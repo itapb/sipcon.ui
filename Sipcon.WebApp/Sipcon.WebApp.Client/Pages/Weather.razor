@@ -1,0 +1,125 @@
+﻿@page "/weather"
+@inject IDialogService DialogService
+<PageTitle>Weather</PageTitle>
+<MudText Typo="Typo.h3" GutterBottom="true">Weather forecast</MudText>
+<MudText Typo="Typo.body1" Class="mb-8">This component demonstrates fetching data from the server.</MudText>
+
+@if (forecasts == null)
+{
+    <MudProgressCircular Color="Color.Default" Indeterminate="true" />
+}
+else
+{
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddOrder">Add Orden</MudButton>
+    <MudDataGrid T="WeatherForecast" 
+    MultiSelection="true" Items="@forecasts" 
+    SortMode="SortMode.Multiple" Filterable="true"
+    QuickFilter="@_quickFilter" Hideable="true" 
+
+    ReadOnly="@_readOnly" EditMode="@(_isCellEditMode ? DataGridEditMode.Cell : DataGridEditMode.Form)"
+    Bordered="true" Dense="true" EditTrigger="@(_editTriggerRowClick ? DataGridEditTrigger.OnRowClick : DataGridEditTrigger.Manual)">
+
+        <ToolBarContent>
+            <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddCard"></MudIconButton>
+            <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudSpacer/>
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+                <MudMenuItem Label="Profile" />
+                <MudMenuItem Label="My account" />
+                <MudMenuItem Label="Logout" />
+            </MudMenu>
+        </ToolBarContent>
+        <Columns>
+            <SelectColumn T="WeatherForecast" />
+            <PropertyColumn Property="x => x.Date" Title="Nr" Sortable="false" Filterable="false" />
+            <PropertyColumn Property="x => x.TemperatureC" />
+            <PropertyColumn Property="x => x.Summary" SortBy="@_sortBy" />
+            <PropertyColumn Property="x => x.TemperatureF" />
+            <TemplateColumn Hidden="@(_isCellEditMode || _readOnly || _editTriggerRowClick)" CellClass="d-flex justify-end">
+                <CellTemplate>
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@context.Actions.StartEditingItemAsync" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="WeatherForecast" />
+        </PagerContent>
+    </MudDataGrid>
+}
+
+@code {
+    private bool _readOnly =false;
+    private bool _isCellEditMode =false;
+    private bool _editTriggerRowClick =false;
+
+    private IEnumerable<WeatherForecast> forecasts = new List<WeatherForecast>();
+    private string _searchString = "";
+    private bool _sortNameByLength = false;
+    private Func<WeatherForecast, object> _sortBy => x =>
+    {
+        if (_sortNameByLength)
+            return x.Summary!.Length;
+        else
+            return x.Summary!;
+    };
+    private Func<WeatherForecast, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (x.Summary!.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.TemperatureC!.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
+    };
+    protected override async Task OnInitializedAsync()
+    {
+        // Simulate asynchronous loading to demonstrate a loading indicator
+        await Task.Delay(500);
+
+        var startDate = DateOnly.FromDateTime(DateTime.Now);
+        var summaries = new[] { "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching" };
+        forecasts = Enumerable.Range(1, 5).Select(index => new WeatherForecast
+        {
+            Date = startDate.AddDays(index),
+            TemperatureC = Random.Shared.Next(-20, 55),
+            Summary = summaries[Random.Shared.Next(summaries.Length)],
+            IsSelected = false
+            }).ToList();
+    }
+
+    void RowClicked(DataGridRowClickEventArgs<WeatherForecast> args)
+    {
+
+    }
+    private async Task ClickAddCard(MouseEventArgs ev)
+    {
+        var weatherForecast = new WeatherForecast
+            {
+                Date = DateOnly.FromDateTime(DateTime.Now),
+                TemperatureC = Random.Shared.Next(-20, 55),
+                Summary = "FF"
+            };
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var parameters = new DialogParameters<AddDialog> { { x => x.weatherForecast, weatherForecast } };
+        var dialog = await DialogService.ShowAsync<AddDialog>("Simple Dialog", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            ((List<WeatherForecast>)forecasts).Add(weatherForecast);
+            StateHasChanged();
+
+        }
+        await Task.CompletedTask;
+    }
+
+    private Task AddOrder()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+
+        return DialogService.ShowAsync<TestDialog>("Simple Dialog", options);
+    }
+}

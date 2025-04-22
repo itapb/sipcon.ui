@@ -1,0 +1,51 @@
+﻿<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6" Class="mr-3 mb-n1">
+            Add Item
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="@orderItem" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <MudGrid>
+                <MudItem xs="12" sm="16">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudTextField @bind-Value="orderItem.ItemId" Label="ItemId" For="@(() => orderItem.ItemId)" ReadOnly="true" />
+                            <MudTextField @bind-Value="orderItem.Name" Label="Name" For="@(() => orderItem.Name)" ReadOnly="false" />
+                            <MudTextField @bind-Value="orderItem.Description" Label="Description" For="@(() => orderItem.Description)" ReadOnly="false" />
+                            <MudTextField @bind-Value="orderItem.Price" Label="Price" For="@(() => orderItem.Price)" ReadOnly="false" />
+                            <MudTextField @bind-Value="orderItem.Quantity" Label="Quantity" For="@(() => orderItem.Quantity)" ReadOnly="false" />
+                        </MudCardContent>
+                        <MudCardActions Class="justify-end">
+                            <MudButton OnClick="Cancel">Cancel</MudButton>
+                            <MudButton ButtonType="ButtonType.Submit">Add</MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        @*         <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Ok</MudButton> *@
+    </DialogActions>
+</MudDialog>
+
+
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public OrderItem orderItem { get; set; } = new OrderItem();
+
+
+    private void OnValidSubmit(EditContext context)
+    {
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+    private void Cancel() => MudDialog.Cancel();
+}
+

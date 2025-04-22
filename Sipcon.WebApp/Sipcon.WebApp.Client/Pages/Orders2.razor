@@ -1,0 +1,182 @@
+﻿@page "/orders2"
+@inject IDialogService DialogService
+@using Sipcon.WebApp.Client.Models
+@using MudBlazor
+
+<MudContainer>
+    <MudGrid>
+        <MudItem xs="12">
+            <MudPaper Elevation="4" Class="pa-4">
+                <MudDataGrid T="Order" Items="mOrders" Hover="true" Dense="true" Bordered="true" RowClick="OnOrderSelected"
+                QuickFilter="@_quickFilter">
+                    <ToolBarContent>
+                        <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddOrder"></MudIconButton>
+                        <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                        <MudSpacer />
+                        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+                            <MudMenuItem Label="Profile" />
+                            <MudMenuItem Label="My account" />
+                            <MudMenuItem Label="Logout" />
+                        </MudMenu>
+                    </ToolBarContent>
+                    <Columns>
+                        <SelectColumn T="Order" />
+                        <PropertyColumn Property="x => x.OrderId" Title="Order ID" />
+                        <PropertyColumn Property="x => x.OrderNumber" Title="Order Number" />
+                        <PropertyColumn Property="x => x.CustomerName" Title="Customer Name" />
+                    </Columns>
+                </MudDataGrid>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12">
+            <MudPaper Elevation="4" Class="pa-4">
+                @if (selectedOrder != null)
+                {
+                    <MudForm @ref="form">
+                        <MudButtonGroup Class="mb-4 d-flex justify-end">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveOrder">Save</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="Cancel">Cancel</MudButton>
+                        </MudButtonGroup>
+
+
+                        <MudText Typo="Typo.h5">New Order</MudText>
+                        <MudTextField @bind-Value="selectedOrder.OrderNumber" Label="Order Number" Required="true" For="@(() => selectedOrder.OrderNumber)" />
+                        <MudTextField @bind-Value="selectedOrder.CustomerName" Label="Customer Name" Required="true" For="@(() => selectedOrder.CustomerName)" />
+
+                        <MudText Typo="Typo.h6" Class="mt-4">Order Items</MudText>
+                        <MudDataGrid T="OrderItem" Items="selectedOrderItems" ReadOnly="@_readOnly" Hover="true" Dense="true" Bordered="true" EditMode="@(_isCellEditMode ? DataGridEditMode.Cell : DataGridEditMode.Form)" EditTrigger="@(_editTriggerRowClick ? DataGridEditTrigger.OnRowClick : DataGridEditTrigger.Manual)">
+                            <ToolBarContent>
+                                <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddItem"></MudIconButton>
+                            </ToolBarContent>
+                            <Columns>
+                                <PropertyColumn Property="x => x.Name" Title="Item Name" />
+                                <PropertyColumn Property="x => x.Description" Title="Description" />
+                                <PropertyColumn Property="x => x.Price" Title="Price" />
+                                <PropertyColumn Property="x => x.Quantity" Title="Quantity" />
+                                <TemplateColumn Hidden="@(_isCellEditMode || _readOnly || _editTriggerRowClick)" CellClass="d-flex justify-end">
+                                    <CellTemplate>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@context.Actions.StartEditingItemAsync" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => RemoveItem(context.Item)" />
+                                    </CellTemplate>
+                                </TemplateColumn>
+                            </Columns>
+
+                            <PagerContent>
+                                <MudDataGridPager T="OrderItem" />
+                            </PagerContent>
+                        </MudDataGrid>
+
+                    </MudForm>
+                }
+                else
+                {
+                    <MudText Typo="Typo.h6">Select an order to view details</MudText>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+
+
+    public EventCallback<Order> OnSave { get; set; }   
+    public EventCallback OnCancel { get; set; }
+
+    private MudForm? form;
+    private bool isValid = false;
+
+    private string _searchString = "";
+    private bool _readOnly = false;
+    private bool _isCellEditMode = false;
+    private bool _editTriggerRowClick = false;
+    private Func<Order, bool> _quickFilter => x =>
+       {
+           if (string.IsNullOrWhiteSpace(_searchString))
+               return true;
+
+           if (x.OrderNumber!.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+               return true;
+
+           if (x.CustomerName!.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+               return true;
+
+           return false;
+       };
+
+    private List<Order> mOrders = new List<Order>
+    {
+        new Order { OrderId = 1, OrderNumber = "ORD001", CustomerName = "John Doe" },
+        new Order { OrderId = 2, OrderNumber = "ORD002", CustomerName = "Jane Smith" }
+    };
+
+    private List<OrderItem> orderItems = new List<OrderItem>
+    {
+        new OrderItem { ItemId = 1, Name = "Item A", Description = "Description A", Price = 10.5m, Quantity = 2, OrderId = 1 },
+        new OrderItem { ItemId = 2, Name = "Item B", Description = "Description B", Price = 20.0m, Quantity = 1, OrderId = 1 },
+        new OrderItem { ItemId = 3, Name = "Item C", Description = "Description C", Price = 15.0m, Quantity = 3, OrderId = 2 }
+    };
+
+    private Order? selectedOrder;
+    private List<OrderItem> selectedOrderItems = new();
+
+    private void OnOrderSelected(DataGridRowClickEventArgs<Order> args)
+    {
+        selectedOrder = args.Item;
+        selectedOrderItems = orderItems.Where(item => item.OrderId == selectedOrder!.OrderId).ToList();
+    }   
+    private async Task ClickAddOrder(MouseEventArgs ev)
+    {
+        await Task.CompletedTask;
+    }
+    private async Task ClickAddItem(MouseEventArgs ev)
+    {
+        var aOrderItem = new OrderItem()
+        {
+                ItemId = selectedOrderItems.LastOrDefault()!.ItemId + 1,
+                Name = string.Empty,
+                Description = string.Empty,
+                Price = 10,
+                Quantity = 1,
+                OrderId = selectedOrder!.OrderId
+        };
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var parameters = new DialogParameters<AddOrderItem> { { x => x.orderItem, aOrderItem } };
+        var dialog = await DialogService.ShowAsync<AddOrderItem>("Simple Dialog2", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            orderItems.Add(aOrderItem); selectedOrderItems.Add(aOrderItem);
+            StateHasChanged();
+
+        }
+        await Task.CompletedTask;
+    }
+    private async Task RemoveItem(OrderItem item)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Confirm Delete",
+            $"Are you sure you want to delete the item '{item.Name}'?",
+            yesText: "Yes", noText: "No");
+
+        if (result == true)
+        {
+            orderItems.Remove(item); ;
+        }
+
+    }
+    private async Task SaveOrder()
+    {
+        await form!.Validate();
+        if (isValid)
+        {
+            // order.OrderItems = orderItems;
+            await OnSave.InvokeAsync(selectedOrder);
+        }
+    }
+    private async Task Cancel()
+    {
+        await OnCancel.InvokeAsync();
+    }
+}

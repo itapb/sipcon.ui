@@ -1,0 +1,106 @@
+﻿@inject IDialogService DialogService
+<MudDialog>
+    <TitleContent>
+        Dialog Title
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="form">
+            <MudButtonGroup Class="mb-4 d-flex justify-end">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveOrder">Save</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="Cancel">Cancel</MudButton>
+            </MudButtonGroup>
+
+
+            <MudText Typo="Typo.h5">New Order</MudText>
+            <MudTextField @bind-Value="order.OrderNumber" Label="Order Number" Required="true" For="@(() => order.OrderNumber)" />
+            <MudTextField @bind-Value="order.CustomerName" Label="Customer Name" Required="true" For="@(() => order.CustomerName)" />
+
+            <MudText Typo="Typo.h6" Class="mt-4">Order Items</MudText>
+            <MudDataGrid T="OrderItem" Items="orderItems" ReadOnly="@_readOnly" Hover="true" Dense="true" Bordered="true" EditMode="@(_isCellEditMode ? DataGridEditMode.Cell : DataGridEditMode.Form)" EditTrigger="@(_editTriggerRowClick ? DataGridEditTrigger.OnRowClick : DataGridEditTrigger.Manual)">
+                <ToolBarContent>
+                    <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddItem"></MudIconButton>
+                </ToolBarContent>
+                <Columns>
+                    <PropertyColumn Property="x => x.Name" Title="Item Name" />
+                    <PropertyColumn Property="x => x.Description" Title="Description" />
+                    <PropertyColumn Property="x => x.Price" Title="Price" />
+                    <PropertyColumn Property="x => x.Quantity" Title="Quantity" />
+                    <TemplateColumn Hidden="@(_isCellEditMode || _readOnly || _editTriggerRowClick)" CellClass="d-flex justify-end">
+                        <CellTemplate>
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@context.Actions.StartEditingItemAsync" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => RemoveItem(context.Item)" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+
+                <PagerContent>
+                    <MudDataGridPager T="OrderItem" />
+                </PagerContent>
+            </MudDataGrid>
+
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    private MudForm? form;
+    [CascadingParameter]
+    private IMudDialogInstance? MudDialog { get; set; }
+    [Parameter]
+    public Order order { get; set; } = new Order() { OrderId = 1, CustomerName = "", OrderNumber = "0001" };
+    [Parameter]
+    public List<OrderItem> orderItems { get; set; } = new();
+    private bool _readOnly = false;
+    private bool _isCellEditMode = false;
+    private bool _editTriggerRowClick = false;
+
+    private List<OrderItem> selectedOrderItems = new();
+    //private Order? selectedOrder;
+    private async Task ClickAddItem(MouseEventArgs ev)
+    {
+        var aOrderItem = new OrderItem()
+            {
+                ItemId = orderItems.Count + 1,
+                Name = string.Empty,
+                Description = string.Empty,
+                Price = 10,
+                Quantity = 1,
+                OrderId = order!.OrderId
+            };
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var parameters = new DialogParameters<AddOrderItem> { { x => x.orderItem, aOrderItem } };
+        var dialog = await DialogService.ShowAsync<AddOrderItem>("Simple Dialog2", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            orderItems.Add(aOrderItem); selectedOrderItems.Add(aOrderItem);
+            StateHasChanged();
+
+        }
+        await Task.CompletedTask;
+    }
+    private async Task RemoveItem(OrderItem item)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Confirm Delete",
+            $"Are you sure you want to delete the item '{item.Name}'?",
+            yesText: "Yes", noText: "No");
+
+        if (result == true)
+        {
+            orderItems.Remove(item); ;
+        }
+
+    }
+    private async Task SaveOrder()
+    {
+        await Task.CompletedTask;      
+    }
+    private void Submit() => MudDialog!.Close(DialogResult.Ok(true));
+
+    private void Cancel() => MudDialog!.Cancel();
+}

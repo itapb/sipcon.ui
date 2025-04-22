@@ -1,0 +1,168 @@
+﻿@page "/orderform"
+@inject IDialogService DialogService
+<MudContainer>
+    <MudPaper Elevation="4" Class="pa-4">
+        <MudForm @ref="form">
+            <MudButtonGroup Class="mb-4 d-flex justify-end">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveOrder" >Save</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="Cancel">Cancel</MudButton>
+            </MudButtonGroup>
+
+
+            <MudText Typo="Typo.h5">New Order</MudText>
+            <MudTextField @bind-Value="order.OrderNumber" Label="Order Number" Required="true" For="@(() => order.OrderNumber)" />
+            <MudTextField @bind-Value="order.CustomerName" Label="Customer Name" Required="true" For="@(() => order.CustomerName)" />
+
+            <MudText Typo="Typo.h6" Class="mt-4">Order Items</MudText>
+            <MudDataGrid T="OrderItem" Items="orderItems" ReadOnly="@_readOnly" Hover="true" Dense="true" Bordered="true" EditMode="@(_isCellEditMode ? DataGridEditMode.Cell : DataGridEditMode.Form)" EditTrigger="@(_editTriggerRowClick ? DataGridEditTrigger.OnRowClick : DataGridEditTrigger.Manual)">
+                <ToolBarContent>
+                    <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddItem"></MudIconButton>
+                </ToolBarContent>
+                <Columns>
+                    <PropertyColumn Property="x => x.Name" Title="Item Name" />
+                    <PropertyColumn Property="x => x.Description" Title="Description" />
+                    <PropertyColumn Property="x => x.Price" Title="Price" />
+                    <PropertyColumn Property="x => x.Quantity" Title="Quantity" />
+                    <TemplateColumn Hidden="@(_isCellEditMode || _readOnly || _editTriggerRowClick)" CellClass="d-flex justify-end">
+                        <CellTemplate>
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@context.Actions.StartEditingItemAsync" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => RemoveItem(context.Item)" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+
+                <PagerContent>
+                    <MudDataGridPager T="OrderItem" />
+                </PagerContent>
+            </MudDataGrid>         
+
+        </MudForm>
+    </MudPaper>
+
+</MudContainer>
+
+@code {
+    private bool _readOnly = false;
+    private bool _isCellEditMode = false;
+    private bool _editTriggerRowClick = false;
+
+    private MudForm? form;
+    private bool isValid = false;
+    private Order order = new Order(){ OrderId=1, CustomerName="", OrderNumber="0001" };
+    private List<OrderItem> orderItems = new();
+    private OrderItem currentItem = new();
+    //private bool isItemDialogOpen = false;
+    private OrderItem? editingItem = null;
+
+    [Parameter]
+    public EventCallback<Order> OnSave { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    [Parameter]
+    public Order? ExistingOrder { get; set; }
+
+    protected override void OnInitialized()
+    {
+
+    }
+    private async Task ClickAddItem(MouseEventArgs ev)
+    {
+        var aOrderItem = new OrderItem()
+            {
+                ItemId = orderItems.Count + 1,
+                Name = string.Empty,
+                Description = string.Empty,
+                Price = 10,
+                Quantity = 1,
+                OrderId = order.OrderId
+            };
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var parameters = new DialogParameters<AddOrderItem> { { x => x.orderItem, aOrderItem } };
+        var dialog = await DialogService.ShowAsync<AddOrderItem>("Simple Dialog2", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            orderItems.Add(aOrderItem);
+            StateHasChanged();
+
+        }
+        await Task.CompletedTask;
+    }
+    private async Task SaveOrder()
+    {
+        await form!.Validate();
+        if (isValid)
+        {
+            // order.OrderItems = orderItems;
+            await OnSave.InvokeAsync(order);
+        }
+    }
+
+    private async Task Cancel()
+    {
+        await OnCancel.InvokeAsync();
+    }
+
+ 
+    private void EditItem(OrderItem item)
+    {
+        currentItem = new OrderItem
+            {
+                ItemId = item.ItemId,
+                Name = item.Name,
+                Description = item.Description,
+                Price = item.Price,
+                Quantity = item.Quantity,
+                OrderId = item.OrderId
+            };
+        editingItem = item;
+        //isItemDialogOpen = true;
+    }
+
+    private async Task RemoveItem(OrderItem item)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Confirm Delete",
+            $"Are you sure you want to delete the item '{item.Name}'?",
+            yesText: "Yes", noText: "No");
+
+        if (result == true)
+        {
+            orderItems.Remove(item); ;
+        }
+       
+    }
+
+    private void SaveItem()
+    {
+        if (editingItem != null)
+        {
+            // Update the existing item
+            editingItem.Name = currentItem.Name;
+            editingItem.Description = currentItem.Description;
+            editingItem.Price = currentItem.Price;
+            editingItem.Quantity = currentItem.Quantity;
+        }
+        else
+        {
+            // Add a new item
+            orderItems.Add(new OrderItem
+                {
+                    Name = currentItem.Name,
+                    Description = currentItem.Description,
+                    Price = currentItem.Price,
+                    Quantity = currentItem.Quantity
+                });
+        }
+
+        //isItemDialogOpen = false;
+    }
+
+    private void CancelItemDialog()
+    {
+        //isItemDialogOpen = false;
+    }
+}
