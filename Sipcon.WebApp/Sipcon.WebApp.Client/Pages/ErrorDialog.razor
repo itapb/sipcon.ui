@@ -1,0 +1,25 @@
+﻿<MudDialog>
+   <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Start">
+           <MudIcon Icon="@Icons.Material.Filled.Error" Color="@Color.Error" Style="font-size: 2rem;" />
+           <MudText Typo="Typo.h6">
+               @TitleText
+           </MudText>
+       </MudStack>
+   </TitleContent>
+   <DialogContent>
+       <MudText>@ContentText</MudText>
+   </DialogContent>
+   <DialogActions>
+       <MudButton OnClick="Submit" Color="Color.Primary">OK</MudButton>
+   </DialogActions>
+</MudDialog>
+
+@code {
+   [CascadingParameter]
+   private IMudDialogInstance MudDialog { get; set; } = default!;
+   [Parameter] public string TitleText { get; set; } = "Error"; // Título por defecto
+   [Parameter] public string? ContentText { get; set; } // Mensaje de error a mostrar
+
+   void Submit() => MudDialog.Close(DialogResult.Ok(true)); // Cierra el diálogo
+}

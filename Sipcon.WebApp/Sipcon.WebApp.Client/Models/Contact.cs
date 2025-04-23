@@ -41,5 +41,6 @@ namespace Sipcon.WebApp.Client.Models
         public DateTime? Birthday { get; set; }
 
         public string? Type { get; set; }
+        public bool IsSelected { get; set; } = false;
     }
 }

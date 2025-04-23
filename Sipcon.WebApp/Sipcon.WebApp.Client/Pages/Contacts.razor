@@ -13,12 +13,21 @@
             AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             <MudSpacer />
             <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
-                <MudMenuItem Label="Profile" />
-                <MudMenuItem Label="My account" />
-                <MudMenuItem Label="Logout" />
+                @foreach (var strmodulo in modules!)
+                {
+                    <MudMenuItem Label="@strmodulo.ActionDisplay" OnClick="@(()=>ClickMenuContact(strmodulo.ActionName))" />
+                }   
             </MudMenu>
         </ToolBarContent>
         <Columns>
+            <TemplateColumn>
+                <HeaderTemplate>
+                    <MudCheckBox @bind-Value="IsAllSelected" @bind-Value:after="AfterAsyncAllCheck" />
+                </HeaderTemplate>
+                <CellTemplate>
+                    <MudCheckBox @bind-Value="@context.Item.IsSelected" />
+                </CellTemplate>
+            </TemplateColumn>
             <PropertyColumn Property="x => x.Vat" Title="Rif" Sortable="false" Filterable="false" />
             <PropertyColumn Property="x => x.FirstName" title="Nombre" />
             <PropertyColumn Property="x => x.LastName" title="Apellido" />
@@ -56,10 +65,10 @@ else
             </MudItem>
             <MudItem xs="6">
                 <MudStack Row="true">
-                    <MudSelect T="string" @bind-Value="selectedRifType" Label="Tipo RIF" Immediate="true" FitContent="true" @bind-Value:after=" AfterAsync">
+                    <MudSelect T="string" @bind-Value="selectedRifType" Label="Tipo RIF" Immediate="true" FitContent="true" @bind-Value:after="AfterAsync">
                         @foreach (var rif in Rifs)
                         {
-                            <MudSelectItem T="string" Value="@rif">@rif</MudSelectItem>
+                            <MudSelectItem T="string" Value="@rif" Disabled="@(!String.IsNullOrEmpty(strDictionary[rif]))">@rif</MudSelectItem>
                         }
                     </MudSelect>
                     <MudTextField @bind-Value="Selectedcontact.Vat" Label="RIF" For="@(() => Selectedcontact.Vat)" MaxLength="12" Mask="@(new PatternMask($"{selectedRifType}00000000000"))" />
@@ -103,7 +112,7 @@ else
                 </MudSelect>
             </MudItem>
             <MudItem xs="4">
-                <MudDatePicker @bind-Date="Selectedcontact.Birthday" Label="Fecha Nacimiento" Class="@($"{strDictionary["Birthday"]}")" />
+                <MudDatePicker @bind-Date="Selectedcontact.Birthday" Label="Fecha Nacimiento" Class="@($"{strDictionary["Birthday"]}")" PickerVariant="PickerVariant.Dialog" />
             </MudItem>
             <MudItem xs="4">
                 <MudSelect T="bool" @bind-Value="Selectedcontact.Male" Label="Genero" Class="@($"{strDictionary["Male"]}")">
@@ -158,10 +167,10 @@ else
     string searchString = "";
     Dictionary<string, string> strDictionary = new Dictionary<string, string>{{ "LastName", "" },{ "BrandName", "" },{ "Supplier", "" },{ "Dealer", "" },{ "Birthday", "" },
                                                                               { "Male", "" },{ "Suppliers", " invisible" },{ "Dealers", " invisible" },{ "Reference", "" },
-                                                                              { "nameLabel", "Nombre" },{ "addressLabel", "Dirección" }};
+                                                                              { "nameLabel", "Nombre" },{ "addressLabel", "Dirección" }, {"V","" },{"E","" },{ "J",""},{"G","" } };
 
     private MudForm? form;
-    string[] Rifs = { "V", "E", "J", "G" };
+    List<string> Rifs = ["V", "E", "J", "G"];
     private bool isCheckboxValid = false;
     private string selectedRifType = "V";
     private Contact? Selectedcontact;
@@ -170,10 +179,16 @@ else
     private List<Brand>? brands;
     private List<Related>? Suppliers;
     private List<Related>? Dealers;
+    private bool IsAllSelected = false;
+    private List<Module>? modules;
+
 
     private async Task<GridData<Contact>> ServerReload(GridState<Contact> state)
     {       
+        IsAllSelected = false; // Reset the select all checkbox
         var mOffset = state.Page * state.PageSize;
+        modules = await Http.GetFromJsonAsync<List<Module>>("api/Module/GetAll?_module=CONTACTOS-CONTACTOS&_idUser=1");
+
         IEnumerable<Contact> data = await Http.GetFromJsonAsync<List<Contact>>($"api/Contact/GetAll?filter={searchString}&rowFrom={mOffset}&idUser=1") ?? new List<Contact>();
         var totalItems = (data.Count()! > 0) ? data.FirstOrDefault()!.Total : 0;
 
@@ -224,10 +239,13 @@ else
             brands = ContactDetailsResult.Brands;
             relateds = ContactDetailsResult.Relateds;
             Selectedcontact = ContactDetailsResult.Contact!;
+            Selectedcontact.Birthday = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Unspecified); 
+
+            Selectedcontact.CityId = 1;
             isCheckboxValid = false;
             Suppliers = relateds!.Where(r => r.RecordId == 0 && r.IsSupplier == true).ToList();
             Dealers = relateds!.Where(r => r.RecordId == 0 && r.IsDealer == true).ToList();
-           // Selectedcontact = new Contact() { Id = 0, IsCustomer = false, IsDealer = false, IsSupplier = false, IsUser = false, Male = true, Type = "" };
+            // Selectedcontact = new Contact() { Id = 0, IsCustomer = false, IsDealer = false, IsSupplier = false, IsUser = false, Male = true, Type = "" };
             await Task.CompletedTask;
         }
 
@@ -243,6 +261,7 @@ else
             relateds = ContactDetailsResult.Relateds;
             Selectedcontact = ContactDetailsResult.Contact!; 
 
+            selectedRifType = Selectedcontact!.Vat!.Substring(0, 1);
             isCheckboxValid = true;
             Suppliers = relateds!.Where(r => r.RecordId == item!.Id && r.IsSupplier == true).ToList();
             Dealers = relateds!.Where(r => r.RecordId == item!.Id && r.IsDealer == true).ToList();
@@ -260,8 +279,9 @@ else
         return Task.CompletedTask;
     }
     private Task AfterAsync()
-    {
-        bool isRifJorG = "JG".IndexOf(Selectedcontact!.Vat!.Substring(0, 1)) > -1;
+    {       
+        if (Selectedcontact!.Vat!.Length > 0) Selectedcontact!.Vat = selectedRifType + Selectedcontact.Vat!.Substring(1);
+        bool isRifJorG = "JG".IndexOf(selectedRifType) > -1;
         strDictionary["nameLabel"] = isRifJorG ? "Razón Social" : "Nombre";
         strDictionary["addressLabel"] = isRifJorG ? "Dirección Fiscal" : "Dirección";
         strDictionary["LastName"] = isRifJorG ? " invisible" : "";
@@ -271,6 +291,8 @@ else
     }
     private Task AfterAsyncUser()
     {
+        strDictionary["V"] =  "";
+        strDictionary["E"] =  "";
         strDictionary["Suppliers"] = " invisible";
         strDictionary["Dealers"] = " invisible";
 
@@ -318,6 +340,11 @@ else
         strDictionary["Male"] = isISupplier ? " invisible" : "";
         strDictionary["Reference"] = "";
         Selectedcontact.Type = isISupplier ? "Planta" : "";
+
+        selectedRifType = isISupplier ? "J" : "V";
+        strDictionary["V"] = isISupplier ? " invisible" : "";
+        strDictionary["E"] = isISupplier ? " invisible" : "";
+
         ValidateCheckBox();
         return Task.CompletedTask;
     }
@@ -335,11 +362,18 @@ else
         strDictionary["Male"] = isIDealer ? " invisible" : "";
         strDictionary["Reference"] = "";
         Selectedcontact.Type = isIDealer ? "Concesionario" : "";
+
+        selectedRifType = isIDealer ? "J" : "V";
+        strDictionary["V"] = isIDealer ? " invisible" : "";
+        strDictionary["E"] = isIDealer ? " invisible" : "";
         ValidateCheckBox();
         return Task.CompletedTask;
     }
     private Task AfterAsyncCustomer()
     {
+        strDictionary["V"] = "";
+        strDictionary["E"] = "";
+
         Selectedcontact!.IsDealer = false;
         Selectedcontact.IsSupplier = false;
         bool isICustomer = Selectedcontact.IsCustomer ?? false;
@@ -396,8 +430,7 @@ else
     {
         await form!.Validate();
         if (form.IsValid) 
-        {   
-
+        {
             var result_Post_Contacts = await Http.PostAsync("api/Contact/Post_Contacts", new StringContent($"[{System.Text.Json.JsonSerializer.Serialize(Selectedcontact)}]", null, "application/json"));
             if (result_Post_Contacts.IsSuccessStatusCode)
             {
@@ -407,11 +440,11 @@ else
                 if (intValue > 0)
                 {                    
                     //relateds!.ForEach(r => { r.RecordId = Selectedcontact!.Id;});
-                   var result_Post_Related = await Http.PostAsync("api/Contact/Post_Relateds", new StringContent(System.Text.Json.JsonSerializer.Serialize(relateds), null, "application/json"));
-                   if (result_Post_Related.IsSuccessStatusCode)
-                   {
+                    var result_Post_Related = await Http.PostAsync("api/Contact/Post_Relateds", new StringContent(System.Text.Json.JsonSerializer.Serialize(relateds), null, "application/json"));
+                    if (result_Post_Related.IsSuccessStatusCode)
+                    {
                         var parameters = new DialogParameters<Dialog> {                           
-                            { x => x.ContentText, "Contacto Procesado." },
+                            { x => x.ContentText, "Contacto Procesado!" },
                             { x => x.ButtonText, "OK" },
                             { x => x.Color, Color.Primary  }  };
 
@@ -421,13 +454,24 @@ else
                         {
                             Selectedcontact = null;
                         }
-                   }
-       
+                    }                  
+
                 }
-                
+
             }
+            else
+            {
+                var resultString = await result_Post_Contacts.Content.ReadAsStringAsync();
+                var parameters = new DialogParameters<ErrorDialog> {
+                            { x => x.ContentText, resultString },
+                            { x => x.TitleText, "Error Contacto" }
+                };
+                var mdialog = await DialogService.ShowAsync<ErrorDialog>("", parameters, new DialogOptions { BackdropClick = false, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true });
+                var result = await mdialog.Result;
+            }
+
         }  
-    
+
     }
 
     private void Cancel()
@@ -447,4 +491,29 @@ else
         StateHasChanged();
     }
 
+    private async Task ClickMenuContact(string? actionName)
+    {
+        var selectedActions = (ContactMudDataGrid != null && ("ACTIVATE,DEACTIVATE".IndexOf(actionName!) > -1)) ?
+                              (ContactMudDataGrid.FilteredItems.Where(item => item.IsSelected)
+                                                               .Select(item => new Client.Models.Action{UserId = 1, RecordId = item.Id, 
+                                                                                                        ModuleId = modules!.FirstOrDefault()?.Id,actionName = actionName,
+                                                                                                        ActionComment = "", RelatedId = 0}).ToList()
+                               ) : null;
+        var result_Post_Actions = (selectedActions is not null) ? await Http.PostAsync("api/Model/Post_Actions", new StringContent($"{System.Text.Json.JsonSerializer.Serialize(selectedActions)}", null, "application/json")) : null;
+       
+        if (result_Post_Actions != null)
+        {
+            var parameters = new DialogParameters<Dialog> {{ x => x.ContentText, "Contacto(s) Actualizado(s)!" },{ x => x.ButtonText, "OK" },{ x => x.Color, Color.Primary }};
+            var mdialog = await DialogService.ShowAsync<Dialog>("Contacto", parameters, new DialogOptions { BackdropClick = false, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true });
+            var result = await mdialog.Result;
+        } 
+
+        await Task.CompletedTask;
+    }
+    private async Task AfterAsyncAllCheck()
+    { 
+        if (ContactMudDataGrid != null)
+            ContactMudDataGrid.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllSelected);       
+        await Task.CompletedTask;      
+    }
 }
