@@ -4,21 +4,21 @@ namespace Sipcon.WebApp.Client.Models
 {
     public class Contact : Record
     {
-        [Required]
+        [Required(ErrorMessage = "Rif es requerido.")]
         public string? Vat { get; set; }
-        [Required]
+        [Required(ErrorMessage = "Nombre es requerido.")]
         public string? FirstName { get; set; }
        
         public string? LastName { get; set; }
-        [Required]
+        [Required(ErrorMessage = "Direccion es requerido.")]
         public string? Address { get; set; }
-        [Required]
+        [Required(ErrorMessage = "Telefono 1 es requerido.")]
         public string? Phone1 { get; set; }
         public string? Phone2 { get; set; }
         public Int32? BrandId { get; set; }      
         public string? BrandName { get; set; }
-        [Required(ErrorMessage = "The Email field is required.")]
-        [EmailAddress(ErrorMessage = "The Email field is not a valid email address.")]
+        [Required(ErrorMessage = "Email es requerido.")]
+        [EmailAddress(ErrorMessage = "Invalida direccion de email.")]
         public string? Email { get; set; }
         public string? Login { get; set; }
         public string? Password { get; set; }
@@ -31,7 +31,7 @@ namespace Sipcon.WebApp.Client.Models
         public bool? IsUser { get; set; }
      
         public bool? IsDealer { get; set; }
-        [Required]
+        [Required(ErrorMessage = "Ciudad es requerida.")]
         public Int32? CityId { get; set; }       
         public string? CityName { get; set; }      
         public string? State { get; set; }

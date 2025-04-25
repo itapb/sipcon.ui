@@ -41,7 +41,7 @@
 				</TemplateColumn>
 			</Columns>
 			<PagerContent>
-				<MudDataGridPager T="Contact" PageSizeOptions="new int[] {100 }"  />
+				<MudDataGridPager T="Contact" PageSizeOptions="new int[] {pageSize}" />
 			</PagerContent>
 		</MudDataGrid>
 	}
@@ -91,10 +91,7 @@ else
 			</MudItem>
 			<MudItem xs="6">
 				<MudSelect T="int?" @bind-Value="Selectedcontact.CityId" Label="Ciudad" for="@(() => Selectedcontact.CityId)">
-					@foreach (var city in cities!)
-					{
-						<MudSelectItem Value="@city.Id">@city.Name</MudSelectItem>
-					}
+					@foreach (var city in cities!) { <MudSelectItem Value="@city.Id">@city.Name</MudSelectItem>	}
 				</MudSelect>
 			</MudItem>
 			<MudItem xs="4">
@@ -108,10 +105,7 @@ else
 			</MudItem>
 			<MudItem xs="4">
 				<MudSelect T="string" @bind-Value="Selectedcontact.BrandName" Label="Marca" Class="@($"{strVisible["BrandName"]}")">
-					@foreach (var brand in brands!)
-					{
-						<MudSelectItem Value="@brand.Name">@brand.Name</MudSelectItem>
-					}
+					@foreach (var brand in brands!) { <MudSelectItem Value="@brand.Name">@brand.Name</MudSelectItem> }
 				</MudSelect>
 			</MudItem>
 			<MudItem xs="4">
