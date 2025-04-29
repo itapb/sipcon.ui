@@ -1,7 +1,6 @@
 ﻿@page "/contacts"
 @using Sipcon.WebApp.Client.Models
 @using ClosedXML.Excel
-
 @inject HttpClient Http
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
@@ -9,10 +8,10 @@
 <MudText Typo="Typo.h6" GutterBottom="true">@mMessage</MudText>
 @if (SelectedContact == null)
 {
-    <MudDataGrid @ref="ContactMudDataGrid" T="Contact" ServerData="ServerReload" Filterable="false" FixedHeader Height="@gridHeight" Loading="_loading">
+    <MudDataGrid @ref="ContactMudDataGrid" T="Contact" ServerData="ServerReload" Filterable="false" FixedHeader Height="@gridHeight" Loading="_loading" @bind-CurrentPage="ContactCurrentPage" >
         <ToolBarContent>
             <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddContact"></MudIconButton>
-            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s=>OnSearch(s))" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s=>OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             <MudSpacer />
             <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">               
                 @foreach (var strmodulo in Modules!){ <MudMenuItem Label="@strmodulo.ActionDisplay" OnClick="@(()=>ClickMenuContact(strmodulo.ActionName))"/> }   
@@ -90,16 +89,16 @@ else
                 <MudTextField @bind-Value="SelectedContact.FirstName" Label="@($"{strDictionary["nameLabel"]}")" For="@(() => SelectedContact.FirstName)" MaxLength="100" Required="true"/>
             </MudItem>
             <MudItem xs="6">
-                <MudTextField @bind-Value="SelectedContact.LastName" Label="Apellidos" For="@(() => SelectedContact.LastName)" MaxLength="100" Class="@($"{strDictionary["LastName"]}")" Required="(SelectedContact.IsCustomer ?? false) || (SelectedContact.IsUser ?? false)"  RequiredError="Apellido es requerido"/>
+                <MudTextField @bind-Value="SelectedContact.LastName" Label="Apellidos" For="@(() => SelectedContact.LastName)" MaxLength="100" Class="@($"{strDictionary["LastName"]}")" Required="@(((SelectedContact.IsCustomer ?? false) || (SelectedContact.IsUser ?? false)) && IsRifVorE == true)" RequiredError="Apellido es requerido" />
             </MudItem>
             <MudItem xs="6">
                 <MudTextField @bind-Value="SelectedContact.Address" Label="@($"{strDictionary["addressLabel"]}")" For="@(() => SelectedContact.Address)" MaxLength="150" Required="true" />
             </MudItem>
             <MudItem xs="6">
-                <MudSelect T="int?" @bind-Value="SelectedContact.CityId" Label="Ciudad" For="@(() => SelectedContact.CityId)">
+                <MudSelect T="City" Label="Ciudad" ToStringFunc="@ConvertCityFunc" Required="true" ValueChanged="OnCityValueChanged" RequiredError="Ciudad es requerido" Value="CitySelected">
                     @foreach (var city in Cities!)
                     {
-                        <MudSelectItem Value="@city.Id">@city.Name</MudSelectItem>
+                        <MudSelectItem Value="city" />
                     }
                 </MudSelect>
             </MudItem>
@@ -113,8 +112,11 @@ else
                 <MudTextField @bind-Value="SelectedContact.Phone2" Label="Teléfono 2" For="@(() => SelectedContact.Phone2)" MaxLength="12" Mask="@(new PatternMask("0000-00000000"))" />
             </MudItem>
             <MudItem xs="4">
-                <MudSelect T="int?" @bind-Value="SelectedContact.BrandId" Label="Marca" Class="@($"{strDictionary["BrandName"]}")" Required="(SelectedContact.IsSupplier ?? false)" RequiredError="Marca es requerido">
-                    @foreach (var brand in Brands!) { <MudSelectItem Value="@brand.Id">@brand.Name</MudSelectItem> }
+                <MudSelect T="Brand" Label="Marca" ToStringFunc="@ConvertBrandFunc" Class="@($"{strDictionary["BrandName"]}")" Required="(SelectedContact.IsSupplier ?? false)" RequiredError="Marca es requerido" ValueChanged="OnBrandValueChanged" Value="BrandSelected">
+                    @foreach (var brand in Brands!)
+                    {
+                        <MudSelectItem Value="brand"/>
+                    } 
                 </MudSelect>
             </MudItem>
             <MudItem xs="4">
@@ -182,8 +184,9 @@ else
     string searchString = "";
     string mMessage = "Contactos";
     string gridHeight = "300px";
-    string SelectedRifType = "V";
+    string SelectedRifType = "V";   
     string[] Rifs = ["V", "E", "J", "G"];
+    private int ContactCurrentPage = 0;
 
     private MudForm? form;
     private MudDataGrid<Contact>? ContactMudDataGrid;    
@@ -197,13 +200,20 @@ else
     private List<Related>? Suppliers;
     private List<Related>? Dealers;    
     private List<Module>? Modules;
+    private City? CitySelected;
+    private Brand? BrandSelected;
 
+    private Func<City?, string> ConvertCityFunc = city => city?.Name!;
+    private Func<Brand?, string> ConvertBrandFunc = brand => brand?.Name!;
+
+    private bool IsRifVorE => "VE".IndexOf(SelectedRifType) > -1;
 
     private async Task<GridData<Contact>> ServerReload(GridState<Contact> state)
     {       
-        IsAllCheckBoxSelected = false; 
+        IsAllCheckBoxSelected = false;
+        _loading = true;
         var mOffset = state.Page * state.PageSize;
-        Modules = await Http.GetFromJsonAsync<List<Module>>("api/Module/GetAll?_module=CONTACTOS-CONTACTOS&_idUser=1");
+        Modules = await Http.GetFromJsonAsync<List<Module>>("api/Module/GetAll?moduleName=CONTACTOS-CONTACTOS&userId=1");
         IEnumerable<Contact> data = await Http.GetFromJsonAsync<List<Contact>>($"api/Contact/GetAll?filter={searchString}&rowFrom={mOffset}&idUser=1") ?? new List<Contact>();
 
         var totalItems = (data.Count()! > 0) ? data.FirstOrDefault()!.Total : 0;
@@ -258,19 +268,22 @@ else
             SelectedContact.Birthday = DateTime.SpecifyKind(new DateTime(1980,01,01), DateTimeKind.Unspecified);
 
             SelectedContact.IsActive = true;
-            SelectedContact.BrandId = 1;
+            //SelectedContact.BrandId = 1;
+            BrandSelected = null;
             SelectedContact.CityId = 1;
+            SelectedContact.Male = true;
             IsCheckboxValid = false;
             Suppliers = Relateds!.Where(r => r.RecordId == 0 && r.IsSupplier == true).ToList();
             Dealers = Relateds!.Where(r => r.RecordId == 0 && r.IsDealer == true).ToList();
-            // Selectedcontact = new Contact() { Id = 0, IsCustomer = false, IsDealer = false, IsSupplier = false, IsUser = false, Male = true, Type = "" };
+
+            await NewContactUI();
             await Task.CompletedTask;
         }
 
     }
     private async Task ClickEditContact(Contact item)
     {       
-        var ContactDetailsResult = await Http.GetFromJsonAsync<ContactDetails>("api/Contact/GetOne_WithContext?iduser=" + item!.Id);
+        var ContactDetailsResult = await Http.GetFromJsonAsync<ContactDetails>("api/Contact/GetOne_WithContext?contactId=" + item!.Id);
         if (ContactDetailsResult != null)
         {
             mMessage = "Editar Contacto";
@@ -289,8 +302,9 @@ else
             if (SelectedContact.IsDealer ?? false) await AfterAsyncDealer();
             if (SelectedContact.IsCustomer ?? false) await AfterAsyncCustomer();
             if (SelectedContact.IsUser ?? false) await AfterAsyncUser();
-
+            await AfterAsync();
             FirstClickEditContact = false;
+            CitySelected = Cities!.FirstOrDefault(c => c.Id == SelectedContact.CityId);
         }
         await Task.CompletedTask;
     }
@@ -312,11 +326,13 @@ else
     }
     private Task AfterAsyncUser()
     {
+        var localIsRifVorE = IsRifVorE;
         strDictionary["V"] =  "";
         strDictionary["E"] =  "";
         strDictionary["Suppliers"] = " invisible";
         strDictionary["Dealers"] = " invisible";
-        strDictionary["LastName"] = "";
+        //strDictionary["LastName"] = "";
+        strDictionary["LastName"] = localIsRifVorE ? "" : " invisible";
 
         SelectedContact!.IsDealer = false;
         SelectedContact.IsSupplier = false;
@@ -330,8 +346,8 @@ else
             strDictionary["Reference"] = " invisible";
             strDictionary["Supplier"] = "";
             strDictionary["Dealer"] = "";
-            strDictionary["Birthday"] = "";
-            strDictionary["Male"] = "";            
+            strDictionary["Birthday"] = localIsRifVorE ? "" : " invisible";
+            strDictionary["Male"] = localIsRifVorE ? "" : " invisible";
         }
         else if(isICustomer == true && isIUser == false)
         {
@@ -349,6 +365,13 @@ else
         ValidateCheckBox();
         return Task.CompletedTask;
     }
+    private Task NewContactUI()
+    {
+        "BrandName,Supplier,Dealer,Birthday,Male,Reference,LastName".Split(',').ToList().ForEach(key => strDictionary[key] = "");
+        SelectedRifType = "V";
+        CitySelected = null;
+        return Task.CompletedTask;
+    }
     private Task AfterAsyncSupplier()
     {
         SelectedContact!.IsDealer = false;
@@ -364,7 +387,7 @@ else
         strDictionary["Reference"] = "";
         SelectedContact.Type = isISupplier ? "Planta" : "";
 
-        SelectedRifType = isISupplier ? "J" : "V";
+        if (FirstClickEditContact == false) SelectedRifType = isISupplier ? "J" : "V";
         strDictionary["V"] = isISupplier ? " invisible" : "";
         strDictionary["E"] = isISupplier ? " invisible" : "";
         strDictionary["LastName"] = isISupplier ? " invisible" : "";
@@ -387,7 +410,7 @@ else
         strDictionary["Reference"] = "";
         SelectedContact.Type = isIDealer ? "Concesionario" : "";
 
-        SelectedRifType = isIDealer ? "J" : "V";
+        if (FirstClickEditContact == false) SelectedRifType = isIDealer ? "J" : "V";
         strDictionary["V"] = isIDealer ? " invisible" : "";
         strDictionary["E"] = isIDealer ? " invisible" : "";
         strDictionary["LastName"] = isIDealer ? " invisible" : "";
@@ -397,9 +420,10 @@ else
     }
     private Task AfterAsyncCustomer()
     {
+        var localIsRifVorE = IsRifVorE;
         strDictionary["V"] = "";
         strDictionary["E"] = "";
-        strDictionary["LastName"] = "";
+        strDictionary["LastName"] = IsRifVorE ? "" : " invisible";
 
         SelectedContact!.IsDealer = false;
         SelectedContact.IsSupplier = false;
@@ -420,8 +444,8 @@ else
             strDictionary["Reference"] = " invisible";
             strDictionary["Supplier"] = "";
             strDictionary["Dealer"] = "";
-            strDictionary["Birthday"] = "";
-            strDictionary["Male"] = "";            
+            strDictionary["Birthday"] = localIsRifVorE ? "" : " invisible";
+            strDictionary["Male"] = localIsRifVorE ? "" : " invisible"; 
         }
         else if (isICustomer == false && isIUser == false)
         {
@@ -604,4 +628,19 @@ else
             ContactMudDataGrid.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);       
         await Task.CompletedTask;      
     } 
+    private Task OnCityValueChanged(City selectedCity)
+    {        
+        CitySelected = selectedCity;
+        SelectedContact!.CityId = selectedCity?.Id;
+        SelectedContact!.CityName = selectedCity?.Name;
+        return Task.CompletedTask;
+    }
+
+    private Task OnBrandValueChanged(Brand selectedBrand)
+    {
+        BrandSelected = selectedBrand;
+        SelectedContact!.BrandId = selectedBrand?.Id;
+        SelectedContact!.CityName = selectedBrand?.Name;
+        return Task.CompletedTask;
+    }
 }
