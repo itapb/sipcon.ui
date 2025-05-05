@@ -1,0 +1,339 @@
+﻿@page "/warehouses"
+@* @typeparam T *@
+@inject HttpClient Http
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+@using System.Text.Json
+
+<MudText Typo="Typo.h6" GutterBottom="true">@mMessage</MudText>
+<InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
+
+@if (SelectedWarehouse == null)
+{
+    <MudDataGrid @ref="WarehouseMudDataGrid" T="Warehouse" ServerData="ServerReload" Filterable="false" FixedHeader Height="@gridHeight" Loading="_loading" @bind-CurrentPage="WarehouseCurrentPage">
+        <ToolBarContent>
+            <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddWarehouse"></MudIconButton>
+            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s=>OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudSpacer />
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+                @foreach (var strmodulo in Modules!)
+                {
+                    <MudMenuItem Label="@strmodulo.ActionDisplay" OnClick="@(()=>ClickMenuZone(strmodulo.ActionName))" />
+                }
+            </MudMenu>
+        </ToolBarContent>
+        <Columns>
+            <TemplateColumn>
+                <HeaderTemplate>
+                    <MudCheckBox @bind-Value="IsAllCheckBoxSelected" @bind-Value:after="AfterAsyncAllCheck" />
+                </HeaderTemplate>
+                <CellTemplate>
+                    <MudCheckBox @bind-Value="@context.Item.IsSelected" />
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.Name" title="Almacen" Sortable="false" Filterable="false" />
+            <PropertyColumn Property="x => x.SupplierName" title="Planta" />
+            <PropertyColumn Property="x => x.BrandName" title="Marca" />
+            <TemplateColumn>
+                <HeaderTemplate>
+                    <MudText>Activo</MudText>
+                </HeaderTemplate>
+                <CellTemplate>
+                    <MudCheckBox @bind-Value="@context.Item.IsActive" ReadOnly="true" />
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn StickyRight="true">
+                <CellTemplate>
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="()=> ClickEditZone(context.Item)" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="Warehouse" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        </PagerContent>
+    </MudDataGrid>
+}
+else
+{
+    <MudForm @ref="form">
+        <MudGrid Spacing="2">
+            <MudItem xs="12">
+                <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                    <MudStack Row="true">
+                        <MudCheckBox @bind-Value="SelectedWarehouse.IsActive" Label="Activo" />
+                    </MudStack>
+                    <MudButtonGroup>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveClick">Aceptar</MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="CancelClick">Cancelar</MudButton>
+                    </MudButtonGroup>
+                </MudStack>
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudTextField T="string" @bind-Value="SelectedWarehouse.Name" Label="Almacen" For="@(() => SelectedWarehouse.Name)" MaxLength="20" Required="true"/>
+            </MudItem>
+            <MudItem xs="12">
+                <MudSelect T="Contact" Label="Planta" ToStringFunc="@ConvertSupplierFunc" Required="true" ValueChanged="OnSupplierValueChanged" RequiredError="Planta es requerido" Value="SupplierSelected">
+                    @foreach (var supplier in Suppliers!)
+                    {
+                        <MudSelectItem Value="supplier" />
+                    }
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+    </MudForm>
+}
+
+
+@code {
+    string searchString = "";
+    string mMessage = "Almacenes";
+    string gridHeight = "300px";
+    private int WarehouseCurrentPage = 0;
+    bool _loading = true;
+    bool IsAllCheckBoxSelected = false;
+
+    private MudForm? form;
+    private Func<Contact?, string> ConvertSupplierFunc = supplier => supplier?.FirstName!;
+    private Contact? SupplierSelected;
+    private List<Contact>? Suppliers = default;
+
+    private Warehouse? SelectedWarehouse;
+    private MudDataGrid<Warehouse>? WarehouseMudDataGrid;
+    private List<Module>? Modules;
+    private async Task SaveClick()
+    {
+        await form!.Validate();
+        if (form.IsValid)
+        {
+            var strJsonSelectedWarehouse = System.Text.Json.JsonSerializer.Serialize(SelectedWarehouse);
+            var result_Post_Warehouse = await Http.PostAsync("api/Warehouse/Post_Warehouses?userId=1", new StringContent($"[{strJsonSelectedWarehouse}]", null, "application/json"));
+            if (result_Post_Warehouse.IsSuccessStatusCode)
+            {
+                var sucessContent = await result_Post_Warehouse.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
+                if ((sucessContent?.data![0].insertedRows == 1 || sucessContent?.data![0].updatedRows == 1))
+                {
+                    var result = await DialogService.ShowDialog("Almacen Procesado!", "Almacen", "OK", Color.Primary, Icons.Material.Filled.Commit);
+                    if (!result!.Canceled)
+                    {
+                        mMessage = "Almacenes";
+                        SelectedWarehouse = null;
+                    }
+                }
+
+            }
+            else if (result_Post_Warehouse.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                var conflictContent = await result_Post_Warehouse.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+                await DialogService.ShowDialog(conflictContent?.message!.Replace("USP_POST_ZONES : ", ""), "Error Almacen", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+            else
+            {
+                var errorMessage = await result_Post_Warehouse.Content.ReadAsStringAsync();
+                throw new Exception(errorMessage);
+            }
+        }
+        await Task.CompletedTask;
+    }
+    private void CancelClick()
+    {
+        mMessage = "Almacenes"; SelectedWarehouse = null;
+    }
+    private Task OnSupplierValueChanged(Contact selectedSupplier)
+    {
+        SupplierSelected = selectedSupplier;
+        SelectedWarehouse!.SupplierId = selectedSupplier.Id;
+        SelectedWarehouse.SupplierName = selectedSupplier.FirstName;
+        return Task.CompletedTask;
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        Modules = await Http.GetFromJsonAsync<List<Module>>("api/Module/GetAll?moduleName=INVENTARIO-ALMACEN&userId=1");
+    }
+    private async Task<GridData<Warehouse>> ServerReload(GridState<Warehouse> state)
+    {
+        IsAllCheckBoxSelected = false;
+        _loading = true;
+        var mOffset = state.Page * state.PageSize;
+        var totalItems = 0;
+        IEnumerable<Warehouse> data;
+        HttpResponseMessage response = await Http.GetAsync($"api/Warehouse/GetAll?filter={searchString}&rowFrom={mOffset}&userId=1");
+
+        if (response.IsSuccessStatusCode)
+        {
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Warehouse>>>();
+            totalItems = content2!.total ?? 0;
+            data = content2!.data ?? new List<Warehouse>();
+        }
+        else
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
+        _loading = false;
+
+        return new GridData<Warehouse> { TotalItems = totalItems, Items = data };
+    }
+
+    private async Task ClickMenuZone(string? actionName)
+    {
+        if (actionName == "EXPORT")
+        {
+            _loading = true;
+            var ResultWarehouses = await Http.GetAsync($"api/Warehouse/GetExport?_filter={searchString}&userId=1");
+            if (ResultWarehouses.IsSuccessStatusCode)
+            {
+                var fileContent = await ResultWarehouses.Content.ReadAsByteArrayAsync();
+                var base64File = Convert.ToBase64String(fileContent);
+                var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+                await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Almacenes.xlsx");
+            }
+            _loading = false;
+            return;
+        }
+        else if (actionName == "IMPORT")
+        {
+            await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('[type=file]').click()");
+            return;
+        }
+        var SelectedActions = (WarehouseMudDataGrid != null && ("ACTIVATE,DEACTIVATE".IndexOf(actionName!) > -1)) ?
+                            (WarehouseMudDataGrid.FilteredItems.Where(item => item.IsSelected)
+                                                             .Select(item => new Client.Models.Action
+                                                                 {
+                                                                     UserId = 1,
+                                                                     RecordId = item.Id,
+                                                                     ModuleId = Modules!.FirstOrDefault()?.Id,
+                                                                     actionName = actionName,
+                                                                     ActionComment = "",
+                                                                     RelatedId = 0
+                                                                 }).ToList()
+                             ) : null;
+
+        var result_Post_Actions = (SelectedActions is not null && SelectedActions.Count > 0) ? await Http.PostAsync("api/Warehouse/Post_Actions?userId=1", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
+        if (result_Post_Actions is not null && result_Post_Actions.IsSuccessStatusCode)
+        {
+            var resultAction = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
+            if (resultAction?.data![0].updatedRows > 0)
+            {
+                var result = await DialogService.ShowDialog("Almacen(s) Actualizado(s)!", "Almacen", "OK", Color.Primary, Icons.Material.Filled.Commit);
+                await WarehouseMudDataGrid!.ReloadServerData();
+            }
+
+
+        }
+        await Task.CompletedTask;
+
+    }
+    private async Task ClickAddWarehouse(MouseEventArgs ev)
+    {
+        mMessage = "Agregar Almacen";
+        var response1 = await Http.GetAsync($"api/Contact/GetSuppliers");
+        if (response1.IsSuccessStatusCode)
+        {
+            var SuppliersContent = await response1.Content.ReadFromJsonAsync<List<Contact>>();
+            Suppliers = SuppliersContent!;
+            SupplierSelected = null;
+            SelectedWarehouse = new Warehouse() { Id = 0, Name = null, IsActive = true, SupplierId = null, SupplierName = null, IsSelected = false };
+        }
+        else
+        {
+            var errorMessage = await response1.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
+
+        await Task.CompletedTask;
+    }
+    private async Task ClickEditZone(Warehouse item)
+    {
+        var request1 = Http.GetAsync($"api/Contact/GetSuppliers");
+        var request2 = Http.GetAsync($"api/Warehouse/GetOne?warehouseId={item!.Id}&userId=1");
+        await Task.WhenAll(request1, request2);
+        HttpResponseMessage response1 = request1.Result;
+        HttpResponseMessage response2 = request2.Result;
+
+        if (response1.IsSuccessStatusCode && response2.IsSuccessStatusCode)
+        {
+            mMessage = "Editar Almacen";
+            var SuppliersContent = await response1.Content.ReadFromJsonAsync<List<Contact>>();
+            var WarehouseContent = await response2.Content.ReadFromJsonAsync<WebApiResponse<Warehouse>>();
+            Suppliers = SuppliersContent;
+            SelectedWarehouse = WarehouseContent!.data;
+            SupplierSelected = Suppliers!.FirstOrDefault(c => c.Id== SelectedWarehouse!.SupplierId);
+        }
+        else
+        {
+            var errorMessage = await response2.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
+        //var ZoneDetailsResult = await Http.GetFromJsonAsync<WebApiResponse<Warehouse>>($"api/Warehouse/GetOne?ZoneId={item!.Id}&userId=1");// ojo
+
+        await Task.CompletedTask;
+    }
+    private async Task AfterAsyncAllCheck()
+    {
+        if (WarehouseMudDataGrid != null)
+            WarehouseMudDataGrid.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
+        await Task.CompletedTask;
+    }
+    private async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            _loading = true;
+            searchString = text;
+            await WarehouseMudDataGrid!.ReloadServerData();
+        }
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await AdjustGridHeight();
+    }
+    private async Task AdjustGridHeight()
+    {
+        var windowHeight = await JSRuntime.InvokeAsync<int>("getWindowHeight");
+        gridHeight = $"{windowHeight - 230}px"; // Adjust 200px as needed for header/footer or other elements
+        StateHasChanged();
+    }
+
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        if (e.FileCount == 1)
+        {
+            var file = e.File;
+            const long maxAllowedSize = 10 * 1024 * 1024; // 10MB
+            if (file.Size == 0)
+            {
+                await DialogService.ShowDialog("Archivo esta vacio", "Error de Archivo", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+            else if (file.Size > maxAllowedSize)
+            {
+                await DialogService.ShowDialog("Tamaño del archivo excede el limite maximo permitido de 10MB.", "Error de Archivo", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+            else
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
+
+                var content = new StreamContent(stream);
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+                // Create a multipart form data content
+                var formData = new MultipartFormDataContent();
+                formData.Add(content, "file", file.Name);
+                _loading = true;
+
+                var response = await Http.PostAsync("api/Warehouse/Import?userId=1", formData);
+                if (response.IsSuccessStatusCode)
+                {
+                    await DialogService.ShowDialog("Archivo cargado con exito!.", "Zona", "OK", Color.Primary, Icons.Material.Filled.Commit);
+                    await WarehouseMudDataGrid!.ReloadServerData();
+                }
+                else
+                {
+                    await DialogService.ShowDialog("Carga de archivo fallo!", "Error al cargar", "OK", Color.Error, Icons.Material.Filled.Error);
+                    _loading = false;
+                }
+            }
+        }
+        await Task.CompletedTask;
+    }
+}

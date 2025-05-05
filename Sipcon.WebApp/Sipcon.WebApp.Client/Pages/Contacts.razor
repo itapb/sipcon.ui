@@ -1,6 +1,6 @@
 ﻿@page "/contacts"
 @using Sipcon.WebApp.Client.Models
-@using ClosedXML.Excel
+
 @inject HttpClient Http
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
@@ -162,18 +162,6 @@ else
         </MudGrid>
     </MudForm>
 }
-<script>
-    window.getWindowHeight = () => {return window.innerHeight;};
-
-    function downloadFile(url, fileName) {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    }
-</script>
 
 @code {
     bool _loading = true;
@@ -495,10 +483,11 @@ else
                     var result_Post_Related = await Http.PostAsync("api/Contact/Post_Relateds", new StringContent(strJsonRelateds, null, "application/json"));
                     if (result_Post_Related.IsSuccessStatusCode)
                     {
-                        var parameters = new DialogParameters<Dialog>{{ x => x.ContentText, "Contacto Procesado!" },{ x => x.ButtonText, "OK" },{ x => x.Color, Color.Primary}};
-                        var mdialog = await DialogService.ShowAsync<Dialog>("Contacto", parameters, new DialogOptions { BackdropClick = false, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true });
-                        var result = await mdialog.Result;
-                        if (!result!.Canceled)
+                        // var parameters = new DialogParameters<Dialog>{{ x => x.ContentText, "Contacto Procesado!" },{ x => x.ButtonText, "OK" },{ x => x.Color, Color.Primary}};
+                        // var mdialog = await DialogService.ShowAsync<Dialog>("Contacto", parameters, new DialogOptions { BackdropClick = false, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true });
+                        var mdialog = await DialogService.ShowDialog("Contacto Procesado!", "Contacto", "Ok", Color.Primary, Icons.Material.Filled.Commit);
+                        //var result = await mdialog.Result;
+                        if (!mdialog!.Canceled)
                         {
                             mMessage = "Contactos";
                             SelectedContact = null;
@@ -510,9 +499,10 @@ else
             else
             {
                 var resultString = await result_Post_Contacts.Content.ReadAsStringAsync();
-                var parameters = new DialogParameters<ErrorDialog> {{ x => x.ContentText, resultString.Replace("USP_POST_CONTACTS : ","")},{ x => x.TitleText, "Error Contacto"}};
-                var mdialog = await DialogService.ShowAsync<ErrorDialog>("", parameters, new DialogOptions { BackdropClick = false, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true });
-                var result = await mdialog.Result;
+                // var parameters = new DialogParameters<ErrorDialog> {{ x => x.ContentText, resultString.Replace("USP_POST_CONTACTS : ","")},{ x => x.TitleText, "Error Contacto"}};
+                // var mdialog = await DialogService.ShowAsync<ErrorDialog>("", parameters, new DialogOptions { BackdropClick = false, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true });
+                // var result = await mdialog.Result;
+                await DialogService.ShowDialog(resultString.Replace("USP_POST_CONTACTS : ", ""), "Error Contacto", "OK", Color.Primary, Icons.Material.Filled.Error);
             }
 
         }  
@@ -531,75 +521,34 @@ else
         gridHeight = $"{windowHeight - 230}px"; // Adjust 200px as needed for header/footer or other elements
         StateHasChanged();
     }
-
-    private async Task<XLWorkbook> BuildExcelFile(List<Contact>? resultContacts)
-    {
-        var t = Task.Run(() =>
-            {
-                var wb = new XLWorkbook();
-                var sheet = wb.AddWorksheet("Sheet1");
-                int rowIndex = 1;
-                //string[] columns = { "Rif", "FirstName", "LastName", "Address", "Phone1", "Phone2", "BrandId", "BrandName", "Email", "Login", "Reference", "IsCustomer", "IsSupplier", "IsUser", "IsDealer", "CityId", "CityName", "State", "Male", "Birthday", "Type", "Id", "Total", "IsActive" };
-                string[] columns = { "Rif", "Nombre", "Apellido", "Dirección", "Teléfono1", "Teléfono2", "IdMarca", "NombreMarca", "Correo", "Usuario", "Referencia", "EsCliente", "EsProveedor", "EsUsuario", "EsConcesionario", "IdCiudad", "NombreCiudad", "Estado", "Género", "FechaNacimiento", "Tipo", "Id", "Total", "EsActivo" };
-                for (int j = 0; j < columns.Length; j++)
-                {
-                    sheet.Cell(rowIndex, j + 1).Value = columns[j];
-                }
-                sheet.Row(rowIndex).Style.Font.Bold = true;
-                sheet.Row(rowIndex).Style.Fill.BackgroundColor = XLColor.DarkGray;
-                sheet.Row(rowIndex).Style.Font.FontColor = XLColor.Black;
-                sheet.SheetView.FreezeRows(1);
-
-                for (int j = 0; j < resultContacts!.Count; j++)
-                {
-                    rowIndex++;
-                    sheet.Cell(rowIndex, 1).Value = resultContacts[j].Vat;
-                    sheet.Cell(rowIndex, 2).Value = resultContacts[j].FirstName;
-                    sheet.Cell(rowIndex, 3).Value = resultContacts[j].LastName;
-                    sheet.Cell(rowIndex, 4).Value = resultContacts[j].Address;
-                    sheet.Cell(rowIndex, 5).Value = resultContacts[j].Phone1;
-                    sheet.Cell(rowIndex, 6).Value = resultContacts[j].Phone2;
-                    sheet.Cell(rowIndex, 7).Value = resultContacts[j].BrandId;
-                    sheet.Cell(rowIndex, 8).Value = resultContacts[j].BrandName;
-                    sheet.Cell(rowIndex, 9).Value = resultContacts[j].Email;
-                    sheet.Cell(rowIndex, 10).Value = resultContacts[j].Login;
-                    sheet.Cell(rowIndex, 11).Value = resultContacts[j].Reference;
-                    sheet.Cell(rowIndex, 12).Value = resultContacts[j].IsCustomer.ToString();
-                    sheet.Cell(rowIndex, 13).Value = resultContacts[j].IsSupplier.ToString();
-                    sheet.Cell(rowIndex, 14).Value = resultContacts[j].IsUser.ToString();
-                    sheet.Cell(rowIndex, 15).Value = resultContacts[j].IsDealer.ToString();
-                    sheet.Cell(rowIndex, 16).Value = resultContacts[j].CityId;
-                    sheet.Cell(rowIndex, 17).Value = resultContacts[j].CityName;
-                    sheet.Cell(rowIndex, 18).Value = resultContacts[j].State;
-                    sheet.Cell(rowIndex, 19).Value = resultContacts[j].Male.ToString();
-                    sheet.Cell(rowIndex, 20).Value = resultContacts[j].Birthday;
-                    sheet.Cell(rowIndex, 21).Value = resultContacts[j].Type;
-                    sheet.Cell(rowIndex, 22).Value = resultContacts[j].Id;
-                    sheet.Cell(rowIndex, 23).Value = resultContacts[j].Total;
-                    sheet.Cell(rowIndex, 24).Value = resultContacts[j].IsActive.ToString();
-                }
-
-                return wb;
-            });
-        return await t;
-    }
+       
 
     private async Task ClickMenuContact(string? actionName)
     {
         if (actionName == "EXPORT")
         {
+            // _loading = true;
+            // var ResultContacts = await Http.GetFromJsonAsync<List<Contact>>("api/Contact/GetAll?idUser=1"); 
+            // if (ResultContacts is not null)
+            // {
+            //     var wb = await BuildExcelFile(ResultContacts);
+            //     using var stream = new MemoryStream();
+            //     wb.SaveAs(stream);
+            //     stream.Seek(0, SeekOrigin.Begin);
+            //     var base64File = Convert.ToBase64String(stream.ToArray());
+            //     var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+            //     await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Contactos.xlsx");
+            // } 
+            // _loading = false;
             _loading = true;
-            var ResultContacts = await Http.GetFromJsonAsync<List<Contact>>("api/Contact/GetAll?idUser=1"); 
-            if (ResultContacts is not null)
+            var ResultZonas = await Http.GetAsync($"api/Contact/GetExport?_filter={searchString}&userId=1");
+            if (ResultZonas.IsSuccessStatusCode)
             {
-                var wb = await BuildExcelFile(ResultContacts);
-                using var stream = new MemoryStream();
-                wb.SaveAs(stream);
-                stream.Seek(0, SeekOrigin.Begin);
-                var base64File = Convert.ToBase64String(stream.ToArray());
+                var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
+                var base64File = Convert.ToBase64String(fileContent);
                 var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
                 await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Contactos.xlsx");
-            } 
+            }
             _loading = false;
             return;
         }
@@ -615,9 +564,10 @@ else
         if (result_Post_Actions is not null && result_Post_Actions.IsSuccessStatusCode)
         {
             var rest = result_Post_Actions.Content.ReadAsStringAsync();
-            var parameters = new DialogParameters<Dialog> {{ x => x.ContentText, "Contacto(s) Actualizado(s)!" },{ x => x.ButtonText, "OK" },{ x => x.Color, Color.Primary }};
-            var mdialog = await DialogService.ShowAsync<Dialog>("Contacto", parameters, new DialogOptions { BackdropClick = false, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true });
-            var result = await mdialog.Result;
+            // var parameters = new DialogParameters<Dialog> {{ x => x.ContentText, "Contacto(s) Actualizado(s)!" },{ x => x.ButtonText, "OK" },{ x => x.Color, Color.Primary }};
+            // var mdialog = await DialogService.ShowAsync<Dialog>("Contacto", parameters, new DialogOptions { BackdropClick = false, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true });
+            // var result = await mdialog.Result;
+            await DialogService.ShowDialog("Contacto(s) Actualizado(s)!", "Contacto", "OK", Color.Primary, Icons.Material.Filled.Commit);
             await ContactMudDataGrid!.ReloadServerData();
         }
         await Task.CompletedTask;
