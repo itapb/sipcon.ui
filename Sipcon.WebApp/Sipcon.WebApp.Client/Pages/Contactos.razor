@@ -15,7 +15,7 @@
 		MultiSelection="false" Items="@contacts"
 		SortMode="SortMode.Multiple" Filterable="true" Hideable="true" ReadOnly="@_readOnly"
 		Bordered="true" Dense="true" EditTrigger="@(_editTriggerRowClick ? DataGridEditTrigger.OnRowClick : DataGridEditTrigger.Manual)" Height="450px"
-					 FixedHeader >
+		FixedHeader >
 			<ToolBarContent>
 				<MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddContact"></MudIconButton>
 				<MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" OnKeyDown="HandleKeyDown"></MudTextField>
@@ -40,9 +40,9 @@
 					</CellTemplate>
 				</TemplateColumn>
 			</Columns>
-            <PagerContent>
-				<MudDataGridPager T="Contact" PageSizeOptions="new int[] {100 }"  />
-            </PagerContent>
+			<PagerContent>
+				<MudDataGridPager T="Contact" PageSizeOptions="new int[] {pageSize}" />
+			</PagerContent>
 		</MudDataGrid>
 	}
 
@@ -91,10 +91,7 @@ else
 			</MudItem>
 			<MudItem xs="6">
 				<MudSelect T="int?" @bind-Value="Selectedcontact.CityId" Label="Ciudad" for="@(() => Selectedcontact.CityId)">
-					@foreach (var city in cities!)
-					{
-						<MudSelectItem Value="@city.Id">@city.Name</MudSelectItem>
-					}
+					@foreach (var city in cities!) { <MudSelectItem Value="@city.Id">@city.Name</MudSelectItem>	}
 				</MudSelect>
 			</MudItem>
 			<MudItem xs="4">
@@ -108,10 +105,7 @@ else
 			</MudItem>
 			<MudItem xs="4">
 				<MudSelect T="string" @bind-Value="Selectedcontact.BrandName" Label="Marca" Class="@($"{strVisible["BrandName"]}")">
-					@foreach (var brand in brands!)
-					{
-						<MudSelectItem Value="@brand.Name">@brand.Name</MudSelectItem>
-					}
+					@foreach (var brand in brands!) { <MudSelectItem Value="@brand.Name">@brand.Name</MudSelectItem> }
 				</MudSelect>
 			</MudItem>
 			<MudItem xs="4">
@@ -191,7 +185,7 @@ else
 		   { "Reference", "" },
 	   };
 
-	string[] Rifs = { "V", "E", "J", "G" };
+	List<string> Rifs = ["V", "E", "J", "G"];
 	private MudForm? form;
 	private string selectedRifType = "V";
 
@@ -308,6 +302,13 @@ else
 		strVisible["Male"] = isISupplier ? " invisible" : "";
 		strVisible["Reference"] = "";
 		Selectedcontact.Type = isISupplier ? "Planta" : "";
+
+		Rifs.Clear();
+		if (isISupplier)
+			Rifs.AddRange(["J","G"]);
+		else
+			Rifs.AddRange(["V", "E", "J", "G"]);
+
 		ValidateCheckBox();
 		return Task.CompletedTask;
 	}

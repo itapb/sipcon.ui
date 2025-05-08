@@ -13,8 +13,8 @@ builder.Services.AddRazorComponents()
     .AddInteractiveWebAssemblyComponents();
 builder.Services.AddHttpClient("ServerAPI", client => client.BaseAddress = new Uri(builder.Configuration["BackEndUrl"]!)); //.AddHttpMessageHandler<TokenHandler>();
 builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("ServerAPI"));
-var app = builder.Build();
 
+var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -26,8 +26,8 @@ else
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
-app.UsePathBase("/sipcon/");
-app.UseHttpsRedirection();
+app.UsePathBase("/sipconapp/");
+//app.UseHttpsRedirection();
 app.UseRouting();
 app.UseAntiforgery();
 
