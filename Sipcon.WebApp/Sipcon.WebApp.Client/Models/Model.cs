@@ -2,41 +2,28 @@
 
 namespace Sipcon.WebApp.Client.Models
 {
-
     public class Model
     {
         [Required]
-        public int Total { get; set; } = 0;
-        
-        [Required]
-        public List<TModel> Models { get; set; } = [];
-
-    }
-
-
-    public class TModel
-    {
-
-        [Required]
-        public int? Id { get; set; }
+        public int BrandId { get; set; } = 0;
+        public string BrandName { get; set; } = string.Empty;
 
         [Required]
         public string Description { get; set; } = string.Empty;
 
         [Required]
         public string Name { get; set; } = string.Empty;
-        
-        [Required]
-        public int? BrandId { get; set; }
-
 
         [Required]
-        public int? PolicyTypeId { get; set; }
+        public int PolicyTypeId { get; set; } = 0;
 
         public string PolicyTypeName { get; set; } = string.Empty;
+        
+        [Required]
+        public int Id { get; set; } = 0;
 
         [Required]
-        public bool? IsActive { get; set; } = true;
+        public bool IsActive { get; set; } = true;
 
 
     }

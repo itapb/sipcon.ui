@@ -1,0 +1,317 @@
+﻿@page "/Vehicles"
+
+
+@using Sipcon.WebApp.Client.Models
+@using Sipcon.WebApp.Client.Services
+@using Sipcon.WebApp.Client.Utils
+@using Sipcon.WebApp.Client.Enum
+
+
+@inject IVehicleService VehicleService
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+
+
+
+<PageTitle>Vehiculos</PageTitle>
+
+
+<MudBreadcrumbs Items="_itemsNavigate"></MudBreadcrumbs>
+<MudText Typo="Typo.h5" GutterBottom="true">Vehiculos</MudText>
+<MudText Typo="Typo.body1" Class="mb-8">Administrar Vehiculos.</MudText>
+
+@if (_errorMessage == string.Empty)
+{
+    if (_Vehicles.Count() > 0)
+    {
+        <MudDataGrid T="Vehicle"
+        MultiSelection="true" Items="@_Vehicles"
+        SortMode="SortMode.Multiple"
+        Filterable="true"
+        Hideable="true"
+        Loading="_loading"
+        ReadOnly="@_readOnly"
+        EditMode="@(_isCellEditMode ? DataGridEditMode.Cell : DataGridEditMode.Form)"
+        Bordered="true"
+        Dense="true"
+        EditTrigger="@(_editTriggerRowClick ? DataGridEditTrigger.OnRowClick : DataGridEditTrigger.Manual)">
+
+            <ToolBarContent>
+                <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="() => ClickAddVehicle()"></MudIconButton>
+                <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                <MudSpacer />
+                <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+                    @foreach (var module in _itemsModules)
+                    {
+                        <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
+                        Label="@module.Text"
+                        OnClick="() => HandleMenuClick(module.ActionName)" />
+                    }
+                </MudMenu>
+            </ToolBarContent>
+            <Columns>
+                <SelectColumn T="Vehicle" />
+
+                <TemplateColumn T="Vehicle" Title="Marca">
+                    <CellTemplate>
+                        @if (context.Item.BrandId == 1)
+                        {
+                            <div class="d-flex justify-center" style="height: 45px;">
+
+                                <MudTooltip Text="@context.Item.BrandName">
+                                    <MudImage Src="Images/changan_marca.jpeg" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg " FallbackSrc="Images/changan_emblema.png" Height="45" Width="55"></MudImage>
+                                </MudTooltip>
+                            </div>
+
+
+                        }
+                        else
+                        {
+                            <div class="d-flex justify-center" style="height: 45px;">
+                                <MudTooltip Text="@context.Item.BrandName">
+                                    <MudImage Src="Images/foton_marca.jpeg " ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg " FallbackSrc="Images/foton_emblema.jpeg" Height="45" Width="35"></MudImage>
+                                </MudTooltip>
+                            </div>
+
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn T="Vehicle" Title="VIN">
+                    <CellTemplate>
+
+                        <MudStack Row="false">
+                            <MudText Typo="Typo.caption" ><b>VIN :</b> <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary">@context.Item.Vin</MudText></MudText>
+                            <MudText Typo="Typo.caption" Align="Align.Start"><b>Placa :</b> @context.Item.Plate</MudText>
+                        </MudStack>
+
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.Year" Title="Año" Sortable="false" Filterable="false" />
+                <PropertyColumn Property="x => x.ColorName" Title="Color" Sortable="false" Filterable="false" />
+                @* <PropertyColumn Property="x => x.ModelName" Title="Modelo" Sortable="false" Filterable="false" /> *@
+                <TemplateColumn T="Vehicle" Title="Modelo">
+                    <CellTemplate>
+                        <MudChip T="string" Variant="Variant.Text">
+                            <AvatarContent>
+                                <MudAvatar Size="Size.Small">
+                                    <MudImage Src="Images/changan_rojo_1.png"></MudImage>
+                                </MudAvatar>
+                            </AvatarContent>
+                            <ChildContent>@context.Item.ModelName</ChildContent>
+                        </MudChip>
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.SupplierName" Title="Planta" Sortable="false" Filterable="false" />
+
+
+                <TemplateColumn T="Vehicle" Title="Estatus">
+                    <CellTemplate>
+                        @if (context.Item.IsActive == true)
+                        {
+                            <MudChip T="string" Icon="@Icons.Material.Filled.VerifiedUser" Color="Color.Success" Size="Size.Small">Activo</MudChip>
+                        }
+                        else
+                        {
+                            <MudChip T="string" Icon="@Icons.Material.Filled.Dangerous" IconColor="Color.Error" Size="Size.Small">Inactivo</MudChip>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Hidden="@(_isCellEditMode || _readOnly || _editTriggerRowClick)">
+                    <CellTemplate>
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditVehicle(context.Item)" />
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <PagerContent>
+                <MudDataGridPager T="Model" />
+            </PagerContent>
+        </MudDataGrid>
+
+    }
+    else
+    {
+        <p class="text-danger">@_errorMessage</p>
+    }
+
+}
+else
+{
+    <p class="text-danger">@_errorMessage</p>
+
+}
+
+@code {
+    private IEnumerable<Vehicle> _Vehicles = new List<Vehicle>();
+    private string _errorMessage = string.Empty;
+    private int _rowCount = 0;
+    private int _pageSize = 100;
+    private int _pageNumber = 1;
+    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
+    private string _filter = string.Empty; // Cambia esto
+    private int _rowsTotal = 0; 
+
+    private bool _readOnly = false;
+    private bool _isCellEditMode = false;
+    private bool _editTriggerRowClick = false;
+    private string _searchString = string.Empty;
+    private bool _loading = true;
+    private string _moduleName = "VEHICULOS-VEHICULOS";
+
+    private IEnumerable<Module> _Modules { get; set; } = new List<Module>();
+    private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
+
+    private List<BreadcrumbItem> _itemsNavigate =
+                   [
+       new("Home",href: "#", icon: Icons.Material.Filled.Home),
+        new("Vehicles",  href: null, disabled: true, icon: Icons.Material.Filled.CardTravel),
+    ];
+
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        await GetVehicles();
+
+    }
+
+    private async Task GetVehicles()
+    {
+        var serviceResponse = await VehicleService.GetVehicles(_iduser, _rowCount, _filter);
+        if (serviceResponse.Processed)
+        {
+            _Vehicles = serviceResponse.Data;
+
+            _rowsTotal = serviceResponse.Total;
+            _loading = false;
+
+            _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
+
+        }
+        else
+        {
+            Console.WriteLine(serviceResponse.Message);
+            _errorMessage = "No se encontraron Vehiculos.";
+        }
+
+    }
+
+
+    private async Task ClickEditVehicle(Vehicle item)
+    {
+        
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = false };
+        var parameters = new DialogParameters<VehicleDialog> { { x => x.IdVehicle, item.Id }, { x => x.ActionsModal, ActionsEnum.Edit } };
+        var dialog = await DialogService.ShowAsync<VehicleDialog>("simple dialog", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            await GetVehicles();
+            StateHasChanged();
+        }
+       
+        await Task.CompletedTask;
+    }
+
+
+    private async Task ClickAddVehicle()
+    {
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = false };
+        var parameters = new DialogParameters<VehicleDialog> { { x => x.IdVehicle, 0 }, { x => x.ActionsModal, ActionsEnum.Create } };
+        var dialog = await DialogService.ShowAsync<VehicleDialog>("simple dialog", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+
+            await GetVehicles();
+            StateHasChanged();
+           
+        }
+       
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleMenuClick(string actionName)
+    {
+        switch (actionName)
+        {
+            case "IMPORT":
+                await ImportItemsAsync();
+                break;
+            case "EXPORT":
+                await ExportItemsAsync();
+                break;
+            case "ACTIVATE":
+                await ActivateItemsAsync();
+                break;
+            case "DEACTIVATE":
+                await DesactivateItemsAsync();
+                break;
+            case "ASSIGN":
+                await AssignItemsAsync();
+                break;
+            case "UNASSIGN":
+                await UnassignItemsAsync();
+                break;
+            case "AVAILABLE":
+                await AvailableItemsAsync();
+                break;
+            case "UNAVAILABLE":
+                await UnavailableItemsAsync();
+                break;
+            default:
+                Console.WriteLine($"Acción no reconocida: {actionName}");
+                break;
+        }
+    }
+
+    private async Task ImportItemsAsync()
+    {
+        // Lógica para importar elementos
+        Console.WriteLine("Importando elementos...");
+    }
+
+    private async Task ExportItemsAsync()
+    {
+        // Lógica para exportar elementos
+        Console.WriteLine("Exportando elementos...");
+    }
+
+    private async Task ActivateItemsAsync()
+    {
+        // Lógica para importar elementos
+        Console.WriteLine("Activate elementos...");
+    }
+
+    private async Task DesactivateItemsAsync()
+    {
+        // Lógica para exportar elementos
+        Console.WriteLine("Desactivate elementos...");
+    }
+
+    private async Task AssignItemsAsync()
+    {
+        // Lógica para importar elementos
+        Console.WriteLine("Assign elementos...");
+    }
+
+    private async Task UnassignItemsAsync()
+    {
+        // Lógica para exportar elementos
+        Console.WriteLine("Unassign elementos...");
+    }
+
+    private async Task AvailableItemsAsync()
+    {
+        // Lógica para importar elementos
+        Console.WriteLine("Available elementos...");
+    }
+
+    private async Task UnavailableItemsAsync()
+    {
+        // Lógica para exportar elementos
+        Console.WriteLine("Unavailable elementos...");
+    }
+}

@@ -1,23 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Sipcon.WebApp.Client.Models
 {
-
     public class Vehicle
     {
         [Required]
-        public int Total { get; set; } = 0;
-
-        public List<TVehicle> Vehicless { get; set; } = [];
-
-    }
-
-
-
-    public class TVehicle
-    {
-        [Required]
-        public int? Id { get; set; }
+        public int Id { get; set; } = 0;
 
         [Required]
         public string Vin { get; set; } = string.Empty;
@@ -26,52 +15,47 @@ namespace Sipcon.WebApp.Client.Models
         public string EngineSerial { get; set; } = string.Empty;
 
         [Required]
-        public string BodySerial { get; set; } = string.Empty;
-
-        [Required]
         public string Plate { get; set; } = string.Empty;
 
         [Required]
-        public int? ColorId { get; set; } 
+        public int ColorId { get; set; } = 0;
 
-       
-        public string ColorName { get; set; } = string.Empty;
-
-        [Required]
-        public int? ModelId { get; set; }
-
-  
-        public string ModelName { get; set; } = string.Empty;
+        public string ColorName { get;  set; } = string.Empty;
 
         [Required]
-        public int? BrandId { get; set; }
+        public int ModelId { get; set; } = 0;
 
+        public string ModelName { get;  set; } = string.Empty;
+
+        
+        //[JsonIgnore(Condition = JsonIgnoreCondition.Always)]
+        public int BrandId { get; set; } = 0;
       
-        public string BrandName { get; set; } = string.Empty;
+        //[JsonIgnore(Condition = JsonIgnoreCondition.Always)]
+        public string BrandName { get;  set; } = string.Empty;
 
         [Required]
-        public int? Year { get; set; }
+        public int Year { get; set; } = 0;
 
         [Required]
-        public int? SupplierId { get; set; }
+        public int SupplierId { get; set; } = 0;
 
-       
-        public string SupplierName { get; set; } = string.Empty;
-
-        [Required]
-        public int? DealerID { get; set; }
-
-       
-        public string DealerName { get; set; } = string.Empty;
+        public string SupplierName { get;  set; } = string.Empty;
 
         [Required]
-        public int? CustomerId { get; set; }
+        //[JsonIgnore(Condition = JsonIgnoreCondition.Never)]
+        public int DealerId { get; set; } = 0;
 
-       
-        public string CustomerName { get; set; } = string.Empty;
-                
+        public string DealerName { get;  set; } = string.Empty;
+
         [Required]
-        public int? IsActive { get; set; }
+        //[JsonIgnore(Condition = JsonIgnoreCondition.Never)]
+        public int CustomerId { get; set; } = 0;
+
+        public string CustomerName { get;  set; } = string.Empty;
+
+        [Required]
+        public bool IsActive { get; set; } = true;
 
 
     }

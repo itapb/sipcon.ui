@@ -1,0 +1,258 @@
+﻿@page "/Models"
+
+
+@using Sipcon.WebApp.Client.Models
+@using Sipcon.WebApp.Client.Services
+@using Sipcon.WebApp.Client.Utils
+@using Sipcon.WebApp.Client.Enum
+
+
+@inject IModelService ModelService
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+
+
+
+<PageTitle>Modelos</PageTitle>
+
+
+<MudBreadcrumbs Items="_itemsNavigate"></MudBreadcrumbs>
+<MudText Typo="Typo.h5" GutterBottom="true">Modelos</MudText>
+<MudText Typo="Typo.body1" Class="mb-8">Administrar el cat&aacute;logo de modelos.</MudText>
+
+@if (_errorMessage == string.Empty)
+{
+    if (_Models.Count() > 0)
+    {
+    <MudDataGrid T="Model"
+                 MultiSelection="true" Items="@_Models"
+                 SortMode="SortMode.Multiple"
+                 Filterable="true"
+                 Hideable="true"
+                 Loading="_loading"
+                 ReadOnly="@_readOnly"
+                 EditMode="@(_isCellEditMode ? DataGridEditMode.Cell : DataGridEditMode.Form)"
+                 Bordered="true"
+                 Dense="true"
+                 EditTrigger="@(_editTriggerRowClick ? DataGridEditTrigger.OnRowClick : DataGridEditTrigger.Manual)">
+
+        <ToolBarContent>
+                <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="() => ClickAddModel()"></MudIconButton>
+            <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudSpacer />
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+                @foreach (var module in _itemsModules)
+                {
+                    <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
+                                 Label="@module.Text"
+                                 OnClick="() => HandleMenuClick(module.ActionName)" />
+                }
+            </MudMenu>
+        </ToolBarContent>
+        <Columns>
+            <SelectColumn T="Model" />
+            <TemplateColumn T="Model" Title="Marca">
+                <CellTemplate>
+                    @if (context.Item.BrandId == 1)
+                    {
+                        <div class="d-flex justify-center" style="height: 45px;">
+                                
+                            <MudTooltip Text="@context.Item.BrandName">
+                                    <MudImage Src="Images/changan_marca.jpeg" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg " FallbackSrc="Images/changan_emblema.png" Height="45" Width="55"></MudImage>
+                            </MudTooltip>
+                        </div>
+
+                            
+                    }
+                    else
+                    {
+                         <div class="d-flex justify-center" style="height: 45px;">
+                            <MudTooltip Text="@context.Item.BrandName">
+                                    <MudImage Src="Images/foton_marca.jpeg " ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg " FallbackSrc="Images/foton_emblema.jpeg" Height="45" Width="35"></MudImage>
+                            </MudTooltip>
+                        </div>
+                        
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.Name" Title="Nombre" Sortable="false" Filterable="false" />
+            @* <PropertyColumn Property="x => x.Description" Title="Descripcion" Sortable="false" Filterable="false" /> *@
+            <PropertyColumn Property="x => x.PolicyTypeName" Title="Poliza" Sortable="false" Filterable="false" />
+
+            <TemplateColumn T="Model" Title="Status">
+                <CellTemplate>
+                    @if (context.Item.IsActive == true)
+                    {
+                        <MudChip T="string" Icon="@Icons.Material.Filled.VerifiedUser" Color="Color.Success" Size="Size.Small">Activo</MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Icon="@Icons.Material.Filled.Dangerous" IconColor="Color.Error" Size="Size.Small">Inactivo</MudChip>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Hidden="@(_isCellEditMode || _readOnly || _editTriggerRowClick)">
+                <CellTemplate>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditModel(context.Item)" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="Model" />
+        </PagerContent>
+    </MudDataGrid> 
+
+    
+}
+else
+{
+    <p class="text-danger">@_errorMessage</p>
+}
+
+}
+else
+{
+<p class="text-danger">@_errorMessage</p>
+
+}
+
+@code {
+    private IEnumerable<Model> _Models = new List<Model>();
+    private string _errorMessage = string.Empty;
+    private int _rowCount = 0;
+    private int _pageSize = 100;
+    private int _pageNumber = 1;
+    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
+    private string _filter = " "; // Cambia esto
+    private int _rowsTotal = 0; 
+
+    private bool _readOnly = false;
+    private bool _isCellEditMode = false;
+    private bool _editTriggerRowClick = false;
+    private string _searchString = string.Empty;
+    private bool _loading = true;
+    private string _moduleName = "VEHICULOS-MODELOS";
+
+    private IEnumerable<Module> _Modules { get; set; } = new List<Module>();
+    private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
+
+
+
+    private List<BreadcrumbItem> _itemsNavigate =
+                [
+        new("Home", href: "#", icon: Icons.Material.Filled.Home),
+        new("Models",  href: null, disabled: true, icon: Icons.Material.Filled.Policy),
+    ];
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        
+        await GetModels();
+
+    }
+
+    private async Task GetModels()
+    {
+        var serviceResponse = await ModelService.GetModels(_iduser, _rowCount, _filter);
+        if (serviceResponse.Processed)
+        {
+            _Models = serviceResponse.Data;
+            _rowsTotal = serviceResponse.Total;
+
+            _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
+
+            _loading = false;
+        }
+        else
+        {
+            Console.WriteLine(serviceResponse.Message);
+            _errorMessage = "No se encontraron Modelos.";
+        }
+
+    }
+
+    private async Task ClickEditModel(Model item)
+    {
+        
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false };
+        var parameters = new DialogParameters<ModelDialog> { { x => x.IdModel, item.Id }, { x => x.ActionsModal, ActionsEnum.Edit } };
+        var dialog = await DialogService.ShowAsync<ModelDialog>("simple dialog", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            await GetModels();
+            StateHasChanged();
+        }
+
+        await Task.CompletedTask;
+    }
+
+    private async Task ClickAddModel()
+    {
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false };
+        var parameters = new DialogParameters<ModelDialog> { { x => x.IdModel, 0 }, { x => x.ActionsModal, ActionsEnum.Create } };
+        var dialog = await DialogService.ShowAsync<ModelDialog>("simple dialog", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+
+            await GetModels();
+            StateHasChanged();
+           
+        }
+       
+        await Task.CompletedTask;
+    }
+
+
+    private async Task HandleMenuClick(string actionName)
+    {
+        switch (actionName)
+        {
+            case "IMPORT":
+                await ImportItemsAsync();
+                break;
+            case "EXPORT":
+                await ExportItemsAsync();
+                break;
+            case "ACTIVATE":
+                await ActivateItemsAsync();
+                break;
+            case "DEACTIVATE":
+                await DesactivateItemsAsync();
+                break;
+            default:
+                Console.WriteLine($"Acción no reconocida: {actionName}");
+                break;
+        }
+    }
+
+    private async Task ImportItemsAsync()
+    {
+        // Lógica para importar elementos
+        Console.WriteLine("Importando elementos...");
+    }
+
+    private async Task ExportItemsAsync()
+    {
+        // Lógica para exportar elementos
+        Console.WriteLine("Exportando elementos...");
+    }
+
+    private async Task ActivateItemsAsync()
+    {
+        // Lógica para importar elementos
+        Console.WriteLine("Activate elementos...");
+    }
+
+    private async Task DesactivateItemsAsync()
+    {
+        // Lógica para exportar elementos
+        Console.WriteLine("Desactivate elementos...");
+    }
+
+   
+
+}
