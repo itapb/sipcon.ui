@@ -1,0 +1,401 @@
+﻿@using Sipcon.WebApp.Client.Services
+@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+@using Sipcon.WebApp.Client.Utils
+@using Sipcon.WebApp.Client.Enum
+
+@inject IModelService ModelService
+@inject IDialogService DialogService
+@inject IVehicleService VehicleService
+@inject UtilModuleActions ModuleActionsService
+
+<EditForm Model="@_model" OnValidSubmit="OnValidSubmit">
+    <MudDialog Class="blur dialog-background" TitleClass="blur dialog-background-title" ContentClass="dialog-background-surface py-2 pa-1" ActionsClass="dialog-background-surface">
+        <TitleContent>
+            @switch (ActionsModal)
+            {
+                case ActionsEnum.Create:
+                    <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-3 mb-n1" />
+                    @string.Concat("Crear Modelo...")
+                    break;
+                case ActionsEnum.Edit:
+                    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3 mb-n1" />
+                    @string.Concat("Modificar Modelo ", IdModel.ToString(), "...")
+                    break;
+                default:
+                    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3 mb-n1" />
+                    @string.Concat("Modificar Modelo ", IdModel.ToString(), "...")
+                    break;
+            }
+        </TitleContent>
+        <DialogContent>
+            <DataAnnotationsValidator />
+
+            <MudContainer>
+                <MudGrid Spacing="1" Justify="Justify.Center">
+
+                    <MudItem xs="12" sm="4">
+                        <MudCard>
+
+                            <MudCardContent Style="padding-top: 0px;">
+                                <div class="d-flex justify-center" >
+
+                                    <MudTooltip Text="Imagen Modelo">
+                                        <MudImage Src="images/changan_rojo_1.png" Alt="Modelo" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg " FallbackSrc="Images/changan_emblema.png" Width="125" Height="152" />
+                                    </MudTooltip>
+                                </div>
+                                
+
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12" sm="8">
+                        <MudCard>
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudStack Row="true">
+                                        <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
+                                        <MudText Typo="Typo.h6">Modelo</MudText>
+                                    </MudStack>
+
+                                </CardHeaderContent>
+                                <CardHeaderActions>
+                                    <MudSwitch @bind-Value="_model.IsActive" Label="Activo" LabelPlacement="Placement.Start" Color="Color.Success" />
+                                </CardHeaderActions>
+                            </MudCardHeader>
+                            <MudCardContent Style="padding-top: 0px;">
+                                <MudHidden @bind-Value="_model.Id" />
+                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Name" Label="Nombre" Required="true" MaxLength="80" Variant="Variant.Text"
+                                              Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
+                                              Validation="@(new Func<string, string>(ValidName))" />
+                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Description" Label="Descripci&oacute;n" Required="true" MaxLength="150" Variant="Variant.Text" 
+                                              Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
+                                              Validation="@(new Func<string, string>(ValidDescription))" />
+
+                            </MudCardContent>
+
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12" sm="12">
+                        <MudCard>
+                             <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudStack Row="true">
+                                        <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Default" Style="font-size: 1.5rem;"></MudIcon>
+                                        <MudText Typo="Typo.subtitle2">Opciones</MudText>
+                                    </MudStack>
+
+                                </CardHeaderContent>
+                                <CardHeaderActions>
+
+                                </CardHeaderActions>
+                            </MudCardHeader>
+                            <MudCardContent Style="padding-top: 0px;">
+                                <MudStack Row="true">
+                                    <MudSelect @bind-Value="_model.BrandId" Label="Marca" AdornmentColor="Color.Primary" 
+                                               Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
+                                               Required="true" RequiredError="Marca es requerido!"
+                                               Validation="@(new Func<int, string>(ValidSelect))">
+                                        @foreach (var item in _brandList)
+                                        {
+                                            <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
+                                        }
+                                    </MudSelect>
+
+
+                                    <MudSelect @bind-Value="_model.PolicyTypeId" Label="Tipo Poliza" AdornmentColor="Color.Secondary" 
+                                                Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
+                                               Required="true" RequiredError="Tipo Poliza es requerido!"
+                                               Validation="@(new Func<int, string>(ValidSelect))">
+                                        @foreach (var item in _policyTypeList)
+                                        {
+                                            <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
+                                        }
+                                    </MudSelect>
+
+
+                                </MudStack>
+
+                            </MudCardContent>
+
+                        </MudCard>
+                    </MudItem>
+                </MudGrid>
+            </MudContainer>
+
+
+
+            <MudDialog @bind-Visible="_nestedVisible">
+                <DialogContent>
+
+                    @if (success)
+                    {
+                        <MudText Class="nested" Color="Color.Success">Success</MudText>
+                    }
+                    else
+                    {
+                        <MudText Class="nested" Color="Color.Warning">@_errorMessage!</MudText>
+                    }
+                </DialogContent>
+                <DialogActions>
+                    <MudButton Color="Color.Primary" OnClick="CloseNested">Cerrar</MudButton>
+                </DialogActions>
+            </MudDialog>
+
+        </DialogContent>
+        <DialogActions>
+            <MudContainer>
+                
+                <MudCard>
+
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            @if (success)
+                            {
+                                <MudText Color="Color.Success">Success</MudText>
+                            }
+                            else
+                            {
+                                <MudText></MudText>
+                            }
+                        </CardHeaderContent>
+                        <CardHeaderActions>
+                            <MudStack Row="true">
+
+                                <MudButton OnClick="Cancel">Cerrar</MudButton>
+                                <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Guardar" Color="Color.Info" ButtonType="ButtonType.Submit" Size="Size.Small" />
+
+                            </MudStack>
+                        </CardHeaderActions>
+                    </MudCardHeader>
+                  
+                </MudCard>
+                    
+            </MudContainer>
+            
+        </DialogActions>
+    </MudDialog>
+ </EditForm>
+
+<style>
+    .blur {
+    backdrop-filter: blur(10px);
+    }
+
+    .dialog-background {
+    background-color: transparent;
+    }
+
+    .dialog-background-title {
+    background: rgb(from var(--mud-palette-info-lighten) r g b / 50%);
+    color: var(--mud-palette-white);
+    }
+
+    .dialog-background-surface {
+    background: rgb(from var(--mud-palette-surface) r g b / 75%);
+    }
+</style>
+
+@code {
+
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public int IdModel { get; set; } 
+    [Parameter]
+    public ActionsEnum ActionsModal { get; set; }
+
+
+    private MudForm? form;
+    private Model _model { get; set; } = new Model();
+
+    private string _errorMessage = string.Empty;
+    private bool _nestedVisible;
+    private bool _disabled = false;
+    bool success = false;
+    private int _rowCount = 0;
+    private int _pageSize = 100;
+    private int _pageNumber = 1;
+    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
+    private string _filter = " "; // Cambia esto
+    private int _rowsTotal = 0; 
+
+    private IEnumerable<SelectOption> _brandList { get; set; } = new List<SelectOption>();
+    private IEnumerable<SelectOption> _policyTypeList { get; set; } = new List<SelectOption>();
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+
+
+        if (ActionsModal == ActionsEnum.Create)
+        {
+            _model = new Model();
+
+            _brandList = await ModuleActionsService.GetBrandOption(_iduser);
+            _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(_iduser);
+            
+            await Task.Delay(1000);
+            _disabled = false;
+        }
+        else
+        {
+            await GetModel();
+
+        }
+
+        await Task.CompletedTask;
+
+    }
+
+
+    private async Task GetModel()
+    {
+        var serviceResponse = await ModelService.GetModel(IdModel, _iduser);
+        if (serviceResponse.Processed)
+        {
+            _model = serviceResponse.Data ?? new Model();
+            _disabled = _model.IsActive ? false : true;
+
+            _brandList = await ModuleActionsService.GetBrandOption(_iduser);
+            _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(_iduser);
+
+            await Task.Delay(1000);
+            StateHasChanged();
+        }
+        else
+        {
+            _model = new Model();
+            _disabled = true;
+            _errorMessage = "(Problemas al cargar Modelo) Modelo no encontrado...";
+            Console.WriteLine(serviceResponse.Message);
+            OpenNested();
+        }
+
+        await Task.CompletedTask;
+
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        _errorMessage = "";
+        var serviceResponse = await ModelService.UpdateModel(_model, _iduser);
+
+        if (serviceResponse.Processed)
+        {
+            if (ActionsModal == ActionsEnum.Create)
+            {
+                ActionsModal = ActionsEnum.Edit;
+                var _results = serviceResponse.Data ?? new List<ActionResult>();
+                var _result = _results.FirstOrDefault();
+                if (_result is not null)
+                {
+                    IdModel = _result.LastId;
+                    await GetModel();
+                }
+            }
+            _errorMessage = "Successfully...";
+            success = true;
+
+        }
+        else
+        {
+            success = false;
+            _errorMessage = "Problemas al guardar Modelo...";
+            Console.WriteLine(serviceResponse.Message);
+            OpenNested();
+
+        }
+
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+
+
+    private void Cancel()
+    {
+        if (success)
+            MudDialog.Close(DialogResult.Ok(true));
+        else
+        {
+            MudDialog!.Cancel();
+        }
+    }
+
+    private void OpenNested() => _nestedVisible = true;
+
+    private void CloseNested() => _nestedVisible = false;
+
+
+
+    // Validaciones Form
+
+    private string ValidDescription(string arg)
+    {
+        if (string.IsNullOrWhiteSpace(arg))
+        {
+            return "Campo es requerido!";
+        }
+        if (arg.Length < 5)
+            return $"Debe contener almenos (5) caracteres";
+        if (arg.Length > 150)
+            return $"Debe contener máximo (150) caracteres";
+        if (!Regex.IsMatch(arg, @"[A-Za-z0-9]"))
+            return "Campo admite solo letras y números";
+
+        return string.Empty;
+    }
+
+
+
+    private string ValidName(string arg)
+    {
+        if (string.IsNullOrWhiteSpace(arg))
+        {
+            return "Campo es requerido!";
+        }
+        if (arg.Length < 5)
+            return $"Debe contener almenos (5) caracteres";
+        if (arg.Length > 80)
+            return $"Debe contener máximo (80) caracteres";
+        if (!Regex.IsMatch(arg, @"[A-Za-z0-9]"))
+            return "Campo admite solo letras y números";
+
+        return string.Empty;
+    }
+
+    private string ValidSelect(int arg)
+    {
+        if (string.IsNullOrWhiteSpace(arg.ToString()))
+        {
+            return "Campo es requerido!";
+        }
+        if (arg == 0)
+            return "Campo es requerido!";
+        
+
+        return string.Empty;
+    }
+
+    //private Order? selectedOrder;
+
+    // private async Task RemoveItem(OrderItem item)
+    // {
+    //     bool? result = await DialogService.ShowMessageBox(
+    //         "Confirm Delete",
+    //         $"Are you sure you want to delete the item '{item.Name}'?",
+    //         yesText: "Yes", noText: "No");
+
+    //     if (result == true)
+    //     {
+    //         orderItems.Remove(item); ;
+    //     }
+
+    // }
+
+   
+}

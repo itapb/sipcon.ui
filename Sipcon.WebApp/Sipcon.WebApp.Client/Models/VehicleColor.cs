@@ -1,23 +1,17 @@
-
 ﻿using System.ComponentModel.DataAnnotations;
+
 
 namespace Sipcon.WebApp.Client.Models
 {
-    public class Module
+    public class VehicleColor
     {
-
         [Required]
-        public int Id { get; set; } = 0;
+        public int Id { get; set; }
 
         [Required]
         public string Name { get; set; } = string.Empty;
 
         [Required]
-        public string ActionName { get; set; } = string.Empty;
-
-        [Required]
-        public string ActionDisplay { get; set; } = string.Empty;
-
+        public bool IsActive { get; set; } = true;
     }
-
 }

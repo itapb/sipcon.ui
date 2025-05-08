@@ -1,0 +1,201 @@
+﻿
+using MudBlazor;
+using Sipcon.WebApp.Client.Models;
+using Sipcon.WebApp.Client.Services;
+
+
+namespace Sipcon.WebApp.Client.Utils
+{
+    public class UtilModuleActions(
+        IModuleService ModuleService, 
+        IVehicleColorService VehicleColorService,
+        IModelService ModelService,
+        ISupplierService SupplierService,
+        IDealerService DealerService,
+        IBrandService BrandService,
+        IPolicyTypeService PolicyTypeService
+        ) 
+    {
+
+        //private readonly IModuleService ServiceModule = Service;
+        //private readonly IVehicleColorService ServiceVehicleColor = VehicleColorService;     
+
+        public async Task<List<ModuleAction>> GetModuleActions(int IdUser, string ModuleName)
+        {
+            List<ModuleAction> _itemsModules = new([]);
+            List<Module> _Modules = [];
+        
+            var moduleResponse = await ModuleService.GetModules(IdUser, ModuleName);
+            if (moduleResponse.Processed)
+            {
+                _Modules = moduleResponse.Data ?? new List<Module>();
+                foreach (var module in _Modules.ToList())
+                {
+                    switch (module.ActionName)
+                    {
+                        case "IMPORT":
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.ImportExport, module.ActionName, Color.Secondary));
+                            break;
+                        case "EXPORT":
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.ImportExport, module.ActionName, Color.Dark));
+                            break;
+                        case "ACTIVATE":
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.CheckCircle, module.ActionName, Color.Success));
+                            break;
+                        case "DEACTIVATE":
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.Cancel, module.ActionName, Color.Error));
+                            break;
+                        case "ASSIGN":
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.Assignment, module.ActionName, Color.Tertiary));
+                            break;
+                        case "UNASSIGN":
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.Unarchive, module.ActionName, Color.Default));
+                            break;
+                        case "AVAILABLE":
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.LockOpen, module.ActionName, Color.Primary));
+                            break;
+                        case "UNAVAILABLE":
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.Lock, module.ActionName, Color.Default));
+                            break;
+
+                        default:
+                            Console.WriteLine($"Acción no reconocida: {module.ActionName}");
+                            break;
+                    }
+
+                }
+            }
+            return _itemsModules;
+
+        }
+
+
+        public async Task<List<SelectOption>> GetColorOption(int IdUser)
+        {
+            List<SelectOption> _itemsSelect = new([]);
+            
+
+            var moduleResponse = await VehicleColorService.GetVehicleColors(IdUser);
+            if (moduleResponse.Processed)
+            {
+                List<VehicleColor> _List = moduleResponse.Data ?? new List<VehicleColor>();
+
+
+                _itemsSelect.Add(new SelectOption());
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Id, item.Name));
+                }
+            }
+            return _itemsSelect;
+
+        }
+
+
+        public async Task<List<SelectOption>> GetModelOption(int IdUser)
+        {
+            List<SelectOption> _itemsSelect = new([]);
+            
+
+            var moduleResponse = await ModelService.GetModels(IdUser, 0);
+            if (moduleResponse.Processed)
+            {
+                List<Model> _List = moduleResponse.Data ?? new List<Model>();
+
+
+                _itemsSelect.Add(new SelectOption());
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Id, item.Name));
+                }
+            }
+            return _itemsSelect;
+
+        }
+
+        public async Task<List<SelectOption>> GetSupplierOption(int IdUser)
+        {
+            List<SelectOption> _itemsSelect = new([]);
+
+
+            var moduleResponse = await SupplierService.GetSuppliers(IdUser);
+            if (moduleResponse.Processed)
+            {
+                List<Supplier> _List = moduleResponse.Data ?? new List<Supplier>();
+
+
+                _itemsSelect.Add(new SelectOption());
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Id, item.FirstName));
+                }
+            }
+            return _itemsSelect;
+
+        }
+
+        public async Task<List<SelectOption>> GetDealerOption(int IdUser)
+        {
+            List<SelectOption> _itemsSelect = new([]);
+
+
+            var moduleResponse = await DealerService.GetDealers(IdUser);
+            if (moduleResponse.Processed)
+            {
+                List<Dealer> _List = moduleResponse.Data ?? new List<Dealer>();
+
+
+                _itemsSelect.Add(new SelectOption());
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Id, item.FirstName));
+                }
+            }
+            return _itemsSelect;
+
+        }
+
+        public async Task<List<SelectOption>> GetBrandOption(int IdUser)
+        {
+            List<SelectOption> _itemsSelect = new([]);
+
+
+            var moduleResponse = await BrandService.GetBrands(IdUser,0);
+            if (moduleResponse.Processed)
+            {
+                List<Brand> _List = moduleResponse.Data ?? new List<Brand>();
+
+
+                _itemsSelect.Add(new SelectOption());
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Id, item.Name));
+                }
+            }
+            return _itemsSelect;
+
+        }
+
+        public async Task<List<SelectOption>> GetPolicyTypeOption(int IdUser)
+        {
+            List<SelectOption> _itemsSelect = new([]);
+
+
+            var moduleResponse = await PolicyTypeService.GetPolicyTypes(IdUser, 0);
+            if (moduleResponse.Processed)
+            {
+                List<PolicyType> _List = moduleResponse.Data ?? new List<PolicyType>();
+
+
+                _itemsSelect.Add(new SelectOption());
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Id, item.Description));
+                }
+            }
+            return _itemsSelect;
+
+        }
+
+    }
+}
