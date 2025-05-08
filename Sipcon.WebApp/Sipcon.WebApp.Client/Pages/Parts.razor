@@ -1,0 +1,81 @@
+﻿@page "/parts"
+@inject IJSRuntime JSRuntime
+<MudText Typo="Typo.h6" GutterBottom="true">@mMessage</MudText>
+ <MudForm @ref="form">
+    <div style="display: flex; flex-direction: column; border: 1px solid lightgrey;">
+        
+        <div style="flex-shrink: 0; background-color: #f0f0f0;" class="pa-2">          
+            <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                    <MudStack>
+                        <MudCheckBox @bind-Value="CheckValue" Label="Activo" />
+                    </MudStack>
+                    <MudButtonGroup>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary">Aceptar</MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Secondary">Cancelar</MudButton>
+                    </MudButtonGroup>
+                </MudStack>
+            </MudPaper>
+        </div>
+        
+        <div id="scrollableGridContentStyled" style="overflow-y: auto; max-height:calc(100vh - 205px); padding: 8px; background-color: #f0f0f0;">
+           <MudGrid Spacing="2">
+                <MudItem xs="12" sm="8">
+                    <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Descripcion" Variant="Variant.Text"></MudTextField></MudItem>
+                            <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Codigo Parte" Variant="Variant.Text"></MudTextField></MudItem>
+                            <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Codigo Fabrica" Variant="Variant.Text"></MudTextField></MudItem>
+                            <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Codigo Alterno" Variant="Variant.Text"></MudTextField></MudItem>
+                            <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Codigo Barra" Variant="Variant.Text"></MudTextField></MudItem>
+                            <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Tipo" Variant="Variant.Text"></MudTextField></MudItem>
+                            <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Familia" Variant="Variant.Text"></MudTextField></MudItem>
+                            <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="SubFamilia" Variant="Variant.Text"></MudTextField></MudItem>
+                            <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Planta" Variant="Variant.Text"></MudTextField></MudItem>
+                            <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Marca" Variant="Variant.Text"></MudTextField></MudItem>
+                            <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Modelo" Variant="Variant.Text"></MudTextField></MudItem>
+                            <MudItem xs="6"> <MudTextField @bind-Value="TextValue" Label="Unidad Medida" Variant="Variant.Text"></MudTextField></MudItem>
+                            <MudItem xs="6"> <MudTextField @bind-Value="TextValue" Label="Tamano" Variant="Variant.Text"></MudTextField></MudItem>
+                            <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Clasificacion" Variant="Variant.Text"></MudTextField></MudItem>
+                            <MudItem xs="6"> <MudTextField @bind-Value="TextValue" Label="Empaque" Variant="Variant.Text"></MudTextField></MudItem>
+                            <MudItem xs="6"> <MudTextField @bind-Value="TextValue" Label="MiVenta" Variant="Variant.Text"></MudTextField></MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudStack>
+                        <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                            <MudGrid Spacing="2">
+                                <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Precio" Variant="Variant.Text"></MudTextField></MudItem>
+                                <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Deto" Variant="Variant.Text"></MudTextField></MudItem>
+                                <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Taplado" Variant="Variant.Text"></MudTextField></MudItem>
+                                <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Gasto" Variant="Variant.Text"></MudTextField></MudItem>
+                            </MudGrid>
+                        </MudPaper>
+                        <MudPaper Height="548px" Elevation="2" Class="pa-2 mud-text-align-center">
+                            <MudStack>
+                                <MudCheckBox @bind-Value="CheckValue" Label="Venta"></MudCheckBox>
+                                <MudCheckBox @bind-Value="CheckValue" Label="Compra"></MudCheckBox>
+                                <MudCheckBox @bind-Value="CheckValue" Label="Garantia"></MudCheckBox>
+                                <MudCheckBox @bind-Value="CheckValue" Label="Licencia"></MudCheckBox>
+                                <MudCheckBox @bind-Value="CheckValue" Label="Original"></MudCheckBox>
+                                <MudCheckBox @bind-Value="CheckValue" Label="Serializable"></MudCheckBox>
+                            </MudStack>
+                        </MudPaper>
+                    </MudStack>
+                </MudItem>
+            </MudGrid>
+
+        </div>
+    </div>
+
+    <MudScrollToTop Selector="#scrollableGridContentStyled">
+        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.ArrowUpward" />
+    </MudScrollToTop>   
+</MudForm>
+@code { 
+    public string? TextValue { get; set; }
+    public bool CheckValue { get; set; }
+    public string? mMessage { get; set; } = "Partes";
+    private MudForm? form;
+}

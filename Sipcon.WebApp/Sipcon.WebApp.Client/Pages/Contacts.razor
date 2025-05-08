@@ -4,11 +4,10 @@
 @inject HttpClient Http
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
-
 <MudText Typo="Typo.h6" GutterBottom="true">@mMessage</MudText>
 @if (SelectedContact == null)
 {
-    <MudDataGrid @ref="ContactMudDataGrid" T="Contact" ServerData="ServerReload" Filterable="false" FixedHeader Height="@gridHeight" Loading="_loading" @bind-CurrentPage="ContactCurrentPage" >
+    <MudDataGrid @ref="ContactMudDataGrid" T="Contact" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 235px)" Loading="_loading" @bind-CurrentPage="ContactCurrentPage">
         <ToolBarContent>
             <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddContact"></MudIconButton>
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s=>OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
@@ -54,112 +53,137 @@
 else
 {
     <MudForm @ref="form">
-        <MudGrid Spacing="2">
-            <MudItem xs="12">
-                <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
-                    <MudStack Row="true">
-                        <MudCheckBox @bind-Value="SelectedContact.IsActive" Label="Activo" />
+         <div style="display: flex; flex-direction: column; border: 1px solid lightgrey;">
+            <div style="flex-shrink: 0; background-color: #f0f0f0;" class="pa-2">
+                <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                    <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                        <MudStack Row="true">
+                            <MudCheckBox @bind-Value="SelectedContact.IsActive" Label="Activo" />
+                        </MudStack>
+                        <MudButtonGroup>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveContact">Aceptar</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="Cancel">Cancelar</MudButton>
+                        </MudButtonGroup>
                     </MudStack>
-                    <MudButtonGroup>
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveContact">Aceptar</MudButton>
-                        <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="Cancel">Cancelar</MudButton>
-                    </MudButtonGroup>
-                </MudStack>
-            </MudItem>
-            <MudItem xs="12">
-                <MudStack Row="true">
-                    <MudCheckBox @bind-Value="SelectedContact.IsSupplier" Label="Planta" @bind-Value:after="AfterAsyncSupplier" Required="!IsCheckboxValid" RequiredError="Alguna opcion requerida" />
-                    <MudCheckBox @bind-Value="SelectedContact.IsDealer" Label="Concesionario" @bind-Value:after="AfterAsyncDealer" Required="!IsCheckboxValid" RequiredError="" />
-                    <MudCheckBox @bind-Value="SelectedContact.IsCustomer" Label="Cliente" @bind-Value:after="AfterAsyncCustomer" Required="!IsCheckboxValid" RequiredError="" />
-                    <MudCheckBox @bind-Value="SelectedContact.IsUser" Label="Usuario" @bind-Value:after="AfterAsyncUser" Required="!IsCheckboxValid" RequiredError="" />
-                </MudStack>
-            </MudItem>
-            <MudItem xs="6">
-                <MudStack Row="true">
-                    <MudSelect T="string" @bind-Value="SelectedRifType" Label="Tipo RIF" Immediate="true" FitContent="true" @bind-Value:after="AfterAsync">
-                        @foreach (var rif in Rifs) { <MudSelectItem T="string" Value="@rif" Disabled="@(!String.IsNullOrEmpty(strDictionary[rif]))">@rif</MudSelectItem> }
-                    </MudSelect>
-                    <MudTextField @bind-Value="SelectedContact.Vat" Label="RIF" For="@(() => SelectedContact.Vat)" MaxLength="12" Mask="@(new PatternMask($"{SelectedRifType}00000000000"))" Required="true" />
-                </MudStack>
-            </MudItem>
-            <MudItem xs="6">
-                <MudTextField @bind-Value="SelectedContact.Reference" Label="Reference" For="@(() => SelectedContact.Reference)" MaxLength="4" Class="@($"{strDictionary["Reference"]}")" />
-            </MudItem>
-            <MudItem xs="6">
-                <MudTextField @bind-Value="SelectedContact.FirstName" Label="@($"{strDictionary["nameLabel"]}")" For="@(() => SelectedContact.FirstName)" MaxLength="100" Required="true"/>
-            </MudItem>
-            <MudItem xs="6">
-                <MudTextField @bind-Value="SelectedContact.LastName" Label="Apellidos" For="@(() => SelectedContact.LastName)" MaxLength="100" Class="@($"{strDictionary["LastName"]}")" Required="@(((SelectedContact.IsCustomer ?? false) || (SelectedContact.IsUser ?? false)) && IsRifVorE == true)" RequiredError="Apellido es requerido" />
-            </MudItem>
-            <MudItem xs="6">
-                <MudTextField @bind-Value="SelectedContact.Address" Label="@($"{strDictionary["addressLabel"]}")" For="@(() => SelectedContact.Address)" MaxLength="150" Required="true" />
-            </MudItem>
-            <MudItem xs="6">
-                <MudSelect T="City" Label="Ciudad" ToStringFunc="@ConvertCityFunc" Required="true" ValueChanged="OnCityValueChanged" RequiredError="Ciudad es requerido" Value="CitySelected">
-                    @foreach (var city in Cities!)
-                    {
-                        <MudSelectItem Value="city" />
-                    }
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="4">
-                <MudTextField @bind-Value="SelectedContact.Email" Label="Email" For="@(() => SelectedContact.Email)" MaxLength="50" Required="true" />
-            </MudItem>
-            <MudItem xs="4">
-                <MudTextField @bind-Value="SelectedContact.Phone1" Label="Teléfono 1" For="@(() => SelectedContact.Phone1)" MaxLength="12" Mask="@(new PatternMask("0000-00000000"))" Required="true" />
-            </MudItem>
-            <MudItem xs="4">
-                <MudTextField @bind-Value="SelectedContact.Phone2" Label="Teléfono 2" For="@(() => SelectedContact.Phone2)" MaxLength="12" Mask="@(new PatternMask("0000-00000000"))" />
-            </MudItem>
-            <MudItem xs="4">
-                <MudSelect T="Brand" Label="Marca" ToStringFunc="@ConvertBrandFunc" Class="@($"{strDictionary["BrandName"]}")" Required="(SelectedContact.IsSupplier ?? false)" RequiredError="Marca es requerido" ValueChanged="OnBrandValueChanged" Value="BrandSelected">
-                    @foreach (var brand in Brands!)
-                    {
-                        <MudSelectItem Value="brand"/>
-                    } 
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="4">
-                <MudDatePicker @bind-Date="SelectedContact.Birthday" Label="Fecha Nacimiento" Class="@($"{strDictionary["Birthday"]}")" PickerVariant="PickerVariant.Dialog" />
-            </MudItem>
-            <MudItem xs="4">
-                <MudSelect T="bool" @bind-Value="SelectedContact.Male" Label="Genero" Class="@($"{strDictionary["Male"]}")">
-                    <MudSelectItem Value="true">Masculino</MudSelectItem>
-                    <MudSelectItem Value="false">Femenino</MudSelectItem>
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="6">
-                <MudPaper Class="@(($"d-flex align-center justify-center mud-width-full py-4{strDictionary["Supplier"]}"))">
-                    <MudText Typo="Typo.caption" Color="Color.Error" Class="@(($"{strDictionary["Suppliers"]}"))">Alguno(s) es requerido</MudText>
-                    <MudDataGrid T="Related" Items="Suppliers" Hover="true" Dense="true" Bordered="true" Height="150px">
-                        <Columns>
-                            <TemplateColumn>
-                                <CellTemplate>
-                                    <MudCheckBox @bind-Value="context.Item.IsRelated" Disabled="@((SelectedContact.IsDealer ?? false) && Suppliers!.Where(r => r.IsRelated == true).Count() > 0 && context.Item.IsRelated == false)" />
-                                </CellTemplate>
-                            </TemplateColumn>
-                            <PropertyColumn Property="x => x.RelatedName" Title="Planta" />
-                            <PropertyColumn Property="x => x.Reference" Title="Marca" />
-                        </Columns>
-                    </MudDataGrid>
                 </MudPaper>
-            </MudItem>
-            <MudItem xs="6">
-                <MudPaper Class="@(($"d-flex align-center justify-center mud-width-full py-4{strDictionary["Dealer"]}"))">
-                    <MudText Typo="Typo.caption" Color="Color.Error" Class="@(($"{strDictionary["Dealers"]}"))">Alguno(s) es requerido</MudText>
-                    <MudDataGrid T="Related" Items="Dealers" Hover="true" Dense="true" Bordered="true" Height="150px">
-                        <Columns>
-                            <TemplateColumn>
-                                <CellTemplate>
-                                    <MudCheckBox @bind-Value="@context.Item.IsRelated" />
-                                </CellTemplate>
-                            </TemplateColumn>
-                            <PropertyColumn Property="x => x.RelatedName" Title="Concesionario" />
-                        </Columns>
-                    </MudDataGrid>
-                </MudPaper>
-            </MudItem>
-        </MudGrid>
+            </div>
+            <div id="scrollableGridContentStyled" style="overflow-y: auto; max-height:calc(100vh - 205px); padding: 8px; background-color: #f0f0f0;">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12">
+                        <MudPaper Class="pa-2" Elevation="2">
+                            <MudGrid Spacing="2">
+                                <MudItem xs="12">
+                                    <MudStack Row="true">
+                                        <MudCheckBox @bind-Value="SelectedContact.IsSupplier" Label="Planta" @bind-Value:after="AfterAsyncSupplier" Required="!IsCheckboxValid" RequiredError="Alguna opcion requerida" />
+                                        <MudCheckBox @bind-Value="SelectedContact.IsDealer" Label="Concesionario" @bind-Value:after="AfterAsyncDealer" Required="!IsCheckboxValid" RequiredError="" />
+                                        <MudCheckBox @bind-Value="SelectedContact.IsCustomer" Label="Cliente" @bind-Value:after="AfterAsyncCustomer" Required="!IsCheckboxValid" RequiredError="" />
+                                        <MudCheckBox @bind-Value="SelectedContact.IsUser" Label="Usuario" @bind-Value:after="AfterAsyncUser" Required="!IsCheckboxValid" RequiredError="" />
+                                    </MudStack>
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudStack Row="true">
+                                        <MudSelect T="string" @bind-Value="SelectedRifType" Label="Tipo RIF" Immediate="true" FitContent="true" @bind-Value:after="AfterAsync">
+                                            @foreach (var rif in Rifs)
+                                            {
+                                                <MudSelectItem T="string" Value="@rif" Disabled="@(!String.IsNullOrEmpty(strDictionary[rif]))">@rif</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                        <MudTextField @bind-Value="SelectedContact.Vat" Label="RIF" For="@(() => SelectedContact.Vat)" MaxLength="12" Mask="@(new PatternMask($"{SelectedRifType}00000000000"))" Required="true" />
+                                    </MudStack>
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudTextField @bind-Value="SelectedContact.Reference" Label="Reference" For="@(() => SelectedContact.Reference)" MaxLength="4" Class="@($"{strDictionary["Reference"]}")" />
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudTextField @bind-Value="SelectedContact.FirstName" Label="@($"{strDictionary["nameLabel"]}")" For="@(() => SelectedContact.FirstName)" MaxLength="100" Required="true" />
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudTextField @bind-Value="SelectedContact.LastName" Label="Apellidos" For="@(() => SelectedContact.LastName)" MaxLength="100" Class="@($"{strDictionary["LastName"]}")" Required="@(((SelectedContact.IsCustomer ?? false) || (SelectedContact.IsUser ?? false)) && IsRifVorE == true)" RequiredError="Apellido es requerido" />
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudTextField @bind-Value="SelectedContact.Address" Label="@($"{strDictionary["addressLabel"]}")" For="@(() => SelectedContact.Address)" MaxLength="150" Required="true" />
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudSelect T="City" Label="Ciudad" ToStringFunc="@ConvertCityFunc" Required="true" ValueChanged="OnCityValueChanged" RequiredError="Ciudad es requerido" Value="CitySelected">
+                                        @foreach (var city in Cities!)
+                                        {
+                                            <MudSelectItem Value="city" />
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="4">
+                                    <MudTextField @bind-Value="SelectedContact.Email" Label="Email" For="@(() => SelectedContact.Email)" MaxLength="50" Required="true" />
+                                </MudItem>
+                                <MudItem xs="4">
+                                    <MudTextField @bind-Value="SelectedContact.Phone1" Label="Teléfono 1" For="@(() => SelectedContact.Phone1)" MaxLength="12" Mask="@(new PatternMask("0000-00000000"))" Required="true" />
+                                </MudItem>
+                                <MudItem xs="4">
+                                    <MudTextField @bind-Value="SelectedContact.Phone2" Label="Teléfono 2" For="@(() => SelectedContact.Phone2)" MaxLength="12" Mask="@(new PatternMask("0000-00000000"))" />
+                                </MudItem>
+                                <MudItem xs="4">
+                                    <MudSelect T="Brand" Label="Marca" ToStringFunc="@ConvertBrandFunc" Class="@($"{strDictionary["BrandName"]}")" Required="(SelectedContact.IsSupplier ?? false)" RequiredError="Marca es requerido" ValueChanged="OnBrandValueChanged" Value="BrandSelected">
+                                        @foreach (var brand in Brands!)
+                                        {
+                                            <MudSelectItem Value="brand" />
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="4">
+                                    <MudDatePicker @bind-Date="SelectedContact.Birthday" Label="Fecha Nacimiento" Class="@($"{strDictionary["Birthday"]}")" PickerVariant="PickerVariant.Dialog" />
+                                </MudItem>
+                                <MudItem xs="4">
+                                    <MudSelect T="bool" @bind-Value="SelectedContact.Male" Label="Genero" Class="@($"{strDictionary["Male"]}")">
+                                        <MudSelectItem Value="true">Masculino</MudSelectItem>
+                                        <MudSelectItem Value="false">Femenino</MudSelectItem>
+                                    </MudSelect>
+                                </MudItem>
+                            </MudGrid>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudPaper Elevation="2" Class="@(($"d-flex align-center justify-center mud-width-full py-2{strDictionary["Supplier"]}"))">
+                            @if (strDictionary["Suppliers"] == "")
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Error" >Algunos requeridos</MudText>
+                            }                            
+                            <MudDataGrid T="Related" Items="Suppliers" Hover="true" Dense="true" Bordered="true" Height="150px" FixedHeader>
+                                <Columns>
+                                    <TemplateColumn>
+                                        <CellTemplate>
+                                            <MudCheckBox @bind-Value="context.Item.IsRelated" Disabled="@((SelectedContact.IsDealer ?? false) && Suppliers!.Where(r => r.IsRelated == true).Count() > 0 && context.Item.IsRelated == false)" />
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                    <PropertyColumn Property="x => x.RelatedName" Title="Planta" />
+                                    <PropertyColumn Property="x => x.Reference" Title="Marca" />
+                                </Columns>
+                            </MudDataGrid>                     
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudPaper Elevation="2" Class="@(($"d-flex align-center justify-center mud-width-full py-2{strDictionary["Dealer"]}"))">
+                            @if (strDictionary["Dealers"]=="")
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Error" >Algunos requeridos</MudText>
+                            }
+                            <MudDataGrid T="Related" Items="Dealers" Hover="true" Dense="true" Bordered="true" Height="150px" FixedHeader>
+                                <Columns>
+                                    <TemplateColumn>
+                                        <CellTemplate>
+                                            <MudCheckBox @bind-Value="@context.Item.IsRelated" />
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                    <PropertyColumn Property="x => x.RelatedName" Title="Concesionario" />
+                                </Columns>
+                            </MudDataGrid>
+                        </MudPaper>
+                    </MudItem>
+                </MudGrid>
+
+            </div>
+        </div>
+        <MudScrollToTop Selector="#scrollableGridContentStyled">
+            <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.ArrowUpward" />
+        </MudScrollToTop>
     </MudForm>
 }
 
@@ -167,11 +191,10 @@ else
     bool _loading = true;
     bool IsCheckboxValid = false;
     bool IsAllCheckBoxSelected = false;
-    bool FirstClickEditContact = true;
+    bool FirstClickEditContact = false;
 
     string searchString = "";
-    string mMessage = "Contactos";
-    string gridHeight = "300px";
+    string mMessage = "Contactos";    
     string SelectedRifType = "V";   
     string[] Rifs = ["V", "E", "J", "G"];
     private int ContactCurrentPage = 0;
@@ -263,7 +286,7 @@ else
             IsCheckboxValid = false;
             Suppliers = Relateds!.Where(r => r.RecordId == 0 && r.IsSupplier == true).ToList();
             Dealers = Relateds!.Where(r => r.RecordId == 0 && r.IsDealer == true).ToList();
-
+            FirstClickEditContact = false;
             await NewContactUI();
             await Task.CompletedTask;
         }
@@ -357,6 +380,8 @@ else
     {
         "BrandName,Supplier,Dealer,Birthday,Male,Reference,LastName".Split(',').ToList().ForEach(key => strDictionary[key] = "");
         SelectedRifType = "V";
+        strDictionary["Suppliers"] = " invisible";
+        strDictionary["Dealers"] = " invisible";
         CitySelected = null;
         return Task.CompletedTask;
     }
@@ -467,7 +492,7 @@ else
     private async Task SaveContact()
     {
         await form!.Validate();
-        if (form.IsValid) 
+        if (IsValidRelates() && form.IsValid)
         {
             var strJsonSelectedContact = System.Text.Json.JsonSerializer.Serialize(SelectedContact);
             var result_Post_Contacts = await Http.PostAsync("api/Contact/Post_Contacts", new StringContent($"[{strJsonSelectedContact}]", null, "application/json"));
@@ -483,10 +508,7 @@ else
                     var result_Post_Related = await Http.PostAsync("api/Contact/Post_Relateds", new StringContent(strJsonRelateds, null, "application/json"));
                     if (result_Post_Related.IsSuccessStatusCode)
                     {
-                        // var parameters = new DialogParameters<Dialog>{{ x => x.ContentText, "Contacto Procesado!" },{ x => x.ButtonText, "OK" },{ x => x.Color, Color.Primary}};
-                        // var mdialog = await DialogService.ShowAsync<Dialog>("Contacto", parameters, new DialogOptions { BackdropClick = false, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true });
                         var mdialog = await DialogService.ShowDialog("Contacto Procesado!", "Contacto", "Ok", Color.Primary, Icons.Material.Filled.Commit);
-                        //var result = await mdialog.Result;
                         if (!mdialog!.Canceled)
                         {
                             mMessage = "Contactos";
@@ -499,9 +521,6 @@ else
             else
             {
                 var resultString = await result_Post_Contacts.Content.ReadAsStringAsync();
-                // var parameters = new DialogParameters<ErrorDialog> {{ x => x.ContentText, resultString.Replace("USP_POST_CONTACTS : ","")},{ x => x.TitleText, "Error Contacto"}};
-                // var mdialog = await DialogService.ShowAsync<ErrorDialog>("", parameters, new DialogOptions { BackdropClick = false, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true });
-                // var result = await mdialog.Result;
                 await DialogService.ShowDialog(resultString.Replace("USP_POST_CONTACTS : ", ""), "Error Contacto", "OK", Color.Primary, Icons.Material.Filled.Error);
             }
 
@@ -510,36 +529,11 @@ else
     }
 
     private void Cancel() { mMessage = "Contactos"; SelectedContact = null; }
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender) await AdjustGridHeight();       
-    }
-
-    private async Task AdjustGridHeight()
-    {
-        var windowHeight = await JSRuntime.InvokeAsync<int>("getWindowHeight");
-        gridHeight = $"{windowHeight - 230}px"; // Adjust 200px as needed for header/footer or other elements
-        StateHasChanged();
-    }
-       
-
+   
     private async Task ClickMenuContact(string? actionName)
     {
         if (actionName == "EXPORT")
         {
-            // _loading = true;
-            // var ResultContacts = await Http.GetFromJsonAsync<List<Contact>>("api/Contact/GetAll?idUser=1"); 
-            // if (ResultContacts is not null)
-            // {
-            //     var wb = await BuildExcelFile(ResultContacts);
-            //     using var stream = new MemoryStream();
-            //     wb.SaveAs(stream);
-            //     stream.Seek(0, SeekOrigin.Begin);
-            //     var base64File = Convert.ToBase64String(stream.ToArray());
-            //     var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
-            //     await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Contactos.xlsx");
-            // } 
-            // _loading = false;
             _loading = true;
             var ResultZonas = await Http.GetAsync($"api/Contact/GetExport?_filter={searchString}&userId=1");
             if (ResultZonas.IsSuccessStatusCode)
@@ -564,9 +558,6 @@ else
         if (result_Post_Actions is not null && result_Post_Actions.IsSuccessStatusCode)
         {
             var rest = result_Post_Actions.Content.ReadAsStringAsync();
-            // var parameters = new DialogParameters<Dialog> {{ x => x.ContentText, "Contacto(s) Actualizado(s)!" },{ x => x.ButtonText, "OK" },{ x => x.Color, Color.Primary }};
-            // var mdialog = await DialogService.ShowAsync<Dialog>("Contacto", parameters, new DialogOptions { BackdropClick = false, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true });
-            // var result = await mdialog.Result;
             await DialogService.ShowDialog("Contacto(s) Actualizado(s)!", "Contacto", "OK", Color.Primary, Icons.Material.Filled.Commit);
             await ContactMudDataGrid!.ReloadServerData();
         }

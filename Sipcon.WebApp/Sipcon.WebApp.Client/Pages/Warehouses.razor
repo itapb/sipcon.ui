@@ -10,7 +10,7 @@
 
 @if (SelectedWarehouse == null)
 {
-    <MudDataGrid @ref="WarehouseMudDataGrid" T="Warehouse" ServerData="ServerReload" Filterable="false" FixedHeader Height="@gridHeight" Loading="_loading" @bind-CurrentPage="WarehouseCurrentPage">
+    <MudDataGrid @ref="WarehouseMudDataGrid" T="Warehouse" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 235px)" Loading="_loading" @bind-CurrentPage="WarehouseCurrentPage">
         <ToolBarContent>
             <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddWarehouse"></MudIconButton>
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s=>OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
@@ -55,9 +55,11 @@
 }
 else
 {
+    <div style="flex-shrink: 0; background-color: #f0f0f0;" class="pa-2">
     <MudForm @ref="form">
         <MudGrid Spacing="2">
             <MudItem xs="12">
+                <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
                 <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
                     <MudStack Row="true">
                         <MudCheckBox @bind-Value="SelectedWarehouse.IsActive" Label="Activo" />
@@ -67,28 +69,38 @@ else
                         <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="CancelClick">Cancelar</MudButton>
                     </MudButtonGroup>
                 </MudStack>
+                </MudPaper>
             </MudItem>
-
             <MudItem xs="12">
+                 <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                 <MudStack Row="false">
                 <MudTextField T="string" @bind-Value="SelectedWarehouse.Name" Label="Almacen" For="@(() => SelectedWarehouse.Name)" MaxLength="20" Required="true"/>
-            </MudItem>
-            <MudItem xs="12">
                 <MudSelect T="Contact" Label="Planta" ToStringFunc="@ConvertSupplierFunc" Required="true" ValueChanged="OnSupplierValueChanged" RequiredError="Planta es requerido" Value="SupplierSelected">
                     @foreach (var supplier in Suppliers!)
                     {
                         <MudSelectItem Value="supplier" />
                     }
                 </MudSelect>
+                </MudStack>
+                </MudPaper>
             </MudItem>
+@*             <MudItem xs="12">
+                <MudSelect T="Contact" Label="Planta" ToStringFunc="@ConvertSupplierFunc" Required="true" ValueChanged="OnSupplierValueChanged" RequiredError="Planta es requerido" Value="SupplierSelected">
+                    @foreach (var supplier in Suppliers!)
+                    {
+                        <MudSelectItem Value="supplier" />
+                    }
+                </MudSelect>
+            </MudItem> *@
         </MudGrid>
     </MudForm>
+    </div>
 }
 
 
 @code {
     string searchString = "";
-    string mMessage = "Almacenes";
-    string gridHeight = "300px";
+    string mMessage = "Almacenes";    
     private int WarehouseCurrentPage = 0;
     bool _loading = true;
     bool IsAllCheckBoxSelected = false;
@@ -107,7 +119,7 @@ else
         if (form.IsValid)
         {
             var strJsonSelectedWarehouse = System.Text.Json.JsonSerializer.Serialize(SelectedWarehouse);
-            var result_Post_Warehouse = await Http.PostAsync("api/Warehouse/Post_Warehouses?userId=1", new StringContent($"[{strJsonSelectedWarehouse}]", null, "application/json"));
+            var result_Post_Warehouse = await Http.PostAsync("api/Warehouse/PostWarehouses?userId=1", new StringContent($"[{strJsonSelectedWarehouse}]", null, "application/json"));
             if (result_Post_Warehouse.IsSuccessStatusCode)
             {
                 var sucessContent = await result_Post_Warehouse.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
@@ -180,7 +192,7 @@ else
         if (actionName == "EXPORT")
         {
             _loading = true;
-            var ResultWarehouses = await Http.GetAsync($"api/Warehouse/GetExport?_filter={searchString}&userId=1");
+            var ResultWarehouses = await Http.GetAsync($"api/Warehouse/Export?filter={searchString}&userId=1");
             if (ResultWarehouses.IsSuccessStatusCode)
             {
                 var fileContent = await ResultWarehouses.Content.ReadAsByteArrayAsync();
@@ -265,7 +277,7 @@ else
             var errorMessage = await response2.Content.ReadAsStringAsync();
             throw new Exception(errorMessage);
         }
-        //var ZoneDetailsResult = await Http.GetFromJsonAsync<WebApiResponse<Warehouse>>($"api/Warehouse/GetOne?ZoneId={item!.Id}&userId=1");// ojo
+
 
         await Task.CompletedTask;
     }
@@ -284,17 +296,6 @@ else
             await WarehouseMudDataGrid!.ReloadServerData();
         }
     }
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender) await AdjustGridHeight();
-    }
-    private async Task AdjustGridHeight()
-    {
-        var windowHeight = await JSRuntime.InvokeAsync<int>("getWindowHeight");
-        gridHeight = $"{windowHeight - 230}px"; // Adjust 200px as needed for header/footer or other elements
-        StateHasChanged();
-    }
-
     private async Task OnInputFileChange(InputFileChangeEventArgs e)
     {
         if (e.FileCount == 1)
