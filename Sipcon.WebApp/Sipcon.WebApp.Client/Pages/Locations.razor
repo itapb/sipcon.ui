@@ -1,0 +1,335 @@
+﻿@page "/locations"
+@* @typeparam T *@
+@inject HttpClient Http
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+@using System.Text.Json
+
+<MudText Typo="Typo.h6" GutterBottom="true">@mMessage</MudText>
+<InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
+
+@if(SelectedLocation == null){
+    <MudDataGrid @ref="LocationMudDataGrid" T="Location" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 235px)" Loading="_loading" @bind-CurrentPage="LocationCurrentPage">
+        <ToolBarContent>
+            <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddLocation"></MudIconButton>
+            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s=>OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudSpacer />
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+                @foreach (var strmodulo in Modules!)
+                {
+                    <MudMenuItem Label="@strmodulo.ActionDisplay" OnClick="@(()=>ClickMenuLocation(strmodulo.ActionName))" />
+                }
+            </MudMenu>
+        </ToolBarContent>
+        <Columns>
+            <TemplateColumn>
+                <HeaderTemplate>
+                    <MudCheckBox @bind-Value="IsAllCheckBoxSelected" @bind-Value:after="AfterAsyncAllCheck" />
+                </HeaderTemplate>
+                <CellTemplate>
+                    <MudCheckBox @bind-Value="@context.Item.IsSelected" />
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.Name" title="Nombre" Sortable="false" Filterable="false" />
+            <PropertyColumn Property="x => x.ZoneName" title="Zona" />
+            <PropertyColumn Property="x => x.WarehouseName" title="Almacen" />
+            <TemplateColumn>
+                <HeaderTemplate>
+                    <MudText>Activo</MudText>
+                </HeaderTemplate>
+                <CellTemplate>
+                    <MudCheckBox @bind-Value="@context.Item.IsActive" ReadOnly="true" />
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn StickyRight="true">
+                <CellTemplate>
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="()=> ClickEditLocation(context.Item)" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="Location" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        </PagerContent>
+    </MudDataGrid>
+}
+else
+{
+    <div style="flex-shrink: 0; background-color: #f0f0f0;" class="pa-2">
+    <MudForm @ref="form">
+        <MudGrid Spacing="2">
+            <MudItem xs="12">
+                <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                    <MudStack Row="true">
+                        <MudCheckBox @bind-Value="SelectedLocation.IsActive" Label="Activo" />
+                    </MudStack>
+                    <MudButtonGroup>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveClick">Aceptar</MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="CancelClick">Cancelar</MudButton>
+                    </MudButtonGroup>
+                </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                    <MudStack Row="false">
+                        <MudTextField T="string" @bind-Value="SelectedLocation.Name" Label="Ubicacion" For="@(() => SelectedLocation.Name)" MaxLength="20" />
+                            <MudSelect T="Zone" Label="Zona" ToStringFunc="@ConvertZoneFunc" Required="true" ValueChanged="OnZoneValueChanged" RequiredError="Zona es requerido" Value="ZoneSelected">
+                                @foreach (var zone in Zones!)
+                                {
+                                    <MudSelectItem Value="zone" />
+                                }
+                            </MudSelect>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+@*             <MudItem xs="12">
+                <MudSelect T="Zone" Label="Zona" ToStringFunc="@ConvertZoneFunc" Required="true" ValueChanged="OnZoneValueChanged" RequiredError="Zona es requerido" Value="ZoneSelected" >
+                    @foreach (var zone in Zones!)
+                    {
+                        <MudSelectItem Value="zone" />
+                    }
+                </MudSelect>
+            </MudItem> *@
+
+        </MudGrid>
+    </MudForm>
+    </div>
+}
+
+@code {
+    string searchString = "";
+    string mMessage = "Ubicaciones";   
+    private int LocationCurrentPage = 0;
+    bool _loading = true;
+    bool IsAllCheckBoxSelected = false;
+
+    private MudForm? form;
+    private Func<Zone?, string> ConvertZoneFunc = zone => zone?.Name!;
+    private Zone? ZoneSelected;
+    private List<Zone>? Zones = default;
+
+    private Location? SelectedLocation;   
+    private MudDataGrid<Location>? LocationMudDataGrid;
+    private List<Module>? Modules;
+
+    private async Task SaveClick()
+    {
+        await form!.Validate();
+        if (form.IsValid)
+        {
+            var strJsonSelectedLocation = System.Text.Json.JsonSerializer.Serialize(SelectedLocation);
+            var result_Post_Location = await Http.PostAsync("api/Location/PostLocations?userId=1", new StringContent($"[{strJsonSelectedLocation}]", null, "application/json"));
+            if (result_Post_Location.IsSuccessStatusCode)
+            {
+                var content2 = await result_Post_Location.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
+                if ((content2?.data![0].insertedRows == 1 || content2?.data![0].updatedRows == 1))
+                {
+                    // var parameters = new DialogParameters<Dialog> { { x => x.ContentText, "Ubicacion Procesado!" }, { x => x.ButtonText, "OK" }, { x => x.Color, Color.Primary } };
+                    // var mdialog = await DialogService.ShowAsync<Dialog>("Ubicacion", parameters, new DialogOptions { BackdropClick = false, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true });
+                    var mdialog = await DialogService.ShowDialog("Ubicacion Procesado!", "Ubicacion", "OK", Color.Primary, Icons.Material.Filled.Commit);
+                    //var result = await mdialog.Result;
+                    if (!mdialog!.Canceled)
+                    {
+                        mMessage = "Ubicacion";
+                        SelectedLocation = null;
+                    }
+                }
+
+            }
+        }
+        await Task.CompletedTask;
+    }
+    private void CancelClick()
+    {
+        mMessage = "Ubicaciones"; SelectedLocation = null; 
+    }
+    private Task OnZoneValueChanged(Zone selectedZone)
+    {
+        ZoneSelected = selectedZone;
+        SelectedLocation!.ZoneId = selectedZone.Id;
+        SelectedLocation.ZoneName = selectedZone.Name;
+        return Task.CompletedTask;
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        Modules = await Http.GetFromJsonAsync<List<Module>>("api/Module/GetAll?moduleName=INVENTARIO-UBICACIONES&userId=1");
+    }
+    private async Task<GridData<Location>> ServerReload(GridState<Location> state)
+    {
+        IsAllCheckBoxSelected = false;
+        _loading = true;
+        var mOffset = state.Page * state.PageSize;
+        var totalItems = 0;
+        IEnumerable<Location> data;
+        HttpResponseMessage response = await Http.GetAsync($"api/Location/GetAll?filter={searchString}&rowFrom={mOffset}&userId=1");
+
+        if (response.IsSuccessStatusCode)
+        {            
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Location>>>();
+            totalItems = content2!.total ?? 0;           
+            data = content2!.data ?? new List<Location>(); ;
+        }
+        else
+        {         
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
+        _loading = false;       
+
+        return new GridData<Location> { TotalItems = totalItems, Items = data };
+    }
+
+    private async Task ClickMenuLocation(string? actionName)
+    {
+        if (actionName == "EXPORT")
+        {
+            _loading = true;
+            var ResultZonas = await Http.GetAsync($"api/Location/Export?filter={searchString}&userId=1");
+            if (ResultZonas.IsSuccessStatusCode)
+            {
+                var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
+                var base64File = Convert.ToBase64String(fileContent);
+                var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+                await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Ubicaciones.xlsx");
+            }
+            _loading = false;
+            return;
+        }
+        else if (actionName == "IMPORT")
+        {
+            await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('[type=file]').click()");
+            return;
+        }
+        var SelectedActions = (LocationMudDataGrid != null && ("ACTIVATE,DEACTIVATE".IndexOf(actionName!) > -1)) ?
+                            (LocationMudDataGrid.FilteredItems.Where(item => item.IsSelected)
+                                                             .Select(item => new Client.Models.Action
+                                                                 {
+                                                                     UserId = 1,
+                                                                     RecordId = item.Id,
+                                                                     ModuleId = Modules!.FirstOrDefault()?.Id,
+                                                                     actionName = actionName,
+                                                                     ActionComment = "",
+                                                                     RelatedId = 0
+                                                                 }).ToList()
+                             ) : null;
+
+        var result_Post_Actions = (SelectedActions is not null && SelectedActions.Count > 0) ? await Http.PostAsync("api/Location/PostActions?userId=1", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
+        if (result_Post_Actions is not null && result_Post_Actions.IsSuccessStatusCode)
+        {
+            var resultAction = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
+            if  (resultAction?.data![0].updatedRows > 0)
+            {
+                await DialogService.ShowDialog("Ubicacion(es) Actualizado(s)!", "Ubicacion", "OK", Color.Primary, Icons.Material.Filled.Commit);
+                await LocationMudDataGrid!.ReloadServerData();
+            }
+            
+
+        }
+        await Task.CompletedTask;
+       
+    }
+    private async Task ClickAddLocation(MouseEventArgs ev)
+    {
+        mMessage = "Agregar Ubicacion";
+        var response1 = await Http.GetAsync($"api/Zone/GetAll?rowFrom=0&userId=1");
+
+        if (response1.IsSuccessStatusCode)
+        {
+            var zonesContent = await response1.Content.ReadFromJsonAsync<WebApiResponse<List<Zone>>>();
+            Zones = zonesContent!.data;
+            ZoneSelected = null;
+            SelectedLocation = new Location() { Id = 0, Name = null, WarehouseName = null, IsActive = true, ZoneId = null, ZoneName = null, IsSelected = false };
+        }
+        else
+        {
+            var errorMessage = await response1.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
+       
+        await Task.CompletedTask;
+    }
+    private async Task ClickEditLocation(Location item)
+    {
+        var request1 = Http.GetAsync($"api/Zone/GetAll?rowFrom=0&userId=1");
+        var request2 = Http.GetAsync($"api/Location/GetOne?locationId={item!.Id}&userId=1");
+        await Task.WhenAll(request1, request2);
+        HttpResponseMessage response1 = request1.Result;
+        HttpResponseMessage response2 = request2.Result;
+
+        if (response1.IsSuccessStatusCode && response2.IsSuccessStatusCode)
+        {
+            mMessage = "Editar Ubicacion";
+            var zonesContent = await response1.Content.ReadFromJsonAsync<WebApiResponse<List<Zone>>>();
+            var locationContent = await response2.Content.ReadFromJsonAsync<WebApiResponse<Location>>();
+            Zones = zonesContent!.data;
+            SelectedLocation = locationContent!.data;
+            ZoneSelected = Zones!.FirstOrDefault(c => c.Id == SelectedLocation!.ZoneId);
+        }
+        else
+        {
+            var errorMessage = await response2.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }       
+
+        await Task.CompletedTask;
+    }
+    private async Task AfterAsyncAllCheck()
+    {
+        if (LocationMudDataGrid != null)
+            LocationMudDataGrid.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
+        await Task.CompletedTask;
+    }
+    private async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            _loading = true;
+            searchString = text;
+            await LocationMudDataGrid!.ReloadServerData();
+        }
+    }
+  
+   private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        if (e.FileCount == 1)
+        {
+            var file = e.File;
+            const long maxAllowedSize = 10 * 1024 * 1024; // 10MB
+            if (file.Size == 0)
+            {
+                await DialogService.ShowDialog("Archivo esta vacio", "Error de Archivo", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+            else if (file.Size > maxAllowedSize)
+            {
+                await DialogService.ShowDialog("Tamaño del archivo excede el limite maximo permitido de 10MB.", "Error de Archivo", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+            else
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
+
+                var content = new StreamContent(stream);
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+                // Create a multipart form data content
+                var formData = new MultipartFormDataContent();
+                formData.Add(content, "file", file.Name);
+                _loading = true;
+
+                var response = await Http.PostAsync("api/Location/Import?userId=1", formData);
+                if (response.IsSuccessStatusCode)
+                {
+                    await DialogService.ShowDialog("Archivo cargado con exito!.", "Ubicaciones", "OK", Color.Primary, Icons.Material.Filled.Commit);
+                    await LocationMudDataGrid!.ReloadServerData();
+                }
+                else
+                {
+                    await DialogService.ShowDialog("Carga de archivo fallo!", "Error al cargar", "OK", Color.Error, Icons.Material.Filled.Error);
+                    _loading = false;
+                }
+            }
+        }
+        await Task.CompletedTask;
+    }
+}

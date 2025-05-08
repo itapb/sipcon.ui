@@ -17,6 +17,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddHttpClient("ServerAPI", client => client.BaseAddress = new Uri(builder.Configuration["BackEndUrl"]!)); //.AddHttpMessageHandler<TokenHandler>();
 builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("ServerAPI"));
 
+
 builder.Services.AddScoped<IModelService, ModelRepository>();
 builder.Services.AddScoped<IModuleService, ModuleRepository>();
 builder.Services.AddScoped<IVehicleService, VehicleRepository>();
@@ -27,6 +28,7 @@ builder.Services.AddScoped<ISupplierService, SupplierRepository>();
 builder.Services.AddScoped<IDealerService, DealerRepository>();
 
 builder.Services.AddTransient<UtilModuleActions>();
+
 
 var app = builder.Build();
 // Configure the HTTP request pipeline.

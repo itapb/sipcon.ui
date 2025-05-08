@@ -12,11 +12,11 @@ namespace Sipcon.WebApp.Client.Models
         [Required]
         public bool? IsActive { get; set; }
        
-        public string? Created { get; set; }
+        //public string? Created { get; set; }
         
-        public string? Updated { get; set; }
+        //public string? Updated { get; set; }
       
-        public string? UpdatedBy { get; set; }
+        //public string? UpdatedBy { get; set; }
 
 
     }

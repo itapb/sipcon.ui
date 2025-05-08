@@ -1,6 +1,6 @@
 ﻿namespace Sipcon.WebApp.Client.Models
 {
-    public class Supplier
+    public class Supplier: Record
     {
         public int Id { get; set; } = 0;
         public bool IsActive { get; set; } = true;
