@@ -6,8 +6,6 @@ using Sipcon.WebApp.Client.Utils;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
-
-
 builder.Services.AddMudServices();
 //builder.Services.AddScoped<TokenHandler>();
 var backEndUrl = builder.Configuration.GetValue<string>("BackEndUrl")!;
