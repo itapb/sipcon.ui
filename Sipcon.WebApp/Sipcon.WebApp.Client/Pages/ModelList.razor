@@ -22,8 +22,7 @@
 
 @if (_errorMessage == string.Empty)
 {
-    if (_Models.Count() > 0)
-    {
+   
     <MudDataGrid T="Model"
                  MultiSelection="true" Items="@_Models"
                  SortMode="SortMode.Multiple"
@@ -38,8 +37,10 @@
 
         <ToolBarContent>
                 <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="() => ClickAddModel()"></MudIconButton>
-            <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" OnKeyDown="HandleKeyDownSearch"></MudTextField>
             <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Success" OnClick="() => HandleOnClickRefresh()" />
             <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
                 @foreach (var module in _itemsModules)
                 {
@@ -102,17 +103,12 @@
         </PagerContent>
     </MudDataGrid> 
 
-    
-}
-else
-{
-    <p class="text-danger">@_errorMessage</p>
-}
 
 }
 else
 {
-<p class="text-danger">@_errorMessage</p>
+    
+    <p class="text-danger">@_errorMessage</p>
 
 }
 
@@ -154,21 +150,53 @@ else
 
     private async Task GetModels()
     {
+        _filter = _searchString;
         var serviceResponse = await ModelService.GetModels(_iduser, _rowCount, _filter);
         if (serviceResponse.Processed)
         {
             _Models = serviceResponse.Data;
             _rowsTotal = serviceResponse.Total;
-
-            _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
-
             _loading = false;
+
+            if (_Models.Count() > 0)
+            {
+                _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
+            }
+            else { _itemsModules = new List<ModuleAction>([]); }
+
+           
         }
         else
         {
             Console.WriteLine(serviceResponse.Message);
             _errorMessage = "No se encontraron Modelos.";
         }
+
+    }
+
+
+    private async Task HandleKeyDownSearch(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            if (_searchString.Length > 4 || _searchString == string.Empty)
+            {
+                Console.WriteLine($"Buscando: {_searchString}");
+                _filter = _searchString;
+                await GetModels();
+            }
+
+        }
+    }
+
+
+    private async Task HandleOnClickRefresh()
+    {
+
+        Console.WriteLine($"Buscando: {_searchString}");
+        _filter = string.Empty;
+        _searchString = string.Empty;
+        await GetModels();
 
     }
 

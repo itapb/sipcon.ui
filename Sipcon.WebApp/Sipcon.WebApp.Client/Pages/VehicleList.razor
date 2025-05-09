@@ -22,116 +22,110 @@
 
 @if (_errorMessage == string.Empty)
 {
-    if (_Vehicles.Count() > 0)
-    {
-        <MudDataGrid T="Vehicle"
-        MultiSelection="true" Items="@_Vehicles"
-        SortMode="SortMode.Multiple"
-        Filterable="true"
-        Hideable="true"
-        Loading="_loading"
-        ReadOnly="@_readOnly"
-        EditMode="@(_isCellEditMode ? DataGridEditMode.Cell : DataGridEditMode.Form)"
-        Bordered="true"
-        Dense="true"
-        EditTrigger="@(_editTriggerRowClick ? DataGridEditTrigger.OnRowClick : DataGridEditTrigger.Manual)">
+    <MudDataGrid T="Vehicle"
+    MultiSelection="true" Items="@_Vehicles"
+    SortMode="SortMode.Multiple"
+    Filterable="true"
+    Hideable="true"
+    Loading="_loading"
+    ReadOnly="@_readOnly"
+    EditMode="@(_isCellEditMode ? DataGridEditMode.Cell : DataGridEditMode.Form)"
+    Bordered="true"
+    Dense="true"
+    EditTrigger="@(_editTriggerRowClick ? DataGridEditTrigger.OnRowClick : DataGridEditTrigger.Manual)">
 
-            <ToolBarContent>
-                <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="() => ClickAddVehicle()"></MudIconButton>
-                <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-                <MudSpacer />
-                <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
-                    @foreach (var module in _itemsModules)
+        <ToolBarContent>
+            <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="() => ClickAddVehicle()"></MudIconButton>
+            <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+            AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" OnKeyDown="HandleKeyDownSearch"></MudTextField>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Success" OnClick="() => HandleOnClickRefresh()" />
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+                @foreach (var module in _itemsModules)
+                {
+                    <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
+                    Label="@module.Text"
+                    OnClick="() => HandleMenuClick(module.ActionName)" />
+                }
+            </MudMenu>
+        </ToolBarContent>
+        <Columns>
+            <SelectColumn T="Vehicle" />
+
+            <TemplateColumn T="Vehicle" Title="Marca">
+                <CellTemplate>
+                    @if (context.Item.BrandId == 1)
                     {
-                        <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
-                        Label="@module.Text"
-                        OnClick="() => HandleMenuClick(module.ActionName)" />
+                        <div class="d-flex justify-center" style="height: 45px;">
+
+                            <MudTooltip Text="@context.Item.BrandName">
+                                <MudImage Src="Images/changan_marca.jpeg" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg " FallbackSrc="Images/changan_emblema.png" Height="45" Width="55"></MudImage>
+                            </MudTooltip>
+                        </div>
+
+
                     }
-                </MudMenu>
-            </ToolBarContent>
-            <Columns>
-                <SelectColumn T="Vehicle" />
+                    else
+                    {
+                        <div class="d-flex justify-center" style="height: 45px;">
+                            <MudTooltip Text="@context.Item.BrandName">
+                                <MudImage Src="Images/foton_marca.jpeg " ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg " FallbackSrc="Images/foton_emblema.jpeg" Height="45" Width="35"></MudImage>
+                            </MudTooltip>
+                        </div>
 
-                <TemplateColumn T="Vehicle" Title="Marca">
-                    <CellTemplate>
-                        @if (context.Item.BrandId == 1)
-                        {
-                            <div class="d-flex justify-center" style="height: 45px;">
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="Vehicle" Title="VIN">
+                <CellTemplate>
 
-                                <MudTooltip Text="@context.Item.BrandName">
-                                    <MudImage Src="Images/changan_marca.jpeg" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg " FallbackSrc="Images/changan_emblema.png" Height="45" Width="55"></MudImage>
-                                </MudTooltip>
-                            </div>
+                    <MudStack Row="false">
+                        <MudText Typo="Typo.caption" ><b>VIN :</b> <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary">@context.Item.Vin</MudText></MudText>
+                        <MudText Typo="Typo.caption" Align="Align.Start"><b>Placa :</b> @context.Item.Plate</MudText>
+                    </MudStack>
 
-
-                        }
-                        else
-                        {
-                            <div class="d-flex justify-center" style="height: 45px;">
-                                <MudTooltip Text="@context.Item.BrandName">
-                                    <MudImage Src="Images/foton_marca.jpeg " ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg " FallbackSrc="Images/foton_emblema.jpeg" Height="45" Width="35"></MudImage>
-                                </MudTooltip>
-                            </div>
-
-                        }
-                    </CellTemplate>
-                </TemplateColumn>
-                <TemplateColumn T="Vehicle" Title="VIN">
-                    <CellTemplate>
-
-                        <MudStack Row="false">
-                            <MudText Typo="Typo.caption" ><b>VIN :</b> <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary">@context.Item.Vin</MudText></MudText>
-                            <MudText Typo="Typo.caption" Align="Align.Start"><b>Placa :</b> @context.Item.Plate</MudText>
-                        </MudStack>
-
-                    </CellTemplate>
-                </TemplateColumn>
-                <PropertyColumn Property="x => x.Year" Title="Año" Sortable="false" Filterable="false" />
-                <PropertyColumn Property="x => x.ColorName" Title="Color" Sortable="false" Filterable="false" />
-                @* <PropertyColumn Property="x => x.ModelName" Title="Modelo" Sortable="false" Filterable="false" /> *@
-                <TemplateColumn T="Vehicle" Title="Modelo">
-                    <CellTemplate>
-                        <MudChip T="string" Variant="Variant.Text">
-                            <AvatarContent>
-                                <MudAvatar Size="Size.Small">
-                                    <MudImage Src="Images/changan_rojo_1.png"></MudImage>
-                                </MudAvatar>
-                            </AvatarContent>
-                            <ChildContent>@context.Item.ModelName</ChildContent>
-                        </MudChip>
-                    </CellTemplate>
-                </TemplateColumn>
-                <PropertyColumn Property="x => x.SupplierName" Title="Planta" Sortable="false" Filterable="false" />
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.Year" Title="Año" Sortable="false" Filterable="false" />
+            <PropertyColumn Property="x => x.ColorName" Title="Color" Sortable="false" Filterable="false" />
+            @* <PropertyColumn Property="x => x.ModelName" Title="Modelo" Sortable="false" Filterable="false" /> *@
+            <TemplateColumn T="Vehicle" Title="Modelo">
+                <CellTemplate>
+                    <MudChip T="string" Variant="Variant.Text">
+                        <AvatarContent>
+                            <MudAvatar Size="Size.Small">
+                                <MudImage Src="Images/changan_rojo_1.png"></MudImage>
+                            </MudAvatar>
+                        </AvatarContent>
+                        <ChildContent>@context.Item.ModelName</ChildContent>
+                    </MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.SupplierName" Title="Planta" Sortable="false" Filterable="false" />
 
 
-                <TemplateColumn T="Vehicle" Title="Estatus">
-                    <CellTemplate>
-                        @if (context.Item.IsActive == true)
-                        {
-                            <MudChip T="string" Icon="@Icons.Material.Filled.VerifiedUser" Color="Color.Success" Size="Size.Small">Activo</MudChip>
-                        }
-                        else
-                        {
-                            <MudChip T="string" Icon="@Icons.Material.Filled.Dangerous" IconColor="Color.Error" Size="Size.Small">Inactivo</MudChip>
-                        }
-                    </CellTemplate>
-                </TemplateColumn>
-                <TemplateColumn Hidden="@(_isCellEditMode || _readOnly || _editTriggerRowClick)">
-                    <CellTemplate>
-                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditVehicle(context.Item)" />
-                    </CellTemplate>
-                </TemplateColumn>
-            </Columns>
-            <PagerContent>
-                <MudDataGridPager T="Model" />
-            </PagerContent>
-        </MudDataGrid>
-
-    }
-    else
-    {
-        <p class="text-danger">@_errorMessage</p>
-    }
+            <TemplateColumn T="Vehicle" Title="Estatus">
+                <CellTemplate>
+                    @if (context.Item.IsActive == true)
+                    {
+                        <MudChip T="string" Icon="@Icons.Material.Filled.VerifiedUser" Color="Color.Success" Size="Size.Small">Activo</MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Icon="@Icons.Material.Filled.Dangerous" IconColor="Color.Error" Size="Size.Small">Inactivo</MudChip>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Hidden="@(_isCellEditMode || _readOnly || _editTriggerRowClick)">
+                <CellTemplate>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditVehicle(context.Item)" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="Model" />
+        </PagerContent>
+    </MudDataGrid>
 
 }
 else
@@ -178,6 +172,7 @@ else
 
     private async Task GetVehicles()
     {
+        _filter = _searchString;
         var serviceResponse = await VehicleService.GetVehicles(_iduser, _rowCount, _filter);
         if (serviceResponse.Processed)
         {
@@ -186,7 +181,12 @@ else
             _rowsTotal = serviceResponse.Total;
             _loading = false;
 
-            _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
+            if (_Vehicles.Count() > 0)
+            {
+                _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
+            }
+            else { _itemsModules = new List<ModuleAction>([]); }
+
 
         }
         else
@@ -194,6 +194,30 @@ else
             Console.WriteLine(serviceResponse.Message);
             _errorMessage = "No se encontraron Vehiculos.";
         }
+
+    }
+
+    private async Task HandleKeyDownSearch(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            if (_searchString.Length > 4 || _searchString == string.Empty)
+            {
+                Console.WriteLine($"Buscando: {_searchString}");
+                _filter = _searchString;
+                await GetVehicles();
+            }
+            
+        }
+    }
+
+    private async Task HandleOnClickRefresh()
+    {
+        
+        Console.WriteLine($"Buscando: {_searchString}");
+        _filter = string.Empty;
+        _searchString = string.Empty;
+        await GetVehicles();
 
     }
 
