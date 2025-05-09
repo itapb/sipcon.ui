@@ -12,12 +12,12 @@
 
 
 
-        public async Task<ApiResponse<List<Model>>> GetModels(int IdUser, int RowFrom = 0, string Filter = " ")
+        public async Task<ApiResponse<List<Model>>> GetModels(int IdUser, int RowFrom = 0, string Filter = "")
         {
             ApiResponse<List<Model>>? result;
             try
             {
-                result = await _http.GetFromJsonAsync<ApiResponse<List<Model>>>($"api/Model/GetAll?rowFrom={RowFrom}&userId={IdUser}");
+                result = await _http.GetFromJsonAsync<ApiResponse<List<Model>>>($"api/Model/GetAll?filter={Filter}&rowFrom={RowFrom}&userId={IdUser}");
 
                 result = (result is null) ? new ApiResponse<List<Model>>()
                 {
