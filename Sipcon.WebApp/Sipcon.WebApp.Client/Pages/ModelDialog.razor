@@ -3,13 +3,15 @@
 @using System.ComponentModel.DataAnnotations
 @using Sipcon.WebApp.Client.Utils
 @using Sipcon.WebApp.Client.Enum
+@using FluentValidation
 
 @inject IModelService ModelService
 @inject IDialogService DialogService
 @inject IVehicleService VehicleService
 @inject UtilModuleActions ModuleActionsService
 
-<EditForm Model="@_model" OnValidSubmit="OnValidSubmit">
+
+<MudForm Model="@_model" @ref="@form" Validation="@(_modelValidator.ValidateValue)" ValidationDelay="0" >
     <MudDialog Class="blur dialog-background" TitleClass="blur dialog-background-title" ContentClass="dialog-background-surface py-2 pa-1" ActionsClass="dialog-background-surface">
         <TitleContent>
             @switch (ActionsModal)
@@ -29,7 +31,7 @@
             }
         </TitleContent>
         <DialogContent>
-            <DataAnnotationsValidator />
+           @*  <DataAnnotationsValidator /> *@
 
             <MudContainer>
                 <MudGrid Spacing="1" Justify="Justify.Center">
@@ -44,7 +46,7 @@
                                         <MudImage Src="images/changan_rojo_1.png" Alt="Modelo" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg " FallbackSrc="Images/changan_emblema.png" Width="125" Height="152" />
                                     </MudTooltip>
                                 </div>
-                                
+
 
                             </MudCardContent>
                         </MudCard>
@@ -65,12 +67,14 @@
                             </MudCardHeader>
                             <MudCardContent Style="padding-top: 0px;">
                                 <MudHidden @bind-Value="_model.Id" />
-                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Name" Label="Nombre" Required="true" MaxLength="80" Variant="Variant.Text"
+                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Name" Label="Nombre" Variant="Variant.Text"
                                               Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                              Validation="@(new Func<string, string>(ValidName))" />
-                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Description" Label="Descripci&oacute;n" Required="true" MaxLength="150" Variant="Variant.Text" 
-                                              Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                              Validation="@(new Func<string, string>(ValidDescription))" />
+                                              For="@(() => _model.Name)"
+                                              Immediate="true" />
+                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Description" Label="Descripci&oacute;n" Variant="Variant.Text"
+                                              Margin="Margin.Dense" Disabled="@(!_model.IsActive)" 
+                                              For="@(() => _model.Description)"
+                                              Immediate="true" />
 
                             </MudCardContent>
 
@@ -78,7 +82,7 @@
                     </MudItem>
                     <MudItem xs="12" sm="12">
                         <MudCard>
-                             <MudCardHeader>
+                            <MudCardHeader>
                                 <CardHeaderContent>
                                     <MudStack Row="true">
                                         <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Default" Style="font-size: 1.5rem;"></MudIcon>
@@ -93,9 +97,9 @@
                             <MudCardContent Style="padding-top: 0px;">
                                 <MudStack Row="true">
                                     <MudSelect @bind-Value="_model.BrandId" Label="Marca" AdornmentColor="Color.Primary" 
-                                               Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                               Required="true" RequiredError="Marca es requerido!"
-                                               Validation="@(new Func<int, string>(ValidSelect))">
+                                    Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
+                                               For="@(() => _model.BrandId)"
+                                               Immediate="true" >
                                         @foreach (var item in _brandList)
                                         {
                                             <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
@@ -104,9 +108,9 @@
 
 
                                     <MudSelect @bind-Value="_model.PolicyTypeId" Label="Tipo Poliza" AdornmentColor="Color.Secondary" 
-                                                Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                               Required="true" RequiredError="Tipo Poliza es requerido!"
-                                               Validation="@(new Func<int, string>(ValidSelect))">
+                                    Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
+                                               For="@(() => _model.PolicyTypeId)"
+                                               Immediate="true">
                                         @foreach (var item in _policyTypeList)
                                         {
                                             <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
@@ -145,7 +149,7 @@
         </DialogContent>
         <DialogActions>
             <MudContainer>
-                
+
                 <MudCard>
 
                     <MudCardHeader>
@@ -163,19 +167,19 @@
                             <MudStack Row="true">
 
                                 <MudButton OnClick="Cancel">Cerrar</MudButton>
-                                <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Guardar" Color="Color.Info" ButtonType="ButtonType.Submit" Size="Size.Small" />
+                                <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Guardar" OnClick="@(async () => await OnValidSubmit())" Color="Color.Info" Size="Size.Small" />
 
                             </MudStack>
                         </CardHeaderActions>
                     </MudCardHeader>
-                  
+
                 </MudCard>
-                    
+
             </MudContainer>
-            
+
         </DialogActions>
     </MudDialog>
- </EditForm>
+</MudForm>
 
 <style>
     .blur {
@@ -208,7 +212,7 @@
     public ActionsEnum ActionsModal { get; set; }
 
 
-    private MudForm? form;
+    private MudForm form;
     private Model _model { get; set; } = new Model();
 
     private string _errorMessage = string.Empty;
@@ -224,6 +228,8 @@
 
     private IEnumerable<SelectOption> _brandList { get; set; } = new List<SelectOption>();
     private IEnumerable<SelectOption> _policyTypeList { get; set; } = new List<SelectOption>();
+    
+    ModelValidator _modelValidator = new ModelValidator();
 
 
 
@@ -237,8 +243,8 @@
 
             _brandList = await ModuleActionsService.GetBrandOption(_iduser);
             _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(_iduser);
-            
-            await Task.Delay(1000);
+
+            await Task.Delay(500);
             _disabled = false;
         }
         else
@@ -279,36 +285,43 @@
 
     }
 
-    private async Task OnValidSubmit(EditContext context)
+    private async Task OnValidSubmit()
     {
-        _errorMessage = "";
-        var serviceResponse = await ModelService.UpdateModel(_model, _iduser);
+        await form.Validate();
 
-        if (serviceResponse.Processed)
+        if (form.IsValid)
         {
-            if (ActionsModal == ActionsEnum.Create)
+            _errorMessage = "";
+            var serviceResponse = await ModelService.UpdateModel(_model, _iduser);
+
+            if (serviceResponse.Processed)
             {
-                ActionsModal = ActionsEnum.Edit;
-                var _results = serviceResponse.Data ?? new List<ActionResult>();
-                var _result = _results.FirstOrDefault();
-                if (_result is not null)
+                if (ActionsModal == ActionsEnum.Create)
                 {
-                    IdModel = _result.LastId;
-                    await GetModel();
+                    ActionsModal = ActionsEnum.Edit;
+                    var _results = serviceResponse.Data ?? new List<ActionResult>();
+                    var _result = _results.FirstOrDefault();
+                    if (_result is not null)
+                    {
+                        IdModel = _result.LastId;
+                        await GetModel();
+                    }
                 }
+                _errorMessage = "Successfully...";
+                success = true;
+
             }
-            _errorMessage = "Successfully...";
-            success = true;
+            else
+            {
+                success = false;
+                _errorMessage = "Problemas al guardar Modelo...";
+                Console.WriteLine(serviceResponse.Message);
+                OpenNested();
 
+            }
         }
-        else
-        {
-            success = false;
-            _errorMessage = "Problemas al guardar Modelo...";
-            Console.WriteLine(serviceResponse.Message);
-            OpenNested();
 
-        }
+      
 
         StateHasChanged();
         await Task.CompletedTask;
@@ -331,54 +344,44 @@
     private void CloseNested() => _nestedVisible = false;
 
 
+    
 
-    // Validaciones Form
-
-    private string ValidDescription(string arg)
+    /// <summary>
+    /// Validacion del formulario 
+    /// </summary>
+    /// <typeparam name="Model"></typeparam>
+    public class ModelValidator : AbstractValidator<Model>
     {
-        if (string.IsNullOrWhiteSpace(arg))
+        public ModelValidator()
         {
-            return "Campo es requerido!";
+
+            RuleFor(x => x.Name)
+                .NotEmpty().WithMessage("Campo requerido")
+                .Length(3, 80).WithMessage("Campo requerido entre 3-80 carácteres");
+
+            RuleFor(x => x.Description)
+            .NotEmpty().WithMessage("Campo requerido")
+            .Length(5, 150).WithMessage("Campo requerido entre 5-150 carácteres");
+
+            RuleFor(x => x.BrandId)
+                .NotNull()
+                 .GreaterThan(0).WithMessage("seleccione una Marca.");
+
+            RuleFor(x => x.PolicyTypeId)
+           .NotNull()
+            .GreaterThan(0).WithMessage("seleccione un Tipo de Póliza.");
+
         }
-        if (arg.Length < 5)
-            return $"Debe contener almenos (5) caracteres";
-        if (arg.Length > 150)
-            return $"Debe contener máximo (150) caracteres";
-        if (!Regex.IsMatch(arg, @"[A-Za-z0-9]"))
-            return "Campo admite solo letras y números";
-
-        return string.Empty;
-    }
 
 
-
-    private string ValidName(string arg)
-    {
-        if (string.IsNullOrWhiteSpace(arg))
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
         {
-            return "Campo es requerido!";
-        }
-        if (arg.Length < 5)
-            return $"Debe contener almenos (5) caracteres";
-        if (arg.Length > 80)
-            return $"Debe contener máximo (80) caracteres";
-        if (!Regex.IsMatch(arg, @"[A-Za-z0-9]"))
-            return "Campo admite solo letras y números";
+            var result = await ValidateAsync(ValidationContext<Model>.CreateWithOptions((Model)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
 
-        return string.Empty;
-    }
-
-    private string ValidSelect(int arg)
-    {
-        if (string.IsNullOrWhiteSpace(arg.ToString()))
-        {
-            return "Campo es requerido!";
-        }
-        if (arg == 0)
-            return "Campo es requerido!";
-        
-
-        return string.Empty;
     }
 
     //private Order? selectedOrder;
