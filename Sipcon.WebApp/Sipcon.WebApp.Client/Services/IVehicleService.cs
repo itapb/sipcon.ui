@@ -8,7 +8,7 @@
         public Task<ApiResponse<Vehicle>> GetVehicle(int IdVehicle, int IdUser);
         public Task<ApiResponse<List<ActionResult>>> CreateVehicle(Vehicle Vehicle, int IdUser);
         public Task<ApiResponse<List<ActionResult>>> UpdateVehicle(Vehicle Vehicle, int IdUser);
-
+        public Task<ApiResponse<List<ActionResult>>> ActionsVehicle(List<PostAction> PostActions, int IdUser);
 
     }
 }

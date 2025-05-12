@@ -8,6 +8,7 @@
         public Task<ApiResponse<Model>> GetModel(int IdModel, int IdUser); 
         public Task<ApiResponse<List<ActionResult>>> CreateModel(Model Model, int IdUser);
         public Task<ApiResponse<List<ActionResult>>> UpdateModel(Model Model, int IdUser);
-        
+        public Task<ApiResponse<List<ActionResult>>> ActionsModel(List<PostAction> PostActions, int IdUser);
+
     }
 }

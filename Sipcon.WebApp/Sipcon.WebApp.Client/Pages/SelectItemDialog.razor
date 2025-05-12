@@ -1,0 +1,181 @@
+﻿@using Sipcon.WebApp.Client.Models
+@using Sipcon.WebApp.Client.Services
+@using Sipcon.WebApp.Client.Utils
+@using FluentValidation
+
+
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+
+<MudForm @ref="@form" >
+    <MudDialog Class="blur dialog-background" TitleClass="blur dialog-background-title" ContentClass="dialog-background-surface py-2 pa-1" ActionsClass="dialog-background-surface">
+
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3 mb-n1" />
+            @Title
+
+        </MudText>
+
+    </TitleContent>
+    <DialogContent>
+
+        <MudContainer>
+            <MudGrid Spacing="1" Justify="Justify.Center">
+
+                <MudItem xs="12" sm="12">
+                    <MudCard>
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudStack Row="true">
+                                    <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Default" Style="font-size: 1.5rem;"></MudIcon>
+                                    <MudText Typo="Typo.subtitle2">Opciones</MudText>
+                                </MudStack>
+
+                            </CardHeaderContent>
+                            <CardHeaderActions>
+
+                            </CardHeaderActions>
+                        </MudCardHeader>
+                        <MudCardContent Style="padding-top: 3px;">
+                            <MudStack Row="true">
+
+
+                                <MudSelect Typo="Typo.caption" @bind-Value="@_returnValue" Label="Concecionario" AdornmentColor="Color.Secondary"
+                                Margin="Margin.Dense" Disabled="false"
+                                           Validation="@_SelectValidator.Validation" Immediate="true">
+                                    @foreach (var model in SelectList)
+                                    {
+                                        <MudSelectItem Value="@model.Value">@model.Text</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudStack>
+
+
+                        </MudCardContent>
+                    </MudCard>
+
+
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+
+    </DialogContent>
+
+    <DialogActions>
+        <MudContainer>
+
+            <MudCard>
+
+                <MudCardHeader>
+                    <CardHeaderContent>
+
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <MudStack Row="true">
+
+                            <MudButton OnClick="Cancel">Cerrar</MudButton>
+                            <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Guardar" OnClick="@(async () => await OnValidSubmit())" Color="Color.Info" Size="Size.Small" />
+                        </MudStack>
+                    </CardHeaderActions>
+                </MudCardHeader>
+
+            </MudCard>
+
+        </MudContainer>
+    </DialogActions>
+
+</MudDialog>
+</MudForm>
+
+
+<style>
+    .blur {
+    backdrop-filter: blur(10px);
+    }
+
+    .dialog-background {
+    background-color: transparent;
+    }
+
+    .dialog-background-title {
+    background: rgb(from var(--mud-palette-info-lighten) r g b / 50%);
+    color: var(--mud-palette-white);
+    }
+
+    .dialog-background-surface {
+    background: rgb(from var(--mud-palette-surface) r g b / 75%);
+    }
+</style>
+
+@code {
+
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public IEnumerable<SelectOption> SelectList { get; set; } = ([]);
+
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+
+    private MudForm form;
+    private int _returnValue = 0;
+    private string _errorMessage = string.Empty;
+    bool success = false;
+
+    private int _iduser = 1; 
+
+
+    // The validation rules (overkill, I know, but very fluent):
+    SelectValidator<int> _SelectValidator = new SelectValidator<int>(x => x
+        .NotNull().WithMessage("Campo requerido")
+        .GreaterThan(0).WithMessage("Seleccione un Concesionario."));
+
+
+    private async Task OnValidSubmit()
+    {
+        await form.Validate();
+        if (form.IsValid)
+        {
+            MudDialog.Close(DialogResult.Ok(_returnValue));
+            
+        }
+
+        StateHasChanged();
+        await Task.CompletedTask;
+        
+    }
+
+
+    private void Cancel() => MudDialog.Cancel();
+
+
+    /// <summary>
+    /// Validacion del formulario
+    /// </summary>
+    /// <typeparam name="Vehicle"></typeparam>
+    public class SelectValidator<T> : AbstractValidator<T>
+    {
+       
+        public SelectValidator(Action<IRuleBuilderInitial<T, T>> rule)
+        {
+            rule(RuleFor(x => x));
+        }
+
+
+        private IEnumerable<string> ValidateValue(T arg)
+        {
+            var result = Validate(arg);
+            if (result.IsValid)
+                return new string[0];
+            return result.Errors.Select(e => e.ErrorMessage);
+        }
+
+        public Func<T, IEnumerable<string>> Validation => ValidateValue;
+
+    }
+}
