@@ -1,4 +1,4 @@
-﻿@page "/Models"
+﻿@page "/models"
 
 
 @using Sipcon.WebApp.Client.Models
@@ -25,6 +25,7 @@
    
     <MudDataGrid T="Model"
                  MultiSelection="true" Items="@_Models"
+                 SelectedItems="@_selectedModels"
                  SortMode="SortMode.Multiple"
                  Filterable="true"
                  Hideable="true"
@@ -46,7 +47,7 @@
                 {
                     <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
                                  Label="@module.Text"
-                                 OnClick="() => HandleMenuClick(module.ActionName)" />
+                                 OnClick="() => HandleMenuClick(module)" />
                 }
             </MudMenu>
         </ToolBarContent>
@@ -101,7 +102,24 @@
         <PagerContent>
             <MudDataGridPager T="Model" />
         </PagerContent>
-    </MudDataGrid> 
+    </MudDataGrid>
+
+    <MudDialog @bind-Visible="_nestedVisible">
+        <DialogContent>
+
+            @if (_success)
+            {
+                <MudText Class="nested">@_nestedErrorMessage</MudText>
+            }
+            else
+            {
+                <MudText Class="nested" Color="Color.Warning">@_nestedErrorMessage!</MudText>
+            }
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="CloseNested">Cerrar</MudButton>
+        </DialogActions>
+    </MudDialog>
 
 
 }
@@ -115,6 +133,12 @@ else
 @code {
     private IEnumerable<Model> _Models = new List<Model>();
     private string _errorMessage = string.Empty;
+    private string _nestedErrorMessage = string.Empty;
+    private bool _nestedVisible;
+
+    bool _success = false;
+
+
     private int _rowCount = 0;
     private int _pageSize = 100;
     private int _pageNumber = 1;
@@ -129,6 +153,8 @@ else
     private bool _loading = true;
     private string _moduleName = "VEHICULOS-MODELOS";
 
+
+    private HashSet<Model> _selectedModels = new([]);
     private IEnumerable<Module> _Modules { get; set; } = new List<Module>();
     private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
 
@@ -234,10 +260,15 @@ else
         await Task.CompletedTask;
     }
 
+    
+    private void OpenNested() => _nestedVisible = true;
 
-    private async Task HandleMenuClick(string actionName)
+    private void CloseNested() => _nestedVisible = false;
+
+
+    private async Task HandleMenuClick(ModuleAction module)
     {
-        switch (actionName)
+        switch (module.ActionName)
         {
             case "IMPORT":
                 await ImportItemsAsync();
@@ -246,13 +277,13 @@ else
                 await ExportItemsAsync();
                 break;
             case "ACTIVATE":
-                await ActivateItemsAsync();
+                await ActivateItemsAsync(module.IdAction, module.ActionName);
                 break;
             case "DEACTIVATE":
-                await DesactivateItemsAsync();
+                await DesactivateItemsAsync(module.IdAction, module.ActionName);
                 break;
             default:
-                Console.WriteLine($"Acción no reconocida: {actionName}");
+                Console.WriteLine($"Acción no reconocida: {module.ActionName}");
                 break;
         }
     }
@@ -269,18 +300,127 @@ else
         Console.WriteLine("Exportando elementos...");
     }
 
-    private async Task ActivateItemsAsync()
+    private async Task ActivateItemsAsync(int moduleId, string moduleActionName)
     {
-        // Lógica para importar elementos
-        Console.WriteLine("Activate elementos...");
+        Console.WriteLine("Activate Modelo(s)...");
+        if (_selectedModels.Any())
+        {
+            var option = new DialogOptions
+                {
+                    CloseButton = false,
+                    MaxWidth = MaxWidth.Small,
+                    FullWidth = true,
+                    BackdropClick = false
+                };
+            bool? result = await DialogService.ShowMessageBox(
+                "Activar Modelo(s)",
+                $"Seguro de Activar Modelos seleccionados? ",
+                yesText: "Si", noText: "No", "", option);
+
+            if (result == true)
+            {
+                List<PostAction> ActionList = ([]);
+
+                foreach (var vehicle in _selectedModels)
+                {
+                    var VehicleAction = new PostAction
+                        {
+                            RecordId = vehicle.Id,
+                            ModuleId = moduleId,
+                            ActionName = moduleActionName
+                        };
+                    ActionList.Add(VehicleAction);
+                }
+
+                _errorMessage = "";
+                var serviceResponse = await ModelService.ActionsModel(ActionList, _iduser);
+
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = "Modelo(s) activados...";
+
+                    OpenNested();
+                    await GetModels();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = "!Problemas al activar Modelos...";
+                    Console.WriteLine(serviceResponse.Message);
+                    OpenNested();
+
+                }
+            }
+
+        }
+
+        _selectedModels = new([]);
+        await Task.CompletedTask;
     }
 
-    private async Task DesactivateItemsAsync()
+    private async Task DesactivateItemsAsync(int moduleId, string moduleActionName)
     {
-        // Lógica para exportar elementos
-        Console.WriteLine("Desactivate elementos...");
-    }
+        Console.WriteLine("Inactivar Modelos...");
+        if (_selectedModels.Any())
+        {
+            var option = new DialogOptions
+                {
+                    CloseButton = false,
+                    MaxWidth = MaxWidth.Small,
+                    FullWidth = true,
+                    BackdropClick = false
+                };
+            bool? result = await DialogService.ShowMessageBox(
+                "Inactivar Modelo(s)",
+                $"Seguro de Inactivar Vehiculo(s) seleccionado(s)? ",
+                yesText: "Si", noText: "No", "", option);
 
+            if (result == true)
+            {
+                List<PostAction> ActionList = ([]);
+
+                foreach (var vehicle in _selectedModels)
+                {
+                    var VehicleAction = new PostAction
+                        {
+                            RecordId = vehicle.Id,
+                            ModuleId = moduleId,
+                            ActionName = moduleActionName
+                        };
+                    ActionList.Add(VehicleAction);
+                }
+
+                _errorMessage = "";
+                var serviceResponse = await ModelService.ActionsModel(ActionList, _iduser);
+
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = "Modelo(s) Inactivado(s)...";
+
+                    OpenNested();
+                    await GetModels();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = "!Problemas al Inactivar Modelo(s)...";
+                    Console.WriteLine(serviceResponse.Message);
+                    OpenNested();
+
+                }
+            }
+
+        }
+
+        _selectedModels = new([]);
+        await Task.CompletedTask;
+    }
    
 
 }

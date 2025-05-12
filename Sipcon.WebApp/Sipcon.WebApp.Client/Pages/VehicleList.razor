@@ -1,4 +1,4 @@
-﻿@page "/Vehicles"
+﻿@page "/vehicles"
 
 
 @using Sipcon.WebApp.Client.Models
@@ -23,7 +23,10 @@
 @if (_errorMessage == string.Empty)
 {
     <MudDataGrid T="Vehicle"
-    MultiSelection="true" Items="@_Vehicles"
+    MultiSelection="true" 
+    Items="@_Vehicles"
+    SelectedItems="@_selectedVehicles"
+
     SortMode="SortMode.Multiple"
     Filterable="true"
     Hideable="true"
@@ -45,7 +48,9 @@
                 {
                     <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
                     Label="@module.Text"
-                    OnClick="() => HandleMenuClick(module.ActionName)" />
+
+                    OnClick="() => HandleMenuClick(module)" />
+
                 }
             </MudMenu>
         </ToolBarContent>
@@ -127,6 +132,25 @@
         </PagerContent>
     </MudDataGrid>
 
+    <MudDialog @bind-Visible="_nestedVisible">
+        <DialogContent>
+
+            @if (_success)
+            {
+                <MudText Class="nested" >@_nestedErrorMessage</MudText>
+            }
+            else
+            {
+                <MudText Class="nested" Color="Color.Warning">@_nestedErrorMessage!</MudText>
+            }
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="CloseNested">Cerrar</MudButton>
+        </DialogActions>
+    </MudDialog>
+
+
+
 }
 else
 {
@@ -134,9 +158,14 @@ else
 
 }
 
+
 @code {
     private IEnumerable<Vehicle> _Vehicles = new List<Vehicle>();
     private string _errorMessage = string.Empty;
+    private string _nestedErrorMessage = string.Empty;
+    private bool _nestedVisible;
+    bool _success = false;
+
     private int _rowCount = 0;
     private int _pageSize = 100;
     private int _pageNumber = 1;
@@ -151,16 +180,16 @@ else
     private bool _loading = true;
     private string _moduleName = "VEHICULOS-VEHICULOS";
 
+
+    private HashSet<Vehicle> _selectedVehicles = new([]);
     private IEnumerable<Module> _Modules { get; set; } = new List<Module>();
     private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
 
     private List<BreadcrumbItem> _itemsNavigate =
-                   [
-       new("Home",href: "#", icon: Icons.Material.Filled.Home),
+    [
+        new("Home",href: "#", icon: Icons.Material.Filled.Home),
         new("Vehicles",  href: null, disabled: true, icon: Icons.Material.Filled.CardTravel),
     ];
-
-
 
 
     protected override async Task OnInitializedAsync()
@@ -207,13 +236,13 @@ else
                 _filter = _searchString;
                 await GetVehicles();
             }
-            
+
         }
     }
 
     private async Task HandleOnClickRefresh()
     {
-        
+
         Console.WriteLine($"Buscando: {_searchString}");
         _filter = string.Empty;
         _searchString = string.Empty;
@@ -224,7 +253,7 @@ else
 
     private async Task ClickEditVehicle(Vehicle item)
     {
-        
+
         DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = false };
         var parameters = new DialogParameters<VehicleDialog> { { x => x.IdVehicle, item.Id }, { x => x.ActionsModal, ActionsEnum.Edit } };
         var dialog = await DialogService.ShowAsync<VehicleDialog>("simple dialog", parameters, options);
@@ -234,7 +263,7 @@ else
             await GetVehicles();
             StateHasChanged();
         }
-       
+
         await Task.CompletedTask;
     }
 
@@ -251,15 +280,22 @@ else
 
             await GetVehicles();
             StateHasChanged();
-           
+
         }
-       
+
         await Task.CompletedTask;
     }
 
-    private async Task HandleMenuClick(string actionName)
+
+    private void OpenNested() => _nestedVisible = true;
+
+    private void CloseNested() => _nestedVisible = false;
+
+     
+
+    private async Task HandleMenuClick(ModuleAction module)
     {
-        switch (actionName)
+        switch (module.ActionName)
         {
             case "IMPORT":
                 await ImportItemsAsync();
@@ -268,25 +304,25 @@ else
                 await ExportItemsAsync();
                 break;
             case "ACTIVATE":
-                await ActivateItemsAsync();
+                await ActivateItemsAsync(module.IdAction, module.ActionName);
                 break;
             case "DEACTIVATE":
-                await DesactivateItemsAsync();
+                await DesactivateItemsAsync(module.IdAction, module.ActionName);
                 break;
             case "ASSIGN":
-                await AssignItemsAsync();
+                await AssignItemsAsync(module.IdAction, module.ActionName);
                 break;
             case "UNASSIGN":
-                await UnassignItemsAsync();
+                await UnassignItemsAsync(module.IdAction, module.ActionName);
                 break;
             case "AVAILABLE":
-                await AvailableItemsAsync();
+                await AvailableItemsAsync(module.IdAction, module.ActionName);
                 break;
             case "UNAVAILABLE":
-                await UnavailableItemsAsync();
+                await UnavailableItemsAsync(module.IdAction, module.ActionName);
                 break;
             default:
-                Console.WriteLine($"Acción no reconocida: {actionName}");
+                Console.WriteLine($"Acción no reconocida: {module.ActionName}");
                 break;
         }
     }
@@ -303,39 +339,368 @@ else
         Console.WriteLine("Exportando elementos...");
     }
 
-    private async Task ActivateItemsAsync()
+    private async Task ActivateItemsAsync(int moduleId, string moduleActionName )
     {
-        // Lógica para importar elementos
-        Console.WriteLine("Activate elementos...");
+        Console.WriteLine("Activate Vehiculos...");
+        if (_selectedVehicles.Any())
+        {
+            var option = new DialogOptions
+                {
+                    CloseButton = false,
+                    MaxWidth = MaxWidth.Small,
+                    FullWidth = true,
+                    BackdropClick = false
+                };
+            bool? result = await DialogService.ShowMessageBox(
+                "Confirmar Activación",
+                $"Seguro de Activar Vehiculos seleccionados? ",
+                yesText: "Si", noText: "No", "", option);
+
+            if (result == true)
+            {
+                List<PostAction> ActionList = ([]);
+
+                foreach (var vehicle in _selectedVehicles)
+                {
+                    var VehicleAction = new PostAction
+                        {
+                            RecordId = vehicle.Id,
+                            ModuleId = moduleId,
+                            ActionName = moduleActionName
+                        };
+                    ActionList.Add(VehicleAction);
+                }
+
+                _errorMessage = "";
+                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, _iduser);
+
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = "Vehiculo(s) activados...";
+
+                    OpenNested();
+                    await GetVehicles();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = "!Problemas al activar Vehiculos...";
+                    Console.WriteLine(serviceResponse.Message);
+                    OpenNested();
+
+                }                
+            }
+           
+        }
+       
+        _selectedVehicles = new([]);
+        await Task.CompletedTask;
     }
 
-    private async Task DesactivateItemsAsync()
+    private async Task DesactivateItemsAsync(int moduleId, string moduleActionName)
     {
-        // Lógica para exportar elementos
-        Console.WriteLine("Desactivate elementos...");
+        Console.WriteLine("Inactivar Vehiculos...");
+        if (_selectedVehicles.Any())
+        {
+            var option = new DialogOptions
+                {
+                    CloseButton = false,
+                    MaxWidth = MaxWidth.Small,
+                    FullWidth = true,
+                    BackdropClick = false
+                };
+            bool? result = await DialogService.ShowMessageBox(
+                "Confirmar Inactivar Vehiculo(s)",
+                $"Seguro de Inactivar Vehiculo(s) seleccionado(s)? ",
+                yesText: "Si", noText: "No", "", option);
+
+            if (result == true)
+            {
+                List<PostAction> ActionList = ([]);
+
+                foreach (var vehicle in _selectedVehicles)
+                {
+                    var VehicleAction = new PostAction
+                        {
+                            RecordId = vehicle.Id,
+                            ModuleId = moduleId,
+                            ActionName = moduleActionName
+                        };
+                    ActionList.Add(VehicleAction);
+                }
+
+                _errorMessage = "";
+                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, _iduser);
+
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = "Vehiculo(s) Inactivado(s)...";
+
+                    OpenNested();
+                    await GetVehicles();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = "!Problemas al Inactivar Vehiculo(s)...";
+                    Console.WriteLine(serviceResponse.Message);
+                    OpenNested();
+
+                }
+            }
+
+        }
+
+        _selectedVehicles = new([]);
+        await Task.CompletedTask;
     }
 
-    private async Task AssignItemsAsync()
+    private async Task AssignItemsAsync(int moduleId, string moduleActionName)
     {
-        // Lógica para importar elementos
-        Console.WriteLine("Assign elementos...");
+        Console.WriteLine("Asignar concesionario Vehiculo(s)...");
+        if (_selectedVehicles.Any())
+        {
+            var _DealerList = await ModuleActionsService.GetDealerOption(_iduser);
+
+            DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false };
+            var parameters = new DialogParameters<SelectItemDialog> { { x => x.SelectList, _DealerList }, { x => x.Title, "Asignar Concesionario Vehiculo(s)..." } };
+            var dialog = await DialogService.ShowAsync<SelectItemDialog>("simple dialog", parameters, options);
+            
+            StateHasChanged();
+
+            var result = await dialog.Result;
+            if (!result!.Canceled)
+            {
+                var _selectedDealer = (int)(result.Data ?? 0);
+                List<PostAction> ActionList = ([]);
+
+                foreach (var vehicle in _selectedVehicles)
+                {
+                    var VehicleAction = new PostAction
+                        {
+                            RecordId = vehicle.Id,
+                            ModuleId = moduleId,
+                            ActionName = moduleActionName,
+                            RelatedId = _selectedDealer 
+                        };
+                    ActionList.Add(VehicleAction);
+                }
+
+                _errorMessage = "";
+                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, _iduser);
+
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = "Vehiculo(s) Asignados...";
+
+                    OpenNested();
+                    await GetVehicles();
+                    StateHasChanged();
+                    
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = "!Problemas al Asignar Concecionarios...";
+                    Console.WriteLine(serviceResponse.Message);
+                    OpenNested();
+
+                }
+               
+            }
+
+        }
+
+        _selectedVehicles = new([]);
+        await Task.CompletedTask;
     }
 
-    private async Task UnassignItemsAsync()
+    private async Task UnassignItemsAsync(int moduleId, string moduleActionName)
     {
-        // Lógica para exportar elementos
-        Console.WriteLine("Unassign elementos...");
+        Console.WriteLine("Desasignar Concesionario a Vehiculos...");
+        if (_selectedVehicles.Any())
+        {
+
+            DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false };
+            var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Desasignar concesionario a Vehiculo(s)..." } };
+            var dialog = await DialogService.ShowAsync<TextItemDialog>("simple dialog", parameters, options);
+
+            StateHasChanged();
+
+            var result = await dialog.Result;
+            if (!result!.Canceled)
+            {
+                var _Observacion = (string)(result.Data ?? string.Empty);
+                List<PostAction> ActionList = ([]);
+
+                foreach (var vehicle in _selectedVehicles)
+                {
+                    var VehicleAction = new PostAction
+                        {
+                            RecordId = vehicle.Id,
+                            ModuleId = moduleId,
+                            ActionName = moduleActionName,
+                            ActionComment = _Observacion
+                        };
+                    ActionList.Add(VehicleAction);
+                }
+
+                _errorMessage = "";
+                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, _iduser);
+
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = "Concesionario Desasignado a Vehiculo(s)...";
+
+                    OpenNested();
+                    await GetVehicles();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = "!Problemas al Desasignar Concecionario...";
+                    Console.WriteLine(serviceResponse.Message);
+                    OpenNested();
+
+                }
+
+            }
+
+        }
+
+        _selectedVehicles = new([]);
+        await Task.CompletedTask;
     }
 
-    private async Task AvailableItemsAsync()
+    private async Task AvailableItemsAsync(int moduleId, string moduleActionName)
     {
-        // Lógica para importar elementos
-        Console.WriteLine("Available elementos...");
+        Console.WriteLine("Vehiculos Disponibles...");
+        if (_selectedVehicles.Any())
+        {
+            var option = new DialogOptions
+                {
+                    CloseButton = false,
+                    MaxWidth = MaxWidth.Small,
+                    FullWidth = true,
+                    BackdropClick = false
+                };
+            bool? result = await DialogService.ShowMessageBox(
+                "Confirmar Vehiculo(s) Disponibles",
+                $"Seguro de Habilitar Vehiculos seleccionados? ",
+                yesText: "Si", noText: "No", "", option);
+
+            if (result == true)
+            {
+                List<PostAction> ActionList = ([]);
+
+                foreach (var vehicle in _selectedVehicles)
+                {
+                    var VehicleAction = new PostAction
+                        {
+                            RecordId = vehicle.Id,
+                            ModuleId = moduleId,
+                            ActionName = moduleActionName
+                        };
+                    ActionList.Add(VehicleAction);
+                }
+
+                _errorMessage = "";
+                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, _iduser);
+
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = "Vehiculo(s) Habilitado(s)...";
+
+                    OpenNested();
+                    await GetVehicles();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = "!Problemas al Habilitar Vehiculo(s)...";
+                    Console.WriteLine(serviceResponse.Message);
+                    OpenNested();
+
+                }
+            }
+
+        }
+
+        _selectedVehicles = new([]);
+        await Task.CompletedTask;
     }
 
-    private async Task UnavailableItemsAsync()
+    private async Task UnavailableItemsAsync(int moduleId, string moduleActionName)
     {
-        // Lógica para exportar elementos
-        Console.WriteLine("Unavailable elementos...");
+        Console.WriteLine("Vehiculos No Disponibles...");
+        
+        if (_selectedVehicles.Any())
+        {
+
+            DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false };
+            var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Vehiculo(s) No Disponible(s)..." } };
+            var dialog = await DialogService.ShowAsync<TextItemDialog>("simple dialog", parameters, options);
+
+            StateHasChanged();
+
+            var result = await dialog.Result;
+            if (!result!.Canceled)
+            {
+                var _Observacion = (string)(result.Data ?? string.Empty);
+                List<PostAction> ActionList = ([]);
+
+                foreach (var vehicle in _selectedVehicles)
+                {
+                    var VehicleAction = new PostAction
+                        {
+                            RecordId = vehicle.Id,
+                            ModuleId = moduleId,
+                            ActionName = moduleActionName,
+                            ActionComment = _Observacion
+                        };
+                    ActionList.Add(VehicleAction);
+                }
+
+                _errorMessage = "";
+                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, _iduser);
+
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = "Vehiculo(s) no Disponibles...";
+
+                    OpenNested();
+                    await GetVehicles();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = "!Problemas al Inhabilitar Vehiculo(s)...";
+                    Console.WriteLine(serviceResponse.Message);
+                    OpenNested();
+
+                }
+
+            }
+
+        }
+
+        _selectedVehicles = new([]);
+        await Task.CompletedTask;
     }
 }

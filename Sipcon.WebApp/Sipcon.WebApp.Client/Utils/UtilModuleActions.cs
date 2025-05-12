@@ -34,28 +34,28 @@ namespace Sipcon.WebApp.Client.Utils
                     switch (module.ActionName)
                     {
                         case "IMPORT":
-                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.ImportExport, module.ActionName, Color.Secondary));
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.ImportExport, module.Id, module.ActionName, Color.Secondary));
                             break;
                         case "EXPORT":
-                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.ImportExport, module.ActionName, Color.Dark));
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.ImportExport, module.Id, module.ActionName, Color.Dark));
                             break;
                         case "ACTIVATE":
-                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.CheckCircle, module.ActionName, Color.Success));
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.CheckCircle, module.Id, module.ActionName, Color.Success));
                             break;
                         case "DEACTIVATE":
-                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.Cancel, module.ActionName, Color.Error));
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.Cancel, module.Id, module.ActionName, Color.Error));
                             break;
                         case "ASSIGN":
-                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.Assignment, module.ActionName, Color.Tertiary));
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.Assignment, module.Id, module.ActionName, Color.Tertiary));
                             break;
                         case "UNASSIGN":
-                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.Unarchive, module.ActionName, Color.Default));
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.Unarchive, module.Id, module.ActionName, Color.Default));
                             break;
                         case "AVAILABLE":
-                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.LockOpen, module.ActionName, Color.Primary));
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.LockOpen, module.Id, module.ActionName, Color.Primary));
                             break;
                         case "UNAVAILABLE":
-                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.Lock, module.ActionName, Color.Default));
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.Lock, module.Id, module.ActionName, Color.Default));
                             break;
 
                         default:

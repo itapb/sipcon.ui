@@ -14,7 +14,6 @@
         
 
 
-
         public async Task<ApiResponse<List<Vehicle>>> GetVehicles(int IdUser, int RowFrom = 0, string Filter = "")
         {
             ApiResponse<List<Vehicle>>? result;
@@ -125,7 +124,7 @@
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error al crear el modelo: {response.StatusCode} - {response.ReasonPhrase}");
+                    throw new Exception($"Error al crear el Vehiculo: {response.StatusCode} - {response.ReasonPhrase}");
                 }
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
@@ -204,7 +203,7 @@
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error al crear el modelo: {response.StatusCode} - {response.ReasonPhrase}");
+                    throw new Exception($"Error al Modificar un Vehiculo: {response.StatusCode} - {response.ReasonPhrase}");
                 }
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
@@ -244,7 +243,67 @@
             return result;
 
         }
-      
+
+        public async Task<ApiResponse<List<ActionResult>>> ActionsVehicle(List<PostAction> PostActions, int IdUser)
+        {
+            ApiResponse<List<ActionResult>>? result;
+            List<PostAction> PostActionList = ([]);
+            try
+            {
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
+                    IgnoreReadOnlyProperties = true,
+                    WriteIndented = true
+                };
+
+                
+                var response = await _http.PostAsJsonAsync($"api/Vehicle/PostActions?userId={IdUser}", PostActions, options);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Error accion Vehiculo: {response.StatusCode} - {response.ReasonPhrase}");
+                }
+
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
+                result = (result is null) ? new ApiResponse<List<ActionResult>>()
+                {
+                    Processed = false,
+                    Message = "El servidor devolvió una respuesta vacía."
+                } : result;
+
+            }
+            catch (HttpRequestException httpEx)
+            {
+                result = new ApiResponse<List<ActionResult>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
+                };
+            }
+            catch (NotSupportedException notSupportedEx)
+            {
+                result = new ApiResponse<List<ActionResult>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
+                };
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<ActionResult>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+
+            }
+            return result;
+
+        }
+
 
     }
 

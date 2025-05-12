@@ -223,7 +223,70 @@
             return result;
 
         }
-      
+
+
+        public async Task<ApiResponse<List<ActionResult>>> ActionsModel(List<PostAction> PostActions, int IdUser)
+        {
+            ApiResponse<List<ActionResult>>? result;
+            List<PostAction> PostActionList = ([]);
+            try
+            {
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
+                    IgnoreReadOnlyProperties = true,
+                    WriteIndented = true
+                };
+
+
+                var response = await _http.PostAsJsonAsync($"api/Model/PostActions?userId={IdUser}", PostActions, options);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Error Accion modelo: {response.StatusCode} - {response.ReasonPhrase}");
+                }
+
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
+                result = (result is null) ? new ApiResponse<List<ActionResult>>()
+                {
+                    Processed = false,
+                    Message = "El servidor devolvió una respuesta vacía."
+                } : result;
+
+            }
+            catch (HttpRequestException httpEx)
+            {
+                result = new ApiResponse<List<ActionResult>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
+                };
+            }
+            catch (NotSupportedException notSupportedEx)
+            {
+                result = new ApiResponse<List<ActionResult>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
+                };
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<ActionResult>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+
+            }
+            return result;
+
+        }
+
+
+
     }
 
 }
