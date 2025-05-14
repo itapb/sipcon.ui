@@ -163,7 +163,7 @@ else
                         </MudPaper>
                     </MudItem>
                     <MudItem xs="12" sm="4">
-                        <MudStack>
+                        <MudStack Style="height: 100%; flex: 1 1 auto;">
                             <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
                                 <MudGrid Spacing="2">
                                     <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Price" Label="Precio" Variant="Variant.Text" Required="true" RequiredError="Precio requerido"></MudTextField></MudItem>
@@ -180,7 +180,7 @@ else
                                     <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Cost" Label="Costo" Variant="Variant.Text" Required="true" RequiredError="Costo requerido"></MudTextField></MudItem>
                                 </MudGrid>
                             </MudPaper>
-                            <MudPaper Height="555px" Elevation="2" Class="pa-2 mud-text-align-center">
+                            <MudPaper Elevation="2" Class="pa-2 mud-text-align-center flex-grow-1" Style="flex: 1 1 auto; min-height: 0;">
                                 <MudStack>
                                     @if (!AnySelectedCheckbox)
                                     {
@@ -319,6 +319,7 @@ else
     {
         mMessage = "Modificar Respuesto";
         await LoadPartContextAsync(item.Id);
+        AnySelectedCheckbox = true;
         BrandSelected = Brands?.FirstOrDefault(f => f.Id == SelectedPart?.BrandId);
         TaxSelected = Taxes?.FirstOrDefault(f => f.Id == SelectedPart?.TaxId);  
         PartTypeSelected = PartTypes?.FirstOrDefault(f => f.Id == SelectedPart?.TypeId);
