@@ -1,81 +1,612 @@
 ﻿@page "/parts"
 @inject IJSRuntime JSRuntime
+@inject HttpClient Http
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+
 <MudText Typo="Typo.h6" GutterBottom="true">@mMessage</MudText>
- <MudForm @ref="form">
-    <div style="display: flex; flex-direction: column; border: 1px solid lightgrey;">
-        
-        <div style="flex-shrink: 0; background-color: #f0f0f0;" class="pa-2">          
-            <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
-                <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
-                    <MudStack>
-                        <MudCheckBox @bind-Value="CheckValue" Label="Activo" />
+<InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
+
+@if (SelectedPart == null)
+{
+    <MudDataGrid @ref="PartMudDataGrid" T="Part" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 235px)" Loading="_loading" @bind-CurrentPage="PartCurrentPage">
+        <ToolBarContent>
+            <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddPart"></MudIconButton>
+            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudSpacer />
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+                @foreach (var strmodulo in Modules!)
+                {
+                    <MudMenuItem Label="@strmodulo.ActionDisplay" OnClick="@(() => ClickMenuPart(strmodulo.ActionName))" />
+                }
+            </MudMenu>
+        </ToolBarContent>
+        <Columns>
+            <TemplateColumn>
+                <HeaderTemplate>
+                    <MudCheckBox @bind-Value="IsAllCheckBoxSelected" @bind-Value:after="AfterAsyncAllCheck" />
+                </HeaderTemplate>
+                <CellTemplate>
+                    <MudCheckBox @bind-Value="@context.Item.IsSelected" />
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.InnerCode" Title="Codigo Parte" Sortable="false" Filterable="false" />
+            <PropertyColumn Property="x => x.MasterCode" title="Codigo Fabrica" />
+            <PropertyColumn Property="x => x.Description" title="Descripcion" />
+            <PropertyColumn Property="x => x.Price" title="Precio" />
+            <TemplateColumn>
+                <HeaderTemplate>
+                    <MudText>Activo</MudText>
+                </HeaderTemplate>
+                <CellTemplate>
+                    <MudCheckBox @bind-Value="@context.Item.IsActive" ReadOnly="true" />
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn StickyRight="true">
+                <CellTemplate>
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditPart(context.Item)" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="Part" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        </PagerContent>
+    </MudDataGrid>
+}
+else
+{
+    <MudForm @ref="form">
+        <div style="display: flex; flex-direction: column; border: 1px solid lightgrey;">
+
+            <div style="flex-shrink: 0; background-color: #f0f0f0;" class="pa-2">
+                <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                    <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                        <MudStack>
+                            <MudCheckBox @bind-Value="SelectedPart.IsActive" Label="Activo" />
+                        </MudStack>
+                        <MudButtonGroup>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveClick">Aceptar</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="CancelClick">Cancelar</MudButton>
+                        </MudButtonGroup>
                     </MudStack>
-                    <MudButtonGroup>
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary">Aceptar</MudButton>
-                        <MudButton Variant="Variant.Filled" Color="Color.Secondary">Cancelar</MudButton>
-                    </MudButtonGroup>
-                </MudStack>
-            </MudPaper>
-        </div>
-        
-        <div id="scrollableGridContentStyled" style="overflow-y: auto; max-height:calc(100vh - 205px); padding: 8px; background-color: #f0f0f0;">
-           <MudGrid Spacing="2">
-                <MudItem xs="12" sm="8">
-                    <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
-                        <MudGrid Spacing="2">
-                            <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Descripcion" Variant="Variant.Text"></MudTextField></MudItem>
-                            <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Codigo Parte" Variant="Variant.Text"></MudTextField></MudItem>
-                            <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Codigo Fabrica" Variant="Variant.Text"></MudTextField></MudItem>
-                            <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Codigo Alterno" Variant="Variant.Text"></MudTextField></MudItem>
-                            <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Codigo Barra" Variant="Variant.Text"></MudTextField></MudItem>
-                            <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Tipo" Variant="Variant.Text"></MudTextField></MudItem>
-                            <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Familia" Variant="Variant.Text"></MudTextField></MudItem>
-                            <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="SubFamilia" Variant="Variant.Text"></MudTextField></MudItem>
-                            <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Planta" Variant="Variant.Text"></MudTextField></MudItem>
-                            <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Marca" Variant="Variant.Text"></MudTextField></MudItem>
-                            <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Modelo" Variant="Variant.Text"></MudTextField></MudItem>
-                            <MudItem xs="6"> <MudTextField @bind-Value="TextValue" Label="Unidad Medida" Variant="Variant.Text"></MudTextField></MudItem>
-                            <MudItem xs="6"> <MudTextField @bind-Value="TextValue" Label="Tamano" Variant="Variant.Text"></MudTextField></MudItem>
-                            <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Clasificacion" Variant="Variant.Text"></MudTextField></MudItem>
-                            <MudItem xs="6"> <MudTextField @bind-Value="TextValue" Label="Empaque" Variant="Variant.Text"></MudTextField></MudItem>
-                            <MudItem xs="6"> <MudTextField @bind-Value="TextValue" Label="MiVenta" Variant="Variant.Text"></MudTextField></MudItem>
-                        </MudGrid>
-                    </MudPaper>
-                </MudItem>
-                <MudItem xs="12" sm="4">
-                    <MudStack>
+                </MudPaper>
+            </div>
+
+            <div id="scrollableGridContentStyled" style="overflow-y: auto; max-height:calc(100vh - 205px); padding: 8px; background-color: #f0f0f0;">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="8">
                         <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
                             <MudGrid Spacing="2">
-                                <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Precio" Variant="Variant.Text"></MudTextField></MudItem>
-                                <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Deto" Variant="Variant.Text"></MudTextField></MudItem>
-                                <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Taplado" Variant="Variant.Text"></MudTextField></MudItem>
-                                <MudItem xs="12"><MudTextField @bind-Value="TextValue" Label="Gasto" Variant="Variant.Text"></MudTextField></MudItem>
+                                <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Description" Label="Descripcion" Variant="Variant.Text" Required="true" RequiredError="Descripcion es requerido"></MudTextField></MudItem>
+                                <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.InnerCode" Label="Codigo Parte" Variant="Variant.Text" Required="true" RequiredError="Codigo Parte es requerido"></MudTextField></MudItem>
+                                <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.MasterCode" Label="Codigo Fabrica" Variant="Variant.Text" Required="true" RequiredError="Codigo Fabrica es requerido"></MudTextField></MudItem>
+                                <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.AlterCode" Label="Codigo Alterno" Variant="Variant.Text"></MudTextField></MudItem>
+                                <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.ReplacementCode" Label="Codigo Remplazo" Variant="Variant.Text"></MudTextField></MudItem>
+                                <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.BarCode" Label="Codigo Barra" Variant="Variant.Text"></MudTextField></MudItem>
+                                <MudItem xs="12">
+                                    <MudSelect T="PartType" Label="Tipo" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertPartTypeFunc" Value="PartTypeSelected" ValueChanged="OnPartTypeValueChanged" Required="true" RequiredError="Tipo requerido">
+                                        @foreach (var parttype in PartTypes!)
+                                        {
+                                            <MudSelectItem Value="@parttype" />
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudSelect T="Family" Label="Familia" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertFamilyFunc" Value="FamilySelected" ValueChanged="OnFamilyValueChanged" Required="true" RequiredError="Familia requerida">
+                                        @foreach (var family in FilteredFamilies ?? Enumerable.Empty<Family>())
+                                        {
+                                            <MudSelectItem Value="@family" />
+                                        }
+
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudSelect T="SubFamily" Label="Sub Familia" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertSubFamilyFunc" Value="SubFamilySelected" ValueChanged="OnSubFamilyValueChanged" Required="true" RequiredError="Sub Familia requerida">
+                                        @foreach (var subfamily in FilteredSubFamilies ?? Enumerable.Empty<SubFamily>())
+                                        {
+                                            <MudSelectItem Value="@subfamily" />
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudSelect T="Contact" Label="Planta" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertSupplierFunc" Value="SupplierSelected" ValueChanged="OnSupplierValueChanged" Required="true" RequiredError="Planta requerida">
+                                        @foreach (var supplier in Suppliers!)
+                                        {
+                                            <MudSelectItem Value="@supplier" />
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudSelect T="Brand" Label="Marca" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertBrandFunc" Value="BrandSelected" ValueChanged="OnBrandValueChanged" Required="true" RequiredError="Marca requerida">
+                                        @foreach (var brand in Brands!)
+                                        {
+                                            <MudSelectItem Value="@brand" />
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudSelect T="RelatedModel" Label="Modelos" MultiSelection="true" SelectAll="true" FullWidth="true" SelectedValues="SelectedRelatedModels" SelectedValuesChanged="OnSelectedRelatedModels" Required="true" RequiredError="Algun Modelo requerido" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetModelMultiSelectionText))">
+                                        @foreach (var relatedmodel in FilteredRelatedModels ?? Enumerable.Empty<RelatedModel>())
+                                        {
+                                            <MudSelectItem T="RelatedModel" Value="@relatedmodel">@relatedmodel</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="6">
+                                    @* <MudTextField @bind-Value="SelectedPart.UmId" Label="Unidad Medida" Variant="Variant.Text"></MudTextField> *@
+                                    <MudSelect T="Um" Label="Unidad Medida" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertUmFunc" Value="UmSelected" ValueChanged="OnUmValueChanged" Required="true" RequiredError="Unidad Medida requerido">
+                                        @foreach (var um in Ums ?? Enumerable.Empty<Um>())
+                                        {
+                                            <MudSelectItem Value="@um"></MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudSelect T="string" @bind-Value="SelectedPart.Size" Label="Tamaño" Immediate="true" FitContent="true" FullWidth="true" Required="true" RequiredError="Tamano requerida">
+                                        @foreach (var msize in Sizes)
+                                        {
+                                            <MudSelectItem T="string" Value="@msize">@msize</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudSelect T="string" @bind-Value="SelectedPart.Rating" Label="Clasificacion" Immediate="true" FitContent="true" FullWidth="true" Required="true" RequiredError="Clasificacion requerida">
+                                        @foreach (var rating in Ratings)
+                                        {
+                                            <MudSelectItem T="string" Value="@rating">@rating</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="6"> <MudTextField @bind-Value="SelectedPart.Packing" Label="Empaque" Variant="Variant.Text" Required="true" RequiredError="Empaque requerido"></MudTextField></MudItem>
+                                <MudItem xs="6"> <MudTextField @bind-Value="SelectedPart.MinSale" Label="Mini Venta" Variant="Variant.Text" Required="true" RequiredError="Mini Venta requerido"></MudTextField></MudItem>
                             </MudGrid>
                         </MudPaper>
-                        <MudPaper Height="548px" Elevation="2" Class="pa-2 mud-text-align-center">
-                            <MudStack>
-                                <MudCheckBox @bind-Value="CheckValue" Label="Venta"></MudCheckBox>
-                                <MudCheckBox @bind-Value="CheckValue" Label="Compra"></MudCheckBox>
-                                <MudCheckBox @bind-Value="CheckValue" Label="Garantia"></MudCheckBox>
-                                <MudCheckBox @bind-Value="CheckValue" Label="Licencia"></MudCheckBox>
-                                <MudCheckBox @bind-Value="CheckValue" Label="Original"></MudCheckBox>
-                                <MudCheckBox @bind-Value="CheckValue" Label="Serializable"></MudCheckBox>
-                            </MudStack>
-                        </MudPaper>
-                    </MudStack>
-                </MudItem>
-            </MudGrid>
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudStack>
+                            <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                                <MudGrid Spacing="2">
+                                    <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Price" Label="Precio" Variant="Variant.Text" Required="true" RequiredError="Precio requerido"></MudTextField></MudItem>
+                                    <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Discount" Label="Dcto" Variant="Variant.Text" Required="true" RequiredError="Dcto requerido"></MudTextField></MudItem>
+                                    <MudItem xs="12">
+                                        @* <MudTextField @bind-Value="SelectedPart.TaxId" Label="Impuesto" Variant="Variant.Text"></MudTextField> *@
+                                        <MudSelect T="Tax" Label="Impuesto" Immediate="true" FitContent="true" ToStringFunc="@ConvertTaxFunc" Value="TaxSelected" ValueChanged="OnTaxValueChanged" Required="true" RequiredError="Impuesto requerido" FullWidth="true">
+                                            @foreach (var tax in Taxes!)
+                                            {
+                                                <MudSelectItem Value="@tax" />
+                                            }
+                                        </MudSelect>
+                                    </MudItem>
+                                    <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Cost" Label="Costo" Variant="Variant.Text" Required="true" RequiredError="Costo requerido"></MudTextField></MudItem>
+                                </MudGrid>
+                            </MudPaper>
+                            <MudPaper Height="555px" Elevation="2" Class="pa-2 mud-text-align-center">
+                                <MudStack>
+                                    @if (!AnySelectedCheckbox)
+                                    {
+                                        <MudText Typo = "Typo.caption" Color = "Color.Error"> Algunos requeridos </MudText>
+                                    }
+                                    <MudCheckBox @bind-Value="SelectedPart.Sell" Label="Venta"></MudCheckBox>
+                                    <MudCheckBox @bind-Value="SelectedPart.Purchase" Label="Compra"></MudCheckBox>
+                                    <MudCheckBox @bind-Value="SelectedPart.Warranty" Label="Garantia"></MudCheckBox>
+                                    <MudCheckBox @bind-Value="SelectedPart.License" Label="Licencia"></MudCheckBox>
+                                    <MudCheckBox @bind-Value="SelectedPart.Original" Label="Original"></MudCheckBox>
+                                    <MudCheckBox @bind-Value="SelectedPart.Serializable" Label="Serializable"></MudCheckBox>
+                                </MudStack>
+                            </MudPaper>
+                        </MudStack>
+                    </MudItem>
+                </MudGrid>
 
+            </div>
         </div>
-    </div>
 
-    <MudScrollToTop Selector="#scrollableGridContentStyled">
-        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.ArrowUpward" />
-    </MudScrollToTop>   
-</MudForm>
-@code { 
-    public string? TextValue { get; set; }
-    public bool CheckValue { get; set; }
-    public string? mMessage { get; set; } = "Partes";
+        <MudScrollToTop Selector="#scrollableGridContentStyled">
+            <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.ArrowUpward" />
+        </MudScrollToTop>
+    </MudForm>
+}
+
+@code {
+    bool AnySelectedCheckbox = false;
+    int PartCurrentPage = 0;
+    bool _loading = true;
+    string searchString = "";
+    string mMessage = "Respuestos";
+    string SelectedSize = "S";
+    string[] Sizes = ["S", "M", "L"];
+    string[] Ratings = ["A", "B", "C", "D", "E", "F"];
+
+    private List<RelatedModel>? RelatedModels;
+    private Func<RelatedModel?, string> ConvertModelFunc = model => model?.ModelName!;
+
+    private Func<List<string>?, string> GetModelMultiSelectionText = selectedmodels => string.Join(", ", selectedmodels?.Select(m => m) ?? Enumerable.Empty<string>());
+    //private Func<List<string>?, string> GetModelMultiSelectionText = selectedmodels => $"{selectedmodels?.Count} Modelo{(selectedmodels?.Count > 1 ? "s han" : " a")} sido seleccionado";
+    private IEnumerable<RelatedModel> SelectedRelatedModels { get; set; } = new HashSet<RelatedModel>();
+
+    private List<RelatedModel>? FilteredRelatedModels;
+
+    private List<Brand>? Brands;
+    private Brand? BrandSelected;
+    private Func<Brand?, string> ConvertBrandFunc = brand => brand?.Name!;
+
+    private List<Contact>? Suppliers;
+    private Contact? SupplierSelected;
+    private Func<Contact?, string> ConvertSupplierFunc = supplier => supplier?.FirstName!;
+
+    private List<SubFamily>? SubFamilies;
+    private List<SubFamily>? FilteredSubFamilies;
+    private SubFamily? SubFamilySelected;
+    private Func<SubFamily?, string> ConvertSubFamilyFunc = subfamily => subfamily?.Name!;
+
+    private List<Family>? Families;
+    private List<Family>? FilteredFamilies;
+    private Family? FamilySelected;
+    private Func<Family?, string> ConvertFamilyFunc = family => family?.Name!;
+
+    private List<PartType>? PartTypes;
+    private PartType? PartTypeSelected;
+    private Func<PartType?, string> ConvertPartTypeFunc = parttype => parttype?.Name!;
+
+    private List<Um>? Ums;
+    private Um? UmSelected;
+    private Func<Um?, string> ConvertUmFunc = um => um?.Name!;
+
+    private List<Tax>? Taxes;
+    private Tax? TaxSelected;
+    private Func<Tax?, string> ConvertTaxFunc = tax => tax?.Name!;
+
+    bool IsAllCheckBoxSelected = false;
+
+
+
+    private MudDataGrid<Part>? PartMudDataGrid;
+
+    private Part? SelectedPart;
     private MudForm? form;
+    private List<Module>? Modules;
+
+    private async Task LoadPartContextAsync(int? partId)
+    {
+        var response = await Http.GetAsync($"api/Part/GetOneWithContext?partId={partId}&userId=1");
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadFromJsonAsync<WebApiResponse<PartDetails>>();
+            if (content != null)
+            {
+                Suppliers = content.data?.Suppliers;
+                PartTypes = content.data?.Types;
+                RelatedModels = content.data?.Models;
+                SubFamilies = content.data?.Subfamilies;
+                Families = content.data?.Families;
+                Ums = content.data?.Ums;
+                Taxes = content.data?.Taxes;
+                Brands = content.data?.Brands;
+                SelectedPart = content.data?.Part;
+            }
+        }
+    }
+
+
+    private async Task ClickAddPart(MouseEventArgs args)
+    {
+        mMessage = "Agregar Respuesto";
+        await LoadPartContextAsync(0);
+        AnySelectedCheckbox = true;
+        SelectedPart!.Serializable = false;
+        SelectedPart!.Sell = false;
+        SelectedPart!.Purchase = false;
+        SelectedPart!.Warranty = false;
+        SelectedPart!.License = false;
+        SelectedPart!.Original = false;
+        SelectedPart!.IsActive = true;
+        SelectedPart!.UmName = null;
+        SelectedPart!.Cost = null;
+        SelectedPart!.Discount = null;
+        SelectedPart!.Price = null;
+        SelectedPart!.MinSale = null;
+        SelectedPart!.Packing = null;
+        TaxSelected = null;
+        UmSelected = null;
+        BrandSelected = null;
+        PartTypeSelected = null;
+        FamilySelected = null;
+        SubFamilySelected = null;
+        SupplierSelected = null;
+        SelectedRelatedModels = new HashSet<RelatedModel>();
+    }
+    private async Task ClickEditPart(Part item)
+    {
+        mMessage = "Modificar Respuesto";
+        await LoadPartContextAsync(item.Id);
+        BrandSelected = Brands?.FirstOrDefault(f => f.Id == SelectedPart?.BrandId);
+        TaxSelected = Taxes?.FirstOrDefault(f => f.Id == SelectedPart?.TaxId);  
+        PartTypeSelected = PartTypes?.FirstOrDefault(f => f.Id == SelectedPart?.TypeId);
+        if (PartTypeSelected != null)
+        {
+            FilterFamilies(PartTypeSelected?.Id);
+            FamilySelected = FilteredFamilies?.FirstOrDefault(f => f.Id == SelectedPart?.FamilyId);
+
+            if (FamilySelected != null)
+            {
+                FilterSubFamilies(FamilySelected!.Id);
+                SubFamilySelected = FilteredSubFamilies?.FirstOrDefault(f => f.FamilyId == FamilySelected.Id);
+            }
+        }
+
+        SupplierSelected = Suppliers?.FirstOrDefault(f => f.Id == SelectedPart?.SupplierId);
+        if (SupplierSelected != null)
+        {
+            FilterRealtedModels(SupplierSelected?.Id);
+            SelectedRelatedModels = new HashSet<RelatedModel>(FilteredRelatedModels?.Where(m => m.IsRelated) ?? Enumerable.Empty<RelatedModel>());
+        }
+    }
+    private async Task SaveClick()
+    {
+        await form!.Validate();
+        await ValidateCheckBoxs();
+        if (AnySelectedCheckbox && form.IsValid)
+        {
+            var mPostPart = new PostPart { Part = SelectedPart, Models = RelatedModels };
+            var strJsonPostPart = System.Text.Json.JsonSerializer.Serialize(mPostPart);
+            var result_Post_Part = await Http.PostAsync("api/Part/PostParts?userId=1", new StringContent(strJsonPostPart, null, "application/json"));
+            if (result_Post_Part.IsSuccessStatusCode)
+            {
+                var sucessContent = await result_Post_Part.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
+                if ((sucessContent?.data![0].insertedRows == 1 || sucessContent?.data![0].updatedRows == 1))
+                {
+                    var result = await DialogService.ShowDialog("Respuesto Procesado!", "Respuesto", "OK", Color.Primary, Icons.Material.Filled.Commit);
+                    if (!result!.Canceled)
+                    {
+                        mMessage = "Respuesto";
+                        SelectedPart = null;
+                    }
+                }
+                
+            }
+            else if (result_Post_Part.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                var conflictContent = await result_Post_Part.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+                await DialogService.ShowDialog(conflictContent?.message!, "Error Respuesto", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+            else
+            {
+                var errorMessage = await result_Post_Part.Content.ReadAsStringAsync();
+                throw new Exception(errorMessage);
+            }
+        }
+    }
+    private void CancelClick()
+    {
+        mMessage = "Respuestos"; SelectedPart = null;
+    }
+    private async Task ClickMenuPart(string? actionName)
+    {
+        if (actionName == "EXPORT")
+        {
+            _loading = true;
+            var ResultZonas = await Http.GetAsync($"api/Part/Export?filter={searchString}&userId=1");
+            if (ResultZonas.IsSuccessStatusCode)
+            {
+                var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
+                var base64File = Convert.ToBase64String(fileContent);
+                var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+                await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Partes.xlsx");
+            }
+            _loading = false;
+            return;
+        }
+        else if (actionName == "IMPORT")
+        {
+            await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('[type=file]').click()");
+            return;
+        }
+        var SelectedActions = (PartMudDataGrid != null && ("ACTIVATE,DEACTIVATE".IndexOf(actionName!) > -1)) ?
+                            (PartMudDataGrid.FilteredItems.Where(item => item.IsSelected)
+                                                             .Select(item => new Client.Models.Action
+                                                             {
+                                                                 UserId = 1,
+                                                                 RecordId = item.Id,
+                                                                 ModuleId = Modules!.FirstOrDefault()?.Id,
+                                                                 actionName = actionName,
+                                                                 ActionComment = "",
+                                                                 RelatedId = 0
+                                                             }).ToList()
+                             ) : null;
+
+        var result_Post_Actions = (SelectedActions is not null && SelectedActions.Count > 0) ? await Http.PostAsync("api/Part/PostActions?userId=1", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
+        if (result_Post_Actions is not null && result_Post_Actions.IsSuccessStatusCode)
+        {
+            var resultAction = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
+            if (resultAction?.data![0].updatedRows > 0)
+            {
+                var result = await DialogService.ShowDialog("Parte(s) Actualizado(s)!", "Partes", "OK", Color.Primary, Icons.Material.Filled.Commit);
+                await PartMudDataGrid!.ReloadServerData();
+            }
+
+
+        }
+        await Task.CompletedTask;
+    }
+    private async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            _loading = true;
+            searchString = text;
+            await PartMudDataGrid!.ReloadServerData();
+        }
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        Modules = await Http.GetFromJsonAsync<List<Module>>("api/Module/GetAll?moduleName=INVENTARIO-REPUESTOS&userId=1");
+    }
+
+    private async Task<GridData<Part>> ServerReload(GridState<Part> state)
+    {
+        IsAllCheckBoxSelected = false;
+        _loading = true;
+        var totalItems = 0;
+        var mOffset = state.Page * state.PageSize;
+        IEnumerable<Part> data;
+        HttpResponseMessage response = await Http.GetAsync($"api/Part/GetAll?rowFrom={mOffset}&filter={searchString}&userId=1");
+
+        if (response.IsSuccessStatusCode)
+        {
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Part>>>();
+            totalItems = content2!.total ?? 0;
+            data = content2!.data ?? new List<Part>();
+        }
+        else
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
+
+        var sortDefinition = state.SortDefinitions.FirstOrDefault();
+        if (sortDefinition != null)
+        {
+            switch (sortDefinition.SortBy)
+            {
+                case nameof(Part.InnerCode):
+                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.MasterCode);
+                    break;
+                case nameof(Part.MasterCode):
+                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.InnerCode);
+                    break;
+                case nameof(Part.Description):
+                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.Description);
+                    break;
+                case nameof(Part.Price):
+                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.Price);
+                    break;
+            }
+        }
+        _loading = false;
+        return new GridData<Part> { TotalItems = totalItems, Items = data };
+    }
+
+    private async Task AfterAsyncAllCheck()
+    {
+        if (PartMudDataGrid != null)
+            PartMudDataGrid.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
+        await Task.CompletedTask;
+    }
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        if (e.FileCount == 1)
+        {
+            var file = e.File;
+            const long maxAllowedSize = 10 * 1024 * 1024; // 10MB
+            if (file.Size == 0)
+            {
+                await DialogService.ShowDialog("Archivo esta vacio", "Error de Archivo", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+            else if (file.Size > maxAllowedSize)
+            {
+                await DialogService.ShowDialog("Tamaño del archivo excede el limite maximo permitido de 10MB.", "Error de Archivo", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+            else
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
+
+                var content = new StreamContent(stream);
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+                // Create a multipart form data content
+                var formData = new MultipartFormDataContent();
+                formData.Add(content, "file", file.Name);
+                _loading = true;
+
+                var response = await Http.PostAsync("api/Zone/Import?userId=1", formData);
+                if (response.IsSuccessStatusCode)
+                {
+                    await DialogService.ShowDialog("Archivo cargado con exito!.", "Partes", "OK", Color.Primary, Icons.Material.Filled.Commit);
+                    await PartMudDataGrid!.ReloadServerData();
+                }
+                else
+                {
+                    await DialogService.ShowDialog("Carga de archivo fallo!", "Error al cargar", "OK", Color.Error, Icons.Material.Filled.Error);
+                    _loading = false;
+                }
+            }
+        }
+        await Task.CompletedTask;
+    }
+    private void FilterRealtedModels(int? supplierId)
+    {
+        SelectedRelatedModels = new HashSet<RelatedModel>();
+        FilteredRelatedModels = RelatedModels?.Where(m => m.SupplierId == supplierId).ToList();
+    }
+    private void FilterFamilies(int? typePartId)
+    {
+        FamilySelected = null;
+        SubFamilySelected = null;
+        FilteredSubFamilies = null;
+        FilteredFamilies = Families?.Where(f => f.Id == typePartId).ToList();
+    }
+    private void FilterSubFamilies(int? familyId)
+    {
+        SubFamilySelected = null;
+        FilteredSubFamilies = SubFamilies?.Where(f => f.FamilyId == familyId).ToList();
+    }
+    private Task OnPartTypeValueChanged(PartType selectedPartType)
+    {
+        PartTypeSelected = selectedPartType;
+        SelectedPart!.TypeId = selectedPartType?.Id;
+        FilterFamilies(selectedPartType?.Id);
+        return Task.CompletedTask;
+    }
+    private Task OnFamilyValueChanged(Family selectedFamily)
+    {
+        FamilySelected = selectedFamily;
+        SelectedPart!.FamilyId = selectedFamily?.Id;
+        FilterSubFamilies(selectedFamily?.Id);
+        return Task.CompletedTask;
+    }
+    private Task OnSubFamilyValueChanged(SubFamily selectedSubFamily)
+    {
+        SubFamilySelected = selectedSubFamily;
+        SelectedPart!.SubFamilyId = selectedSubFamily?.Id;
+        return Task.CompletedTask;
+    }
+    private Task OnSupplierValueChanged(Contact selectedSupplier)
+    {
+        SupplierSelected = selectedSupplier;
+        SelectedPart!.SupplierId = selectedSupplier?.Id;
+        RelatedModels?.Where(m => m.IsRelated).ToList().ForEach(m => m.IsRelated = false);
+        FilterRealtedModels(selectedSupplier?.Id);
+        return Task.CompletedTask;
+    }
+    private Task OnBrandValueChanged(Brand selectedBrand)
+    {
+        BrandSelected = selectedBrand;
+        SelectedPart!.BrandId = selectedBrand?.Id;
+        return Task.CompletedTask;
+    }
+    private Task OnUmValueChanged(Um selectedUm)
+    {
+        UmSelected = selectedUm;
+        SelectedPart!.UmId = selectedUm?.Id;
+        return Task.CompletedTask;
+    }
+    private Task OnTaxValueChanged(Tax selectedTax)
+    {
+        TaxSelected = selectedTax;
+        SelectedPart!.TaxId = selectedTax?.Id;
+        return Task.CompletedTask;
+    }
+    private Task OnSelectedRelatedModels(IEnumerable<RelatedModel> args)
+    {
+        RelatedModels?.Where(m => m.IsRelated && m.SupplierId == SupplierSelected?.Id).ToList().ForEach(m => m.IsRelated = false);
+        args.ToList().ForEach(m => m.IsRelated = true);
+        SelectedRelatedModels = args;
+        return Task.CompletedTask;
+    }
+    private Task ValidateCheckBoxs() 
+    { 
+         AnySelectedCheckbox = (SelectedPart!.Serializable ?? false) || (SelectedPart!.Sell ?? false) || (SelectedPart!.Purchase ?? false) || (SelectedPart!.Warranty ?? false) || (SelectedPart!.License ?? false) || (SelectedPart!.Original ?? false);
+         return Task.CompletedTask;
+    }
+
 }

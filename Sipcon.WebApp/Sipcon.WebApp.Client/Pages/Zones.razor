@@ -13,12 +13,12 @@
     <MudDataGrid @ref="ZoneMudDataGrid" T="Zone" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 235px)" Loading="_loading" @bind-CurrentPage="ZoneCurrentPage">
         <ToolBarContent>
             <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddZone"></MudIconButton>
-            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s=>OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             <MudSpacer />
             <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
                 @foreach (var strmodulo in Modules!)
                 {
-                    <MudMenuItem Label="@strmodulo.ActionDisplay" OnClick="@(()=>ClickMenuZone(strmodulo.ActionName))" />
+                    <MudMenuItem Label="@strmodulo.ActionDisplay" OnClick="@(() => ClickMenuZone(strmodulo.ActionName))" />
                 }
             </MudMenu>
         </ToolBarContent>
@@ -30,9 +30,10 @@
                 <CellTemplate>
                     <MudCheckBox @bind-Value="@context.Item.IsSelected" />
                 </CellTemplate>
-            </TemplateColumn>           
+            </TemplateColumn>
             <PropertyColumn Property="x => x.Name" title="Zona" Sortable="false" Filterable="false" />
             <PropertyColumn Property="x => x.WarehouseName" title="Almacen" />
+            <PropertyColumn Property="x => x.Size" title="Tamaño" />
             <TemplateColumn>
                 <HeaderTemplate>
                     <MudText>Activo</MudText>
@@ -43,47 +44,54 @@
             </TemplateColumn>
             <TemplateColumn StickyRight="true">
                 <CellTemplate>
-                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="()=> ClickEditZone(context.Item)" />
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditZone(context.Item)" />
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
         <PagerContent>
-            <MudDataGridPager T="Zone" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+            <MudDataGridPager T="Zone" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
         </PagerContent>
     </MudDataGrid>
 }
 else
 {
     <div style="flex-shrink: 0; background-color: #f0f0f0;" class="pa-2">
-    <MudForm @ref="form">
-        <MudGrid Spacing="2">
-            <MudItem xs="12">
-                <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
-                <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
-                    <MudStack Row="true">
-                        <MudCheckBox @bind-Value="SelectedZone.IsActive" Label="Activo" />
-                    </MudStack>
-                    <MudButtonGroup>
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveClick">Aceptar</MudButton>
-                        <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="CancelClick">Cancelar</MudButton>
-                    </MudButtonGroup>
-                </MudStack>
-                </MudPaper>
-            </MudItem>
-            <MudItem xs="12">               
-                 <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
-                       <MudStack Row="false">
-                        <MudTextField T="string" @bind-Value="SelectedZone.Name" Label="Zona" For="@(() => SelectedZone.Name)" MaxLength="20" /> 
+        <MudForm @ref="form">
+            <MudGrid Spacing="2">
+                <MudItem xs="12">
+                    <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                        <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                            <MudStack Row="true">
+                                <MudCheckBox @bind-Value="SelectedZone.IsActive" Label="Activo" />
+                            </MudStack>
+                            <MudButtonGroup>
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveClick">Aceptar</MudButton>
+                                <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="CancelClick">Cancelar</MudButton>
+                            </MudButtonGroup>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                        <MudStack Row="false">
+                            <MudTextField T="string" @bind-Value="SelectedZone.Name" Label="Zona" For="@(() => SelectedZone.Name)" MaxLength="20" />
                             <MudSelect T="Warehouse" Label="Almacen" ToStringFunc="@ConvertWarehouseFunc" Required="true" ValueChanged="OnWarehouseValueChanged" RequiredError="Almacen es requerido" Value="WarehouseSelected">
-                            @foreach (var warehouse in Warehouses!)
-                            {
-                                <MudSelectItem Value="warehouse" />
-                            }
+                                @foreach (var warehouse in Warehouses!)
+                                {
+                                    <MudSelectItem Value="warehouse" />
+                                }
                             </MudSelect>
-                    </MudStack>
-                 </MudPaper>                
-            </MudItem>
-@*             <MudItem xs="12">
+                            <MudSelect T="string" Label="Tamaño" ToStringFunc="@ConvertSizeFunc" Required="true" ValueChanged="OnSizeValueChanged" RequiredError="Tamaño es requerido" Value="SizeSelected">
+                                @foreach (var size in Sizes!)
+                                {
+                                    <MudSelectItem Value="size" />
+                                }
+                            </MudSelect>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+
+                @*             <MudItem xs="12">
                 <MudSelect T="Warehouse" Label="Almacen" ToStringFunc="@ConvertWarehouseFunc" Required="true" ValueChanged="OnWarehouseValueChanged" RequiredError="Almacen es requerido" Value="WarehouseSelected">
                     @foreach (var warehouse in Warehouses!)
                     {
@@ -91,14 +99,14 @@ else
                     }
                 </MudSelect>
             </MudItem> *@
-        </MudGrid>
-    </MudForm>
+            </MudGrid>
+        </MudForm>
     </div>
 }
 
 @code {
     string searchString = "";
-    string mMessage = "Zonas";    
+    string mMessage = "Zonas";
     private int ZoneCurrentPage = 0;
     bool _loading = true;
     bool IsAllCheckBoxSelected = false;
@@ -107,6 +115,10 @@ else
     private Func<Warehouse?, string> ConvertWarehouseFunc = warehouse => warehouse?.Name!;
     private Warehouse? WarehouseSelected;
     private List<Warehouse>? Warehouses = default;
+
+    private Func<string?, string> ConvertSizeFunc = size => size!;
+    private string? SizeSelected;
+    string[] Sizes = ["S", "M", "L"];
 
     private Zone? SelectedZone;
     private MudDataGrid<Zone>? ZoneMudDataGrid;
@@ -133,7 +145,7 @@ else
 
             }
             else if (result_Post_Zone.StatusCode == System.Net.HttpStatusCode.Conflict)
-            {                
+            {
                 var conflictContent = await result_Post_Zone.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
                 await DialogService.ShowDialog(conflictContent?.message!.Replace("USP_POST_ZONES : ", ""), "Error Zona", "OK", Color.Error, Icons.Material.Filled.Error);
             }
@@ -149,6 +161,13 @@ else
     {
         mMessage = "Zonas"; SelectedZone = null;
     }
+    private Task OnSizeValueChanged(string selectedSize)
+    {
+        SizeSelected = selectedSize;
+        SelectedZone!.Size = selectedSize;
+        return Task.CompletedTask;
+    }
+
     private Task OnWarehouseValueChanged(Warehouse selectedWarehouse)
     {
         WarehouseSelected = selectedWarehouse;
@@ -173,7 +192,7 @@ else
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Zone>>>();
             totalItems = content2!.total ?? 0;
-            data = content2!.data ?? new List<Zone>(); 
+            data = content2!.data ?? new List<Zone>();
         }
         else
         {
@@ -209,14 +228,14 @@ else
         var SelectedActions = (ZoneMudDataGrid != null && ("ACTIVATE,DEACTIVATE".IndexOf(actionName!) > -1)) ?
                             (ZoneMudDataGrid.FilteredItems.Where(item => item.IsSelected)
                                                              .Select(item => new Client.Models.Action
-                                                                 {
-                                                                     UserId = 1,
-                                                                     RecordId = item.Id,
-                                                                     ModuleId = Modules!.FirstOrDefault()?.Id,
-                                                                     actionName = actionName,
-                                                                     ActionComment = "",
-                                                                     RelatedId = 0
-                                                                 }).ToList()
+                                                             {
+                                                                 UserId = 1,
+                                                                 RecordId = item.Id,
+                                                                 ModuleId = Modules!.FirstOrDefault()?.Id,
+                                                                 actionName = actionName,
+                                                                 ActionComment = "",
+                                                                 RelatedId = 0
+                                                             }).ToList()
                              ) : null;
 
         var result_Post_Actions = (SelectedActions is not null && SelectedActions.Count > 0) ? await Http.PostAsync("api/Zone/PostActions?userId=1", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
@@ -269,12 +288,13 @@ else
             Warehouses = WarehousesContent!.data;
             SelectedZone = ZoneContent!.data;
             WarehouseSelected = Warehouses!.FirstOrDefault(c => c.Id == SelectedZone!.WarehouseId);
+            SizeSelected = ZoneContent.data?.Size;
         }
         else
         {
             var errorMessage = await response2.Content.ReadAsStringAsync();
             throw new Exception(errorMessage);
-        }    
+        }
 
         await Task.CompletedTask;
     }
@@ -319,16 +339,16 @@ else
                 var formData = new MultipartFormDataContent();
                 formData.Add(content, "file", file.Name);
                 _loading = true;
-               
+
                 var response = await Http.PostAsync("api/Zone/Import?userId=1", formData);
                 if (response.IsSuccessStatusCode)
                 {
-                  await DialogService.ShowDialog("Archivo cargado con exito!.", "Zona", "OK", Color.Primary, Icons.Material.Filled.Commit);    
-                  await ZoneMudDataGrid!.ReloadServerData();
+                    await DialogService.ShowDialog("Archivo cargado con exito!.", "Zona", "OK", Color.Primary, Icons.Material.Filled.Commit);
+                    await ZoneMudDataGrid!.ReloadServerData();
                 }
                 else
                 {
-                  await DialogService.ShowDialog("Carga de archivo fallo!", "Error al cargar", "OK", Color.Error, Icons.Material.Filled.Error);
+                    await DialogService.ShowDialog("Carga de archivo fallo!", "Error al cargar", "OK", Color.Error, Icons.Material.Filled.Error);
                     _loading = false;
                 }
             }

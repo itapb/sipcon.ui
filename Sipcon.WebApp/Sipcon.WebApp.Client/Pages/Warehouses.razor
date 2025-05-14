@@ -13,12 +13,12 @@
     <MudDataGrid @ref="WarehouseMudDataGrid" T="Warehouse" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 235px)" Loading="_loading" @bind-CurrentPage="WarehouseCurrentPage">
         <ToolBarContent>
             <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddWarehouse"></MudIconButton>
-            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s=>OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             <MudSpacer />
             <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
                 @foreach (var strmodulo in Modules!)
                 {
-                    <MudMenuItem Label="@strmodulo.ActionDisplay" OnClick="@(()=>ClickMenuZone(strmodulo.ActionName))" />
+                    <MudMenuItem Label="@strmodulo.ActionDisplay" OnClick="@(() => ClickMenuZone(strmodulo.ActionName))" />
                 }
             </MudMenu>
         </ToolBarContent>
@@ -36,6 +36,15 @@
             <PropertyColumn Property="x => x.BrandName" title="Marca" />
             <TemplateColumn>
                 <HeaderTemplate>
+                    <MudText>Venta</MudText>
+                </HeaderTemplate>
+                <CellTemplate>
+                    <MudCheckBox @bind-Value="@context.Item.Sell" ReadOnly="true" />
+                </CellTemplate>
+            </TemplateColumn>
+
+            <TemplateColumn>
+                <HeaderTemplate>
                     <MudText>Activo</MudText>
                 </HeaderTemplate>
                 <CellTemplate>
@@ -44,47 +53,48 @@
             </TemplateColumn>
             <TemplateColumn StickyRight="true">
                 <CellTemplate>
-                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="()=> ClickEditZone(context.Item)" />
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditZone(context.Item)" />
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
         <PagerContent>
-            <MudDataGridPager T="Warehouse" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+            <MudDataGridPager T="Warehouse" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
         </PagerContent>
     </MudDataGrid>
 }
 else
 {
     <div style="flex-shrink: 0; background-color: #f0f0f0;" class="pa-2">
-    <MudForm @ref="form">
-        <MudGrid Spacing="2">
-            <MudItem xs="12">
-                <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
-                <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
-                    <MudStack Row="true">
-                        <MudCheckBox @bind-Value="SelectedWarehouse.IsActive" Label="Activo" />
-                    </MudStack>
-                    <MudButtonGroup>
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveClick">Aceptar</MudButton>
-                        <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="CancelClick">Cancelar</MudButton>
-                    </MudButtonGroup>
-                </MudStack>
-                </MudPaper>
-            </MudItem>
-            <MudItem xs="12">
-                 <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
-                 <MudStack Row="false">
-                <MudTextField T="string" @bind-Value="SelectedWarehouse.Name" Label="Almacen" For="@(() => SelectedWarehouse.Name)" MaxLength="20" Required="true"/>
-                <MudSelect T="Contact" Label="Planta" ToStringFunc="@ConvertSupplierFunc" Required="true" ValueChanged="OnSupplierValueChanged" RequiredError="Planta es requerido" Value="SupplierSelected">
-                    @foreach (var supplier in Suppliers!)
-                    {
-                        <MudSelectItem Value="supplier" />
-                    }
-                </MudSelect>
-                </MudStack>
-                </MudPaper>
-            </MudItem>
-@*             <MudItem xs="12">
+        <MudForm @ref="form">
+            <MudGrid Spacing="2">
+                <MudItem xs="12">
+                    <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                        <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                            <MudStack Row="true">
+                                <MudCheckBox @bind-Value="SelectedWarehouse.IsActive" Label="Activo" />
+                            </MudStack>
+                            <MudButtonGroup>
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveClick">Aceptar</MudButton>
+                                <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="CancelClick">Cancelar</MudButton>
+                            </MudButtonGroup>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                        <MudStack Row="false">
+                            <MudTextField T="string" @bind-Value="SelectedWarehouse.Name" Label="Almacen" For="@(() => SelectedWarehouse.Name)" MaxLength="20" Required="true" />
+                            <MudSelect T="Contact" Label="Planta" ToStringFunc="@ConvertSupplierFunc" Required="true" ValueChanged="OnSupplierValueChanged" RequiredError="Planta es requerido" Value="SupplierSelected">
+                                @foreach (var supplier in Suppliers!)
+                                {
+                                    <MudSelectItem Value="supplier" />
+                                }
+                            </MudSelect>
+                            <MudCheckBox T="bool?" @bind-Value="@SelectedWarehouse.Sell" Label="Venta" />
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+                @*             <MudItem xs="12">
                 <MudSelect T="Contact" Label="Planta" ToStringFunc="@ConvertSupplierFunc" Required="true" ValueChanged="OnSupplierValueChanged" RequiredError="Planta es requerido" Value="SupplierSelected">
                     @foreach (var supplier in Suppliers!)
                     {
@@ -92,15 +102,15 @@ else
                     }
                 </MudSelect>
             </MudItem> *@
-        </MudGrid>
-    </MudForm>
+            </MudGrid>
+        </MudForm>
     </div>
 }
 
 
 @code {
     string searchString = "";
-    string mMessage = "Almacenes";    
+    string mMessage = "Almacenes";
     private int WarehouseCurrentPage = 0;
     bool _loading = true;
     bool IsAllCheckBoxSelected = false;
@@ -211,14 +221,14 @@ else
         var SelectedActions = (WarehouseMudDataGrid != null && ("ACTIVATE,DEACTIVATE".IndexOf(actionName!) > -1)) ?
                             (WarehouseMudDataGrid.FilteredItems.Where(item => item.IsSelected)
                                                              .Select(item => new Client.Models.Action
-                                                                 {
-                                                                     UserId = 1,
-                                                                     RecordId = item.Id,
-                                                                     ModuleId = Modules!.FirstOrDefault()?.Id,
-                                                                     actionName = actionName,
-                                                                     ActionComment = "",
-                                                                     RelatedId = 0
-                                                                 }).ToList()
+                                                             {
+                                                                 UserId = 1,
+                                                                 RecordId = item.Id,
+                                                                 ModuleId = Modules!.FirstOrDefault()?.Id,
+                                                                 actionName = actionName,
+                                                                 ActionComment = "",
+                                                                 RelatedId = 0
+                                                             }).ToList()
                              ) : null;
 
         var result_Post_Actions = (SelectedActions is not null && SelectedActions.Count > 0) ? await Http.PostAsync("api/Warehouse/Post_Actions?userId=1", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
@@ -270,7 +280,7 @@ else
             var WarehouseContent = await response2.Content.ReadFromJsonAsync<WebApiResponse<Warehouse>>();
             Suppliers = SuppliersContent;
             SelectedWarehouse = WarehouseContent!.data;
-            SupplierSelected = Suppliers!.FirstOrDefault(c => c.Id== SelectedWarehouse!.SupplierId);
+            SupplierSelected = Suppliers!.FirstOrDefault(c => c.Id == SelectedWarehouse!.SupplierId);
         }
         else
         {
