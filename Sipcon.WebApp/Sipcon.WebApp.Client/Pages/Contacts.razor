@@ -35,11 +35,11 @@
                 <HeaderTemplate>
                     <MudText>Activo</MudText>
                 </HeaderTemplate>
-                <CellTemplate>
-                    <MudCheckBox @bind-Value="@context.Item.IsActive" ReadOnly ="true" />
+                <CellTemplate> 
+                    <MudIcon Icon="@(context.Item.IsActive ?? false ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.IsActive ?? false ? Color.Success : Color.Error)" Size="Size.Medium" />
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn StickyRight="true">
+            <TemplateColumn>
                 <CellTemplate>
                     <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="()=> ClickEditContact(context.Item)" />
                 </CellTemplate>
@@ -58,12 +58,12 @@ else
                 <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
                     <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
                         <MudStack Row="true">
-                            <MudCheckBox @bind-Value="SelectedContact.IsActive" Label="Activo" />
+                            <MudSwitch @bind-Value="SelectedContact.IsActive" Color="Color.Success" Label="Activo" />
                         </MudStack>
-                        <MudButtonGroup>
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveContact">Aceptar</MudButton>
-                            <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="Cancel">Cancelar</MudButton>
-                        </MudButtonGroup>
+                        <MudStack Row="true" Spacing="2">
+                            <MudButton OnClick="Cancel">Cancelar</MudButton>
+                            <MudFab Color="Color.Info" OnClick="SaveContact" Size="Size.Small" Label="Aceptar"></MudFab>
+                        </MudStack>
                     </MudStack>
                 </MudPaper>
             </div>
@@ -141,12 +141,12 @@ else
                         </MudPaper>
                     </MudItem>
                     <MudItem xs="6">
-                        <MudPaper Elevation="2" Class="@(($"d-flex align-center justify-center mud-width-full py-2{strDictionary["Supplier"]}"))">
+                        <MudPaper Elevation="2" Class="@(($"mud-width-full{strDictionary["Supplier"]}"))">
                             @if (strDictionary["Suppliers"] == "")
                             {
-                                <MudText Typo="Typo.caption" Color="Color.Error" >Algunos requeridos</MudText>
-                            }                            
-                            <MudDataGrid T="Related" Items="Suppliers" Hover="true" Dense="true" Bordered="true" Height="150px" FixedHeader>
+                                <MudText Typo="Typo.caption" Color="Color.Error" Class="d-flex align-center justify-center">Algunos requeridos</MudText>
+                            }
+                            <MudDataGrid T="Related" Items="Suppliers" Hover="true" Dense="true" Bordered="true" Height="160px" FixedHeader>
                                 <Columns>
                                     <TemplateColumn>
                                         <CellTemplate>
@@ -160,12 +160,12 @@ else
                         </MudPaper>
                     </MudItem>
                     <MudItem xs="6">
-                        <MudPaper Elevation="2" Class="@(($"d-flex align-center justify-center mud-width-full py-2{strDictionary["Dealer"]}"))">
+                        <MudPaper Elevation="2" Class="@(($"mud-width-full{strDictionary["Dealer"]}"))">                            
                             @if (strDictionary["Dealers"]=="")
                             {
-                                <MudText Typo="Typo.caption" Color="Color.Error" >Algunos requeridos</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Error" Class="d-flex align-center justify-center">Algunos requeridos</MudText>
                             }
-                            <MudDataGrid T="Related" Items="Dealers" Hover="true" Dense="true" Bordered="true" Height="150px" FixedHeader>
+                            <MudDataGrid T="Related" Items="Dealers" Hover="true" Dense="true" Bordered="true" Height="160px" FixedHeader>
                                 <Columns>
                                     <TemplateColumn>
                                         <CellTemplate>
@@ -178,7 +178,6 @@ else
                         </MudPaper>
                     </MudItem>
                 </MudGrid>
-
             </div>
         </div>
         <MudScrollToTop Selector="#scrollableGridContentStyled">

@@ -38,10 +38,10 @@
                     <MudText>Activo</MudText>
                 </HeaderTemplate>
                 <CellTemplate>
-                    <MudCheckBox @bind-Value="@context.Item.IsActive" ReadOnly="true" />
+                    <MudIcon Icon="@(context.Item.IsActive ?? false ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.IsActive ?? false ? Color.Success : Color.Error)" Size="Size.Medium" />
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn StickyRight="true">
+            <TemplateColumn>
                 <CellTemplate>
                     <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="()=> ClickEditLocation(context.Item)" />
                 </CellTemplate>
@@ -61,12 +61,12 @@ else
                 <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
                 <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
                     <MudStack Row="true">
-                        <MudCheckBox @bind-Value="SelectedLocation.IsActive" Label="Activo" />
+                        <MudSwitch @bind-Value="SelectedLocation.IsActive" Color="Color.Success" Label="Activo" />
                     </MudStack>
-                    <MudButtonGroup>
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveClick">Aceptar</MudButton>
-                        <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="CancelClick">Cancelar</MudButton>
-                    </MudButtonGroup>
+                    <MudStack Row="true" Spacing="2">
+                        <MudButton OnClick="CancelClick">Cancelar</MudButton>
+                        <MudFab Color="Color.Info" OnClick="SaveClick" Size="Size.Small" Label="Aceptar"></MudFab>
+                    </MudStack>
                 </MudStack>
                 </MudPaper>
             </MudItem>

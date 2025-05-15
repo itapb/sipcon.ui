@@ -39,10 +39,10 @@
                     <MudText>Activo</MudText>
                 </HeaderTemplate>
                 <CellTemplate>
-                    <MudCheckBox @bind-Value="@context.Item.IsActive" ReadOnly="true" />
+                    <MudIcon Icon="@(context.Item.IsActive ?? false ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.IsActive ?? false ? Color.Success : Color.Error)" Size="Size.Medium" />
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn StickyRight="true">
+            <TemplateColumn >
                 <CellTemplate>
                     <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditPart(context.Item)" />
                 </CellTemplate>
@@ -62,12 +62,12 @@ else
                 <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
                     <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
                         <MudStack>
-                            <MudCheckBox @bind-Value="SelectedPart.IsActive" Label="Activo" />
-                        </MudStack>
-                        <MudButtonGroup>
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveClick">Aceptar</MudButton>
-                            <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="CancelClick">Cancelar</MudButton>
-                        </MudButtonGroup>
+                            <MudSwitch @bind-Value="SelectedPart.IsActive" Color="Color.Success" Label="Activo" />
+                        </MudStack>                       
+                        <MudStack Row="true" Spacing="2">
+                            <MudButton OnClick="CancelClick">Cancelar</MudButton>
+                            <MudFab Color="Color.Info" OnClick="SaveClick" Size="Size.Small" Label="Aceptar"></MudFab>
+                        </MudStack>                    
                     </MudStack>
                 </MudPaper>
             </div>
@@ -97,7 +97,6 @@ else
                                         {
                                             <MudSelectItem Value="@family" />
                                         }
-
                                     </MudSelect>
                                 </MudItem>
                                 <MudItem xs="12">
@@ -133,7 +132,6 @@ else
                                     </MudSelect>
                                 </MudItem>
                                 <MudItem xs="6">
-                                    @* <MudTextField @bind-Value="SelectedPart.UmId" Label="Unidad Medida" Variant="Variant.Text"></MudTextField> *@
                                     <MudSelect T="Um" Label="Unidad Medida" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertUmFunc" Value="UmSelected" ValueChanged="OnUmValueChanged" Required="true" RequiredError="Unidad Medida requerido">
                                         @foreach (var um in Ums ?? Enumerable.Empty<Um>())
                                         {
@@ -169,7 +167,6 @@ else
                                     <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Price" Label="Precio" Variant="Variant.Text" Required="true" RequiredError="Precio requerido"></MudTextField></MudItem>
                                     <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Discount" Label="Dcto" Variant="Variant.Text" Required="true" RequiredError="Dcto requerido"></MudTextField></MudItem>
                                     <MudItem xs="12">
-                                        @* <MudTextField @bind-Value="SelectedPart.TaxId" Label="Impuesto" Variant="Variant.Text"></MudTextField> *@
                                         <MudSelect T="Tax" Label="Impuesto" Immediate="true" FitContent="true" ToStringFunc="@ConvertTaxFunc" Value="TaxSelected" ValueChanged="OnTaxValueChanged" Required="true" RequiredError="Impuesto requerido" FullWidth="true">
                                             @foreach (var tax in Taxes!)
                                             {
@@ -184,14 +181,14 @@ else
                                 <MudStack>
                                     @if (!AnySelectedCheckbox)
                                     {
-                                        <MudText Typo = "Typo.caption" Color = "Color.Error"> Algunos requeridos </MudText>
+                                        <MudText Typo = "Typo.caption" Color = "Color.Error">Algunos requeridos</MudText>
                                     }
-                                    <MudCheckBox @bind-Value="SelectedPart.Sell" Label="Venta"></MudCheckBox>
-                                    <MudCheckBox @bind-Value="SelectedPart.Purchase" Label="Compra"></MudCheckBox>
-                                    <MudCheckBox @bind-Value="SelectedPart.Warranty" Label="Garantia"></MudCheckBox>
-                                    <MudCheckBox @bind-Value="SelectedPart.License" Label="Licencia"></MudCheckBox>
-                                    <MudCheckBox @bind-Value="SelectedPart.Original" Label="Original"></MudCheckBox>
-                                    <MudCheckBox @bind-Value="SelectedPart.Serializable" Label="Serializable"></MudCheckBox>
+                                    <MudSwitch @bind-Value="SelectedPart.Sell" Label="Venta" Color="Color.Success" />
+                                    <MudSwitch @bind-Value="SelectedPart.Purchase" Label="Compra" Color="Color.Success" />
+                                    <MudSwitch @bind-Value="SelectedPart.Warranty" Label="Garantia" Color="Color.Success" />
+                                    <MudSwitch @bind-Value="SelectedPart.License" Label="Licencia" Color="Color.Success" />
+                                    <MudSwitch @bind-Value="SelectedPart.Original" Label="Original" Color="Color.Success" />
+                                    <MudSwitch @bind-Value="SelectedPart.Serializable" Label="Serializable" Color="Color.Success" />
                                 </MudStack>
                             </MudPaper>
                         </MudStack>
@@ -200,7 +197,6 @@ else
 
             </div>
         </div>
-
         <MudScrollToTop Selector="#scrollableGridContentStyled">
             <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.ArrowUpward" />
         </MudScrollToTop>
@@ -208,12 +204,14 @@ else
 }
 
 @code {
+   
+    bool IsAllCheckBoxSelected = false;
     bool AnySelectedCheckbox = false;
     int PartCurrentPage = 0;
     bool _loading = true;
     string searchString = "";
     string mMessage = "Respuestos";
-    string SelectedSize = "S";
+
     string[] Sizes = ["S", "M", "L"];
     string[] Ratings = ["A", "B", "C", "D", "E", "F"];
 
@@ -254,14 +252,9 @@ else
 
     private List<Tax>? Taxes;
     private Tax? TaxSelected;
-    private Func<Tax?, string> ConvertTaxFunc = tax => tax?.Name!;
-
-    bool IsAllCheckBoxSelected = false;
-
-
+    private Func<Tax?, string> ConvertTaxFunc = tax => tax?.Name!;  
 
     private MudDataGrid<Part>? PartMudDataGrid;
-
     private Part? SelectedPart;
     private MudForm? form;
     private List<Module>? Modules;
@@ -269,50 +262,36 @@ else
     private async Task LoadPartContextAsync(int? partId)
     {
         var response = await Http.GetAsync($"api/Part/GetOneWithContext?partId={partId}&userId=1");
-        if (response.IsSuccessStatusCode)
+        if (response.IsSuccessStatusCode && (await response.Content.ReadFromJsonAsync<WebApiResponse<PartDetails>>() is WebApiResponse<PartDetails> content))
         {
-            var content = await response.Content.ReadFromJsonAsync<WebApiResponse<PartDetails>>();
-            if (content != null)
-            {
-                Suppliers = content.data?.Suppliers;
-                PartTypes = content.data?.Types;
-                RelatedModels = content.data?.Models;
-                SubFamilies = content.data?.Subfamilies;
-                Families = content.data?.Families;
-                Ums = content.data?.Ums;
-                Taxes = content.data?.Taxes;
-                Brands = content.data?.Brands;
-                SelectedPart = content.data?.Part;
-            }
+            Suppliers = content.data?.Suppliers;
+            PartTypes = content.data?.Types;
+            RelatedModels = content.data?.Models;
+            SubFamilies = content.data?.Subfamilies;
+            Families = content.data?.Families;
+            Ums = content.data?.Ums;
+            Taxes = content.data?.Taxes;
+            Brands = content.data?.Brands;
+            SelectedPart = content.data?.Part;
         }
     }
-
 
     private async Task ClickAddPart(MouseEventArgs args)
     {
         mMessage = "Agregar Respuesto";
         await LoadPartContextAsync(0);
-        AnySelectedCheckbox = true;
-        SelectedPart!.Serializable = false;
-        SelectedPart!.Sell = false;
-        SelectedPart!.Purchase = false;
-        SelectedPart!.Warranty = false;
-        SelectedPart!.License = false;
-        SelectedPart!.Original = false;
-        SelectedPart!.IsActive = true;
-        SelectedPart!.UmName = null;
-        SelectedPart!.Cost = null;
-        SelectedPart!.Discount = null;
-        SelectedPart!.Price = null;
-        SelectedPart!.MinSale = null;
-        SelectedPart!.Packing = null;
-        TaxSelected = null;
-        UmSelected = null;
-        BrandSelected = null;
-        PartTypeSelected = null;
-        FamilySelected = null;
-        SubFamilySelected = null;
-        SupplierSelected = null;
+        
+        this.With(t => {t.AnySelectedCheckbox = true; t.TaxSelected      = null; t.UmSelected     = null; 
+                        t.BrandSelected       = null; t.PartTypeSelected = null; t.FamilySelected = null; 
+                        t.SubFamilySelected   = null; t.SupplierSelected = null;
+                        });
+
+        SelectedPart!.With(p => {p.Serializable = false; p.Sell     = false;  p.Purchase = false; p.Warranty = false; 
+                                 p.License      = false; p.Original = false;  p.IsActive = true;  p.UmName   = null; 
+                                 p.Cost         = null;  p.Discount = null;   p.Price    = null;  p.MinSale  = null;  
+                                 p.Packing  = null;
+                                 });
+
         SelectedRelatedModels = new HashSet<RelatedModel>();
     }
     private async Task ClickEditPart(Part item)
@@ -347,7 +326,7 @@ else
     {
         await form!.Validate();
         await ValidateCheckBoxs();
-        if (AnySelectedCheckbox && form.IsValid)
+        if (this.AnySelectedCheckbox && form.IsValid)
         {
             var mPostPart = new PostPart { Part = SelectedPart, Models = RelatedModels };
             var strJsonPostPart = System.Text.Json.JsonSerializer.Serialize(mPostPart);
@@ -360,7 +339,7 @@ else
                     var result = await DialogService.ShowDialog("Respuesto Procesado!", "Respuesto", "OK", Color.Primary, Icons.Material.Filled.Commit);
                     if (!result!.Canceled)
                     {
-                        mMessage = "Respuesto";
+                        mMessage = "Respuestos";
                         SelectedPart = null;
                     }
                 }
@@ -386,9 +365,8 @@ else
     {
         if (actionName == "EXPORT")
         {
-            _loading = true;
-            var ResultZonas = await Http.GetAsync($"api/Part/Export?filter={searchString}&userId=1");
-            if (ResultZonas.IsSuccessStatusCode)
+            _loading = true;          
+            if ((await Http.GetAsync($"api/Part/Export?filter={searchString}&userId=1") is HttpResponseMessage ResultZonas) && ResultZonas.IsSuccessStatusCode)
             {
                 var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
                 var base64File = Convert.ToBase64String(fileContent);
@@ -425,8 +403,6 @@ else
                 var result = await DialogService.ShowDialog("Parte(s) Actualizado(s)!", "Partes", "OK", Color.Primary, Icons.Material.Filled.Commit);
                 await PartMudDataGrid!.ReloadServerData();
             }
-
-
         }
         await Task.CompletedTask;
     }
@@ -452,7 +428,6 @@ else
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Part> data;
         HttpResponseMessage response = await Http.GetAsync($"api/Part/GetAll?rowFrom={mOffset}&filter={searchString}&userId=1");
-
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Part>>>();
@@ -463,10 +438,8 @@ else
         {
             var errorMessage = await response.Content.ReadAsStringAsync();
             throw new Exception(errorMessage);
-        }
-
-        var sortDefinition = state.SortDefinitions.FirstOrDefault();
-        if (sortDefinition != null)
+        }                
+        if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Part> sortDefinition)
         {
             switch (sortDefinition.SortBy)
             {
@@ -520,10 +493,10 @@ else
                 formData.Add(content, "file", file.Name);
                 _loading = true;
 
-                var response = await Http.PostAsync("api/Zone/Import?userId=1", formData);
+                var response = await Http.PostAsync("api/Part/Import?userId=1", formData);
                 if (response.IsSuccessStatusCode)
                 {
-                    await DialogService.ShowDialog("Archivo cargado con exito!.", "Partes", "OK", Color.Primary, Icons.Material.Filled.Commit);
+                    await DialogService.ShowDialog("Archivo cargado con exito!.", "Resouestos", "OK", Color.Primary, Icons.Material.Filled.Commit);
                     await PartMudDataGrid!.ReloadServerData();
                 }
                 else
