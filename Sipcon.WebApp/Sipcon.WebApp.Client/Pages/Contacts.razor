@@ -4,16 +4,22 @@
 @inject HttpClient Http
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
-<MudText Typo="Typo.h6" GutterBottom="true">@mMessage</MudText>
+
+<MudBreadcrumbs Items="ItemsNavigate"></MudBreadcrumbs>
+<MudText Typo="Typo.h5" GutterBottom="true">@mMessage</MudText>
+
 @if (SelectedContact == null)
 {
-    <MudDataGrid @ref="ContactMudDataGrid" T="Contact" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 235px)" Loading="_loading" @bind-CurrentPage="ContactCurrentPage">
+    <MudDataGrid @ref="ContactMudDataGrid" T="Contact" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 292px)" Loading="_loading" @bind-CurrentPage="ContactCurrentPage">
         <ToolBarContent>
-            <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddContact"></MudIconButton>
+            <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddContact" Color="Color.Info"></MudIconButton>
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s=>OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             <MudSpacer />
-            <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">               
-                @foreach (var strmodulo in Modules!){ <MudMenuItem Label="@strmodulo.ActionDisplay" OnClick="@(()=>ClickMenuContact(strmodulo.ActionName))"/> }   
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+                @foreach (var strmodulo in Modules!)
+                {
+                    <MudMenuItem Label="@strmodulo.ActionDisplay" Icon="@(strmodulo.ActionDisplay.ToActionIcon())" IconColor="@Color.Info" OnClick="@(() => ClickMenuContact(strmodulo.ActionName))" />
+                }
             </MudMenu>
         </ToolBarContent>
         <Columns>
@@ -187,6 +193,7 @@ else
 }
 
 @code {
+    List<BreadcrumbItem> ItemsNavigate = [new("Home", href: "", icon: Icons.Material.Filled.Home), new("Contactos", href: null, disabled: true, icon: Icons.Material.Filled.ImportContacts)];
     bool _loading = true;
     bool IsCheckboxValid = false;
     bool IsAllCheckBoxSelected = false;

@@ -16,5 +16,20 @@ namespace Sipcon.WebApp.Client.Helper
             action(obj);
             return obj;
         }
+        internal static string? ToActionIcon(this string? actionDisplay)
+        {
+            return actionDisplay switch
+            {
+                "Activar" => Icons.Material.Filled.VerifiedUser,
+                "Desactivar" => Icons.Material.Filled.Dangerous,
+                "Importar" => Icons.Material.Filled.Upload,
+                "Exportar" => Icons.Material.Filled.Download, 
+                "Asignar" => Icons.Material.Filled.GroupAdd,
+                "Desasignar" => Icons.Material.Filled.GroupRemove,
+                "Disponible" => Icons.Material.Filled.CheckCircle,
+                "No Disponible" => Icons.Material.Filled.Cancel,
+                _ => Icons.Material.Filled.HelpOutline
+            };
+        }        
     }
 }

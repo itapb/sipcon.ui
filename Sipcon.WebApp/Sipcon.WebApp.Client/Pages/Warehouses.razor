@@ -4,21 +4,21 @@
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
 @using System.Text.Json
-
-<MudText Typo="Typo.h6" GutterBottom="true">@mMessage</MudText>
+<MudBreadcrumbs Items="ItemsNavigate"></MudBreadcrumbs>
+<MudText Typo="Typo.h5" GutterBottom="true">@mMessage</MudText>
 <InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
 
 @if (SelectedWarehouse == null)
 {
-    <MudDataGrid @ref="WarehouseMudDataGrid" T="Warehouse" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 235px)" Loading="_loading" @bind-CurrentPage="WarehouseCurrentPage">
+    <MudDataGrid @ref="WarehouseMudDataGrid" T="Warehouse" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 292px)" Loading="_loading" @bind-CurrentPage="WarehouseCurrentPage">
         <ToolBarContent>
-            <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddWarehouse"></MudIconButton>
+            <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddWarehouse" Color="Color.Info"></MudIconButton>
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             <MudSpacer />
             <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
                 @foreach (var strmodulo in Modules!)
                 {
-                    <MudMenuItem Label="@strmodulo.ActionDisplay" OnClick="@(() => ClickMenuZone(strmodulo.ActionName))" />
+                    <MudMenuItem Label="@strmodulo.ActionDisplay" Icon="@(strmodulo.ActionDisplay.ToActionIcon())" IconColor="@Color.Info" OnClick="@(() => ClickMenuZone(strmodulo.ActionName))" />
                 }
             </MudMenu>
         </ToolBarContent>
@@ -100,8 +100,9 @@ else
 
 
 @code {
+    List<BreadcrumbItem> ItemsNavigate = [new("Home", href: "", icon: Icons.Material.Filled.Home), new("Inventario", href: "warehouses", icon: Icons.Material.Filled.Inventory), new("Almacen", href: null, disabled: true, icon: Icons.Material.Filled.Warehouse)];
     string searchString = "";
-    string mMessage = "Almacenes";
+    string mMessage = "Almacen";
     private int WarehouseCurrentPage = 0;
     bool _loading = true;
     bool IsAllCheckBoxSelected = false;
@@ -129,7 +130,7 @@ else
                     var result = await DialogService.ShowDialog("Almacen Procesado!", "Almacen", "OK", Color.Primary, Icons.Material.Filled.Commit);
                     if (!result!.Canceled)
                     {
-                        mMessage = "Almacenes";
+                        mMessage = "Almacen";
                         SelectedWarehouse = null;
                     }
                 }
@@ -150,7 +151,7 @@ else
     }
     private void CancelClick()
     {
-        mMessage = "Almacenes"; SelectedWarehouse = null;
+        mMessage = "Almacen"; SelectedWarehouse = null;
     }
     private Task OnSupplierValueChanged(Contact selectedSupplier)
     {
