@@ -14,28 +14,21 @@
 
 
 <PageTitle>Vehiculos</PageTitle>
-
-
 <MudBreadcrumbs Items="_itemsNavigate"></MudBreadcrumbs>
 <MudText Typo="Typo.h5" GutterBottom="true">Vehiculos</MudText>
-<MudText Typo="Typo.body1" Class="mb-8">Administrar Vehiculos.</MudText>
 
-@if (_errorMessage == string.Empty)
-{
-    <MudDataGrid T="Vehicle"
-    MultiSelection="true" 
-    Items="@_Vehicles"
-    SelectedItems="@_selectedVehicles"
 
-    SortMode="SortMode.Multiple"
-    Filterable="true"
-    Hideable="true"
-    Loading="_loading"
-    ReadOnly="@_readOnly"
-    EditMode="@(_isCellEditMode ? DataGridEditMode.Cell : DataGridEditMode.Form)"
-    Bordered="true"
-    Dense="true"
-    EditTrigger="@(_editTriggerRowClick ? DataGridEditTrigger.OnRowClick : DataGridEditTrigger.Manual)">
+<MudDataGrid @ref="_mudDataGrid"
+             MultiSelection="true" 
+             SelectedItems="@_selectedVehicles"
+             SortMode="SortMode.Multiple"
+             Filterable="true"
+             FixedHeader Height="calc(92vh - 235px)"
+             Hideable="true"
+             Loading="_loading"
+             Bordered="true"
+             Dense="true"
+             ServerData="LoadGridData">
 
         <ToolBarContent>
             <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="() => ClickAddVehicle()"></MudIconButton>
@@ -47,182 +40,149 @@
                 @foreach (var module in _itemsModules)
                 {
                     <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
-                    Label="@module.Text"
-
-                    OnClick="() => HandleMenuClick(module)" />
+                                 Label="@module.Text"
+                                 OnClick="() => HandleMenuClick(module)" />
 
                 }
             </MudMenu>
         </ToolBarContent>
         <Columns>
             <SelectColumn T="Vehicle" />
-
             <TemplateColumn T="Vehicle" Title="Marca">
                 <CellTemplate>
-                    @if (context.Item.BrandId == 1)
-                    {
-                        <div class="d-flex justify-center" style="height: 45px;">
-
-                            <MudTooltip Text="@context.Item.BrandName">
-                                <MudImage Src="Images/changan_marca.jpeg" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg " FallbackSrc="Images/changan_emblema.png" Height="45" Width="55"></MudImage>
-                            </MudTooltip>
-                        </div>
-
-
-                    }
-                    else
-                    {
-                        <div class="d-flex justify-center" style="height: 45px;">
-                            <MudTooltip Text="@context.Item.BrandName">
-                                <MudImage Src="Images/foton_marca.jpeg " ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg " FallbackSrc="Images/foton_emblema.jpeg" Height="45" Width="35"></MudImage>
-                            </MudTooltip>
-                        </div>
-
-                    }
+                    
+                    <div class="d-flex justify-center" style="height: 45px;">
+                        <MudTooltip Text="@context.Item.BrandName">
+                            <MudImage Src="@(context.Item.BrandName.ToUpper() == "CHANGAN" ? "Images/changan_marca.jpeg" : "Images/foton_marca.jpeg")" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg "
+                                        FallbackSrc="@(context.Item.BrandName.ToUpper() == "CHANGAN" ? "Images/changan_emblema.png": "Images/foton_emblema.jpeg")" Height="45" Width="55"></MudImage>
+                        </MudTooltip>
+                    </div>
+                    
                 </CellTemplate>
             </TemplateColumn>
             <TemplateColumn T="Vehicle" Title="VIN">
                 <CellTemplate>
+                    
+                     <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary">@context.Item.Vin</MudText>
+
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="Vehicle" Title="Placa">
+                <CellTemplate>
 
                     <MudStack Row="false">
-                        <MudText Typo="Typo.caption" ><b>VIN :</b> <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary">@context.Item.Vin</MudText></MudText>
-                        <MudText Typo="Typo.caption" Align="Align.Start"><b>Placa :</b> @context.Item.Plate</MudText>
+                        <MudText Typo="Typo.caption" Align="Align.Start"><b>@context.Item.Plate</b> </MudText>
                     </MudStack>
 
                 </CellTemplate>
             </TemplateColumn>
             <PropertyColumn Property="x => x.Year" Title="Año" Sortable="false" Filterable="false" />
             <PropertyColumn Property="x => x.ColorName" Title="Color" Sortable="false" Filterable="false" />
-            @* <PropertyColumn Property="x => x.ModelName" Title="Modelo" Sortable="false" Filterable="false" /> *@
-            <TemplateColumn T="Vehicle" Title="Modelo">
-                <CellTemplate>
-                    <MudChip T="string" Variant="Variant.Text">
-                        <AvatarContent>
-                            <MudAvatar Size="Size.Small">
-                                <MudImage Src="Images/changan_rojo_1.png"></MudImage>
-                            </MudAvatar>
-                        </AvatarContent>
-                        <ChildContent>@context.Item.ModelName</ChildContent>
-                    </MudChip>
-                </CellTemplate>
-            </TemplateColumn>
+            <PropertyColumn Property="x => x.ModelName" Title="Modelo" Sortable="false" Filterable="false" />
             <PropertyColumn Property="x => x.SupplierName" Title="Planta" Sortable="false" Filterable="false" />
+            <PropertyColumn Property="x => x.EstatusName" Title="Estatus" Sortable="false" Filterable="false" />
 
-
-            <TemplateColumn T="Vehicle" Title="Estatus">
+            <TemplateColumn T="Vehicle" Title="Activo">
                 <CellTemplate>
-                    @if (context.Item.IsActive == true)
-                    {
-                        <MudChip T="string" Icon="@Icons.Material.Filled.VerifiedUser" Color="Color.Success" Size="Size.Small">Activo</MudChip>
-                    }
-                    else
-                    {
-                        <MudChip T="string" Icon="@Icons.Material.Filled.Dangerous" IconColor="Color.Error" Size="Size.Small">Inactivo</MudChip>
-                    }
+                    <div class="d-flex justify-center">
+                        <MudIcon Icon="@(context.Item.IsActive ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.IsActive ? Color.Success : Color.Error)" Size="Size.Medium" />
+                    </div>
+                    
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Hidden="@(_isCellEditMode || _readOnly || _editTriggerRowClick)">
+            <TemplateColumn >
                 <CellTemplate>
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditVehicle(context.Item)" />
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
         <PagerContent>
-            <MudDataGridPager T="Model" />
+            <MudDataGridPager T="Vehicle" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
         </PagerContent>
-    </MudDataGrid>
+</MudDataGrid>
 
-    <MudDialog @bind-Visible="_nestedVisible">
-        <DialogContent>
+<MudDialog @bind-Visible="_nestedVisible">
+    <TitleContent>
+        <MudStack Row="true">
+            <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="@(_success ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
+            <MudText Typo="Typo.h6">Modelo</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
 
-            @if (_success)
-            {
-                <MudText Class="nested" >@_nestedErrorMessage</MudText>
-            }
-            else
-            {
-                <MudText Class="nested" Color="Color.Warning">@_nestedErrorMessage!</MudText>
-            }
-        </DialogContent>
-        <DialogActions>
-            <MudButton OnClick="CloseNested">Cerrar</MudButton>
-        </DialogActions>
-    </MudDialog>
+        <MudStack Row="true">
+            <MudText Class="nested"><p>@_nestedErrorMessage!</p> </MudText>
+        </MudStack>
 
+    </DialogContent>
+    <DialogActions>
 
+        <MudButton Color="Color.Info" OnClick="CloseNested" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
 
-}
-else
-{
-    <p class="text-danger">@_errorMessage</p>
-
-}
+    </DialogActions>
+</MudDialog>
 
 
 @code {
     private IEnumerable<Vehicle> _Vehicles = new List<Vehicle>();
-    private string _errorMessage = string.Empty;
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
     bool _success = false;
 
     private int _rowCount = 0;
-    private int _pageSize = 100;
-    private int _pageNumber = 1;
     private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
-    private string _filter = string.Empty; // Cambia esto
     private int _rowsTotal = 0; 
 
-    private bool _readOnly = false;
-    private bool _isCellEditMode = false;
-    private bool _editTriggerRowClick = false;
     private string _searchString = string.Empty;
     private bool _loading = true;
     private string _moduleName = "VEHICULOS-VEHICULOS";
 
-
+    private MudDataGrid<Vehicle>? _mudDataGrid;
     private HashSet<Vehicle> _selectedVehicles = new([]);
     private IEnumerable<Module> _Modules { get; set; } = new List<Module>();
     private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
 
     private List<BreadcrumbItem> _itemsNavigate =
     [
-        new("Home",href: "#", icon: Icons.Material.Filled.Home),
-        new("Vehicles",  href: null, disabled: true, icon: Icons.Material.Filled.CardTravel),
+        new("Home",href: "home", icon: Icons.Material.Filled.Home),
+        new("Vehiculos",  href: null, disabled: true, icon: Icons.Material.Filled.CardTravel),
     ];
 
 
-    protected override async Task OnInitializedAsync()
+ 
+    private async Task<GridData<Vehicle>> LoadGridData(GridState<Vehicle> state)
     {
-
+     
+        _rowCount = state.Page * state.PageSize;
+       
         await GetVehicles();
-
+     
+        return new GridData<Vehicle> { TotalItems = _rowsTotal, Items = _Vehicles };
     }
 
     private async Task GetVehicles()
     {
-        _filter = _searchString;
-        var serviceResponse = await VehicleService.GetVehicles(_iduser, _rowCount, _filter);
+        _loading = true;
+        var serviceResponse = await VehicleService.GetVehicles(_iduser, _rowCount, _searchString);
         if (serviceResponse.Processed)
         {
             _Vehicles = serviceResponse.Data;
-
             _rowsTotal = serviceResponse.Total;
-            _loading = false;
-
+            
             if (_Vehicles.Count() > 0)
             {
                 _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
             }
             else { _itemsModules = new List<ModuleAction>([]); }
-
-
         }
         else
         {
-            Console.WriteLine(serviceResponse.Message);
-            _errorMessage = "No se encontraron Vehiculos.";
+            _Vehicles = new List<Vehicle>();
+            _rowsTotal = 0;
+            _itemsModules = new List<ModuleAction>([]);
         }
+
+        _loading = false;
 
     }
 
@@ -230,11 +190,11 @@ else
     {
         if (e.Key == "Enter")
         {
-            if (_searchString.Length > 4 || _searchString == string.Empty)
+            if (_searchString.Length >= 3 || _searchString == string.Empty)
             {
                 Console.WriteLine($"Buscando: {_searchString}");
-                _filter = _searchString;
-                await GetVehicles();
+                await _mudDataGrid!.ReloadServerData();
+                
             }
 
         }
@@ -244,10 +204,8 @@ else
     {
 
         Console.WriteLine($"Buscando: {_searchString}");
-        _filter = string.Empty;
         _searchString = string.Empty;
-        await GetVehicles();
-
+        await _mudDataGrid!.ReloadServerData();
     }
 
 
@@ -260,7 +218,7 @@ else
         var result = await dialog.Result;
         if (!result!.Canceled)
         {
-            await GetVehicles();
+            await _mudDataGrid!.ReloadServerData();
             StateHasChanged();
         }
 
@@ -278,7 +236,7 @@ else
         if (!result!.Canceled)
         {
 
-            await GetVehicles();
+            await _mudDataGrid!.ReloadServerData();
             StateHasChanged();
 
         }
@@ -371,16 +329,14 @@ else
                     ActionList.Add(VehicleAction);
                 }
 
-                _errorMessage = "";
                 var serviceResponse = await VehicleService.ActionsVehicle(ActionList, _iduser);
-
                 if (serviceResponse.Processed)
                 {
                     _success = true;
                     _nestedErrorMessage = "Vehiculo(s) activados...";
 
                     OpenNested();
-                    await GetVehicles();
+                    await _mudDataGrid!.ReloadServerData();
                     StateHasChanged();
 
                 }
@@ -432,16 +388,14 @@ else
                     ActionList.Add(VehicleAction);
                 }
 
-                _errorMessage = "";
                 var serviceResponse = await VehicleService.ActionsVehicle(ActionList, _iduser);
-
                 if (serviceResponse.Processed)
                 {
                     _success = true;
                     _nestedErrorMessage = "Vehiculo(s) Inactivado(s)...";
 
                     OpenNested();
-                    await GetVehicles();
+                    await _mudDataGrid!.ReloadServerData();
                     StateHasChanged();
 
                 }
@@ -492,16 +446,14 @@ else
                     ActionList.Add(VehicleAction);
                 }
 
-                _errorMessage = "";
                 var serviceResponse = await VehicleService.ActionsVehicle(ActionList, _iduser);
-
                 if (serviceResponse.Processed)
                 {
                     _success = true;
                     _nestedErrorMessage = "Vehiculo(s) Asignados...";
 
                     OpenNested();
-                    await GetVehicles();
+                    await _mudDataGrid!.ReloadServerData();
                     StateHasChanged();
                     
                 }
@@ -552,16 +504,14 @@ else
                     ActionList.Add(VehicleAction);
                 }
 
-                _errorMessage = "";
                 var serviceResponse = await VehicleService.ActionsVehicle(ActionList, _iduser);
-
                 if (serviceResponse.Processed)
                 {
                     _success = true;
                     _nestedErrorMessage = "Concesionario Desasignado a Vehiculo(s)...";
 
                     OpenNested();
-                    await GetVehicles();
+                    await _mudDataGrid!.ReloadServerData();
                     StateHasChanged();
 
                 }
@@ -614,16 +564,14 @@ else
                     ActionList.Add(VehicleAction);
                 }
 
-                _errorMessage = "";
                 var serviceResponse = await VehicleService.ActionsVehicle(ActionList, _iduser);
-
                 if (serviceResponse.Processed)
                 {
                     _success = true;
                     _nestedErrorMessage = "Vehiculo(s) Habilitado(s)...";
 
                     OpenNested();
-                    await GetVehicles();
+                    await _mudDataGrid!.ReloadServerData();
                     StateHasChanged();
 
                 }
@@ -674,16 +622,14 @@ else
                     ActionList.Add(VehicleAction);
                 }
 
-                _errorMessage = "";
                 var serviceResponse = await VehicleService.ActionsVehicle(ActionList, _iduser);
-
                 if (serviceResponse.Processed)
                 {
                     _success = true;
                     _nestedErrorMessage = "Vehiculo(s) no Disponibles...";
 
                     OpenNested();
-                    await GetVehicles();
+                    await _mudDataGrid!.ReloadServerData();
                     StateHasChanged();
 
                 }

@@ -7,8 +7,8 @@ namespace Sipcon.WebApp.Client.Models
     public class SelectOption 
     {
 
-        public int Value { get; set; } 
-        public string Text { get; set; }
+        public int? Value { get; set; } 
+        public string Text { get; set; } 
 
         public SelectOption(int val, string option )
         {
@@ -18,8 +18,8 @@ namespace Sipcon.WebApp.Client.Models
 
         public SelectOption()
         {
-            Value = 0;
-            Text = "Seleccione...";
+            Value = null;  // = 0
+            Text = string.Empty; // = "Seleccione"
         }
 
     }
