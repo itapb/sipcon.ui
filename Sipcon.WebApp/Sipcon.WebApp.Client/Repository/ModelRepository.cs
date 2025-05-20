@@ -285,6 +285,107 @@
 
         }
 
+        public async Task<ApiResponse<List<byte>>> ExportModels(int IdUser, string Filter = "")
+        {
+            ApiResponse<List<byte>> result;
+            string fileUrl = string.Empty;
+            try
+            {
+                var response = await _http.GetAsync($"api/Model/Export?_filter={Filter}&userId={IdUser}");
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Error Exportar Modelos: {response.StatusCode} - {response.ReasonPhrase}");
+                }
+
+                var fileContent = await response.Content.ReadAsByteArrayAsync();
+                result = new ApiResponse<List<byte>>()
+                {
+                    Processed = true,
+                    Message = "Exportación exitosa.",
+                    Data = fileContent.ToList()
+                };
+            }
+            catch (HttpRequestException httpEx)
+            {
+                result = new ApiResponse<List<byte>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message),
+                    Data = []
+                };
+            }
+            catch (NotSupportedException notSupportedEx)
+            {
+                result = new ApiResponse<List<byte>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message),
+                    Data = []
+                };
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<byte>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message),
+                    Data = []
+                };
+            }
+
+            return result;
+        }
+
+
+        public async Task<ApiResponse<bool>> ImportModels(int IdUser, MultipartFormDataContent FormData)
+        {
+            ApiResponse<bool> result;
+
+            try
+            {
+                var response = await _http.PostAsync($"api/Model/Import?userId={IdUser}", FormData);
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Error Importar Modelo: {response.StatusCode} - {response.ReasonPhrase}");
+                }
+
+                result = new ApiResponse<bool>()
+                {
+                    Processed = true,
+                    Message = "Importacion exitosa.",
+                    Data = true
+                };
+            }
+            catch (HttpRequestException httpEx)
+            {
+                result = new ApiResponse<bool>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message),
+                    Data = false
+                };
+            }
+            catch (NotSupportedException notSupportedEx)
+            {
+                result = new ApiResponse<bool>()
+                {
+                    Processed = false,
+                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message),
+                    Data = false
+                };
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<bool>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message),
+                    Data = false
+                };
+            }
+
+            return result;
+        }
 
 
     }

@@ -8,20 +8,49 @@
 @inject UtilModuleActions ModuleActionsService
 
 <MudForm @ref="@form" >
-    <MudDialog Class="blur dialog-background" TitleClass="blur dialog-background-title" ContentClass="dialog-background-surface py-2 pa-1" ActionsClass="dialog-background-surface">
+    
+    <MudDialog Class="blur dialog-background " TitleClass="blur dialog-background-title py-2 pa-1" ContentClass="dialog-background-surface py-2 pa-1" ActionsClass="dialog-background-surface">
 
-    <TitleContent>
-        <MudText Typo="Typo.h6">
+        <TitleContent>
 
-            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3 mb-n1" />
-            @Title
+            <MudContainer>
 
-        </MudText>
+                <MudCard>
 
-    </TitleContent>
-    <DialogContent>
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudGrid Spacing="0" Justify="Justify.Center">
+                                <MudItem xs="12" sm="4">
+                                    <div class="d-flex justify-left">
+                                    </div>
+                                </MudItem>
+                                <MudItem xs="12" sm="4">
 
-        <MudContainer>
+                                </MudItem>
+                                <MudItem xs="12" sm="4">
+                                    <div class="d-flex justify-right" style="justify-content: end;">
+
+                                        <MudButton OnClick="Cancel">Cerrar</MudButton>
+                                        <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Guardar" OnClick="@(async () => await OnValidSubmit())" Color="Color.Info" Size="Size.Small" />
+
+                                    </div>
+                                </MudItem>
+                            </MudGrid>
+
+
+                        </CardHeaderContent>
+
+                    </MudCardHeader>
+
+                </MudCard>
+
+            </MudContainer>
+
+        </TitleContent>
+
+        <DialogContent>
+
+            <MudContainer>
             <MudGrid Spacing="1" Justify="Justify.Center">
 
                 <MudItem xs="12" sm="12">
@@ -55,32 +84,9 @@
             </MudGrid>
         </MudContainer>
 
-    </DialogContent>
+        </DialogContent>
 
-    <DialogActions>
-        <MudContainer>
-
-            <MudCard>
-
-                <MudCardHeader>
-                    <CardHeaderContent>
-
-                    </CardHeaderContent>
-                    <CardHeaderActions>
-                        <MudStack Row="true">
-
-                            <MudButton OnClick="Cancel">Cerrar</MudButton>
-                            <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Guardar" OnClick="@(async () => await OnValidSubmit())" Color="Color.Info" Size="Size.Small" />
-                        </MudStack>
-                    </CardHeaderActions>
-                </MudCardHeader>
-
-            </MudCard>
-
-        </MudContainer>
-    </DialogActions>
-
-</MudDialog>
+    </MudDialog>
 </MudForm>
 
 

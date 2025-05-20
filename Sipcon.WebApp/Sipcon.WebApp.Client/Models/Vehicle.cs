@@ -18,41 +18,47 @@ namespace Sipcon.WebApp.Client.Models
         public string Plate { get; set; } = string.Empty;
 
         [Required]
-        public int ColorId { get; set; } = 0;
+        public int? ColorId { get; set; } = null;
 
         public string ColorName { get;  set; } = string.Empty;
 
         [Required]
-        public int ModelId { get; set; } = 0;
+        public int? ModelId { get; set; } = null;
 
         public string ModelName { get;  set; } = string.Empty;
 
         
         //[JsonIgnore(Condition = JsonIgnoreCondition.Always)]
-        public int BrandId { get; set; } = 0;
-      
+        public int? BrandId { get; set; } = null;
+
         //[JsonIgnore(Condition = JsonIgnoreCondition.Always)]
         public string BrandName { get;  set; } = string.Empty;
 
         [Required]
-        public int Year { get; set; } = 0;
+        public int? Year { get; set; } = null;
 
         [Required]
-        public int SupplierId { get; set; } = 0;
+        public int? SupplierId { get; set; } = null;
 
         public string SupplierName { get;  set; } = string.Empty;
 
+        public string SupplierReference { get; set; } = string.Empty;
+
         [Required]
         //[JsonIgnore(Condition = JsonIgnoreCondition.Never)]
-        public int DealerId { get; set; } = 0;
+        public int? DealerId { get; set; } = null;
 
         public string DealerName { get;  set; } = string.Empty;
 
+        public string DealerReference { get; set; } = string.Empty;
+
         [Required]
         //[JsonIgnore(Condition = JsonIgnoreCondition.Never)]
-        public int CustomerId { get; set; } = 0;
+        public int? CustomerId { get; set; } = null;    
 
         public string CustomerName { get;  set; } = string.Empty;
+
+        public string EstatusName { get; set; } = string.Empty;
 
         [Required]
         public bool IsActive { get; set; } = true;

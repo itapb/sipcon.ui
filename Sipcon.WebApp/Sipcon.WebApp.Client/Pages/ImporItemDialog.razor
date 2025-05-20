@@ -1,0 +1,210 @@
+﻿@using Sipcon.WebApp.Client.Models
+@using Sipcon.WebApp.Client.Services
+@using Sipcon.WebApp.Client.Utils
+@using FluentValidation
+
+
+@inject IDialogService DialogService
+
+
+<MudForm Model="@_model"
+@ref="@form"
+@bind-IsValid="_isValid"
+@bind-IsTouched="_isTouched"
+Validation="@_validationRules.ValidateValue"> 
+    <MudDialog Class="blur dialog-background" TitleClass="blur dialog-background-title py-2 pa-1" ContentClass="dialog-background-surface py-2 pa-1" ActionsClass="dialog-background-surface">
+
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+
+                <MudIcon Icon="@Icons.Material.Filled.UploadFile" Class="mr-3 mb-n1" />
+                @Title
+
+            </MudText>
+        </TitleContent> 
+        <DialogContent>
+
+            <MudContainer>
+                <MudGrid Spacing="0" Justify="Justify.Center">
+
+                    <MudItem xs="12" sm="12">
+                        <MudCard>
+                            <MudCardContent Style="padding-top: 3px;">
+                                <MudItem xs="12">
+                                    <MudFileUpload T="IBrowserFile"
+                                                   @ref="@_fileUpload"
+                                                   @bind-Files="@_model.Files"
+                                                   For="@(() => _model.Files)"
+                                                   Hidden="@false"
+                                                   InputClass="absolute mud-width-full mud-height-full overflow-hidden z-10"
+                                                   InputStyle="opacity:0"
+                                                   ErrorText="@string.Empty"
+                                                   tabindex="-1"
+                                                   @ondrop="@ClearDragClass"
+                                                   @ondragenter="@SetDragClass"
+                                                   @ondragleave="@ClearDragClass"
+                                                   @ondragend="@ClearDragClass" 
+                                                   Accept=".xls, .xlsx" MaximumFileCount="100">
+                                        <ActivatorContent>
+                                            <MudPaper Height="300px"
+                                            Outlined="true"
+                                            Class="@_dragClass">
+                                                <MudText Typo="Typo.h6">
+                                                    Arrastre y suelte el archivo aquí o haga clic.
+                                                </MudText>
+
+                                                @if (_fileUpload?.Files?.Name is not null)
+                                                {
+                                                    <MudChip T="string" Color="Color.Dark" Text="@(_model.Files is null? string.Empty : _model.Files.Name)" />
+                                                }
+
+
+                                            </MudPaper>
+                                        </ActivatorContent>
+                                    </MudFileUpload>
+                                    <MudToolBar Gutters="@false"
+                                    Class="relative d-flex justify-end gap-4">
+                                        <MudButton Color="Color.Default"
+                                        OnClick="@OpenFilePickerAsync"
+                                        Variant="Variant.Filled"
+                                        StartIcon="@Icons.Material.Filled.AttachFile">
+                                            Adjuntar 
+                                        </MudButton>
+
+                                        <MudButton Color="Color.Error"
+                                        Disabled="@(_model.Files is null )"
+                                        OnClick="@ClearAsync"
+                                        Variant="Variant.Filled">
+                                            Eliminar
+                                        </MudButton>
+                                        <MudButton OnClick="Cancel">Cerrar</MudButton>
+                                        <MudFab StartIcon="@Icons.Material.Filled.CloudUpload" Label="Importar"
+                                        Disabled="@(!_isValid || !_isTouched || _model.Files is null )"
+                                        OnClick="@(async () => await OnValidSubmit())" Color="Color.Info" Size="Size.Small" />
+                                    </MudToolBar>
+
+                                </MudItem>
+                                <MudItem>
+                                    @if (_fileUpload?.ValidationErrors.Any() ?? false)
+                                    {
+                                        <MudText Color="Color.Error"
+                                        Typo="@Typo.caption">
+                                            @_fileUpload?.ValidationErrors[0]
+                                        </MudText>
+                                    }
+                                </MudItem>
+
+                            </MudCardContent>
+                        </MudCard>
+
+
+                    </MudItem>
+                </MudGrid>
+            </MudContainer>
+
+        </DialogContent>
+
+
+    </MudDialog>
+</MudForm>
+
+
+<style>
+    .blur {
+    backdrop-filter: blur(10px);
+    }
+
+    .dialog-background {
+    background-color: transparent;
+    }
+
+    .dialog-background-title {
+    background: rgb(from var(--mud-palette-info-lighten) r g b / 50%);
+    color: var(--mud-palette-white);
+    }
+
+    .dialog-background-surface {
+    background: rgb(from var(--mud-palette-surface) r g b / 75%);
+    }
+</style>
+
+@code {
+
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    private MudForm form;
+    private int _iduser = 1; 
+
+
+    public class ModelFileUpload
+    {
+        public IBrowserFile Files { get; set; } 
+    }
+
+    private ModelFileUpload _model = new();
+    private ModelFluentValidator _validationRules = new();
+    private MudFileUpload<IBrowserFile> _fileUpload;
+    private bool _isValid;
+    private bool _isTouched;
+    private const string DefaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mt-4 mud-width-full mud-height-full";
+    private string _dragClass = DefaultDragClass;
+
+
+    private void SetDragClass()
+        => _dragClass = $"{DefaultDragClass} mud-border-primary";
+
+    private void ClearDragClass()
+        => _dragClass = DefaultDragClass;
+
+    private Task OpenFilePickerAsync()
+        => _fileUpload?.OpenFilePickerAsync() ?? Task.CompletedTask;
+
+    private Task ClearAsync()
+        => _fileUpload?.ClearAsync() ?? Task.CompletedTask;
+
+    private async Task OnValidSubmit()
+    {
+        await form.Validate();
+        if (form.IsValid)
+        {
+
+            MudDialog.Close(DialogResult.Ok(_model.Files));
+
+        }
+
+        StateHasChanged();
+        await Task.CompletedTask;
+
+    }
+
+
+    private void Cancel() => MudDialog.Cancel();
+
+    public class ModelFluentValidator : AbstractValidator<ModelFileUpload>
+    {
+        public ModelFluentValidator()
+        {
+            RuleFor(x => x.Files)
+                .NotEmpty().WithMessage("Debe haber al menos un archivo. "); 
+
+            RuleFor(x => x.Files.Size )
+                // .NotNull().Equal(0).WithMessage("Archivo esta vacio...")
+                .LessThanOrEqualTo(10000).WithMessage("Archivo excede el limite maximo permitido de 10MB");
+
+            RuleFor(x => x.Files.ContentType).NotNull().Must(x => x.Equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") || x.Equals("application/vnd.ms-excel"))
+                .WithMessage("Tipo de archivo incorrecto ");
+
+        }
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<ModelFileUpload>.CreateWithOptions((ModelFileUpload)model, x => x.IncludeProperties(propertyName)));
+            return result.IsValid ? Array.Empty<string>() : result.Errors.Select(e => e.ErrorMessage);
+        };
+    }
+}

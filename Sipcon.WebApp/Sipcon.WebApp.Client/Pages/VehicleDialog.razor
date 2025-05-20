@@ -10,28 +10,45 @@
 @inject UtilModuleActions ModuleActionsService
 
 <MudForm Model="@_model" @ref="@form" Validation="@(_modelValidator.ValidateValue)" ValidationDelay="0">
-    <MudDialog Class="blur dialog-background" TitleClass="blur dialog-background-title" ContentClass="dialog-background-surface py-2 pa-1" ActionsClass="dialog-background-surface">
+    <MudDialog Class="blur dialog-background " TitleClass="blur dialog-background-title py-2 pa-1" ContentClass="dialog-background-surface py-2 pa-1" ActionsClass="dialog-background-surface">
 
         <TitleContent>
-            <MudText Typo="Typo.h6">
-                @switch (ActionsModal)
-                {
-                    case ActionsEnum.Create:
-                        <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-3 mb-n1" />
-                        @string.Concat("Crear Vehiculo...")
-                        break;
-                    case ActionsEnum.Edit:
-                        <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3 mb-n1" />
-                        @string.Concat("Modificar Vehiculo ", IdVehicle.ToString(), "...")
-                        break;
-                    default:
-                        <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3 mb-n1" />
-                        @string.Concat("Modificar Vehiculo ", IdVehicle.ToString(), "...")
-                        break;
-                } 
+            <MudContainer>
 
+                <MudCard>
 
-            </MudText>
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                             <MudGrid Spacing="0" Justify="Justify.Center">
+                                <MudItem xs="12" sm="4">
+                                    <div class="d-flex justify-left">
+
+                                        <MudSwitch @bind-Value="_model.IsActive" Label="Activo" LabelPlacement="Placement.End" Color="Color.Success" Disabled="@(ActionsModal == ActionsEnum.Create ? true : false)" />
+                                        <MudHidden @bind-Value="IdVehicle" />
+                                    </div>
+                                </MudItem>
+                                <MudItem xs="12" sm="4">
+
+                                </MudItem>
+                                <MudItem xs="12" sm="4">
+                                    <div class="d-flex justify-right" style="justify-content: end;">
+
+                                        <MudButton OnClick="Cancel">Cerrar</MudButton>
+                                        <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Guardar" OnClick="@(async () => await OnValidSubmit())" Color="Color.Info" Size="Size.Small" />
+
+                                    </div>
+                                </MudItem>
+                             </MudGrid>
+                            
+
+                        </CardHeaderContent>
+
+                    </MudCardHeader>
+
+                </MudCard>
+
+            </MudContainer>
+          
 
         </TitleContent>
         <DialogContent >
@@ -52,7 +69,7 @@
                                 </div>
 
 
-                                <MudSelect Typo="Typo.caption" @bind-Value="@_model.ColorId" Label="Color" AdornmentColor="Color.Primary" 
+                                <MudSelect Typo="Typo.caption" @bind-Value="@_model.ColorId" Label="Color" AdornmentColor="Color.Default" 
                                            Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
                                            For="@(() => _model.ColorId)"
                                            Immediate="true">
@@ -69,17 +86,33 @@
                         <MudCard>
                             <MudCardHeader>
                                 <CardHeaderContent>
-                                    <MudStack Row="true">
-                                        <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
-                                        <MudText Typo="Typo.h6">Datos del Vehiculo</MudText>
-                                    </MudStack>
+
+                                    <MudGrid Spacing="0" Justify="Justify.Center">
+                                        <MudItem xs="12" sm="8">
+                                            
+                                            <div class="d-flex justify-left">
+
+                                                <MudStack Row="true">
+                                                    <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
+                                                    <MudText Typo="Typo.h6">Datos del Vehiculo</MudText>
+
+                                                </MudStack>
+                                            </div>
+                                        </MudItem>
+                                        
+                                        <MudItem xs="12" sm="4">
+                                          
+
+                                                <MudText Typo="Typo.button" Align="Align.Center" Color="Color.Primary">@_model.EstatusName</MudText>
+
+                                            
+                                        </MudItem>
+                                     </MudGrid>
+
+                                   
 
                                 </CardHeaderContent>
-                                <CardHeaderActions>
 
-                                    <MudSwitch @bind-Value="_model.IsActive" Label="Activo" LabelPlacement="Placement.Start" Color="Color.Success" Disabled="@(ActionsModal == ActionsEnum.Create ? true : false)" />
-
-                                </CardHeaderActions>
                             </MudCardHeader>
                             <MudCardContent Style="padding-top: 0px;">
                                 <MudHidden @bind-Value="_model.Id" />
@@ -146,7 +179,7 @@
                             <MudCardContent Style="padding-top: 3px;">
                                 <MudStack Row="true">
 
-                                    <MudSelect Typo="Typo.caption" @bind-Value="@_model.SupplierId" Label="Planta" AdornmentColor="Color.Success" 
+                                    <MudSelect Typo="Typo.caption" @bind-Value="@_model.SupplierId" Label="Planta" AdornmentColor="Color.Default" 
                                                Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
                                                For="@(() => _model.SupplierId)"
                                                Immediate="true">
@@ -157,7 +190,7 @@
                                     </MudSelect>
 
 
-                                    <MudSelect Typo="Typo.caption" @bind-Value="@_model.DealerId" Label="Concecionario" AdornmentColor="Color.Secondary" 
+                                    <MudSelect Typo="Typo.caption" @bind-Value="@_model.DealerId" Label="Concecionario" AdornmentColor="Color.Default" 
                                                Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
                                                For="@(() => _model.DealerId)"
                                                Immediate="true">
@@ -201,53 +234,25 @@
             </MudContainer>
 
 
-            <MudDialog @bind-Visible="_nestedVisible">
+            <MudDialog @bind-Visible="_nestedModalVisible">
+                <TitleContent>
+                    <MudStack Row="true">
+                        <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="@(_successModal ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
+                        <MudText Typo="Typo.h6">Vehiculo</MudText>
+                    </MudStack>
+                </TitleContent>
                 <DialogContent>
-
-                    @if (success)
-                    {
-                        <MudText  Class="nested" Color="Color.Success">Success</MudText>
-                    }
-                    else
-                    {
-                        <MudText Class="nested" Color="Color.Warning">@_errorMessage!</MudText>
-                    }
+                    <MudStack Row="true">
+                        @* <MudIcon Icon="@(_successModal ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(_successModal ? Color.Success : Color.Error)" Size="Size.Medium" /> *@
+                        <MudText Class="nested"><p>@_errorModalMessage!</p> </MudText>
+                    </MudStack>
                 </DialogContent>
                 <DialogActions>
-                    <MudButton Color="Color.Primary" OnClick="CloseNested">Cerrar</MudButton>
-                </DialogActions>
+                    <MudButton Color="Color.Info" OnClick="CloseNestedModal" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
+                 </DialogActions>
             </MudDialog>
 
         </DialogContent>
-        <DialogActions>
-            <MudContainer>
-
-                <MudCard>
-
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            @if (success)
-                            {
-                                <MudText Color="Color.Success">Success</MudText>
-                            }
-                            else
-                            {
-                                <MudText></MudText>
-                            }
-                        </CardHeaderContent>
-                        <CardHeaderActions>
-                            <MudStack Row="true">
-
-                                <MudButton OnClick="Cancel">Cerrar</MudButton>
-                                <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Guardar" OnClick="@(async () => await OnValidSubmit())" Color="Color.Info" Size="Size.Small" />
-                            </MudStack>
-                        </CardHeaderActions>
-                    </MudCardHeader>
-
-                </MudCard>
-
-            </MudContainer>
-        </DialogActions>
 
     </MudDialog>
 </MudForm>
@@ -278,25 +283,18 @@
 
     [Parameter]
     public int IdVehicle { get; set; }
-
     [Parameter]
     public ActionsEnum ActionsModal { get; set; }
-
 
     private MudForm form;
     private Vehicle _model { get; set; } = new Vehicle();
 
-    private string _errorMessage = string.Empty;
-    private bool _nestedVisible;
+    private string _errorModalMessage = string.Empty;
+    private bool _nestedModalVisible;
     private bool _disabled = false;
-    bool success = false;
-    private int _rowCount = 0;
-    private int _pageSize = 100;
-    private int _pageNumber = 1;
+    bool _successModal = false;
+    
     private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
-    private string _filter = " "; // Cambia esto
-    private int _rowsTotal = 0; 
-
 
     private IEnumerable<SelectOption> _VehicleColorList { get; set; } = new List<SelectOption>();
     private IEnumerable<SelectOption> _VehicleModelList { get; set; } = new List<SelectOption>();
@@ -317,7 +315,7 @@
             _VehicleSupplierList = await ModuleActionsService.GetSupplierOption(_iduser);
             _VehicleDealerList = await ModuleActionsService.GetDealerOption(_iduser);
 
-            await Task.Delay(250);
+            await Task.Delay(100);
             _disabled = false;
         }
         else
@@ -345,16 +343,16 @@
             _VehicleDealerList = await ModuleActionsService.GetDealerOption(_iduser);
 
 
-            await Task.Delay(250);
+            await Task.Delay(100);
             StateHasChanged();
         }
         else
         {
             _model = new Vehicle();
             _disabled = true;
-            _errorMessage = "(Problemas al cargar Vehiculo) Vehiculo no encontrado...";
+            _errorModalMessage = "(Problemas al cargar Vehiculo) Vehiculo no encontrado...";
             Console.WriteLine(serviceResponse.Message);
-            OpenNested();
+            OpenNestedModal();
         }
 
 
@@ -379,9 +377,9 @@
 
         if (form.IsValid)
         {
-            _errorMessage = "";
-            var serviceResponse = await VehicleService.UpdateVehicle(_model, _iduser);
+            _errorModalMessage = "";
 
+            var serviceResponse = await VehicleService.UpdateVehicle(_model, _iduser);
             if (serviceResponse.Processed)
             {
                 if (ActionsModal == ActionsEnum.Create)
@@ -396,29 +394,29 @@
                     }
                 
                 }
-                _errorMessage = "Successfully...";
-                success = true;
+                _errorModalMessage = "Vehiculo guardado Satisfactoriamente...";
+                _successModal = true;
            
             }
             else
             {
-                success = false;
-                _errorMessage = "!Problemas al guardar Vehiculo...";
+                _successModal = false;
+                _errorModalMessage = "!Problemas al guardar Vehiculo...";
                 Console.WriteLine(serviceResponse.Message);            
-                OpenNested();
-
             }
+
+            OpenNestedModal();
         }
 
         StateHasChanged();
         await Task.CompletedTask;
-        
+
     }
 
 
     private void Cancel()
     {
-        if (success)
+        if (_successModal)
             MudDialog.Close(DialogResult.Ok(true));
         else
         {
@@ -426,9 +424,18 @@
         }
     } 
 
-    private void OpenNested() => _nestedVisible = true;
+    private void OpenNestedModal() => _nestedModalVisible = true;
 
-    private void CloseNested() => _nestedVisible = false;
+    private async Task CloseNestedModal()
+    {
+        _nestedModalVisible = false;
+        
+        await Task.Delay(50);
+        MudDialog.Close(DialogResult.Ok(true));
+        await Task.CompletedTask;
+       
+    }
+    
    
 
     /// <summary>

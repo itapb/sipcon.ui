@@ -5,7 +5,7 @@ namespace Sipcon.WebApp.Client.Models
     public class Model
     {
         [Required]
-        public int BrandId { get; set; } = 0;
+        public int? BrandId { get; set; }
         public string BrandName { get; set; } = string.Empty;
 
         [Required]
@@ -15,7 +15,7 @@ namespace Sipcon.WebApp.Client.Models
         public string Name { get; set; } = string.Empty;
 
         [Required]
-        public int PolicyTypeId { get; set; } = 0;
+        public int? PolicyTypeId { get; set; } 
 
         public string PolicyTypeName { get; set; } = string.Empty;
         

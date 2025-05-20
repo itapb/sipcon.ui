@@ -34,28 +34,28 @@ namespace Sipcon.WebApp.Client.Utils
                     switch (module.ActionName)
                     {
                         case "IMPORT":
-                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.ImportExport, module.Id, module.ActionName, Color.Secondary));
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.Upload, module.Id, module.ActionName, Color.Info));
                             break;
                         case "EXPORT":
-                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.ImportExport, module.Id, module.ActionName, Color.Dark));
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.Download, module.Id, module.ActionName, Color.Info));
                             break;
                         case "ACTIVATE":
-                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.CheckCircle, module.Id, module.ActionName, Color.Success));
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.VerifiedUser, module.Id, module.ActionName, Color.Info));
                             break;
                         case "DEACTIVATE":
-                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.Cancel, module.Id, module.ActionName, Color.Error));
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.Dangerous, module.Id, module.ActionName, Color.Info));
                             break;
                         case "ASSIGN":
-                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.Assignment, module.Id, module.ActionName, Color.Tertiary));
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.Label, module.Id, module.ActionName, Color.Info));
                             break;
                         case "UNASSIGN":
-                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.Unarchive, module.Id, module.ActionName, Color.Default));
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Outlined.LabelOff, module.Id, module.ActionName, Color.Info));
                             break;
                         case "AVAILABLE":
-                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.LockOpen, module.Id, module.ActionName, Color.Primary));
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.DirectionsCarFilled, module.Id, module.ActionName, Color.Info));
                             break;
                         case "UNAVAILABLE":
-                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.Lock, module.Id, module.ActionName, Color.Default));
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.CarCrash, module.Id, module.ActionName, Color.Info));
                             break;
 
                         default:
@@ -80,8 +80,6 @@ namespace Sipcon.WebApp.Client.Utils
             {
                 List<VehicleColor> _List = moduleResponse.Data ?? new List<VehicleColor>();
 
-
-                _itemsSelect.Add(new SelectOption());
                 foreach (var item in _List.ToList())
                 {
                     _itemsSelect.Add(new SelectOption(item.Id, item.Name));
@@ -103,7 +101,6 @@ namespace Sipcon.WebApp.Client.Utils
                 List<Model> _List = moduleResponse.Data ?? new List<Model>();
 
 
-                _itemsSelect.Add(new SelectOption());
                 foreach (var item in _List.ToList())
                 {
                     _itemsSelect.Add(new SelectOption(item.Id, item.Name));
@@ -124,7 +121,6 @@ namespace Sipcon.WebApp.Client.Utils
                 List<Supplier> _List = moduleResponse.Data ?? new List<Supplier>();
 
 
-                _itemsSelect.Add(new SelectOption());
                 foreach (var item in _List.ToList())
                 {
                     _itemsSelect.Add(new SelectOption(item.Id, item.FirstName));
@@ -145,7 +141,6 @@ namespace Sipcon.WebApp.Client.Utils
                 List<Dealer> _List = moduleResponse.Data ?? new List<Dealer>();
 
 
-                _itemsSelect.Add(new SelectOption());
                 foreach (var item in _List.ToList())
                 {
                     _itemsSelect.Add(new SelectOption(item.Id, item.FirstName));
@@ -166,7 +161,6 @@ namespace Sipcon.WebApp.Client.Utils
                 List<Brand> _List = moduleResponse.Data ?? new List<Brand>();
 
 
-                _itemsSelect.Add(new SelectOption());
                 foreach (var item in _List.ToList())
                 {
                     _itemsSelect.Add(new SelectOption(item.Id, item.Name));
@@ -187,7 +181,6 @@ namespace Sipcon.WebApp.Client.Utils
                 List<PolicyType> _List = moduleResponse.Data ?? new List<PolicyType>();
 
 
-                _itemsSelect.Add(new SelectOption());
                 foreach (var item in _List.ToList())
                 {
                     _itemsSelect.Add(new SelectOption(item.Id, item.Description));
