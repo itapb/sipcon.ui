@@ -5,107 +5,108 @@
 @using Sipcon.WebApp.Client.Services
 @using Sipcon.WebApp.Client.Utils
 @using Sipcon.WebApp.Client.Enum
+@using System.Text.Json
 
 
 @inject IVehicleService VehicleService
 @inject IDialogService DialogService
 @inject UtilModuleActions ModuleActionsService
-
+@inject IJSRuntime JSRuntime
 
 
 <PageTitle>Vehiculos</PageTitle>
 <MudBreadcrumbs Items="_itemsNavigate"></MudBreadcrumbs>
 <MudText Typo="Typo.h5" GutterBottom="true">Vehiculos</MudText>
-
+<InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
 
 <MudDataGrid @ref="_mudDataGrid"
-             MultiSelection="true" 
-             SelectedItems="@_selectedVehicles"
-             SortMode="SortMode.Multiple"
-             Filterable="true"
-             FixedHeader Height="calc(92vh - 235px)"
-             Hideable="true"
-             Loading="_loading"
-             Bordered="true"
-             Dense="true"
-             ServerData="LoadGridData">
+MultiSelection="true" 
+SelectedItems="@_selectedVehicles"
+SortMode="SortMode.Multiple"
+Filterable="true"
+FixedHeader Height="calc(92vh - 235px)"
+Hideable="true"
+Loading="_loading"
+Bordered="true"
+Dense="true"
+ServerData="LoadGridData">
 
-        <ToolBarContent>
-            <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="() => ClickAddVehicle()"></MudIconButton>
-            <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
-            AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" OnKeyDown="HandleKeyDownSearch"></MudTextField>
-            <MudSpacer />
-            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Success" OnClick="() => HandleOnClickRefresh()" />
-            <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
-                @foreach (var module in _itemsModules)
-                {
-                    <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
-                                 Label="@module.Text"
-                                 OnClick="() => HandleMenuClick(module)" />
+    <ToolBarContent>
+        <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="() => ClickAddVehicle()"></MudIconButton>
+        <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+        AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" OnKeyDown="HandleKeyDownSearch"></MudTextField>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Success" OnClick="() => HandleOnClickRefresh()" />
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+            @foreach (var module in _itemsModules)
+            {
+                <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
+                Label="@module.Text"
+                OnClick="() => HandleMenuClick(module)" />
 
-                }
-            </MudMenu>
-        </ToolBarContent>
-        <Columns>
-            <SelectColumn T="Vehicle" />
-            <TemplateColumn T="Vehicle" Title="Marca">
-                <CellTemplate>
-                    
-                    <div class="d-flex justify-center" style="height: 45px;">
-                        <MudTooltip Text="@context.Item.BrandName">
-                            <MudImage Src="@(context.Item.BrandName.ToUpper() == "CHANGAN" ? "Images/changan_marca.jpeg" : "Images/foton_marca.jpeg")" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg "
-                                        FallbackSrc="@(context.Item.BrandName.ToUpper() == "CHANGAN" ? "Images/changan_emblema.png": "Images/foton_emblema.jpeg")" Height="45" Width="55"></MudImage>
-                        </MudTooltip>
-                    </div>
-                    
-                </CellTemplate>
-            </TemplateColumn>
-            <TemplateColumn T="Vehicle" Title="VIN">
-                <CellTemplate>
-                    
-                     <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary">@context.Item.Vin</MudText>
+            }
+        </MudMenu>
+    </ToolBarContent>
+    <Columns>
+        <SelectColumn T="Vehicle" />
+        <TemplateColumn T="Vehicle" Title="Marca">
+            <CellTemplate>
 
-                </CellTemplate>
-            </TemplateColumn>
-            <TemplateColumn T="Vehicle" Title="Placa">
-                <CellTemplate>
+                <div class="d-flex justify-center" style="height: 45px;">
+                    <MudTooltip Text="@context.Item.BrandName">
+                        <MudImage Src="@(context.Item.BrandName.ToUpper() == "CHANGAN" ? "Images/changan_marca.jpeg" : "Images/foton_marca.jpeg")" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg "
+                        FallbackSrc="@(context.Item.BrandName.ToUpper() == "CHANGAN" ? "Images/changan_emblema.png": "Images/foton_emblema.jpeg")" Height="45" Width="55"></MudImage>
+                    </MudTooltip>
+                </div>
 
-                    <MudStack Row="false">
-                        <MudText Typo="Typo.caption" Align="Align.Start"><b>@context.Item.Plate</b> </MudText>
-                    </MudStack>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn T="Vehicle" Title="VIN">
+            <CellTemplate>
 
-                </CellTemplate>
-            </TemplateColumn>
-            <PropertyColumn Property="x => x.Year" Title="Año" Sortable="false" Filterable="false" />
-            <PropertyColumn Property="x => x.ColorName" Title="Color" Sortable="false" Filterable="false" />
-            <PropertyColumn Property="x => x.ModelName" Title="Modelo" Sortable="false" Filterable="false" />
-            <PropertyColumn Property="x => x.SupplierName" Title="Planta" Sortable="false" Filterable="false" />
-            <PropertyColumn Property="x => x.EstatusName" Title="Estatus" Sortable="false" Filterable="false" />
+                <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary">@context.Item.Vin</MudText>
 
-            <TemplateColumn T="Vehicle" Title="Activo">
-                <CellTemplate>
-                    <div class="d-flex justify-center">
-                        <MudIcon Icon="@(context.Item.IsActive ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.IsActive ? Color.Success : Color.Error)" Size="Size.Medium" />
-                    </div>
-                    
-                </CellTemplate>
-            </TemplateColumn>
-            <TemplateColumn >
-                <CellTemplate>
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditVehicle(context.Item)" />
-                </CellTemplate>
-            </TemplateColumn>
-        </Columns>
-        <PagerContent>
-            <MudDataGridPager T="Vehicle" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
-        </PagerContent>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn T="Vehicle" Title="Placa">
+            <CellTemplate>
+
+                <MudStack Row="false">
+                    <MudText Typo="Typo.caption" Align="Align.Start"><b>@context.Item.Plate</b> </MudText>
+                </MudStack>
+
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.Year" Title="Año" Sortable="false" Filterable="false" />
+        <PropertyColumn Property="x => x.ColorName" Title="Color" Sortable="false" Filterable="false" />
+        <PropertyColumn Property="x => x.ModelName" Title="Modelo" Sortable="false" Filterable="false" />
+        <PropertyColumn Property="x => x.SupplierName" Title="Planta" Sortable="false" Filterable="false" />
+        <PropertyColumn Property="x => x.EstatusName" Title="Estatus" Sortable="false" Filterable="false" />
+
+        <TemplateColumn T="Vehicle" Title="Activo">
+            <CellTemplate>
+                <div class="d-flex justify-center">
+                    <MudIcon Icon="@(context.Item.IsActive ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.IsActive ? Color.Success : Color.Error)" Size="Size.Medium" />
+                </div>
+
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn >
+            <CellTemplate>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditVehicle(context.Item)" />
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="Vehicle" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+    </PagerContent>
 </MudDataGrid>
 
 <MudDialog @bind-Visible="_nestedVisible">
     <TitleContent>
         <MudStack Row="true">
             <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="@(_success ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
-            <MudText Typo="Typo.h6">Modelo</MudText>
+            <MudText Typo="Typo.h6">Vehiculo</MudText>
         </MudStack>
     </TitleContent>
     <DialogContent>
@@ -149,14 +150,14 @@
     ];
 
 
- 
+
     private async Task<GridData<Vehicle>> LoadGridData(GridState<Vehicle> state)
     {
-     
+
         _rowCount = state.Page * state.PageSize;
-       
+
         await GetVehicles();
-     
+
         return new GridData<Vehicle> { TotalItems = _rowsTotal, Items = _Vehicles };
     }
 
@@ -168,7 +169,7 @@
         {
             _Vehicles = serviceResponse.Data;
             _rowsTotal = serviceResponse.Total;
-            
+
             if (_Vehicles.Count() > 0)
             {
                 _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
@@ -194,7 +195,7 @@
             {
                 Console.WriteLine($"Buscando: {_searchString}");
                 await _mudDataGrid!.ReloadServerData();
-                
+
             }
 
         }
@@ -249,7 +250,7 @@
 
     private void CloseNested() => _nestedVisible = false;
 
-     
+
 
     private async Task HandleMenuClick(ModuleAction module)
     {
@@ -285,16 +286,156 @@
         }
     }
 
+    // private async Task ImportItemsAsync()
+    // {
+
+    //     await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('[type=file]').click()");
+    //     return;
+    // }
+
     private async Task ImportItemsAsync()
     {
-        // Lógica para importar elementos
-        Console.WriteLine("Importando elementos...");
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false };
+        var parameters = new DialogParameters<ImporItemDialog> { { x => x.Title, "Importar Vehiculo(s)..." } };
+        var dialog = await DialogService.ShowAsync<ImporItemDialog>("simple dialog", parameters, options);
+
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+
+            IBrowserFile file = (IBrowserFile)(result.Data ?? string.Empty);
+            const long maxAllowedSize = 10 * 1024 * 1024; // 10MB
+            if (file.Size == 0)
+            {
+                _success = false;
+                _nestedErrorMessage = "!Archivo esta vacio, Error de Archivo(s)...";
+                OpenNested();
+            }
+            else if (file.Size > maxAllowedSize)
+            {
+                _success = false;
+                _nestedErrorMessage = "!Tamaño del archivo excede el limite maximo permitido de 10MB....";
+                OpenNested();
+            }
+            else
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
+
+                var content = new StreamContent(stream);
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+                // Create a multipart form data content
+                var formData = new MultipartFormDataContent();
+                formData.Add(content, "file", file.Name);
+
+
+                var serviceResponse = await VehicleService.ImportVehicles(_iduser, formData);
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = "Vehiculo(s) Cargados Satisfactoriamente...";
+
+                    OpenNested();
+                    await _mudDataGrid!.ReloadServerData();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = "!Problemas al Importar Vehiculo(s)...";
+                    OpenNested();
+
+                }
+            }
+           
+
+        }
+
+
+       
+    
+        await Task.CompletedTask;
+    }
+
+
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        if (e.FileCount == 1)
+        {
+            var file = e.File;
+            const long maxAllowedSize = 10 * 1024 * 1024; // 10MB
+            if (file.Size == 0)
+            {
+                _success = false;
+                _nestedErrorMessage = "!Archivo esta vacio, Error de Archivo(s)...";
+                OpenNested();
+            }
+            else if (file.Size > maxAllowedSize)
+            {
+                _success = false;
+                _nestedErrorMessage = "!Tamaño del archivo excede el limite maximo permitido de 10MB....";
+                OpenNested();
+            }
+            else
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
+
+                var content = new StreamContent(stream);
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+                // Create a multipart form data content
+                var formData = new MultipartFormDataContent();
+                formData.Add(content, "file", file.Name);
+           
+
+                var serviceResponse = await VehicleService.ImportVehicles(_iduser, formData);
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = "Vehiculo(s) Cargados Satisfactoriamente...";
+
+                    OpenNested();
+                    await _mudDataGrid!.ReloadServerData();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = "!Problemas al Importar Vehiculo(s)...";
+                    OpenNested();
+
+                }
+            }
+        }
+        await Task.CompletedTask;
     }
 
     private async Task ExportItemsAsync()
     {
-        // Lógica para exportar elementos
-        Console.WriteLine("Exportando elementos...");
+
+        var serviceResponse = await VehicleService.ExportVehicles(_iduser, _searchString);
+        if (serviceResponse.Processed)
+        {
+            _success = true;
+            _nestedErrorMessage = "";
+
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+            var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Vehiculos.xlsx");
+
+        }
+        else
+        {
+            _success = false;
+            _nestedErrorMessage = "!Problemas al exportar Vehiculos...";
+            Console.WriteLine(serviceResponse.Message);
+            OpenNested();
+
+        }                
+
     }
 
     private async Task ActivateItemsAsync(int moduleId, string moduleActionName )

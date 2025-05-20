@@ -5,6 +5,7 @@
     using System.Net.Http.Json;
     using System.Text.Json;
     using System.Text.Json.Serialization;
+    using Microsoft.Extensions.Options;
 
 
     public class VehicleRepository(HttpClient http) : IVehicleService
@@ -12,8 +13,6 @@
         private readonly HttpClient _http = http;
 
         
-
-
         public async Task<ApiResponse<List<Vehicle>>> GetVehicles(int IdUser, int RowFrom = 0, string Filter = "")
         {
             ApiResponse<List<Vehicle>>? result;
@@ -60,6 +59,7 @@
             return result;
 
         }
+
         public async Task<ApiResponse<Vehicle>> GetVehicle(int IdVehicle, int IdUser) 
         {
             ApiResponse<Vehicle>? result;
@@ -304,7 +304,107 @@
 
         }
 
+        public async Task<ApiResponse<List<byte>>> ExportVehicles(int IdUser, string Filter = "")
+        {
+            ApiResponse<List<byte>> result; 
+            string fileUrl = string.Empty;
+            try
+            {
+                var response = await _http.GetAsync($"api/Vehicle/Export?filter={Filter}&userId={IdUser}");
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Error Export Vehiculos: {response.StatusCode} - {response.ReasonPhrase}");
+                }
 
+                var fileContent = await response.Content.ReadAsByteArrayAsync();
+                result = new ApiResponse<List<byte>>() 
+                {
+                    Processed = true,
+                    Message = "Exportación exitosa.",
+                    Data = fileContent.ToList()
+                };
+            }
+            catch (HttpRequestException httpEx)
+            {
+                result = new ApiResponse<List<byte>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message),
+                    Data = []
+                };
+            }
+            catch (NotSupportedException notSupportedEx)
+            {
+                result = new ApiResponse<List<byte>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message),
+                    Data = []
+                };
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<byte>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message),
+                    Data = []
+                };
+            }
+
+            return result;
+        }
+
+       
+        public async Task<ApiResponse<bool>> ImportVehicles(int IdUser, MultipartFormDataContent FormData )
+        {
+            ApiResponse<bool> result;
+            
+            try
+            {
+                var response = await _http.PostAsync($"api/Vehicle/Import?userId={IdUser}", FormData);
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Error Importar Vehiculos: {response.StatusCode} - {response.ReasonPhrase}");
+                }
+
+                result = new ApiResponse<bool>()
+                {
+                    Processed = true,
+                    Message = "Importacion exitosa.",
+                    Data = true
+                };
+            }
+            catch (HttpRequestException httpEx)
+            {
+                result = new ApiResponse<bool>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message),
+                    Data = false
+                };
+            }
+            catch (NotSupportedException notSupportedEx)
+            {
+                result = new ApiResponse<bool>()
+                {
+                    Processed = false,
+                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message),
+                    Data = false
+                };
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<bool>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message),
+                    Data = false
+                };
+            }
+
+            return result;
+        }
     }
 
 }

@@ -5,18 +5,19 @@
 @using Sipcon.WebApp.Client.Services
 @using Sipcon.WebApp.Client.Utils
 @using Sipcon.WebApp.Client.Enum
+@using System.Text.Json
 
 
 @inject IModelService ModelService
 @inject IDialogService DialogService
 @inject UtilModuleActions ModuleActionsService
-
+@inject IJSRuntime JSRuntime
 
 
 <PageTitle>Modelos</PageTitle>
 <MudBreadcrumbs Items="_itemsNavigate"></MudBreadcrumbs>
 <MudText Typo="Typo.h5" GutterBottom="true">Modelos</MudText>
-
+<InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
 
 <MudDataGrid @ref="_mudDataGrid"
             MultiSelection="true" 
@@ -250,16 +251,152 @@
         }
     }
 
+    // private async Task ImportItemsAsync()
+    // {
+
+    //     await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('[type=file]').click()");
+    //     return;
+    // }
+
     private async Task ImportItemsAsync()
     {
-        // Lógica para importar elementos
-        Console.WriteLine("Importando elementos...");
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false };
+        var parameters = new DialogParameters<ImporItemDialog> { { x => x.Title, "Importar Modelo(s)..." } };
+        var dialog = await DialogService.ShowAsync<ImporItemDialog>("simple dialog", parameters, options);
+
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+
+            IBrowserFile file = (IBrowserFile)(result.Data ?? string.Empty);
+            const long maxAllowedSize = 10 * 1024 * 1024; // 10MB
+            if (file.Size == 0)
+            {
+                _success = false;
+                _nestedErrorMessage = "!Archivo esta vacio, Error de Archivo(s)...";
+                OpenNested();
+            }
+            else if (file.Size > maxAllowedSize)
+            {
+                _success = false;
+                _nestedErrorMessage = "!Tamaño del archivo excede el limite maximo permitido de 10MB....";
+                OpenNested();
+            }
+            else
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
+
+                var content = new StreamContent(stream);
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+                // Create a multipart form data content
+                var formData = new MultipartFormDataContent();
+                formData.Add(content, "file", file.Name);
+
+
+                var serviceResponse = await ModelService.ImportModels(_iduser, formData);
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = "Modelo(s) Cargados Satisfactoriamente...";
+
+                    OpenNested();
+                    await _mudDataGrid!.ReloadServerData();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = "!Problemas al Importar Modelo(s)...";
+                    OpenNested();
+
+                }
+            }
+
+
+        }
+
+        await Task.CompletedTask;
     }
 
+
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        if (e.FileCount == 1)
+        {
+            var file = e.File;
+            const long maxAllowedSize = 10 * 1024 * 1024; // 10MB
+            if (file.Size == 0)
+            {
+                _success = false;
+                _nestedErrorMessage = "!Archivo esta vacio, Error de Archivo(s)...";
+                OpenNested();
+            }
+            else if (file.Size > maxAllowedSize)
+            {
+                _success = false;
+                _nestedErrorMessage = "!Tamaño del archivo excede el limite maximo permitido de 10MB....";
+                OpenNested();
+            }
+            else
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
+
+                var content = new StreamContent(stream);
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+                // Create a multipart form data content
+                var formData = new MultipartFormDataContent();
+                formData.Add(content, "file", file.Name);
+
+
+                var serviceResponse = await ModelService.ImportModels(_iduser, formData);
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = "Modelo(s) Cargados Satisfactoriamente...";
+
+                    OpenNested();
+                    await _mudDataGrid!.ReloadServerData();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = "!Problemas al Importar Modelo(s)...";
+                    OpenNested();
+
+                }
+            }
+        }
+        await Task.CompletedTask;
+    }
+
+    
     private async Task ExportItemsAsync()
     {
-        // Lógica para exportar elementos
-        Console.WriteLine("Exportando elementos...");
+        var serviceResponse = await ModelService.ExportModels(_iduser, _searchString);
+        if (serviceResponse.Processed)
+        {
+            _success = true;
+            _nestedErrorMessage = "";
+
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+            var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Modelos.xlsx");
+
+        }
+        else
+        {
+            _success = false;
+            _nestedErrorMessage = "!Problemas al exportar Modelos...";
+            Console.WriteLine(serviceResponse.Message);
+            OpenNested();
+
+        }
     }
 
     private async Task ActivateItemsAsync(int moduleId, string moduleActionName)
@@ -336,7 +473,7 @@
                 };
             bool? result = await DialogService.ShowMessageBox(
                 "Inactivar Modelo(s)",
-                $"Seguro de Inactivar Vehiculo(s) seleccionado(s)? ",
+                $"Seguro de Inactivar Modelo(s) seleccionado(s)? ",
                 yesText: "Si", noText: "No", "", option);
 
             if (result == true)

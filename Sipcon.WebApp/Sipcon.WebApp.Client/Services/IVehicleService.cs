@@ -9,6 +9,8 @@
         public Task<ApiResponse<List<ActionResult>>> CreateVehicle(Vehicle Vehicle, int IdUser);
         public Task<ApiResponse<List<ActionResult>>> UpdateVehicle(Vehicle Vehicle, int IdUser);
         public Task<ApiResponse<List<ActionResult>>> ActionsVehicle(List<PostAction> PostActions, int IdUser);
+        public Task<ApiResponse<List<byte>>> ExportVehicles(int IdUser, string Filter = "");
+        public Task<ApiResponse<bool>> ImportVehicles(int IdUser, MultipartFormDataContent FormData);
 
     }
 }

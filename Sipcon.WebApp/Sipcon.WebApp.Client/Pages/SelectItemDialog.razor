@@ -8,18 +8,47 @@
 @inject UtilModuleActions ModuleActionsService
 
 <MudForm @ref="@form" >
-    <MudDialog Class="blur dialog-background" TitleClass="blur dialog-background-title" ContentClass="dialog-background-surface py-2 pa-1" ActionsClass="dialog-background-surface">
+    <MudDialog Class="blur dialog-background " TitleClass="blur dialog-background-title py-2 pa-1" ContentClass="dialog-background-surface py-2 pa-1" ActionsClass="dialog-background-surface">
 
-    <TitleContent>
-        <MudText Typo="Typo.h6">
+        <TitleContent>
+            
+            <MudContainer>
 
-            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3 mb-n1" />
-            @Title
+                <MudCard>
 
-        </MudText>
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudGrid Spacing="0" Justify="Justify.Center">
+                                <MudItem xs="12" sm="4">
+                                    <div class="d-flex justify-left">
 
-    </TitleContent>
-    <DialogContent>
+                                    </div>
+                                </MudItem>
+                                <MudItem xs="12" sm="4">
+
+                                </MudItem>
+                                <MudItem xs="12" sm="4">
+                                    <div class="d-flex justify-right" style="justify-content: end;">
+
+                                        <MudButton OnClick="Cancel">Cerrar</MudButton>
+                                        <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Guardar" OnClick="@(async () => await OnValidSubmit())" Color="Color.Info" Size="Size.Small" />
+
+                                    </div>
+                                </MudItem>
+                            </MudGrid>
+
+
+                        </CardHeaderContent>
+
+                    </MudCardHeader>
+
+                </MudCard>
+
+            </MudContainer>
+
+        </TitleContent>
+    
+        <DialogContent>
 
         <MudContainer>
             <MudGrid Spacing="1" Justify="Justify.Center">
@@ -43,8 +72,10 @@
 
 
                                 <MudSelect Typo="Typo.caption" @bind-Value="@_returnValue" Label="Concecionario" AdornmentColor="Color.Secondary"
-                                Margin="Margin.Dense" Disabled="false"
-                                           Validation="@_SelectValidator.Validation" Immediate="true">
+                                           Margin="Margin.Dense" Disabled="false"
+                                           Validation="@_SelectValidator.Validation" Immediate="true"
+                                           Required= "true" 
+                                           RequiredError="Campo Requerido" >
                                     @foreach (var model in SelectList)
                                     {
                                         <MudSelectItem Value="@model.Value">@model.Text</MudSelectItem>
@@ -63,30 +94,7 @@
 
     </DialogContent>
 
-    <DialogActions>
-        <MudContainer>
-
-            <MudCard>
-
-                <MudCardHeader>
-                    <CardHeaderContent>
-
-                    </CardHeaderContent>
-                    <CardHeaderActions>
-                        <MudStack Row="true">
-
-                            <MudButton OnClick="Cancel">Cerrar</MudButton>
-                            <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Guardar" OnClick="@(async () => await OnValidSubmit())" Color="Color.Info" Size="Size.Small" />
-                        </MudStack>
-                    </CardHeaderActions>
-                </MudCardHeader>
-
-            </MudCard>
-
-        </MudContainer>
-    </DialogActions>
-
-</MudDialog>
+    </MudDialog>
 </MudForm>
 
 
@@ -123,7 +131,7 @@
 
 
     private MudForm form;
-    private int _returnValue = 0;
+    private int? _returnValue = null;
     private string _errorMessage = string.Empty;
     bool success = false;
 
@@ -132,7 +140,7 @@
 
     // The validation rules (overkill, I know, but very fluent):
     SelectValidator<int> _SelectValidator = new SelectValidator<int>(x => x
-        .NotNull().WithMessage("Campo requerido")
+        .NotEmpty().NotNull().WithMessage("Campo requerido")
         .GreaterThan(0).WithMessage("Seleccione un Concesionario."));
 
 
