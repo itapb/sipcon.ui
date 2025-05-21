@@ -5,7 +5,7 @@
 @using Sipcon.WebApp.Client.Enum
 @using FluentValidation
 
-@inject IModelService ModelService
+@inject IPolicyTypeService PolicyTypeService
 @inject IDialogService DialogService
 @inject UtilModuleActions ModuleActionsService
 
@@ -24,7 +24,7 @@
                                     <div class="d-flex justify-left">
 
                                         <MudSwitch @bind-Value="_model.IsActive" Label="Activo" LabelPlacement="Placement.End" Color="Color.Success" Disabled="@(ActionsModal == ActionsEnum.Create ? true : false)" />
-                                        <MudHidden @bind-Value="IdModel"/>
+                                        <MudHidden @bind-Value="IdPolicyType"/>
 
                                     </div>
                                 </MudItem>
@@ -59,10 +59,12 @@
                         <MudCard>
 
                             <MudCardContent Style="padding-top: 0px;">
+                                <MudHidden @bind-Value="_model.Id" />
+
                                 <div class="d-flex justify-center" >
 
-                                    <MudTooltip Text="Imagen Modelo">
-                                        <MudImage Src="images/changan_rojo_1.png" Alt="Modelo" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg " FallbackSrc="Images/changan_emblema.png" Width="125" Height="152" />
+                                    <MudTooltip Text="Tipo Poliza">
+                                        <MudImage Src="images/changan_rojo_1.png" Alt="TipoPoliza" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg " FallbackSrc="Images/changan_emblema.png" Width="130" Height="159" />
                                     </MudTooltip>
                                 </div>
 
@@ -75,37 +77,45 @@
                             <MudCardHeader>
                                 <CardHeaderContent>
                                     <MudStack Row="true">
-                                        <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
-                                        <MudText Typo="Typo.h6">Modelo</MudText>
+                                        <MudIcon Icon="@Icons.Material.Filled.Policy" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
+                                        <MudText Typo="Typo.h6">Tipo Poliza</MudText>
                                     </MudStack>
 
                                 </CardHeaderContent>
-                                <CardHeaderActions>
-                                    
-                                </CardHeaderActions>
                             </MudCardHeader>
                             <MudCardContent Style="padding-top: 0px;">
-                                <MudHidden @bind-Value="_model.Id" />
-                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Name" Label="Nombre" Variant="Variant.Text"
-                                              Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                              For="@(() => _model.Name)"
-                                              Immediate="true" />
-                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Description" Label="Descripci&oacute;n" Variant="Variant.Text"
-                                              Margin="Margin.Dense" Disabled="@(!_model.IsActive)" 
-                                              For="@(() => _model.Description)"
-                                              Immediate="true" />
+
+
+                                <MudSelect @bind-Value="_model.BrandId" Label="Marca" AdornmentColor="Color.Default"
+                                Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
+                                For="@(() => _model.BrandId)"
+                                Immediate="true">
+                                    @foreach (var item in _brandList)
+                                    {
+                                        <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
+                                    }
+                                </MudSelect>
+                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Description" Label="Descripci&oacute;n"
+                                Variant="Variant.Text"
+                                Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
+                                For="@(() => _model.Description)"
+                                Immediate="true" />
+
+
+
+
 
                             </MudCardContent>
 
                         </MudCard>
                     </MudItem>
-                    <MudItem xs="12" sm="12">
+                    <MudItem xs="12" sm="6">
                         <MudCard>
                             <MudCardHeader>
                                 <CardHeaderContent>
                                     <MudStack Row="true">
-                                        <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Default" Style="font-size: 1.5rem;"></MudIcon>
-                                        <MudText Typo="Typo.subtitle2">Opciones</MudText>
+                                        <MudIcon Icon="@Icons.Material.Filled.CarCrash" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
+                                        <MudText Typo="Typo.subtitle2">Cobertura Kilometraje</MudText>
                                     </MudStack>
 
                                 </CardHeaderContent>
@@ -114,28 +124,29 @@
                                 </CardHeaderActions>
                             </MudCardHeader>
                             <MudCardContent Style="padding-top: 0px;">
-                                <MudStack Row="true">
-                                    <MudSelect @bind-Value="_model.BrandId" Label="Marca" AdornmentColor="Color.Default" 
+
+                                <MudStack Row="false">
+
+                                    <MudNumericField Typo="Typo.caption" @bind-Value="_model.KM" Label="KM Frecuencia" Variant="Variant.Text"
+                                    MaxLength="5"
+                                    HideSpinButtons="true"
                                     Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                               For="@(() => _model.BrandId)"
-                                               Immediate="true" >
-                                        @foreach (var item in _brandList)
-                                        {
-                                            <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
-                                        }
-                                    </MudSelect>
+                                    For="@(() => _model.KM)"
+                                    Immediate="true" />
 
-
-                                    <MudSelect @bind-Value="_model.PolicyTypeId" Label="Tipo Poliza" AdornmentColor="Color.Default" 
+                                    <MudNumericField Typo="Typo.caption" @bind-Value="_model.GapKM" Label="KM Tolerancia" Variant="Variant.Text"
+                                    MaxLength="5"
+                                    HideSpinButtons="true"
                                     Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                               For="@(() => _model.PolicyTypeId)"
-                                               Immediate="true">
-                                        @foreach (var item in _policyTypeList)
-                                        {
-                                            <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
-                                        }
-                                    </MudSelect>
+                                    For="@(() => _model.GapKM)"
+                                    Immediate="true" />
 
+                                    <MudNumericField Typo="Typo.caption" @bind-Value="_model.TopKM" Label="KM Cobertura" Variant="Variant.Text"
+                                    MaxLength="6"
+                                    HideSpinButtons="true"
+                                    Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
+                                    For="@(() => _model.TopKM)"
+                                    Immediate="true" />
 
                                 </MudStack>
 
@@ -143,14 +154,61 @@
 
                         </MudCard>
                     </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudCard>
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudStack Row="true">
+                                        <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
+                                        <MudText Typo="Typo.subtitle2">Cobertura Meses</MudText>
+                                    </MudStack>
+
+                                </CardHeaderContent>
+
+                            </MudCardHeader>
+                            <MudCardContent Style="padding-top: 0px;">
+
+
+                                <MudStack Row="false">
+
+                                    <MudNumericField Typo="Typo.caption" @bind-Value="_model.Months" Label="Meses Frecuencia" Variant="Variant.Text"
+                                    MaxLength="2"
+                                    HideSpinButtons="true" 
+                                    Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
+                                    For="@(() => _model.Months)"
+                                    Immediate="true" />
+
+                                    <MudNumericField Typo="Typo.caption" @bind-Value="_model.GapMonths" Label="Dias Tolerancia" Variant="Variant.Text"
+                                    MaxLength="3"
+                                    HideSpinButtons="true"
+                                    Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
+                                    For="@(() => _model.GapMonths)"
+                                    Immediate="true" />
+
+                                    <MudNumericField Typo="Typo.caption" @bind-Value="_model.TopMonths" Label="Meses Cobertura " Variant="Variant.Text"
+                                    MaxLength="2"
+                                    HideSpinButtons="true"
+                                    Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
+                                    For="@(() => _model.TopMonths)"
+                                    Immediate="true" />
+
+                                </MudStack>
+
+
+
+                            </MudCardContent>
+
+                        </MudCard>
+                    </MudItem>
+
                 </MudGrid>
             </MudContainer>
 
             <MudDialog @bind-Visible="_nestedModalVisible">
                 <TitleContent>
                     <MudStack Row="true">
-                        <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="@(_successModal ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
-                        <MudText Typo="Typo.h6">Modelo</MudText>
+                        <MudIcon Icon="@Icons.Material.Filled.Policy" Color="@(_successModal ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
+                        <MudText Typo="Typo.h6">Tipo Poliza</MudText>
                     </MudStack>
                 </TitleContent>
                 <DialogContent>
@@ -164,7 +222,7 @@
             </MudDialog>
 
         </DialogContent>
-       
+
     </MudDialog>
 </MudForm>
 
@@ -194,12 +252,12 @@
     private IMudDialogInstance MudDialog { get; set; } = default!;
 
     [Parameter]
-    public int IdModel { get; set; } 
+    public int IdPolicyType { get; set; } 
     [Parameter]
     public ActionsEnum ActionsModal { get; set; }
 
     private MudForm form;
-    private Model _model { get; set; } = new Model();
+    private PolicyType _model { get; set; } = new PolicyType();
 
     private string _errorModalMessage = string.Empty;
     private bool _nestedModalVisible;
@@ -210,8 +268,8 @@
 
     private IEnumerable<SelectOption> _brandList { get; set; } = new List<SelectOption>();
     private IEnumerable<SelectOption> _policyTypeList { get; set; } = new List<SelectOption>();
-    
-    ModelValidator _modelValidator = new ModelValidator();
+
+    PolicyTypeValidator _modelValidator = new PolicyTypeValidator();
 
 
 
@@ -220,7 +278,7 @@
 
         if (ActionsModal == ActionsEnum.Create)
         {
-            _model = new Model();
+            _model = new PolicyType();
 
             _brandList = await ModuleActionsService.GetBrandOption(_iduser);
             _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(_iduser);
@@ -230,7 +288,7 @@
         }
         else
         {
-            await GetModel();
+            await GetPolicyType();
 
         }
 
@@ -238,12 +296,12 @@
     }
 
 
-    private async Task GetModel()
+    private async Task GetPolicyType()
     {
-        var serviceResponse = await ModelService.GetModel(IdModel, _iduser);
+        var serviceResponse = await PolicyTypeService.GetPolicyType(IdPolicyType, _iduser);
         if (serviceResponse.Processed)
         {
-            _model = serviceResponse.Data ?? new Model();
+            _model = serviceResponse.Data ?? new PolicyType();
             _disabled = _model.IsActive ? false : true;
 
             _brandList = await ModuleActionsService.GetBrandOption(_iduser);
@@ -254,9 +312,9 @@
         }
         else
         {
-            _model = new Model();
+            _model = new PolicyType();
             _disabled = true;
-            _errorModalMessage = "(Problemas al cargar Modelo) Modelo no encontrado...";
+            _errorModalMessage = "(Problemas al cargar Tipo Poliza, no encontrado...";
             Console.WriteLine(serviceResponse.Message);
             OpenNested();
         }
@@ -273,7 +331,7 @@
         {
             _errorModalMessage = "";
 
-            var serviceResponse = await ModelService.UpdateModel(_model, _iduser);
+            var serviceResponse = await PolicyTypeService.UpdatePolicyType(_model, _iduser);
             if (serviceResponse.Processed)
             {
                 if (ActionsModal == ActionsEnum.Create)
@@ -283,18 +341,18 @@
                     var _result = _results.FirstOrDefault();
                     if (_result is not null)
                     {
-                        IdModel = _result.LastId;
-                        await GetModel();
+                        IdPolicyType = _result.LastId;
+                        await GetPolicyType();
                     }
                 }
-                _errorModalMessage = "Modelo guardado Satisfactoriamente...";
+                _errorModalMessage = "Tipo Poliza guardado Satisfactoriamente...";
                 _successModal = true;
 
             }
             else
             {
                 _successModal = false;
-                _errorModalMessage = "Problemas al guardar Modelo...";
+                _errorModalMessage = "Problemas al guardar Tipo Poliza...";
                 Console.WriteLine(serviceResponse.Message);
 
             }
@@ -329,39 +387,63 @@
         await Task.CompletedTask;
 
     }
-    
+
 
     /// <summary>
     /// Validacion del formulario 
     /// </summary>
-    /// <typeparam name="Model"></typeparam>
-    public class ModelValidator : AbstractValidator<Model>
+    /// <typeparam name="PolicyType"></typeparam>
+    public class PolicyTypeValidator : AbstractValidator<PolicyType>
     {
-        public ModelValidator()
+        public PolicyTypeValidator()
         {
 
-            RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("Campo requerido")
-                .Length(3, 80).WithMessage("Campo requerido entre 3-80 carácteres");
-
             RuleFor(x => x.Description)
-            .NotEmpty().WithMessage("Campo requerido")
-            .Length(5, 150).WithMessage("Campo requerido entre 5-150 carácteres");
+                .NotEmpty().WithMessage("Campo requerido")
+                .Length(5, 150).WithMessage("Campo requerido entre 5-150 carácteres");
 
             RuleFor(x => x.BrandId)
-                .NotNull()
-                 .GreaterThan(0).WithMessage("seleccione una Marca.");
+                .NotNull().WithMessage("Campo requerido")
+                .GreaterThan(0).WithMessage("seleccione una Marca.");
 
-            RuleFor(x => x.PolicyTypeId)
-           .NotNull()
-            .GreaterThan(0).WithMessage("seleccione un Tipo de Póliza.");
+            RuleFor(x => x.KM)
+                .NotNull().WithMessage("Campo requerido")
+                .NotEmpty().WithMessage("Campo requerido");
+            // .Custom((value, context) =>
+              //     {
+              //         if (value > DateTime.Now.Year + 5)
+              //         {
+              //             context.AddFailure($"Campo requerido entre {(DateTime.Now.Year - 20).ToString() + "-" + (DateTime.Now.Year + 5)}");
+              //         }
+              //     });
+
+            RuleFor(x => x.GapKM)
+                .NotNull().WithMessage("Campo requerido")
+                .NotEmpty().WithMessage("Campo requerido");
+
+            RuleFor(x => x.TopKM)
+                .NotNull().WithMessage("Campo requerido")
+                .NotEmpty().WithMessage("Campo requerido");
+
+            RuleFor(x => x.Months)
+                .NotNull().WithMessage("Campo requerido")
+                .NotEmpty().WithMessage("Campo requerido");
+
+            RuleFor(x => x.GapMonths)
+                .NotNull().WithMessage("Campo requerido")
+                .NotEmpty().WithMessage("Campo requerido");
+
+            RuleFor(x => x.TopMonths)
+            .NotNull().WithMessage("Campo requerido")
+            .NotEmpty().WithMessage("Campo requerido");
+
 
         }
 
 
         public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
         {
-            var result = await ValidateAsync(ValidationContext<Model>.CreateWithOptions((Model)model, x => x.IncludeProperties(propertyName)));
+            var result = await ValidateAsync(ValidationContext<PolicyType>.CreateWithOptions((PolicyType)model, x => x.IncludeProperties(propertyName)));
             if (result.IsValid)
                 return Array.Empty<string>();
             return result.Errors.Select(e => e.ErrorMessage);
