@@ -1,10 +1,10 @@
 ﻿using MudBlazor;
 using Sipcon.WebApp.Client.Pages;
-
 namespace Sipcon.WebApp.Client.Helper
 {
-    public static class Useful
+    internal static class Useful
     {
+        internal static int userId = 1;
         internal static async Task<DialogResult?> ShowDialog(this IDialogService dialogService, string? strMessage, string strTitle, string strPrimaryButton, Color mColor, string? strIcon)
         {
             var parameters = new DialogParameters<Dialog> { { x => x.ContentText, strMessage }, { x => x.TitleText, strTitle }, { x => x.ButtonText, strPrimaryButton }, { x => x.Color, mColor }, { x => x.strIcon, strIcon } };
@@ -30,6 +30,14 @@ namespace Sipcon.WebApp.Client.Helper
                 "No Disponible" => Icons.Material.Filled.Cancel,
                 _ => Icons.Material.Filled.HelpOutline
             };
-        }        
+        }
+        internal static async Task OpenForm<T, TItem>(this IDialogService dialogService, int? Id, MudDataGrid<TItem>? MyMudDataGrid) where T : class, Microsoft.AspNetCore.Components.IComponent
+        {
+            var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
+            var dialogReference = await dialogService.ShowAsync<T>("", new DialogParameters { ["Value"] = Id }, options);
+            var dialogResult = await dialogReference.Result;
+            if (!dialogResult!.Canceled)
+                await MyMudDataGrid!.ReloadServerData();
+        }
     }
 }

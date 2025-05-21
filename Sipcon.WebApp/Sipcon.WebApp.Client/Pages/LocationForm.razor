@@ -1,0 +1,130 @@
+﻿@if (SelectedLocation != null){
+<div style="flex-shrink: 0; background-color: #f0f0f0;" class="pa-2">
+    <MudForm @ref="form">
+        <MudGrid Spacing="2">
+            <MudItem xs="12">
+                <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                    <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                        <MudStack Row="true">
+                            <MudSwitch @bind-Value="SelectedLocation.IsActive" Color="Color.Success" Label="Activo" />
+                        </MudStack>
+                        <MudStack Row="true" Spacing="2">
+                            <MudButton OnClick="CancelClick">Cancelar</MudButton>
+                            <MudFab StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" OnClick="SaveClick" Size="Size.Small" Label="Aceptar"></MudFab>
+                        </MudStack>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                    <MudStack Row="false">
+                        <MudText Typo="Typo.h6" GutterBottom="true">@GetTitle</MudText>
+                        <MudTextField T="string" @bind-Value="SelectedLocation.Name" Label="Ubicacion" For="@(() => SelectedLocation.Name)" MaxLength="20" />
+                        <MudSelect T="Zone" Label="Zona" ToStringFunc="@ConvertZoneFunc" Required="true" ValueChanged="OnZoneValueChanged" RequiredError="Zona es requerido" Value="ZoneSelected">
+                            @foreach (var zone in Zones!)
+                            {
+                                <MudSelectItem Value="zone" />
+                            }
+                        </MudSelect>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudForm>
+</div>
+}
+else
+{
+    <LoadingForm IsMudDialog="@(MudDialog != null)" />
+}
+
+@code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public int? Value { get; set; }
+    [Parameter] public EventCallback<int?> ValueChanged { get; set; }
+    private MudForm? form;
+    private Func<Zone?, string> ConvertZoneFunc = zone => zone?.Name!;
+    private List<Zone>? Zones = default;
+    private Zone? ZoneSelected;
+    private Location? SelectedLocation;
+    private int? LocationId
+    {
+        get => Value;
+        set
+        {
+            if (Value != value)
+            {
+                Value = value;
+                ValueChanged.InvokeAsync(Value);
+            }
+        }
+    }
+    private string GetTitle => LocationId switch { null => "Ubicaciones", 0 => "Agregar Ubicacion", _ => "Editar Ubicacion" };
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLocation(LocationId!.Value);
+    }
+    private async Task SaveClick()
+    {
+        await form!.Validate();
+        if (form.IsValid)
+        {
+            var strJsonSelectedLocation = System.Text.Json.JsonSerializer.Serialize(SelectedLocation);
+            var result_Post_Location = await Http.PostAsync($"api/Location/PostLocations?userId={Useful.userId}", new StringContent($"[{strJsonSelectedLocation}]", null, "application/json"));
+            if (result_Post_Location.IsSuccessStatusCode)
+            {
+                var content2 = await result_Post_Location.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
+                if ((content2?.data![0].insertedRows == 1 || content2?.data![0].updatedRows == 1))
+                {
+                    var mdialog = await DialogService.ShowDialog("Ubicacion Procesado!", "Ubicacion", "OK", Color.Primary, Icons.Material.Filled.Commit);                   
+                    if (!mdialog!.Canceled)
+                    {
+
+                        MudDialog?.Close(DialogResult.Ok(true));
+                        LocationId = null;
+                    }
+                }
+
+            }
+        }
+        await Task.CompletedTask;
+    }
+    private void CancelClick()
+    {
+        LocationId = null;
+        MudDialog?.Cancel();       
+    }
+    private Task OnZoneValueChanged(Zone selectedZone)
+    {
+        ZoneSelected = selectedZone;
+        SelectedLocation!.ZoneId = selectedZone.Id;
+        SelectedLocation.ZoneName = selectedZone.Name;
+        return Task.CompletedTask;
+    }
+    private async Task LoadLocation(int locationId)
+    {
+        var request1 = Http.GetAsync($"api/Zone/GetAll?rowFrom=0&userId={Useful.userId}");
+        var request2 = Http.GetAsync($"api/Location/GetOne?locationId={locationId}&userId={Useful.userId}");
+        await Task.WhenAll(request1, request2);
+        HttpResponseMessage response1 = request1.Result;
+        HttpResponseMessage response2 = request2.Result;
+
+        if (response1.IsSuccessStatusCode && response2.IsSuccessStatusCode)
+        {    
+            var zonesContent = await response1.Content.ReadFromJsonAsync<WebApiResponse<List<Zone>>>();
+            var locationContent = await response2.Content.ReadFromJsonAsync<WebApiResponse<Location>>();
+            Zones = zonesContent!.data;
+            SelectedLocation = locationId > 0 ? locationContent!.data : new Location() { Id = 0, Name = null, WarehouseName = null, IsActive = true, ZoneId = null, ZoneName = null, IsSelected = false };
+            ZoneSelected = locationId > 0 ? Zones!.FirstOrDefault(c => c.Id == SelectedLocation!.ZoneId): null;
+        }
+        else
+        {
+            var errorMessage = await response2.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
+        await Task.CompletedTask;
+    }
+}

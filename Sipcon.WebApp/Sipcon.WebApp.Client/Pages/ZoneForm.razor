@@ -1,0 +1,161 @@
+@if (SelectedZone != null)
+{
+    <div style="flex-shrink: 0; background-color: #f0f0f0;" class="pa-2">
+        <MudForm @ref="form">
+            <MudGrid Spacing="2">
+                <MudItem xs="12">
+                    <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                        <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                            <MudStack Row="true">
+                                <MudSwitch @bind-Value="SelectedZone.IsActive" Color="Color.Success" Label="Activo" />
+                            </MudStack>
+                            <MudStack Row="true" Spacing="2">
+                                <MudButton OnClick="CancelClick">Cancelar</MudButton>
+                                <MudFab StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" OnClick="SaveClick" Size="Size.Small" Label="Aceptar"></MudFab>
+                            </MudStack>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                        <MudStack Row="false">
+                            <MudText Typo="Typo.h6" GutterBottom="true">@GetTitle</MudText>
+                            <MudTextField T="string" @bind-Value="SelectedZone.Name" Label="Zona" For="@(() => SelectedZone.Name)" MaxLength="20" />
+                            <MudSelect T="Warehouse" Label="Almacen" ToStringFunc="@ConvertWarehouseFunc" Required="true" ValueChanged="OnWarehouseValueChanged" RequiredError="Almacen es requerido" Value="WarehouseSelected">
+                                @foreach (var warehouse in Warehouses!)
+                                {
+                                    <MudSelectItem Value="warehouse" />
+                                }
+                            </MudSelect>
+                            <MudSelect T="string" Label="Tamaño" ToStringFunc="@ConvertSizeFunc" Required="true" ValueChanged="OnSizeValueChanged" RequiredError="Tamaño es requerido" Value="SizeSelected">
+                                @foreach (var size in Sizes!)
+                                {
+                                    <MudSelectItem Value="size" />
+                                }
+                            </MudSelect>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </div>
+}
+else
+{
+    <LoadingForm IsMudDialog="@(MudDialog != null)" />
+}
+@code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public int? Value { get; set; }
+    [Parameter] public EventCallback<int?> ValueChanged { get; set; }
+    private string GetTitle => ZoneId switch { null => "Zonas", 0 => "Agregar Zona", _ => "Editar Zona" };
+    private int? ZoneId
+    {
+        get => Value;
+        set
+        {
+            if (Value != value)
+            {
+                Value = value;
+                ValueChanged.InvokeAsync(Value);
+            }
+        }
+    }    
+
+    private MudForm? form;
+    private Func<Warehouse?, string> ConvertWarehouseFunc = warehouse => warehouse?.Name!;
+    private Warehouse? WarehouseSelected;
+    private List<Warehouse>? Warehouses = default;
+
+    private Func<string?, string> ConvertSizeFunc = size => size!;
+    private string? SizeSelected;
+    string[] Sizes = ["S", "M", "L"];
+
+    private Zone? SelectedZone;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadZone(ZoneId!.Value);
+    }
+    private  void CancelClick()
+    {
+        ZoneId = null;
+        MudDialog?.Cancel();
+       
+    }
+    private Task OnSizeValueChanged(string selectedSize)
+    {
+        SizeSelected = selectedSize;
+        SelectedZone!.Size = selectedSize;
+        return Task.CompletedTask;
+    }
+    private Task OnWarehouseValueChanged(Warehouse selectedWarehouse)
+    {
+        WarehouseSelected = selectedWarehouse;
+        SelectedZone!.WarehouseId = selectedWarehouse.Id;
+        SelectedZone.WarehouseName = selectedWarehouse.Name;
+        return Task.CompletedTask;
+    }
+    private async Task LoadZone(int zoneId)
+    {
+        var request1 = Http.GetAsync($"api/Warehouse/GetAll?rowFrom=0&userId={Useful.userId}");
+        var request2 = Http.GetAsync($"api/Zone/GetOne?ZoneId={zoneId}&userId={Useful.userId}");
+        await Task.WhenAll(request1, request2);
+        HttpResponseMessage response1 = request1.Result;
+        HttpResponseMessage response2 = request2.Result;
+
+        if (response1.IsSuccessStatusCode && response2.IsSuccessStatusCode)
+        {
+            var WarehousesContent = await response1.Content.ReadFromJsonAsync<WebApiResponse<List<Warehouse>>>();
+            Warehouses = WarehousesContent!.data;
+
+            var ZoneContent = await response2.Content.ReadFromJsonAsync<WebApiResponse<Zone>>();
+            SelectedZone = zoneId > 0 ? ZoneContent!.data : new Zone() { Id = 0, Name = null, IsActive = true, WarehouseId = null, WarehouseName = null, IsSelected = false };
+            WarehouseSelected = zoneId > 0 ? Warehouses!.FirstOrDefault(c => c.Id == SelectedZone!.WarehouseId) : null;
+            SizeSelected = zoneId > 0 ? ZoneContent!.data?.Size : null;
+        }
+        else
+        {
+            var errorMessage = await response2.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
+    }
+
+    private async Task SaveClick()
+    {
+        await form!.Validate();
+        if (form.IsValid)
+        {
+            var strJsonSelectedZone = System.Text.Json.JsonSerializer.Serialize(SelectedZone);
+            var result_Post_Zone = await Http.PostAsync($"api/Zone/PostZones?userId={Useful.userId}", new StringContent($"[{strJsonSelectedZone}]", null, "application/json"));
+            if (result_Post_Zone.IsSuccessStatusCode)
+            {
+                var sucessContent = await result_Post_Zone.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
+                if ((sucessContent?.data![0].insertedRows == 1 || sucessContent?.data![0].updatedRows == 1))
+                {
+                    var result = await DialogService.ShowDialog("Zona Procesado!", "Zona", "OK", Color.Primary, Icons.Material.Filled.Commit);
+                    if (!result!.Canceled)
+                    {
+                        MudDialog?.Close(DialogResult.Ok(true));
+                        ZoneId = null;                        
+                    }
+                }
+           }
+           else if (result_Post_Zone.StatusCode == System.Net.HttpStatusCode.Conflict)
+           {
+               var conflictContent = await result_Post_Zone.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+               await DialogService.ShowDialog(conflictContent?.message!.Replace("USP_POST_ZONES : ", ""), "Error Zona", "OK", Color.Error, Icons.Material.Filled.Error);
+           }
+           else
+           {
+               var errorMessage = await result_Post_Zone.Content.ReadAsStringAsync();
+               throw new Exception(errorMessage);
+           }
+        }
+        await Task.CompletedTask;
+    }
+
+}
+

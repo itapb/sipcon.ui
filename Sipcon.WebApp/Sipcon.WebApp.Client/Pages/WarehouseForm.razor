@@ -1,0 +1,142 @@
+﻿@if (SelectedWarehouse != null)
+{
+    <div style="flex-shrink: 0; background-color: #f0f0f0;" class="pa-2">
+        <MudForm @ref="form">
+            <MudGrid Spacing="2">
+                <MudItem xs="12">
+                    <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                        <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                            <MudStack Row="true">
+                                <MudSwitch @bind-Value="SelectedWarehouse.IsActive" Color="Color.Success" Label="Activo" />
+                            </MudStack>
+                            <MudStack Row="true" Spacing="2">
+                                <MudButton OnClick="CancelClick">Cancelar</MudButton>
+                                <MudFab StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" OnClick="SaveClick" Size="Size.Small" Label="Aceptar"></MudFab>
+                            </MudStack>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                        <MudStack Row="false">
+                            <MudText Typo="Typo.h6" GutterBottom="true">@GetTitle</MudText>
+                            <MudTextField T="string" @bind-Value="SelectedWarehouse.Name" Label="Almacen" For="@(() => SelectedWarehouse.Name)" MaxLength="20" Required="true" />
+                            <MudSelect T="Contact" Label="Planta" ToStringFunc="@ConvertSupplierFunc" Required="true" ValueChanged="OnSupplierValueChanged" RequiredError="Planta es requerido" Value="SupplierSelected">
+                                @foreach (var supplier in Suppliers!)
+                                {
+                                    <MudSelectItem Value="supplier" />
+                                }
+                            </MudSelect>
+                            <MudSwitch @bind-Value="SelectedWarehouse.Sell" Color="Color.Success" Label="Venta" />
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </div>
+}
+else
+{
+    <LoadingForm IsMudDialog="@(MudDialog != null)" />
+}
+
+@code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public int? Value { get; set; }
+    [Parameter] public EventCallback<int?> ValueChanged { get; set; }
+    
+    private string GetTitle => WarehouseId switch { null => "Almacen", 0 => "Agregar Almacen", _ => "Editar Almacen" };
+    private int? WarehouseId
+    {
+        get => Value;
+        set
+        {
+            if (Value != value)
+            {
+                Value = value;
+                ValueChanged.InvokeAsync(Value);
+            }
+        }
+    }
+    private MudForm? form;
+    private Func<Contact?, string> ConvertSupplierFunc = supplier => supplier?.FirstName!;
+    private Contact? SupplierSelected;
+    private List<Contact>? Suppliers = default;
+    private Warehouse? SelectedWarehouse;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadWarehouse(WarehouseId!.Value);
+    }
+    private async Task LoadWarehouse(int warehouseId)
+    {
+        var request1 = Http.GetAsync($"api/Contact/GetSuppliers");
+        var request2 = Http.GetAsync($"api/Warehouse/GetOne?warehouseId={warehouseId}&userId={Useful.userId}");
+        await Task.WhenAll(request1, request2);
+        HttpResponseMessage response1 = request1.Result;
+        HttpResponseMessage response2 = request2.Result;
+
+        if (response1.IsSuccessStatusCode && response2.IsSuccessStatusCode)
+        {
+            var SuppliersContent = await response1.Content.ReadFromJsonAsync<List<Contact>>();
+            var WarehouseContent = await response2.Content.ReadFromJsonAsync<WebApiResponse<Warehouse>>();
+            Suppliers = SuppliersContent!;
+            SelectedWarehouse = warehouseId > 0 ? WarehouseContent!.data : new Warehouse() { Id = 0, Name = null, IsActive = true, SupplierId = null, SupplierName = null, IsSelected = false };
+            SupplierSelected = warehouseId > 0 ? Suppliers!.FirstOrDefault(c => c.Id == SelectedWarehouse!.SupplierId) : null;           
+        }
+        else
+        {
+            var errorMessage = await response2.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
+    }
+    private async Task SaveClick()
+    {
+        await form!.Validate();
+        if (form.IsValid)
+        {
+            var strJsonSelectedWarehouse = System.Text.Json.JsonSerializer.Serialize(SelectedWarehouse);
+            var result_Post_Warehouse = await Http.PostAsync($"api/Warehouse/PostWarehouses?userId={Useful.userId}", new StringContent($"[{strJsonSelectedWarehouse}]", null, "application/json"));
+            if (result_Post_Warehouse.IsSuccessStatusCode)
+            {
+                var sucessContent = await result_Post_Warehouse.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
+                if ((sucessContent?.data![0].insertedRows == 1 || sucessContent?.data![0].updatedRows == 1))
+                {
+                    var result = await DialogService.ShowDialog("Almacen Procesado!", "Almacen", "OK", Color.Primary, Icons.Material.Filled.Commit);
+                    if (!result!.Canceled)
+                    {
+                        MudDialog?.Close(DialogResult.Ok(true));
+                        WarehouseId = null;
+                    }
+                }
+
+            }
+            else if (result_Post_Warehouse.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                var conflictContent = await result_Post_Warehouse.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+                await DialogService.ShowDialog(conflictContent?.message!.Replace("USP_POST_ZONES : ", ""), "Error Almacen", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+            else
+            {
+                var errorMessage = await result_Post_Warehouse.Content.ReadAsStringAsync();
+                throw new Exception(errorMessage);
+            }
+        }
+        await Task.CompletedTask;
+    }
+    private void CancelClick()
+    {
+        WarehouseId = null;
+        MudDialog.Cancel();
+    }
+    private Task OnSupplierValueChanged(Contact selectedSupplier)
+    {
+        SupplierSelected = selectedSupplier;
+        SelectedWarehouse!.SupplierId = selectedSupplier.Id;
+        SelectedWarehouse.SupplierName = selectedSupplier.FirstName;
+        return Task.CompletedTask;
+    }
+
+}

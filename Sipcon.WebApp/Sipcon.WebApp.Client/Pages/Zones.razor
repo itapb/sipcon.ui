@@ -1,22 +1,16 @@
 ﻿@page "/zones"
-@* @typeparam T *@
-@inject HttpClient Http
-@inject IDialogService DialogService
-@inject IJSRuntime JSRuntime
-@using System.Text.Json
-<MudBreadcrumbs Items="ItemsNavigate"></MudBreadcrumbs>
-<MudText Typo="Typo.h5" GutterBottom="true">@mMessage</MudText>
-<InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
 
-@if (SelectedZone == null)
-{
-    <MudDataGrid @ref="ZoneMudDataGrid" T="Zone" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 292px)" Loading="_loading" @bind-CurrentPage="ZoneCurrentPage">
-        <ToolBarContent>
-            <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddZone" Color="Color.Info"></MudIconButton>
-            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-            <MudSpacer />
-            <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
-                @foreach (var strmodulo in Modules!)
+<MudBreadcrumbs Items="ItemsNavigate"></MudBreadcrumbs>
+@* <MudText Typo="Typo.h5" GutterBottom="true">Zonas</MudText> *@
+<InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
+@if(ZoneId==null){
+<MudDataGrid @ref="ZoneMudDataGrid" T="Zone" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 292px)" Loading="_loading" @bind-CurrentPage="ZoneCurrentPage">
+    <ToolBarContent>
+        <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddZone" Color="Color.Info"></MudIconButton>
+        <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        <MudSpacer />
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+            @foreach (var strmodulo in Modules!)
                 {
                     <MudMenuItem Label="@strmodulo.ActionDisplay" Icon="@(strmodulo.ActionDisplay.ToActionIcon())" IconColor="@Color.Info" OnClick="@(() => ClickMenuZone(strmodulo.ActionName))" />
                 }
@@ -53,132 +47,27 @@
         </PagerContent>
     </MudDataGrid>
 }
-else
-{
-    <div style="flex-shrink: 0; background-color: #f0f0f0;" class="pa-2">
-        <MudForm @ref="form">
-            <MudGrid Spacing="2">
-                <MudItem xs="12">
-                    <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
-                        <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
-                            <MudStack Row="true">                                
-                                <MudSwitch @bind-Value="SelectedZone.IsActive" Color="Color.Success" Label="Activo" />
-                            </MudStack>
-                            <MudStack Row="true" Spacing="2">
-                                <MudButton OnClick="CancelClick">Cancelar</MudButton>
-                                <MudFab Color="Color.Info" OnClick="SaveClick" Size="Size.Small" Label="Aceptar"></MudFab>
-                            </MudStack>
-                        </MudStack>
-                    </MudPaper>
-                </MudItem>
-                <MudItem xs="12">
-                    <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
-                        <MudStack Row="false">
-                            <MudTextField T="string" @bind-Value="SelectedZone.Name" Label="Zona" For="@(() => SelectedZone.Name)" MaxLength="20" />
-                            <MudSelect T="Warehouse" Label="Almacen" ToStringFunc="@ConvertWarehouseFunc" Required="true" ValueChanged="OnWarehouseValueChanged" RequiredError="Almacen es requerido" Value="WarehouseSelected">
-                                @foreach (var warehouse in Warehouses!)
-                                {
-                                    <MudSelectItem Value="warehouse" />
-                                }
-                            </MudSelect>
-                            <MudSelect T="string" Label="Tamaño" ToStringFunc="@ConvertSizeFunc" Required="true" ValueChanged="OnSizeValueChanged" RequiredError="Tamaño es requerido" Value="SizeSelected">
-                                @foreach (var size in Sizes!)
-                                {
-                                    <MudSelectItem Value="size" />
-                                }
-                            </MudSelect>
-                        </MudStack>
-                    </MudPaper>
-                </MudItem>
-
-                @*             <MudItem xs="12">
-                <MudSelect T="Warehouse" Label="Almacen" ToStringFunc="@ConvertWarehouseFunc" Required="true" ValueChanged="OnWarehouseValueChanged" RequiredError="Almacen es requerido" Value="WarehouseSelected">
-                    @foreach (var warehouse in Warehouses!)
-                    {
-                        <MudSelectItem Value="warehouse" />
-                    }
-                </MudSelect>
-            </MudItem> *@
-            </MudGrid>
-        </MudForm>
-    </div>
+else{
+    <ZoneForm @bind-Value="ZoneId" />
 }
-
 @code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+    private int? ZoneId;
     List<BreadcrumbItem> ItemsNavigate = [new("Home", href: "", icon: Icons.Material.Filled.Home), new("Inventario", href: "zones", icon: Icons.Material.Filled.Inventory), new("Zona", href: null, disabled: true, icon: Icons.Material.Filled.Map)];
     string searchString = "";
     string mMessage = "Zonas";
     private int ZoneCurrentPage = 0;
-    bool _loading = true;
     bool IsAllCheckBoxSelected = false;
+    bool _loading = true;
 
-    private MudForm? form;
-    private Func<Warehouse?, string> ConvertWarehouseFunc = warehouse => warehouse?.Name!;
-    private Warehouse? WarehouseSelected;
-    private List<Warehouse>? Warehouses = default;
-
-    private Func<string?, string> ConvertSizeFunc = size => size!;
-    private string? SizeSelected;
-    string[] Sizes = ["S", "M", "L"];
-
-    private Zone? SelectedZone;
     private MudDataGrid<Zone>? ZoneMudDataGrid;
     private List<Module>? Modules;
-    private async Task SaveClick()
-    {
-        await form!.Validate();
-        if (form.IsValid)
-        {
-            var strJsonSelectedZone = System.Text.Json.JsonSerializer.Serialize(SelectedZone);
-            var result_Post_Zone = await Http.PostAsync("api/Zone/PostZones?userId=1", new StringContent($"[{strJsonSelectedZone}]", null, "application/json"));
-            if (result_Post_Zone.IsSuccessStatusCode)
-            {
-                var sucessContent = await result_Post_Zone.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
-                if ((sucessContent?.data![0].insertedRows == 1 || sucessContent?.data![0].updatedRows == 1))
-                {
-                    var result = await DialogService.ShowDialog("Zona Procesado!", "Zona", "OK", Color.Primary, Icons.Material.Filled.Commit);
-                    if (!result!.Canceled)
-                    {
-                        mMessage = "Zonas";
-                        SelectedZone = null;
-                    }
-                }
 
-            }
-            else if (result_Post_Zone.StatusCode == System.Net.HttpStatusCode.Conflict)
-            {
-                var conflictContent = await result_Post_Zone.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
-                await DialogService.ShowDialog(conflictContent?.message!.Replace("USP_POST_ZONES : ", ""), "Error Zona", "OK", Color.Error, Icons.Material.Filled.Error);
-            }
-            else
-            {
-                var errorMessage = await result_Post_Zone.Content.ReadAsStringAsync();
-                throw new Exception(errorMessage);
-            }
-        }
-        await Task.CompletedTask;
-    }
-    private void CancelClick()
-    {
-        mMessage = "Zonas"; SelectedZone = null;
-    }
-    private Task OnSizeValueChanged(string selectedSize)
-    {
-        SizeSelected = selectedSize;
-        SelectedZone!.Size = selectedSize;
-        return Task.CompletedTask;
-    }
-
-    private Task OnWarehouseValueChanged(Warehouse selectedWarehouse)
-    {
-        WarehouseSelected = selectedWarehouse;
-        SelectedZone!.WarehouseId = selectedWarehouse.Id;
-        SelectedZone.WarehouseName = selectedWarehouse.Name;
-        return Task.CompletedTask;
-    }
     protected override async Task OnInitializedAsync()
     {
-        Modules = await Http.GetFromJsonAsync<List<Module>>("api/Module/GetAll?moduleName=INVENTARIO-ZONAS&userId=1");
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-ZONAS&userId={Useful.userId}");
     }
     private async Task<GridData<Zone>> ServerReload(GridState<Zone> state)
     {
@@ -187,7 +76,7 @@ else
         var mOffset = state.Page * state.PageSize;
         var totalItems = 0;
         IEnumerable<Zone> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Zone/GetAll?filter={searchString}&rowFrom={mOffset}&userId=1");
+        HttpResponseMessage response = await Http.GetAsync($"api/Zone/GetAll?filter={searchString}&rowFrom={mOffset}&userId={Useful.userId}");
 
         if (response.IsSuccessStatusCode)
         {
@@ -210,7 +99,7 @@ else
         if (actionName == "EXPORT")
         {
             _loading = true;
-            var ResultZonas = await Http.GetAsync($"api/Zone/Export?filter={searchString}&userId=1");
+            var ResultZonas = await Http.GetAsync($"api/Zone/Export?filter={searchString}&userId={Useful.userId}");
             if (ResultZonas.IsSuccessStatusCode)
             {
                 var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
@@ -239,7 +128,7 @@ else
                                                              }).ToList()
                              ) : null;
 
-        var result_Post_Actions = (SelectedActions is not null && SelectedActions.Count > 0) ? await Http.PostAsync("api/Zone/PostActions?userId=1", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
+        var result_Post_Actions = (SelectedActions is not null && SelectedActions.Count > 0) ? await Http.PostAsync($"api/Zone/PostActions?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
         if (result_Post_Actions is not null && result_Post_Actions.IsSuccessStatusCode)
         {
             var resultAction = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
@@ -248,57 +137,12 @@ else
                 var result = await DialogService.ShowDialog("Zona(s) Actualizado(s)!", "Zona", "OK", Color.Primary, Icons.Material.Filled.Commit);
                 await ZoneMudDataGrid!.ReloadServerData();
             }
-
-
         }
         await Task.CompletedTask;
 
     }
-    private async Task ClickAddZone(MouseEventArgs ev)
-    {
-        mMessage = "Agregar Zona";
-        var response1 = await Http.GetAsync($"api/Warehouse/GetAll?rowFrom=0&userId=1");
-        if (response1.IsSuccessStatusCode)
-        {
-            var WarehousesContent = await response1.Content.ReadFromJsonAsync<WebApiResponse<List<Warehouse>>>();
-            Warehouses = WarehousesContent!.data;
-            WarehouseSelected = null;
-            SelectedZone = new Zone() { Id = 0, Name = null, IsActive = true, WarehouseId = null, WarehouseName = null, IsSelected = false };
-        }
-        else
-        {
-            var errorMessage = await response1.Content.ReadAsStringAsync();
-            throw new Exception(errorMessage);
-        }
 
-        await Task.CompletedTask;
-    }
-    private async Task ClickEditZone(Zone item)
-    {
-        var request1 = Http.GetAsync($"api/Warehouse/GetAll?rowFrom=0&userId=1");
-        var request2 = Http.GetAsync($"api/Zone/GetOne?ZoneId={item!.Id}&userId=1");
-        await Task.WhenAll(request1, request2);
-        HttpResponseMessage response1 = request1.Result;
-        HttpResponseMessage response2 = request2.Result;
 
-        if (response1.IsSuccessStatusCode && response2.IsSuccessStatusCode)
-        {
-            mMessage = "Editar Zona";
-            var WarehousesContent = await response1.Content.ReadFromJsonAsync<WebApiResponse<List<Warehouse>>>();
-            var ZoneContent = await response2.Content.ReadFromJsonAsync<WebApiResponse<Zone>>();
-            Warehouses = WarehousesContent!.data;
-            SelectedZone = ZoneContent!.data;
-            WarehouseSelected = Warehouses!.FirstOrDefault(c => c.Id == SelectedZone!.WarehouseId);
-            SizeSelected = ZoneContent.data?.Size;
-        }
-        else
-        {
-            var errorMessage = await response2.Content.ReadAsStringAsync();
-            throw new Exception(errorMessage);
-        }
-
-        await Task.CompletedTask;
-    }
     private async Task AfterAsyncAllCheck()
     {
         if (ZoneMudDataGrid != null)
@@ -341,7 +185,7 @@ else
                 formData.Add(content, "file", file.Name);
                 _loading = true;
 
-                var response = await Http.PostAsync("api/Zone/Import?userId=1", formData);
+                var response = await Http.PostAsync($"api/Zone/Import?userId={Useful.userId}", formData);
                 if (response.IsSuccessStatusCode)
                 {
                     await DialogService.ShowDialog("Archivo cargado con exito!.", "Zona", "OK", Color.Primary, Icons.Material.Filled.Commit);
@@ -356,4 +200,17 @@ else
         }
         await Task.CompletedTask;
     }
+    // private async Task ClickAddZone(MouseEventArgs ev)
+    // {
+    //     ZoneId = 0;
+    //     await Task.CompletedTask;
+    // }
+    // private async Task ClickEditZone(Zone item)
+    // {
+    //     ZoneId = item.Id;
+    //     await Task.CompletedTask;
+    // }
+    private async Task OpenZoneForm(int? mId) => await DialogService.OpenForm<ZoneForm, Zone>(mId, ZoneMudDataGrid);
+    private async Task ClickAddZone(MouseEventArgs ev) => await OpenZoneForm(0);
+    private async Task ClickEditZone(Zone item) => await OpenZoneForm(item.Id);
 }
