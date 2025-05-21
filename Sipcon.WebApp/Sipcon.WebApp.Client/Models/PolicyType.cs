@@ -13,26 +13,25 @@ namespace Sipcon.WebApp.Client.Models
         public string Description { get; set; } = string.Empty;
          
         [Required]
-        public int KM { get; set; } = 0;
+        public int? KM { get; set; } = null;
 
         [Required]
-        public int Gap_KM { get; set; } = 0;
+        public int? GapKM { get; set; } = null;
 
         [Required]
-        public int Months { get; set; } = 0;
+        public int? Months { get; set; } = null;
 
         [Required]
-        public int Gap_Days { get; set; } = 0;
+        public int? GapMonths { get; set; } = null;
 
         [Required]
-        public int TopServices { get; set; } = 0;
+        public int? TopKM { get; set; } = null;
 
         [Required]
-        public int? ExpirationMonths { get; set; } = 0;
+        public int? TopMonths { get; set; } = null;
 
-        public int? BrandId { get; set; } = 0;
-
-        public string? BrandName { get; set; } = string.Empty;
+        public int? BrandId { get; set; } = null;
+        public string BrandName { get; set; } = string.Empty;
 
         [Required]
         public bool IsActive { get; set; } = true;

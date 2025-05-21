@@ -1,0 +1,526 @@
+﻿@page "/policytypes"
+
+
+@using Sipcon.WebApp.Client.Models
+@using Sipcon.WebApp.Client.Services
+@using Sipcon.WebApp.Client.Utils
+@using Sipcon.WebApp.Client.Enum
+@using System.Text.Json
+
+
+@inject IPolicyTypeService PolicyTypeService
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+@inject IJSRuntime JSRuntime
+
+
+<PageTitle>Tipo Poliza</PageTitle>
+<MudBreadcrumbs Items="_itemsNavigate"></MudBreadcrumbs>
+<MudText Typo="Typo.h5" GutterBottom="true">Tipo Poliza</MudText>
+<InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
+
+<MudDataGrid @ref="_mudDataGrid"
+            MultiSelection="true" 
+            SelectedItems="@_selectedPolicyTypes"
+            SortMode="SortMode.Multiple"
+            Filterable="true"
+            FixedHeader Height="calc(92vh - 235px)"
+            Hideable="true"
+            Loading="_loading"
+            Bordered="true"
+            Dense="true"
+            ServerData="LoadGridData">
+
+    <ToolBarContent>
+        <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="() => ClickAddPolicyType()"></MudIconButton>
+        <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                        AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" OnKeyDown="HandleKeyDownSearch"></MudTextField>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Success" OnClick="() => HandleOnClickRefresh()" />
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+            @foreach (var module in _itemsModules)
+            {
+                <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
+                                Label="@module.Text"
+                                OnClick="() => HandleMenuClick(module)" />
+            }
+        </MudMenu>
+    </ToolBarContent>
+    <Columns>
+        <SelectColumn T="PolicyType" />
+        <TemplateColumn T="PolicyType" Title="Marca">
+            <CellTemplate>
+                    
+                <div class="d-flex justify-center" style="height: 45px;">
+                    <MudTooltip Text="@context.Item.BrandName">
+                        <MudImage Src="@(context.Item.BrandName.ToUpper() == "CHANGAN" ? "Images/changan_marca.jpeg" : "Images/foton_marca.jpeg")" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg "
+                                    FallbackSrc="@(context.Item.BrandName.ToUpper() == "CHANGAN" ? "Images/changan_emblema.png": "Images/foton_emblema.jpeg")" Height="45" Width="55"></MudImage>
+                    </MudTooltip>
+                </div>
+                   
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.Description" Title="Descripti&oacute;n" Sortable="false" Filterable="false" />
+        <PropertyColumn Property="x => x.KM" Title="KM Frecuencia" Sortable="false" Filterable="false" />
+        <PropertyColumn Property="x => x.Months" Title="Mes Frecuencia" Sortable="false" Filterable="false" />
+        <PropertyColumn Property="x => x.TopKM" Title="Expiraci&oacute;n KM" Sortable="false" Filterable="false" />
+        <PropertyColumn Property="x => x.TopMonths" Title="Expiraci&oacute;n Mes" Sortable="false" Filterable="false" />
+
+
+        <TemplateColumn T="PolicyType" Title="Activo">
+                 
+            <CellTemplate>
+                <div class="d-flex justify-center">
+                    <MudIcon Icon="@(context.Item.IsActive ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.IsActive ? Color.Success : Color.Error)" Size="Size.Medium" />
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn >
+            <CellTemplate>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditPolicyType(context.Item)" />
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+        
+    <PagerContent>
+        <MudDataGridPager T="PolicyType" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+    </PagerContent>
+</MudDataGrid>
+
+<MudDialog @bind-Visible="_nestedVisible">
+    <TitleContent>
+        <MudStack Row="true">
+            <MudIcon Icon="@Icons.Material.Filled.Policy" Color="@(_success ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
+            <MudText Typo="Typo.h6">Tipo Poliza</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+
+        <MudStack Row="true">
+            <MudText Class="nested"><p>@_nestedErrorMessage!</p> </MudText>
+        </MudStack>
+
+    </DialogContent>
+    <DialogActions>
+            
+        <MudButton Color="Color.Info" OnClick="CloseNested" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
+
+    </DialogActions>
+</MudDialog>
+
+
+
+@code {
+    private IEnumerable<PolicyType> _PolicyTypes = new List<PolicyType>();
+    private string _nestedErrorMessage = string.Empty;
+    private bool _nestedVisible;
+    bool _success = false;
+
+    private int _rowCount = 0;
+    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
+    private int _rowsTotal = 0; 
+
+    private string _searchString = string.Empty;
+    private bool _loading = true;
+    private string _moduleName = "VEHICULOS-MODELOS";
+
+    private MudDataGrid<PolicyType>? _mudDataGrid;
+    private HashSet<PolicyType> _selectedPolicyTypes = new([]);
+    private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
+
+    private List<BreadcrumbItem> _itemsNavigate =
+                [
+        new("Home", href: "home", icon: Icons.Material.Filled.Home),
+        new("Tipo Poliza",  href: null, disabled: true, icon: Icons.Material.Filled.Policy),
+    ];
+
+
+    private async Task<GridData<PolicyType>> LoadGridData(GridState<PolicyType> state)
+    {
+
+        _rowCount = state.Page * state.PageSize;
+
+        await GetPolicyTypes();
+
+        return new GridData<PolicyType> { TotalItems = _rowsTotal, Items = _PolicyTypes };
+    }
+
+    private async Task GetPolicyTypes()
+    {
+        _loading = true;
+        var serviceResponse = await PolicyTypeService.GetPolicyTypes(_iduser, _rowCount, _searchString);
+        if (serviceResponse.Processed)
+        {
+            _PolicyTypes = serviceResponse.Data;
+            _rowsTotal = serviceResponse.Total;
+
+            if (_PolicyTypes.Count() > 0)
+            {
+                _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
+            }
+            else { _itemsModules = new List<ModuleAction>([]); }
+
+           
+        }
+        else
+        {
+            _PolicyTypes = new List<PolicyType>();
+            _rowsTotal = 0;
+            _itemsModules = new List<ModuleAction>([]);
+        }
+        _loading = false;
+    }
+
+
+    private async Task HandleKeyDownSearch(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            if (_searchString.Length >= 3 || _searchString == string.Empty)
+            {
+                Console.WriteLine($"Buscando: {_searchString}");
+                await _mudDataGrid!.ReloadServerData();
+            }
+
+        }
+    }
+
+
+    private async Task HandleOnClickRefresh()
+    {
+
+        Console.WriteLine($"Buscando: {_searchString}");
+        _searchString = string.Empty;
+        await _mudDataGrid!.ReloadServerData();
+
+    }
+
+    private async Task ClickEditPolicyType(PolicyType item)
+    {
+        
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false };
+        var parameters = new DialogParameters<PolicyTypeDialog> { { x => x.IdPolicyType, item.Id }, { x => x.ActionsModal, ActionsEnum.Edit } };
+        var dialog = await DialogService.ShowAsync<PolicyTypeDialog>("simple dialog", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            await _mudDataGrid!.ReloadServerData();
+            StateHasChanged();
+        }
+
+        await Task.CompletedTask;
+    }
+
+    private async Task ClickAddPolicyType()
+    {
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false };
+        var parameters = new DialogParameters<PolicyTypeDialog> { { x => x.IdPolicyType, 0 }, { x => x.ActionsModal, ActionsEnum.Create } };
+        var dialog = await DialogService.ShowAsync<PolicyTypeDialog>("simple dialog", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            await _mudDataGrid!.ReloadServerData();
+            StateHasChanged();
+        }
+       
+        await Task.CompletedTask;
+    }
+
+    
+    private void OpenNested() => _nestedVisible = true;
+
+    private void CloseNested() => _nestedVisible = false;
+
+
+    private async Task HandleMenuClick(ModuleAction module)
+    {
+        switch (module.ActionName)
+        {
+            case "IMPORT":
+                await ImportItemsAsync();
+                break;
+            case "EXPORT":
+                await ExportItemsAsync();
+                break;
+            case "ACTIVATE":
+                await ActivateItemsAsync(module.IdAction, module.ActionName);
+                break;
+            case "DEACTIVATE":
+                await DesactivateItemsAsync(module.IdAction, module.ActionName);
+                break;
+            default:
+                Console.WriteLine($"Acción no reconocida: {module.ActionName}");
+                break;
+        }
+    }
+
+    // private async Task ImportItemsAsync()
+    // {
+
+    //     await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('[type=file]').click()");
+    //     return;
+    // }
+
+    private async Task ImportItemsAsync()
+    {
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false };
+        var parameters = new DialogParameters<ImporItemDialog> { { x => x.Title, "Importar Tipo Poliza..." } };
+        var dialog = await DialogService.ShowAsync<ImporItemDialog>("simple dialog", parameters, options);
+
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+
+            IBrowserFile file = (IBrowserFile)(result.Data ?? string.Empty);
+            const long maxAllowedSize = 10 * 1024 * 1024; // 10MB
+            if (file.Size == 0)
+            {
+                _success = false;
+                _nestedErrorMessage = "!Archivo esta vacio, Error de Archivo...";
+                OpenNested();
+            }
+            else if (file.Size > maxAllowedSize)
+            {
+                _success = false;
+                _nestedErrorMessage = "!Tamaño del archivo excede el limite maximo permitido de 10MB....";
+                OpenNested();
+            }
+            else
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
+
+                var content = new StreamContent(stream);
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+                // Create a multipart form data content
+                var formData = new MultipartFormDataContent();
+                formData.Add(content, "file", file.Name);
+
+
+                var serviceResponse = await PolicyTypeService.ImportPolicyTypes(_iduser, formData);
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = "Tipo Poliza Cargado Satisfactoriamente...";
+
+                    OpenNested();
+                    await _mudDataGrid!.ReloadServerData();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = "!Problemas al Importar Tipo Poliza...";
+                    OpenNested();
+
+                }
+            }
+
+
+        }
+
+        await Task.CompletedTask;
+    }
+
+
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        if (e.FileCount == 1)
+        {
+            var file = e.File;
+            const long maxAllowedSize = 10 * 1024 * 1024; // 10MB
+            if (file.Size == 0)
+            {
+                _success = false;
+                _nestedErrorMessage = "!Archivo esta vacio, Error de Archivo...";
+                OpenNested();
+            }
+            else if (file.Size > maxAllowedSize)
+            {
+                _success = false;
+                _nestedErrorMessage = "!Tamaño del archivo excede el limite maximo permitido de 10MB....";
+                OpenNested();
+            }
+            else
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
+
+                var content = new StreamContent(stream);
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+                // Create a multipart form data content
+                var formData = new MultipartFormDataContent();
+                formData.Add(content, "file", file.Name);
+
+
+                var serviceResponse = await PolicyTypeService.ImportPolicyTypes(_iduser, formData);
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = "Tipo Poliza Cargado Satisfactoriamente...";
+
+                    OpenNested();
+                    await _mudDataGrid!.ReloadServerData();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = "!Problemas al Importar Tipo Poliza...";
+                    OpenNested();
+
+                }
+            }
+        }
+        await Task.CompletedTask;
+    }
+
+    
+    private async Task ExportItemsAsync()
+    {
+        var serviceResponse = await PolicyTypeService.ExportPolicyTypes(_iduser, _searchString);
+        if (serviceResponse.Processed)
+        {
+            _success = true;
+            _nestedErrorMessage = "";
+
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+            var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "TipoPoliza.xlsx");
+
+        }
+        else
+        {
+            _success = false;
+            _nestedErrorMessage = "!Problemas al exportar Tipo Poliza...";
+            Console.WriteLine(serviceResponse.Message);
+            OpenNested();
+
+        }
+    }
+
+    private async Task ActivateItemsAsync(int moduleId, string moduleActionName)
+    {
+        Console.WriteLine("Activar Tipo Poliza...");
+        if (_selectedPolicyTypes.Any())
+        {
+            var option = new DialogOptions
+                {
+                    CloseButton = false,
+                    MaxWidth = MaxWidth.Small,
+                    FullWidth = true,
+                    BackdropClick = false
+                };
+            bool? result = await DialogService.ShowMessageBox(
+                "Activar Tipo Poliza",
+                $"Seguro de Activar Tipo Poliza seleccionado? ",
+                yesText: "Si", noText: "No", "", option);
+
+            if (result == true)
+            {
+                List<PostAction> ActionList = ([]);
+
+                foreach (var vehicle in _selectedPolicyTypes)
+                {
+                    var VehicleAction = new PostAction
+                        {
+                            RecordId = vehicle.Id,
+                            ModuleId = moduleId,
+                            ActionName = moduleActionName
+                        };
+                    ActionList.Add(VehicleAction);
+                }
+
+                var serviceResponse = await PolicyTypeService.ActionsPolicyType(ActionList, _iduser);
+                if (serviceResponse.Processed)
+                {
+
+                    _success = true;
+                    _nestedErrorMessage = "Tipo Polza activado...";
+
+                    OpenNested();
+                    await _mudDataGrid!.ReloadServerData();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = "!Problemas al activar Tipo Poliza...";
+                    Console.WriteLine(serviceResponse.Message);
+                    OpenNested();
+
+                }
+            }
+
+        }
+
+        _selectedPolicyTypes = new([]);
+        await Task.CompletedTask;
+    }
+
+    private async Task DesactivateItemsAsync(int moduleId, string moduleActionName)
+    {
+        Console.WriteLine("Inactivar Tipo Poliza...");
+        if (_selectedPolicyTypes.Any())
+        {
+            var option = new DialogOptions
+                {
+                    CloseButton = false,
+                    MaxWidth = MaxWidth.Small,
+                    FullWidth = true,
+                    BackdropClick = false
+                };
+            bool? result = await DialogService.ShowMessageBox(
+                "Inactivar Tipo Poliza",
+                $"Seguro de Inactivar Tipo Poliza seleccionado? ",
+                yesText: "Si", noText: "No", "", option);
+
+            if (result == true)
+            {
+                List<PostAction> ActionList = ([]);
+
+                foreach (var vehicle in _selectedPolicyTypes)
+                {
+                    var VehicleAction = new PostAction
+                        {
+                            RecordId = vehicle.Id,
+                            ModuleId = moduleId,
+                            ActionName = moduleActionName
+                        };
+                    ActionList.Add(VehicleAction);
+                }
+
+                var serviceResponse = await PolicyTypeService.ActionsPolicyType(ActionList, _iduser);
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = "Tipo Poliza Inactivado...";
+
+                    OpenNested();
+                    await _mudDataGrid!.ReloadServerData();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = "!Problemas al Inactivar Tipo Poliza...";
+                    Console.WriteLine(serviceResponse.Message);
+                    OpenNested();
+
+                }
+            }
+
+        }
+
+        _selectedPolicyTypes = new([]);
+        await Task.CompletedTask;
+    }
+   
+
+}
