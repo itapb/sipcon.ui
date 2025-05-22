@@ -213,7 +213,7 @@ ServerData="LoadGridData">
     private async Task ClickEditVehicle(Vehicle item)
     {
 
-        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = false };
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = false, NoHeader = true };
         var parameters = new DialogParameters<VehicleDialog> { { x => x.IdVehicle, item.Id }, { x => x.ActionsModal, ActionsEnum.Edit } };
         var dialog = await DialogService.ShowAsync<VehicleDialog>("simple dialog", parameters, options);
         var result = await dialog.Result;
@@ -230,7 +230,7 @@ ServerData="LoadGridData">
     private async Task ClickAddVehicle()
     {
 
-        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = false };
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = false, NoHeader = true };
         var parameters = new DialogParameters<VehicleDialog> { { x => x.IdVehicle, 0 }, { x => x.ActionsModal, ActionsEnum.Create } };
         var dialog = await DialogService.ShowAsync<VehicleDialog>("simple dialog", parameters, options);
         var result = await dialog.Result;
@@ -296,8 +296,8 @@ ServerData="LoadGridData">
     private async Task ImportItemsAsync()
     {
 
-        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false };
-        var parameters = new DialogParameters<ImporItemDialog> { { x => x.Title, "Importar Vehiculo(s)..." } };
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+        var parameters = new DialogParameters<ImporItemDialog> { { x => x.Title, "Importar Vehiculo..." } };
         var dialog = await DialogService.ShowAsync<ImporItemDialog>("simple dialog", parameters, options);
 
         var result = await dialog.Result;
@@ -309,7 +309,7 @@ ServerData="LoadGridData">
             if (file.Size == 0)
             {
                 _success = false;
-                _nestedErrorMessage = "!Archivo esta vacio, Error de Archivo(s)...";
+                _nestedErrorMessage = "!Archivo esta vacio, Error importar Archivo...";
                 OpenNested();
             }
             else if (file.Size > maxAllowedSize)
@@ -334,7 +334,7 @@ ServerData="LoadGridData">
                 if (serviceResponse.Processed)
                 {
                     _success = true;
-                    _nestedErrorMessage = "Vehiculo(s) Cargados Satisfactoriamente...";
+                    _nestedErrorMessage = "Vehiculo cargados Satisfactoriamente...";
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -369,7 +369,7 @@ ServerData="LoadGridData">
             if (file.Size == 0)
             {
                 _success = false;
-                _nestedErrorMessage = "!Archivo esta vacio, Error de Archivo(s)...";
+                _nestedErrorMessage = "!Archivo esta vacio, Error carga Archivo...";
                 OpenNested();
             }
             else if (file.Size > maxAllowedSize)
@@ -394,7 +394,7 @@ ServerData="LoadGridData">
                 if (serviceResponse.Processed)
                 {
                     _success = true;
-                    _nestedErrorMessage = "Vehiculo(s) Cargados Satisfactoriamente...";
+                    _nestedErrorMessage = "Vehiculo cargado Satisfactoriamente...";
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -474,7 +474,7 @@ ServerData="LoadGridData">
                 if (serviceResponse.Processed)
                 {
                     _success = true;
-                    _nestedErrorMessage = "Vehiculo(s) activados...";
+                    _nestedErrorMessage = "Vehiculo activado...";
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -510,8 +510,8 @@ ServerData="LoadGridData">
                     BackdropClick = false
                 };
             bool? result = await DialogService.ShowMessageBox(
-                "Confirmar Inactivar Vehiculo(s)",
-                $"Seguro de Inactivar Vehiculo(s) seleccionado(s)? ",
+                "Confirmar Inactivar Vehiculo",
+                $"Seguro de Inactivar Vehiculo seleccionado(s)? ",
                 yesText: "Si", noText: "No", "", option);
 
             if (result == true)
@@ -533,7 +533,7 @@ ServerData="LoadGridData">
                 if (serviceResponse.Processed)
                 {
                     _success = true;
-                    _nestedErrorMessage = "Vehiculo(s) Inactivado(s)...";
+                    _nestedErrorMessage = "Vehiculo Inactivado...";
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -563,8 +563,8 @@ ServerData="LoadGridData">
         {
             var _DealerList = await ModuleActionsService.GetDealerOption(_iduser);
 
-            DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false };
-            var parameters = new DialogParameters<SelectItemDialog> { { x => x.SelectList, _DealerList }, { x => x.Title, "Asignar Concesionario Vehiculo(s)..." } };
+            DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+            var parameters = new DialogParameters<SelectItemDialog> { { x => x.SelectList, _DealerList }, { x => x.Title, "Asignar Concesionario Vehiculo..." } };
             var dialog = await DialogService.ShowAsync<SelectItemDialog>("simple dialog", parameters, options);
             
             StateHasChanged();
@@ -591,7 +591,7 @@ ServerData="LoadGridData">
                 if (serviceResponse.Processed)
                 {
                     _success = true;
-                    _nestedErrorMessage = "Vehiculo(s) Asignados...";
+                    _nestedErrorMessage = "Vehiculo Asignados...";
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -621,8 +621,8 @@ ServerData="LoadGridData">
         if (_selectedVehicles.Any())
         {
 
-            DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false };
-            var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Desasignar concesionario a Vehiculo(s)..." } };
+            DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+            var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Desasignar concesionario..." } };
             var dialog = await DialogService.ShowAsync<TextItemDialog>("simple dialog", parameters, options);
 
             StateHasChanged();
@@ -649,7 +649,7 @@ ServerData="LoadGridData">
                 if (serviceResponse.Processed)
                 {
                     _success = true;
-                    _nestedErrorMessage = "Concesionario Desasignado a Vehiculo(s)...";
+                    _nestedErrorMessage = "Concesionario desasignado...";
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -659,7 +659,7 @@ ServerData="LoadGridData">
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = "!Problemas al Desasignar Concecionario...";
+                    _nestedErrorMessage = "!Problemas al desasignar Concesionario...";
                     Console.WriteLine(serviceResponse.Message);
                     OpenNested();
 
@@ -686,7 +686,7 @@ ServerData="LoadGridData">
                     BackdropClick = false
                 };
             bool? result = await DialogService.ShowMessageBox(
-                "Confirmar Vehiculo(s) Disponibles",
+                "Confirmar Vehiculo Disponibles",
                 $"Seguro de Habilitar Vehiculos seleccionados? ",
                 yesText: "Si", noText: "No", "", option);
 
@@ -709,7 +709,7 @@ ServerData="LoadGridData">
                 if (serviceResponse.Processed)
                 {
                     _success = true;
-                    _nestedErrorMessage = "Vehiculo(s) Habilitado(s)...";
+                    _nestedErrorMessage = "Vehiculo Habilitados...";
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -739,8 +739,8 @@ ServerData="LoadGridData">
         if (_selectedVehicles.Any())
         {
 
-            DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false };
-            var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Vehiculo(s) No Disponible(s)..." } };
+            DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+            var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Vehiculos No Disponibles..." } };
             var dialog = await DialogService.ShowAsync<TextItemDialog>("simple dialog", parameters, options);
 
             StateHasChanged();
@@ -767,7 +767,7 @@ ServerData="LoadGridData">
                 if (serviceResponse.Processed)
                 {
                     _success = true;
-                    _nestedErrorMessage = "Vehiculo(s) no Disponibles...";
+                    _nestedErrorMessage = "Vehiculo no Disponibles...";
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
