@@ -30,8 +30,10 @@ namespace Sipcon.WebApp.Client.Models
         [Required]
         public int? TopMonths { get; set; } = null;
 
+
         [Required]
         public int? BrandId { get; set; } = null;
+
 
         public string BrandName { get; set; } = string.Empty;
 
