@@ -1,4 +1,4 @@
-﻿@using Sipcon.WebApp.Client.Services
+@using Sipcon.WebApp.Client.Services
 @using System.Text.RegularExpressions
 @using System.ComponentModel.DataAnnotations
 @using Sipcon.WebApp.Client.Utils
@@ -11,48 +11,48 @@
 
 
 <MudForm Model="@_model" @ref="@form" Validation="@(_modelValidator.ValidateValue)" ValidationDelay="0" >
-    <MudDialog Class="blur dialog-background" TitleClass="blur dialog-background-title py-2 pa-1" ContentClass="dialog-background-surface py-2 pa-1" ActionsClass="dialog-background-surface">
-        <TitleContent>
-            <MudContainer>
+    <MudDialog Class="blur dialog-background" ActionsClass="dialog-background-surface">
+        <DialogContent >
+            <MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
 
                 <MudCard>
 
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudGrid Spacing="0" Justify="Justify.Center">
-                                <MudItem xs="12" sm="4">
-                                    <div class="d-flex justify-left">
+                    <MudCardContent>
 
-                                        <MudSwitch @bind-Value="_model.IsActive" Label="Activo" LabelPlacement="Placement.End" Color="Color.Success" Disabled="@(ActionsModal == ActionsEnum.Create ? true : false)" />
-                                        <MudHidden @bind-Value="IdPolicyType"/>
+                        <MudGrid Spacing="0" Justify="Justify.Center">
+                            <MudItem xs="12" sm="4">
+                                 <div class="d-flex justify-left">
+                                    
+                                     <MudSwitch @bind-Value="_model.IsActive" Label="Activo" LabelPlacement="Placement.End" 
+                                            Color="Color.Success" 
+                                            UncheckedColor="Color.Default"
+                                            Disabled="@(ActionsModal == ActionsEnum.Create ? true : false)" />
+                                </div>
+                            </MudItem>
+                            <MudItem xs="12" sm="2">
 
-                                    </div>
-                                </MudItem>
-                                <MudItem xs="12" sm="2">
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <div class="d-flex justify-right" style="justify-content: end;">
 
-                                </MudItem>
-                                <MudItem xs="12" sm="6">
-                                    <div class="d-flex justify-right" style="justify-content: end;">
+                                    <MudButton OnClick="Cancel">Cancelar</MudButton>
+                                    <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Aceptar" OnClick="@(async () => await OnValidSubmit())" Color="Color.Info" Size="Size.Small" />
 
-                                        <MudButton OnClick="Cancel">Cancelar</MudButton>
-                                        <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Aceptar" OnClick="@(async () => await OnValidSubmit())" Color="Color.Info" Size="Size.Small" />
-
-                                    </div>
-                                </MudItem>
-                            </MudGrid>
+                                </div>
 
 
-                        </CardHeaderContent>
+                            </MudItem>
+                        </MudGrid>
 
-                    </MudCardHeader>
+
+
+
+                    </MudCardContent>
 
                 </MudCard>
 
             </MudContainer>
-        </TitleContent>
-        <DialogContent>
-
-            <MudContainer>
+            <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
                 <MudGrid Spacing="1" Justify="Justify.Center">
 
                     <MudItem xs="12" sm="4">
@@ -60,14 +60,13 @@
 
                             <MudCardContent Style="padding-top: 0px;">
                                 <MudHidden @bind-Value="_model.Id" />
-
+                                <MudHidden @bind-Value="IdPolicyType" />
                                 <div class="d-flex justify-center" >
 
                                     <MudTooltip Text="Tipo Poliza">
                                         <MudImage Src="images/changan_rojo_1.png" Alt="TipoPoliza" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg " FallbackSrc="Images/changan_emblema.png" Width="130" Height="159" />
                                     </MudTooltip>
                                 </div>
-
 
                             </MudCardContent>
                         </MudCard>
@@ -79,9 +78,13 @@
                                     <MudStack Row="true">
                                         <MudIcon Icon="@Icons.Material.Filled.Policy" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
                                         <MudText Typo="Typo.h6">Tipo Poliza</MudText>
+
                                     </MudStack>
 
                                 </CardHeaderContent>
+                                <CardHeaderActions>
+
+                                </CardHeaderActions>
                             </MudCardHeader>
                             <MudCardContent Style="padding-top: 0px;">
 
@@ -128,21 +131,21 @@
                                 <MudStack Row="false">
 
                                     <MudNumericField Typo="Typo.caption" @bind-Value="_model.KM" Label="KM Frecuencia" Variant="Variant.Text"
-                                    MaxLength="5"
+                                    Max="10000"
                                     HideSpinButtons="true"
                                     Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
                                     For="@(() => _model.KM)"
                                     Immediate="true" />
 
                                     <MudNumericField Typo="Typo.caption" @bind-Value="_model.GapKM" Label="KM Tolerancia" Variant="Variant.Text"
-                                    MaxLength="5"
+                                    Max="500"
                                     HideSpinButtons="true"
                                     Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
                                     For="@(() => _model.GapKM)"
                                     Immediate="true" />
 
                                     <MudNumericField Typo="Typo.caption" @bind-Value="_model.TopKM" Label="KM Cobertura" Variant="Variant.Text"
-                                    MaxLength="6"
+                                    Max="200000"
                                     HideSpinButtons="true"
                                     Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
                                     For="@(() => _model.TopKM)"
@@ -172,21 +175,21 @@
                                 <MudStack Row="false">
 
                                     <MudNumericField Typo="Typo.caption" @bind-Value="_model.Months" Label="Meses Frecuencia" Variant="Variant.Text"
-                                    MaxLength="2"
+                                    Max="12"
                                     HideSpinButtons="true" 
                                     Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
                                     For="@(() => _model.Months)"
                                     Immediate="true" />
 
                                     <MudNumericField Typo="Typo.caption" @bind-Value="_model.GapMonths" Label="Dias Tolerancia" Variant="Variant.Text"
-                                    MaxLength="3"
+                                    Max="15"
                                     HideSpinButtons="true"
                                     Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
                                     For="@(() => _model.GapMonths)"
                                     Immediate="true" />
 
                                     <MudNumericField Typo="Typo.caption" @bind-Value="_model.TopMonths" Label="Meses Cobertura " Variant="Variant.Text"
-                                    MaxLength="2"
+                                    Max="120"
                                     HideSpinButtons="true"
                                     Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
                                     For="@(() => _model.TopMonths)"
@@ -261,8 +264,8 @@
 
     private string _errorModalMessage = string.Empty;
     private bool _nestedModalVisible;
-    private bool _disabled = false;
     bool _successModal = false;
+
 
     private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
 
@@ -279,12 +282,10 @@
         if (ActionsModal == ActionsEnum.Create)
         {
             _model = new PolicyType();
-
             _brandList = await ModuleActionsService.GetBrandOption(_iduser);
             _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(_iduser);
 
             await Task.Delay(100);
-            _disabled = false;
         }
         else
         {
@@ -292,7 +293,9 @@
 
         }
 
+        StateHasChanged();
         await Task.CompletedTask;
+    
     }
 
 
@@ -302,7 +305,6 @@
         if (serviceResponse.Processed)
         {
             _model = serviceResponse.Data ?? new PolicyType();
-            _disabled = _model.IsActive ? false : true;
 
             _brandList = await ModuleActionsService.GetBrandOption(_iduser);
             _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(_iduser);
@@ -313,7 +315,6 @@
         else
         {
             _model = new PolicyType();
-            _disabled = true;
             _errorModalMessage = "(Problemas al cargar Tipo Poliza, no encontrado...";
             Console.WriteLine(serviceResponse.Message);
             OpenNested();
@@ -408,34 +409,40 @@
 
             RuleFor(x => x.KM)
                 .NotNull().WithMessage("Campo requerido")
-                .NotEmpty().WithMessage("Campo requerido");
+                .NotEmpty().WithMessage("Campo requerido")
+                .InclusiveBetween(1, 10000).WithMessage("Campo requerido entre {1 - 10.000} km");
             // .Custom((value, context) =>
-              //     {
-              //         if (value > DateTime.Now.Year + 5)
-              //         {
-              //             context.AddFailure($"Campo requerido entre {(DateTime.Now.Year - 20).ToString() + "-" + (DateTime.Now.Year + 5)}");
-              //         }
-              //     });
+                //   {
+                //       if (value >= 1 && value <= 10000)
+                //       {
+                //           context.AddFailure($"Campo requerido entre {(DateTime.Now.Year - 20).ToString() + "-" + (DateTime.Now.Year + 5)}");
+                //       }
+                //   });
 
             RuleFor(x => x.GapKM)
                 .NotNull().WithMessage("Campo requerido")
-                .NotEmpty().WithMessage("Campo requerido");
+                .NotEmpty().WithMessage("Campo requerido")
+                .InclusiveBetween(1, 500).WithMessage("Campo requerido entre {1 - 500} km"); 
 
             RuleFor(x => x.TopKM)
                 .NotNull().WithMessage("Campo requerido")
-                .NotEmpty().WithMessage("Campo requerido");
+                .NotEmpty().WithMessage("Campo requerido")
+                .InclusiveBetween(1, 200000).WithMessage("Campo requerido entre {1 - 200.000} km");
 
             RuleFor(x => x.Months)
                 .NotNull().WithMessage("Campo requerido")
-                .NotEmpty().WithMessage("Campo requerido");
+                .NotEmpty().WithMessage("Campo requerido")
+                .InclusiveBetween(1, 12).WithMessage("Campo requerido entre {1 - 12} Meses");
 
             RuleFor(x => x.GapMonths)
                 .NotNull().WithMessage("Campo requerido")
-                .NotEmpty().WithMessage("Campo requerido");
+                .NotEmpty().WithMessage("Campo requerido")
+                .InclusiveBetween(1, 15).WithMessage("Campo requerido entre {1 - 200.000} dias");
 
             RuleFor(x => x.TopMonths)
-            .NotNull().WithMessage("Campo requerido")
-            .NotEmpty().WithMessage("Campo requerido");
+                .NotNull().WithMessage("Campo requerido")
+                .NotEmpty().WithMessage("Campo requerido")
+                .InclusiveBetween(1, 120).WithMessage("Campo requerido entre {1 - 120} Meses ");
 
 
         }
@@ -450,6 +457,3 @@
         };
 
     }
-
-   
-}

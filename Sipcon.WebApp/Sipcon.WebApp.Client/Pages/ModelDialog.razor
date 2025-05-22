@@ -11,9 +11,11 @@
 
 
 <MudForm Model="@_model" @ref="@form" Validation="@(_modelValidator.ValidateValue)" ValidationDelay="0" >
-    <MudDialog Class="blur dialog-background" TitleClass="blur dialog-background-title py-2 pa-1" ContentClass="dialog-background-surface py-2 pa-1" ActionsClass="dialog-background-surface">
-        <TitleContent>
-            <MudContainer>
+    <MudDialog Class="blur dialog-background"  ActionsClass="dialog-background-surface">
+       
+        <DialogContent>
+
+            <MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
 
                 <MudCard>
 
@@ -24,7 +26,7 @@
                                     <div class="d-flex justify-left">
 
                                         <MudSwitch @bind-Value="_model.IsActive" Label="Activo" LabelPlacement="Placement.End" Color="Color.Success" Disabled="@(ActionsModal == ActionsEnum.Create ? true : false)" />
-                                        <MudHidden @bind-Value="IdModel"/>
+                                        <MudHidden @bind-Value="IdModel" />
 
                                     </div>
                                 </MudItem>
@@ -51,10 +53,8 @@
                 </MudCard>
 
             </MudContainer>
-        </TitleContent>
-        <DialogContent>
 
-            <MudContainer>
+            <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
                 <MudGrid Spacing="1" Justify="Justify.Center">
 
                     <MudItem xs="12" sm="4">
@@ -205,7 +205,6 @@
 
     private string _errorModalMessage = string.Empty;
     private bool _nestedModalVisible;
-    private bool _disabled = false;
     bool _successModal = false;
 
     private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
@@ -228,7 +227,7 @@
             _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(_iduser);
 
             await Task.Delay(100);
-            _disabled = false;
+
         }
         else
         {
@@ -246,7 +245,6 @@
         if (serviceResponse.Processed)
         {
             _model = serviceResponse.Data ?? new Model();
-            _disabled = _model.IsActive ? false : true;
 
             _brandList = await ModuleActionsService.GetBrandOption(_iduser);
             _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(_iduser);
@@ -257,7 +255,6 @@
         else
         {
             _model = new Model();
-            _disabled = true;
             _errorModalMessage = "(Problemas al cargar Modelo) Modelo no encontrado...";
             Console.WriteLine(serviceResponse.Message);
             OpenNested();

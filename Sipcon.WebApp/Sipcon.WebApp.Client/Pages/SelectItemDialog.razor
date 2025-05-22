@@ -8,11 +8,11 @@
 @inject UtilModuleActions ModuleActionsService
 
 <MudForm @ref="@form" >
-    <MudDialog Class="blur dialog-background " TitleClass="blur dialog-background-title py-2 pa-1" ContentClass="dialog-background-surface py-2 pa-1" ActionsClass="dialog-background-surface">
+    <MudDialog Class="blur dialog-background "  ActionsClass="dialog-background-surface">
 
-        <TitleContent>
-            
-            <MudContainer>
+        <DialogContent>
+
+            <MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
 
                 <MudCard>
 
@@ -21,7 +21,6 @@
                             <MudGrid Spacing="0" Justify="Justify.Center">
                                 <MudItem xs="12" sm="4">
                                     <div class="d-flex justify-left">
-
                                     </div>
                                 </MudItem>
 
@@ -48,53 +47,49 @@
 
             </MudContainer>
 
-        </TitleContent>
-    
-        <DialogContent>
+            <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
+                <MudGrid Spacing="1" Justify="Justify.Center">
 
-        <MudContainer>
-            <MudGrid Spacing="1" Justify="Justify.Center">
+                    <MudItem xs="12" sm="12">
+                        <MudCard>
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudStack Row="true">
+                                        <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Default" Style="font-size: 1.5rem;"></MudIcon>
+                                        <MudText Typo="Typo.subtitle2">Opciones</MudText>
+                                    </MudStack>
 
-                <MudItem xs="12" sm="12">
-                    <MudCard>
-                        <MudCardHeader>
-                            <CardHeaderContent>
+                                </CardHeaderContent>
+                                <CardHeaderActions>
+
+                                </CardHeaderActions>
+                            </MudCardHeader>
+                            <MudCardContent Style="padding-top: 3px;">
                                 <MudStack Row="true">
-                                    <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Default" Style="font-size: 1.5rem;"></MudIcon>
-                                    <MudText Typo="Typo.subtitle2">Opciones</MudText>
+
+
+                                    <MudSelect Typo="Typo.caption" @bind-Value="@_returnValue" Label="Concecionario" AdornmentColor="Color.Secondary"
+                                               Margin="Margin.Dense" Disabled="false"
+                                               Validation="@_SelectValidator.Validation" Immediate="true"
+                                               Required= "true" 
+                                               RequiredError="Campo Requerido" >
+                                        @foreach (var model in SelectList)
+                                        {
+                                            <MudSelectItem Value="@model.Value">@model.Text</MudSelectItem>
+                                        }
+                                    </MudSelect>
                                 </MudStack>
 
-                            </CardHeaderContent>
-                            <CardHeaderActions>
 
-                            </CardHeaderActions>
-                        </MudCardHeader>
-                        <MudCardContent Style="padding-top: 3px;">
-                            <MudStack Row="true">
+                            </MudCardContent>
+                        </MudCard>
 
 
-                                <MudSelect Typo="Typo.caption" @bind-Value="@_returnValue" Label="Concecionario" AdornmentColor="Color.Secondary"
-                                           Margin="Margin.Dense" Disabled="false"
-                                           Validation="@_SelectValidator.Validation" Immediate="true"
-                                           Required= "true" 
-                                           RequiredError="Campo Requerido" >
-                                    @foreach (var model in SelectList)
-                                    {
-                                        <MudSelectItem Value="@model.Value">@model.Text</MudSelectItem>
-                                    }
-                                </MudSelect>
-                            </MudStack>
+                    </MudItem>
+                </MudGrid>
+            </MudContainer>
 
-
-                        </MudCardContent>
-                    </MudCard>
-
-
-                </MudItem>
-            </MudGrid>
-        </MudContainer>
-
-    </DialogContent>
+        </DialogContent>
 
     </MudDialog>
 </MudForm>

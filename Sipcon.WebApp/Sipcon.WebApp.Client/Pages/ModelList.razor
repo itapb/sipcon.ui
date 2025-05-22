@@ -194,7 +194,7 @@
     private async Task ClickEditModel(Model item)
     {
         
-        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false };
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
         var parameters = new DialogParameters<ModelDialog> { { x => x.IdModel, item.Id }, { x => x.ActionsModal, ActionsEnum.Edit } };
         var dialog = await DialogService.ShowAsync<ModelDialog>("simple dialog", parameters, options);
         var result = await dialog.Result;
@@ -210,7 +210,7 @@
     private async Task ClickAddModel()
     {
 
-        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false };
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
         var parameters = new DialogParameters<ModelDialog> { { x => x.IdModel, 0 }, { x => x.ActionsModal, ActionsEnum.Create } };
         var dialog = await DialogService.ShowAsync<ModelDialog>("simple dialog", parameters, options);
         var result = await dialog.Result;
@@ -261,7 +261,7 @@
     private async Task ImportItemsAsync()
     {
 
-        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false };
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
         var parameters = new DialogParameters<ImporItemDialog> { { x => x.Title, "Importar Modelo(s)..." } };
         var dialog = await DialogService.ShowAsync<ImporItemDialog>("simple dialog", parameters, options);
 
@@ -274,7 +274,7 @@
             if (file.Size == 0)
             {
                 _success = false;
-                _nestedErrorMessage = "!Archivo esta vacio, Error de Archivo(s)...";
+                _nestedErrorMessage = "!Archivo esta vacio, Error Importar Archivo...";
                 OpenNested();
             }
             else if (file.Size > maxAllowedSize)
@@ -299,7 +299,7 @@
                 if (serviceResponse.Processed)
                 {
                     _success = true;
-                    _nestedErrorMessage = "Modelo(s) Cargados Satisfactoriamente...";
+                    _nestedErrorMessage = "Modelo Cargados Satisfactoriamente...";
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -309,7 +309,7 @@
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = "!Problemas al Importar Modelo(s)...";
+                    _nestedErrorMessage = "!Problemas al Importar Modelo...";
                     OpenNested();
 
                 }
@@ -331,7 +331,7 @@
             if (file.Size == 0)
             {
                 _success = false;
-                _nestedErrorMessage = "!Archivo esta vacio, Error de Archivo(s)...";
+                _nestedErrorMessage = "!Archivo esta vacio, Error carga Archivo...";
                 OpenNested();
             }
             else if (file.Size > maxAllowedSize)
@@ -356,7 +356,7 @@
                 if (serviceResponse.Processed)
                 {
                     _success = true;
-                    _nestedErrorMessage = "Modelo(s) Cargados Satisfactoriamente...";
+                    _nestedErrorMessage = "Modelo Cargados Satisfactoriamente...";
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -366,7 +366,7 @@
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = "!Problemas al Importar Modelo(s)...";
+                    _nestedErrorMessage = "!Problemas al Importar Modelo...";
                     OpenNested();
 
                 }
@@ -392,7 +392,7 @@
         else
         {
             _success = false;
-            _nestedErrorMessage = "!Problemas al exportar Modelos...";
+            _nestedErrorMessage = "!Problemas al exportar Modelo...";
             Console.WriteLine(serviceResponse.Message);
             OpenNested();
 
@@ -401,7 +401,7 @@
 
     private async Task ActivateItemsAsync(int moduleId, string moduleActionName)
     {
-        Console.WriteLine("Activate Modelo(s)...");
+        Console.WriteLine("Activate Modelo...");
         if (_selectedModels.Any())
         {
             var option = new DialogOptions
@@ -436,7 +436,7 @@
                 {
 
                     _success = true;
-                    _nestedErrorMessage = "Modelo(s) activados...";
+                    _nestedErrorMessage = "Modelo activado...";
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -473,7 +473,7 @@
                 };
             bool? result = await DialogService.ShowMessageBox(
                 "Inactivar Modelo(s)",
-                $"Seguro de Inactivar Modelo(s) seleccionado(s)? ",
+                $"Seguro de Inactivar Modelo seleccionado(s)? ",
                 yesText: "Si", noText: "No", "", option);
 
             if (result == true)
@@ -495,7 +495,7 @@
                 if (serviceResponse.Processed)
                 {
                     _success = true;
-                    _nestedErrorMessage = "Modelo(s) Inactivado(s)...";
+                    _nestedErrorMessage = "Modelo Inactivado...";
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -505,7 +505,7 @@
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = "!Problemas al Inactivar Modelo(s)...";
+                    _nestedErrorMessage = "!Problemas al Inactivar Modelo...";
                     Console.WriteLine(serviceResponse.Message);
                     OpenNested();
 

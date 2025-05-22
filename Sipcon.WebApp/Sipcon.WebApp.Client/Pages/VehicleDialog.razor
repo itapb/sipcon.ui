@@ -10,10 +10,11 @@
 @inject UtilModuleActions ModuleActionsService
 
 <MudForm Model="@_model" @ref="@form" Validation="@(_modelValidator.ValidateValue)" ValidationDelay="0">
-    <MudDialog Class="blur dialog-background " TitleClass="blur dialog-background-title py-2 pa-1" ContentClass="dialog-background-surface py-2 pa-1" ActionsClass="dialog-background-surface">
+    <MudDialog Class="blur dialog-background " ActionsClass="dialog-background-surface">
 
-        <TitleContent>
-            <MudContainer>
+        <DialogContent >
+
+            <MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
 
                 <MudCard>
 
@@ -54,11 +55,9 @@
             </MudContainer>
 
 
+            <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
 
-        </TitleContent>
-        <DialogContent >
 
-            <MudContainer>
                 <MudGrid Spacing="1" Justify="Justify.Center">
 
 
@@ -118,8 +117,6 @@
                                         </MudItem>
                                     </MudGrid>
 
-
-n
 
                                 </CardHeaderContent>
 
@@ -307,7 +304,6 @@ n
 
     private string _errorModalMessage = string.Empty;
     private bool _nestedModalVisible;
-    private bool _disabled = false;
     bool _successModal = false;
 
 
@@ -334,7 +330,7 @@ n
             _VehicleDealerList = await ModuleActionsService.GetDealerOption(_iduser);
 
             await Task.Delay(100);
-            _disabled = false;
+           
         }
         else
         {
@@ -350,7 +346,6 @@ n
         if (serviceResponse.Processed)
         {
             _model = serviceResponse.Data ?? new Vehicle();
-            _disabled = _model.IsActive ? false : true;
 
             _VehicleColorList = await ModuleActionsService.GetColorOption(_iduser);
 
@@ -367,7 +362,7 @@ n
         else
         {
             _model = new Vehicle();
-            _disabled = true;
+          
             _errorModalMessage = "(Problemas al cargar Vehiculo) Vehiculo no encontrado...";
             Console.WriteLine(serviceResponse.Message);
             OpenNestedModal();
@@ -382,7 +377,6 @@ n
     // private async Task OnSwitchValueChanged(bool newValue)
     // {
     //     // !_model.IsActive = _model.IsActive ? false : true;
-    //     _disabled = !newValue; // Actualiza el estado de `!_model.IsActive` basado en el nuevo valor.
     //     _model.IsActive = newValue; // Actualiza el modelo con el nuevo valor del switch.
     //     await Task.CompletedTask;
     // }

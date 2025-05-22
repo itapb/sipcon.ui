@@ -198,7 +198,9 @@
     private async Task ClickEditPolicyType(PolicyType item)
     {
         
-        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false };
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+
         var parameters = new DialogParameters<PolicyTypeDialog> { { x => x.IdPolicyType, item.Id }, { x => x.ActionsModal, ActionsEnum.Edit } };
         var dialog = await DialogService.ShowAsync<PolicyTypeDialog>("simple dialog", parameters, options);
         var result = await dialog.Result;
@@ -214,7 +216,9 @@
     private async Task ClickAddPolicyType()
     {
 
-        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false };
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+
         var parameters = new DialogParameters<PolicyTypeDialog> { { x => x.IdPolicyType, 0 }, { x => x.ActionsModal, ActionsEnum.Create } };
         var dialog = await DialogService.ShowAsync<PolicyTypeDialog>("simple dialog", parameters, options);
         var result = await dialog.Result;
@@ -265,7 +269,9 @@
     private async Task ImportItemsAsync()
     {
 
-        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false };
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+
         var parameters = new DialogParameters<ImporItemDialog> { { x => x.Title, "Importar Tipo Poliza..." } };
         var dialog = await DialogService.ShowAsync<ImporItemDialog>("simple dialog", parameters, options);
 
