@@ -4,7 +4,7 @@
 @if (ContactId == null)
 {
     @* <MudText Typo="Typo.h5" GutterBottom="true">Contactos</MudText> *@
-    <MudDataGrid @ref="ContactMudDataGrid" T="Contact" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 292px)" Loading="_loading" @bind-CurrentPage="ContactCurrentPage">
+    <MudDataGrid @ref="ContactMudDataGrid" T="Contact" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 260px)" Loading="_loading" @bind-CurrentPage="ContactCurrentPage">
         <ToolBarContent>
             <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddContact" Color="Color.Info"></MudIconButton>
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s=>OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
@@ -61,7 +61,7 @@ else
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
     private int? ContactId;
 
-    List<BreadcrumbItem> ItemsNavigate = [new("Home", href: "", icon: Icons.Material.Filled.Home), new("Contactos", href: null, disabled: true, icon: Icons.Material.Filled.ImportContacts)];
+    List<BreadcrumbItem> ItemsNavigate = [new("Home", href: "", icon: Icons.Material.Filled.Home), new("Contactos", href: "contacts", icon: Icons.Material.Filled.ImportContacts)];
     bool _loading = true;   
     bool IsAllCheckBoxSelected = false;
 
@@ -153,7 +153,7 @@ else
         if (result_Post_Actions is not null && result_Post_Actions.IsSuccessStatusCode)
         {
             var rest = result_Post_Actions.Content.ReadAsStringAsync();
-            await DialogService.ShowDialog("Contacto(s) Actualizado(s)!", "Contacto", "OK", Color.Primary, Icons.Material.Filled.Commit);
+            await DialogService.ShowDialog("Contacto(s) Actualizado(s)!", "Contacto", "OK", Color.Info, Icons.Material.Filled.Commit);
             await ContactMudDataGrid!.ReloadServerData();
         }
         await Task.CompletedTask;

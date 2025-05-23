@@ -5,6 +5,7 @@ namespace Sipcon.WebApp.Client.Helper
     internal static class Useful
     {
         internal static int userId = 1;
+        internal static string OkSavedMessage = "Registro guardado satisfactoriamente.";
         internal static async Task<DialogResult?> ShowDialog(this IDialogService dialogService, string? strMessage, string strTitle, string strPrimaryButton, Color mColor, string? strIcon)
         {
             var parameters = new DialogParameters<Dialog> { { x => x.ContentText, strMessage }, { x => x.TitleText, strTitle }, { x => x.ButtonText, strPrimaryButton }, { x => x.Color, mColor }, { x => x.strIcon, strIcon } };

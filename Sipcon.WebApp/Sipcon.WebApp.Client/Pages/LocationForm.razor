@@ -1,8 +1,8 @@
 ﻿@if (SelectedLocation != null){
-<div style="flex-shrink: 0; background-color: #f0f0f0;" class="pa-2">
+<div>
     <MudForm @ref="form">
-        <MudGrid Spacing="2">
-            <MudItem xs="12">
+        <MudGrid Spacing="0">
+            <MudItem xs="12"> <MudPaper Elevation="2" Class="pa-3 jpv1-dialog-background-title" Square="true">
                 <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
                     <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
                         <MudStack Row="true">
@@ -13,10 +13,10 @@
                             <MudFab StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" OnClick="SaveClick" Size="Size.Small" Label="Aceptar"></MudFab>
                         </MudStack>
                     </MudStack>
-                </MudPaper>
+                </MudPaper></MudPaper>
             </MudItem>
 
-            <MudItem xs="12">
+            <MudItem xs="12"><MudPaper Elevation="2" Class="pa-3 jpv1-dialog-body-background" Square="true">
                 <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
                     <MudStack Row="false">
                         <MudText Typo="Typo.h6" GutterBottom="true">@GetTitle</MudText>
@@ -28,7 +28,7 @@
                             }
                         </MudSelect>
                     </MudStack>
-                </MudPaper>
+                </MudPaper></MudPaper>
             </MudItem>
         </MudGrid>
     </MudForm>
@@ -79,7 +79,7 @@ else
                 var content2 = await result_Post_Location.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
                 if ((content2?.data![0].insertedRows == 1 || content2?.data![0].updatedRows == 1))
                 {
-                    var mdialog = await DialogService.ShowDialog("Ubicacion Procesado!", "Ubicacion", "OK", Color.Primary, Icons.Material.Filled.Commit);                   
+                    var mdialog = await DialogService.ShowDialog(Useful.OkSavedMessage, "Ubicacion", "OK", Color.Info, Icons.Material.Filled.Commit);
                     if (!mdialog!.Canceled)
                     {
 

@@ -1,9 +1,9 @@
 ﻿@if (SelectedPart != null)
 {
 <MudForm @ref="form">
-    <div style="display: flex; flex-direction: column; border: 1px solid lightgrey;">
+    <div style="display: flex; flex-direction: column;">
 
-        <div style="flex-shrink: 0; background-color: #f0f0f0;" class="pa-2">
+        <div style="flex-shrink: 0; background-color: #f0f0f0;"><MudPaper Elevation="2" Class="pa-3 jpv1-dialog-background-title" Square="true">
             <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
                 <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
                     <MudStack>
@@ -14,8 +14,8 @@
                         <MudFab StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" OnClick="SaveClick" Size="Size.Small" Label="Aceptar"></MudFab>
                     </MudStack>
                 </MudStack>
-            </MudPaper>
-        </div>
+            </MudPaper></MudPaper>
+        </div><MudPaper Elevation="2" Class="pa-1 jpv1-dialog-body-background" Square="true">
 
         <div id="scrollableGridContentStyled" style="overflow-y: auto; max-height:calc(100vh - 205px); padding: 8px; background-color: #f0f0f0;">
             <MudGrid Spacing="2">
@@ -143,7 +143,7 @@
                 </MudItem>
             </MudGrid>
 
-        </div>
+        </div></MudPaper>
     </div>
     <MudScrollToTop Selector="#scrollableGridContentStyled">
         <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.ArrowUpward" />
@@ -300,7 +300,7 @@ else
                 var sucessContent = await result_Post_Part.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
                 if ((sucessContent?.data![0].insertedRows == 1 || sucessContent?.data![0].updatedRows == 1))
                 {
-                    var result = await DialogService.ShowDialog("Respuesto Procesado!", "Respuesto", "OK", Color.Primary, Icons.Material.Filled.Commit);
+                    var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Respuesto", "OK", Color.Info, Icons.Material.Filled.Commit);
                     if (!result!.Canceled)
                     {
                         MudDialog?.Close(DialogResult.Ok(true));

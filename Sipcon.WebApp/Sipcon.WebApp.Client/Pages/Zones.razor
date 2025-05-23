@@ -4,7 +4,7 @@
 @* <MudText Typo="Typo.h5" GutterBottom="true">Zonas</MudText> *@
 <InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
 @if(ZoneId==null){
-<MudDataGrid @ref="ZoneMudDataGrid" T="Zone" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 292px)" Loading="_loading" @bind-CurrentPage="ZoneCurrentPage">
+<MudDataGrid @ref="ZoneMudDataGrid" T="Zone" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 260px)" Loading="_loading" @bind-CurrentPage="ZoneCurrentPage">
     <ToolBarContent>
         <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddZone" Color="Color.Info"></MudIconButton>
         <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
@@ -55,7 +55,7 @@ else{
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
     private int? ZoneId;
-    List<BreadcrumbItem> ItemsNavigate = [new("Home", href: "", icon: Icons.Material.Filled.Home), new("Inventario", href: "zones", icon: Icons.Material.Filled.Inventory), new("Zona", href: null, disabled: true, icon: Icons.Material.Filled.Map)];
+    List<BreadcrumbItem> ItemsNavigate = [new("Home", href: "", icon: Icons.Material.Filled.Home), new("Inventario", href: "zones", icon: Icons.Material.Filled.Inventory), new("Zona", href: "zones", icon: Icons.Material.Filled.Map)];
     string searchString = "";
     string mMessage = "Zonas";
     private int ZoneCurrentPage = 0;
@@ -145,8 +145,7 @@ else{
 
     private async Task AfterAsyncAllCheck()
     {
-        if (ZoneMudDataGrid != null)
-            ZoneMudDataGrid.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
+        ZoneMudDataGrid?.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
         await Task.CompletedTask;
     }
     private async Task OnSearch(string text)
@@ -188,7 +187,7 @@ else{
                 var response = await Http.PostAsync($"api/Zone/Import?userId={Useful.userId}", formData);
                 if (response.IsSuccessStatusCode)
                 {
-                    await DialogService.ShowDialog("Archivo cargado con exito!.", "Zona", "OK", Color.Primary, Icons.Material.Filled.Commit);
+                    await DialogService.ShowDialog("Archivo cargado con exito!.", "Zona", "OK", Color.Info, Icons.Material.Filled.Commit);
                     await ZoneMudDataGrid!.ReloadServerData();
                 }
                 else

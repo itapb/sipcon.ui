@@ -15,7 +15,8 @@ namespace Sipcon.WebApp.Client.Models
             public int RelatedId { get; set; }
             public string? RelatedName { get; set; }       
             public string? Reference { get; set; }
+            public override string ToString() => RelatedName!;
 
-        }
+    }
   
 }

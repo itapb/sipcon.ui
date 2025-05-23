@@ -4,7 +4,7 @@
 <InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
 @if (WarehouseId == null)
 {
-    <MudDataGrid @ref="WarehouseMudDataGrid" T="Warehouse" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 292px)" Loading="_loading" @bind-CurrentPage="WarehouseCurrentPage">
+    <MudDataGrid @ref="WarehouseMudDataGrid" T="Warehouse" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 260px)" Loading="_loading" @bind-CurrentPage="WarehouseCurrentPage">
         <ToolBarContent>
             <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddWarehouse" Color="Color.Info"></MudIconButton>
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
@@ -58,7 +58,7 @@ else
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
     private int? WarehouseId;
 
-    List<BreadcrumbItem> ItemsNavigate = [new("Home", href: "", icon: Icons.Material.Filled.Home), new("Inventario", href: "warehouses", icon: Icons.Material.Filled.Inventory), new("Almacen", href: null, disabled: true, icon: Icons.Material.Filled.Warehouse)];
+    List<BreadcrumbItem> ItemsNavigate = [new("Home", href: "", icon: Icons.Material.Filled.Home), new("Inventario", href: "warehouses", icon: Icons.Material.Filled.Inventory), new("Almacen", href: "warehouses", icon: Icons.Material.Filled.Warehouse)];
     string searchString = "";
     string mMessage = "Almacen";
     private int WarehouseCurrentPage = 0;

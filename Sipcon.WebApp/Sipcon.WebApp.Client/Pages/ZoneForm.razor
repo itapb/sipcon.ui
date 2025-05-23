@@ -1,9 +1,10 @@
 @if (SelectedZone != null)
 {
-    <div style="flex-shrink: 0; background-color: #f0f0f0;" class="pa-2">
+    <div>
         <MudForm @ref="form">
-            <MudGrid Spacing="2">
+            <MudGrid Spacing="0">
                 <MudItem xs="12">
+                    <MudPaper Elevation="2" Class="jpv1-dialog-background-title pa-3" Square="true">
                     <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
                         <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
                             <MudStack Row="true">
@@ -14,10 +15,10 @@
                                 <MudFab StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" OnClick="SaveClick" Size="Size.Small" Label="Aceptar"></MudFab>
                             </MudStack>
                         </MudStack>
-                    </MudPaper>
+                    </MudPaper></MudPaper>
                 </MudItem>
-                <MudItem xs="12">
-                    <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                <MudItem xs="12"><MudPaper Elevation="2" Class="pa-3 jpv1-dialog-body-background" Square="true">
+                        <MudPaper Elevation="2" Class="pa-3 mud-text-align-center">
                         <MudStack Row="false">
                             <MudText Typo="Typo.h6" GutterBottom="true">@GetTitle</MudText>
                             <MudTextField T="string" @bind-Value="SelectedZone.Name" Label="Zona" For="@(() => SelectedZone.Name)" MaxLength="20" />
@@ -34,7 +35,7 @@
                                 }
                             </MudSelect>
                         </MudStack>
-                    </MudPaper>
+                    </MudPaper></MudPaper>
                 </MudItem>
             </MudGrid>
         </MudForm>
@@ -135,7 +136,7 @@ else
                 var sucessContent = await result_Post_Zone.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
                 if ((sucessContent?.data![0].insertedRows == 1 || sucessContent?.data![0].updatedRows == 1))
                 {
-                    var result = await DialogService.ShowDialog("Zona Procesado!", "Zona", "OK", Color.Primary, Icons.Material.Filled.Commit);
+                    var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Zona", "OK", Color.Info, Icons.Material.Filled.Commit);
                     if (!result!.Canceled)
                     {
                         MudDialog?.Close(DialogResult.Ok(true));

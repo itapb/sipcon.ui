@@ -5,7 +5,7 @@
 @if (PartId == null)
 {
 @*     <MudText Typo="Typo.h5" GutterBottom="true">Respuestos</MudText> *@
-    <MudDataGrid @ref="PartMudDataGrid" T="Part" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 292px)" Loading="_loading" @bind-CurrentPage="PartCurrentPage">
+    <MudDataGrid @ref="PartMudDataGrid" T="Part" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 260px)" Loading="_loading" @bind-CurrentPage="PartCurrentPage">
         <ToolBarContent>
             <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddPart" Color="Color.Info"></MudIconButton>
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
@@ -59,7 +59,7 @@ else
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
     private int? PartId;
-    List<BreadcrumbItem> ItemsNavigate = [new("Home", href: "", icon: Icons.Material.Filled.Home), new("Inventario", href: "parts", icon: Icons.Material.Filled.Inventory), new("Respuestos", href: null, disabled: true, icon: Icons.Material.Filled.Hardware)];
+    List<BreadcrumbItem> ItemsNavigate = [new("Home", href: "", icon: Icons.Material.Filled.Home), new("Inventario", href: "parts", icon: Icons.Material.Filled.Inventory), new("Respuestos", href: "parts", icon: Icons.Material.Filled.Hardware)];
     bool IsAllCheckBoxSelected = false;
     int PartCurrentPage = 0;
     bool _loading = true;
@@ -106,7 +106,7 @@ else
             var resultAction = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
             if (resultAction?.data![0].updatedRows > 0)
             {
-                var result = await DialogService.ShowDialog("Parte(s) Actualizado(s)!", "Partes", "OK", Color.Primary, Icons.Material.Filled.Commit);
+                var result = await DialogService.ShowDialog("Parte(s) Actualizado(s)!", "Partes", "OK", Color.Info, Icons.Material.Filled.Commit);
                 await PartMudDataGrid!.ReloadServerData();
             }
         }
@@ -202,7 +202,7 @@ else
                 var response = await Http.PostAsync($"api/Part/Import?userId={Useful.userId}", formData);
                 if (response.IsSuccessStatusCode)
                 {
-                    await DialogService.ShowDialog("Archivo cargado con exito!.", "Resouestos", "OK", Color.Primary, Icons.Material.Filled.Commit);
+                    await DialogService.ShowDialog("Archivo cargado con exito!.", "Resouestos", "OK", Color.Info, Icons.Material.Filled.Commit);
                     await PartMudDataGrid!.ReloadServerData();
                 }
                 else
