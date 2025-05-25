@@ -10,8 +10,7 @@
     {
         private readonly HttpClient _http = http;
 
-
-
+        
         public async Task<ApiResponse<List<Model>>> GetModels(int IdUser, int RowFrom = 0, string Filter = "")
         {
             ApiResponse<List<Model>>? result;
@@ -106,18 +105,11 @@
             List<Model> modelList = ([]);
             try
             {
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
-                    IgnoreReadOnlyProperties = true,
-                    WriteIndented = true
-                };
 
                 modelList.Add(Model);
 
                 
-                var response = await _http.PostAsJsonAsync($"api/Model/PostModels?userId={IdUser}", modelList, options);
+                var response = await _http.PostAsJsonAsync($"api/Model/PostModels?userId={IdUser}", modelList);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -168,18 +160,18 @@
             List<Model> modelList = ([]);
             try
             {
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
-                    IgnoreReadOnlyProperties = true,
-                    WriteIndented = true
-                };
+                //var options = new JsonSerializerOptions
+                //{
+                //    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                //    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
+                //    IgnoreReadOnlyProperties = true,
+                //    WriteIndented = true
+                //};
 
                 modelList.Add(Model);
 
 
-                var response = await _http.PostAsJsonAsync($"api/Model/PostModels?userId={IdUser}", modelList, options);
+                var response = await _http.PostAsJsonAsync($"api/Model/PostModels?userId={IdUser}", modelList);
 
                 if (!response.IsSuccessStatusCode)
                 {
