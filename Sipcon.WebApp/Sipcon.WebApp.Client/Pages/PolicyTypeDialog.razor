@@ -4,6 +4,7 @@
 @using Sipcon.WebApp.Client.Utils
 @using Sipcon.WebApp.Client.Enum
 @using FluentValidation
+@using Microsoft.AspNetCore.Components
 
 @inject IPolicyTypeService PolicyTypeService
 @inject IDialogService DialogService
@@ -21,12 +22,12 @@
 
                         <MudGrid Spacing="0" Justify="Justify.Center">
                             <MudItem xs="12" sm="4">
-                                 <div class="d-flex justify-left">
-                                    
-                                     <MudSwitch @bind-Value="_model.IsActive" Label="Activo" LabelPlacement="Placement.End" 
-                                            Color="Color.Success" 
-                                            UncheckedColor="Color.Default"
-                                            Disabled="@(ActionsModal == ActionsEnum.Create ? true : false)" />
+                                <div class="d-flex justify-left">
+
+                                    <MudSwitch @bind-Value="_model.IsActive" Label="Activo" LabelPlacement="Placement.End" 
+                                    Color="Color.Success" 
+                                    UncheckedColor="Color.Default"
+                                    Disabled="@(ActionsModal == ActionsEnum.Create ? true : false)" />
                                 </div>
                             </MudItem>
                             <MudItem xs="12" sm="2">
@@ -255,7 +256,8 @@
     private IMudDialogInstance MudDialog { get; set; } = default!;
 
     [Parameter]
-    public int IdPolicyType { get; set; } 
+    public int IdPolicyType { get; set; }
+
     [Parameter]
     public ActionsEnum ActionsModal { get; set; }
 
@@ -365,8 +367,6 @@
 
     }
 
-
-
     private void Cancel()
     {
         if (_successModal)
@@ -457,3 +457,5 @@
         };
 
     }
+
+}
