@@ -45,10 +45,10 @@
                                 <MudTextField @bind-Value="SelectedContact.Reference" Label="Reference" For="@(() => SelectedContact.Reference)" MaxLength="4" Class="@($"{strDictionary["Reference"]}")" />
                             </MudItem>
                             <MudItem xs="6">
-                                <MudTextField @bind-Value="SelectedContact.FirstName" Label="@($"{strDictionary["nameLabel"]}")" For="@(() => SelectedContact.FirstName)" MaxLength="100" Required="true" />
-                            </MudItem>
+                                        <MudTextField Value="SelectedContact.FirstName" ValueChanged="@((string value) => { SelectedContact.FirstName = value.ToUpper(); })" Immediate=" true" Label="@($"{strDictionary["nameLabel"]}")" For="@(() => SelectedContact.FirstName)" MaxLength="100" Class="uppercase-mud-textfield" Required="true" />
+                               </MudItem>
                             <MudItem xs="6">
-                                <MudTextField @bind-Value="SelectedContact.LastName" Label="Apellidos" For="@(() => SelectedContact.LastName)" MaxLength="100" Class="@($"{strDictionary["LastName"]}")" Required="@(((SelectedContact.IsCustomer ?? false) || (SelectedContact.IsUser ?? false)) && IsRifVorE == true)" RequiredError="Apellido es requerido" />
+                                        <MudTextField Value="SelectedContact.LastName" ValueChanged="@((string value) => { SelectedContact.LastName = value.ToUpper(); })"  Immediate="true" Label="Apellidos" For="@(() => SelectedContact.LastName)" MaxLength="100" Class="@($"uppercase-mud-textfield{strDictionary["LastName"]}")" Required="@(((SelectedContact.IsCustomer ?? false) || (SelectedContact.IsUser ?? false)) && IsRifVorE == true)" RequiredError="Apellido es requerido" />
                             </MudItem>
                             <MudItem xs="6">
                                 <MudTextField @bind-Value="SelectedContact.Address" Label="@($"{strDictionary["addressLabel"]}")" For="@(() => SelectedContact.Address)" MaxLength="150" Required="true" />
@@ -88,7 +88,7 @@
                                 </MudSelect>
                             </MudItem>
                              <MudItem xs="6" Elevation="2"Class="@(($"mud-width-full{strDictionary["Supplier"]}"))">
-                                        <MudSelect T="Related" Label="Planta" MultiSelection="true" SelectAll="false" FullWidth="true" SelectedValues="SelectedRelatedSuppliers" SelectedValuesChanged="OnSelectedRelatedSuppliers" Required="((SelectedContact.IsDealer ?? false))" RequiredError="Alguna Planta requerida" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetSupplierMultiSelectionText))">
+                                        <MudSelect T="Related" Label="Planta" MultiSelection="true" SelectAll="false" FullWidth="true" SelectedValues="SelectedRelatedSuppliers" SelectedValuesChanged="OnSelectedRelatedSuppliers" Required="((SelectedContact.IsDealer ?? false) || ((SelectedContact.IsUser ?? false) && (AnySelectedDealer == false && AnySelectedSupplier == false)))" RequiredError="Algun requerido"  MultiSelectionTextFunc="@(new Func<List<string>, string>(GetSupplierMultiSelectionText))" @ref="supplierSelectRef">
                                      @foreach (var relatedsupplier in FilteredRelatedSuppliers ?? Enumerable.Empty<Related>())
                                          {
                                                 <MudSelectItem T="Related" Value="@relatedsupplier" Disabled="@((SelectedContact.IsDealer ?? false) && FilteredRelatedSuppliers!.Where(r => r.IsRelated == true).Count() > 0 && relatedsupplier.IsRelated == false)">@relatedsupplier</MudSelectItem>
@@ -96,7 +96,7 @@
                                  </MudSelect>
                              </MudItem>
                              <MudItem xs="6" Elevation="2" Class="@(($"mud-width-full{strDictionary["Dealer"]}"))">
-                                        <MudSelect T="Related" Label="Concesionario" MultiSelection="true" SelectAll="false" FullWidth="true" SelectedValues="SelectedRelatedDealers" SelectedValuesChanged="OnSelectedRelatedDealers" Required="(SelectedContact.IsUser ?? false)" RequiredError="Algun Concesionario requerido" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetDealerMultiSelectionText))">
+                                        <MudSelect T="Related" Label="Concesionario" MultiSelection="true" SelectAll="false" FullWidth="true" SelectedValues="SelectedRelatedDealers" SelectedValuesChanged="OnSelectedRelatedDealers" Required="((SelectedContact.IsUser ?? false) && (AnySelectedSupplier == false && AnySelectedDealer == false))" RequiredError="Algun requerido" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetDealerMultiSelectionText))" @ref="dealerSelectRef">
                                      @foreach (var relateddealer in FilteredRelatedDealers ?? Enumerable.Empty<Related>())
                                          {
                                              <MudSelectItem T="Related" Value="@relateddealer">@relateddealer</MudSelectItem>
@@ -185,6 +185,8 @@ else
             }
         }
     }
+
+    public IMask ToUppcase = new RegexMask(@"^[^a-z]*$");
     private Contact? SelectedContact;
     private List<Related>? Relateds;
     private List<City>? Cities;
@@ -198,6 +200,11 @@ else
     string[] Rifs = ["V", "E", "J", "G"];
     private MudForm? form;
     private bool IsRifVorE => "VE".IndexOf(SelectedRifType) > -1;
+    private MudSelect<Related>? supplierSelectRef;
+    private MudSelect<Related>? dealerSelectRef;
+    private bool AnySelectedSupplier => (Relateds!.Where(r => r.IsSupplier == true && r.IsRelated == true && r.RecordId == SelectedContact!.Id).Count() > 0);
+    private bool AnySelectedDealer => (Relateds!.Where(r => r.IsDealer == true && r.IsRelated == true && r.RecordId == SelectedContact!.Id).Count() > 0);
+
     private Func<City?, string> ConvertCityFunc = city => city?.Name!;
     private Func<Brand?, string> ConvertBrandFunc = brand => brand?.Name!;
 
@@ -211,6 +218,7 @@ else
 
     private List<Related>? FilteredRelatedDealers;
     private List<Related>? FilteredRelatedSuppliers;
+
     private void FilterRealtedDealers()
     {
         SelectedRelatedDealers = new HashSet<Related>();
@@ -222,19 +230,23 @@ else
         FilteredRelatedSuppliers = Relateds?.Where(m => m.IsSupplier ?? false).ToList();
     }
 
-    private Task OnSelectedRelatedDealers(IEnumerable<Related> args)
+    private async Task OnSelectedRelatedDealers(IEnumerable<Related> args)
     {
         Relateds?.Where(m => m.IsRelated && m.IsDealer == true).ToList().ForEach(m => m.IsRelated = false);
         args.ToList().ForEach(m => m.IsRelated = true);
         SelectedRelatedDealers = args;
-        return Task.CompletedTask;
+
+        supplierSelectRef!.ResetValidation();
+        await Task.CompletedTask;
     }
-    private Task OnSelectedRelatedSuppliers(IEnumerable<Related> args)
+    private async Task OnSelectedRelatedSuppliers(IEnumerable<Related> args)
     {
         Relateds?.Where(m => m.IsRelated && m.IsSupplier == true).ToList().ForEach(m => m.IsRelated = false);
         args.ToList().ForEach(m => m.IsRelated = true);
         SelectedRelatedSuppliers = args;
-        return Task.CompletedTask;
+
+        dealerSelectRef!.ResetValidation();
+        await Task.CompletedTask;
     }
 
     protected override async Task OnInitializedAsync()
@@ -276,7 +288,7 @@ else
                 FirstClickEditContact = true;
                 SelectedRifType = SelectedContact!.Vat!.Substring(0, 1);
                 IsCheckboxValid = true;
-
+                BrandSelected = Brands?.FirstOrDefault(r => r.Id == SelectedContact.BrandId);
                 if (SelectedContact!.IsSupplier ?? false) await AfterAsyncSupplier();
                 if (SelectedContact.IsDealer ?? false) await AfterAsyncDealer();
                 if (SelectedContact.IsCustomer ?? false) await AfterAsyncCustomer();
@@ -470,7 +482,7 @@ else
     private async Task SaveContact()
     {    
         await form!.Validate();
-        
+
         if ( form.IsValid)
         {
             var strJsonSelectedContact = System.Text.Json.JsonSerializer.Serialize(SelectedContact);
@@ -507,5 +519,9 @@ else
 
         }
 
+    }
+    private Task OnTextChanged(String text)
+    {
+        throw new NotImplementedException();
     }
 }
