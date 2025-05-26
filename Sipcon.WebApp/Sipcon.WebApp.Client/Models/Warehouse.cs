@@ -7,9 +7,11 @@ namespace Sipcon.WebApp.Client.Models
         [Required(ErrorMessage = "Almacen es requerido.")]
         public string? Name { get; set; }
         [Required]
-        public Int32? SupplierId { get; set; }      
-        public string? SupplierName { get; set; }      
+        public Int32? SupplierId { get; set; }
+        public string? SupplierName { get; set; }
         public string? BrandName { get; set; }
+        public bool? Sell { get; set; } = true;
         public bool IsSelected { get; set; } = false;
     }
+
 }

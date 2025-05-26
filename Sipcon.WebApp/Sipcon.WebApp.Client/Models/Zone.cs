@@ -11,6 +11,9 @@ namespace Sipcon.WebApp.Client.Models
         [Required]
         public Int32? WarehouseId { get; set; }
         public string? WarehouseName { get; set; }
+
+        [Required]
+        public string? Size { get; set; }
         public bool IsSelected { get; set; } = false;
 
     }
