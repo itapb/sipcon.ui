@@ -315,7 +315,7 @@
         else
         {
             _model = new PolicyType();
-            _errorModalMessage = "(Problemas al cargar Tipo Poliza, no encontrado...";
+            _errorModalMessage = MessageEnum.GetError.GetStringValue();
             Console.WriteLine(serviceResponse.Message);
             OpenNested();
         }
@@ -346,14 +346,14 @@
                         await GetPolicyType();
                     }
                 }
-                _errorModalMessage = "Tipo Poliza guardado Satisfactoriamente...";
+                _errorModalMessage = MessageEnum.SaveOK.GetStringValue();
                 _successModal = true;
 
             }
             else
             {
                 _successModal = false;
-                _errorModalMessage = "Problemas al guardar Tipo Poliza...";
+                _errorModalMessage = MessageEnum.SaveNotOK.GetStringValue();
                 Console.WriteLine(serviceResponse.Message);
 
             }
@@ -456,4 +456,5 @@
             return result.Errors.Select(e => e.ErrorMessage);
         };
 
+    }
     }

@@ -16,7 +16,7 @@
 
 <PageTitle>Tipo Poliza</PageTitle>
 <MudBreadcrumbs Items="_itemsNavigate"></MudBreadcrumbs>
-<MudText Typo="Typo.h5" GutterBottom="true">Tipo Poliza</MudText>
+@* <MudText Typo="Typo.h5" GutterBottom="true">Tipo Poliza</MudText> *@
 <InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
 
 <MudDataGrid @ref="_mudDataGrid"
@@ -130,8 +130,8 @@
 
     private List<BreadcrumbItem> _itemsNavigate =
                 [
-        new("Home", href: "home", icon: Icons.Material.Filled.Home),
-        new("Tipo Poliza",  href: null, disabled: true, icon: Icons.Material.Filled.Policy),
+        new("Home", href: null, icon: Icons.Material.Filled.Home),
+        new("Tipo Poliza",  href: "policytypes", disabled: true, icon: Icons.Material.Filled.Policy),
     ];
 
 
@@ -188,11 +188,8 @@
 
     private async Task HandleOnClickRefresh()
     {
-
-        Console.WriteLine($"Buscando: {_searchString}");
         _searchString = string.Empty;
         await _mudDataGrid!.ReloadServerData();
-
     }
 
     private async Task ClickEditPolicyType(PolicyType item)
@@ -215,7 +212,6 @@
 
     private async Task ClickAddPolicyType()
     {
-
 
         DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
 
@@ -254,7 +250,7 @@
                 await DesactivateItemsAsync(module.IdAction, module.ActionName);
                 break;
             default:
-                Console.WriteLine($"Acción no reconocida: {module.ActionName}");
+                Console.WriteLine($"{MessageEnum.ActionsError.GetStringValue()}: {module.ActionName}");
                 break;
         }
     }
@@ -284,13 +280,13 @@
             if (file.Size == 0)
             {
                 _success = false;
-                _nestedErrorMessage = "!Archivo esta vacio, Error de Archivo...";
+                _nestedErrorMessage = MessageEnum.ImportError.GetStringValue();
                 OpenNested();
             }
             else if (file.Size > maxAllowedSize)
             {
                 _success = false;
-                _nestedErrorMessage = "!Tamaño del archivo excede el limite maximo permitido de 10MB....";
+                _nestedErrorMessage = MessageEnum.ImportErrorMaxByte.GetStringValue();
                 OpenNested();
             }
             else
@@ -309,7 +305,7 @@
                 if (serviceResponse.Processed)
                 {
                     _success = true;
-                    _nestedErrorMessage = "Tipo Poliza Cargado Satisfactoriamente...";
+                    _nestedErrorMessage = MessageEnum.ImportOK.GetStringValue();
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -319,7 +315,7 @@
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = "!Problemas al Importar Tipo Poliza...";
+                    _nestedErrorMessage = MessageEnum.ImportNotOK.GetStringValue();
                     OpenNested();
 
                 }
@@ -341,13 +337,13 @@
             if (file.Size == 0)
             {
                 _success = false;
-                _nestedErrorMessage = "!Archivo esta vacio, Error de Archivo...";
+                _nestedErrorMessage = MessageEnum.ImportError.GetStringValue();
                 OpenNested();
             }
             else if (file.Size > maxAllowedSize)
             {
                 _success = false;
-                _nestedErrorMessage = "!Tamaño del archivo excede el limite maximo permitido de 10MB....";
+                _nestedErrorMessage = MessageEnum.ImportErrorMaxByte.GetStringValue();
                 OpenNested();
             }
             else
@@ -366,7 +362,7 @@
                 if (serviceResponse.Processed)
                 {
                     _success = true;
-                    _nestedErrorMessage = "Tipo Poliza Cargado Satisfactoriamente...";
+                    _nestedErrorMessage = MessageEnum.ImportOK.GetStringValue();
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -376,7 +372,7 @@
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = "!Problemas al Importar Tipo Poliza...";
+                    _nestedErrorMessage = MessageEnum.ImportNotOK.GetStringValue();
                     OpenNested();
 
                 }
@@ -402,7 +398,7 @@
         else
         {
             _success = false;
-            _nestedErrorMessage = "!Problemas al exportar Tipo Poliza...";
+            _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue();
             Console.WriteLine(serviceResponse.Message);
             OpenNested();
 
@@ -446,7 +442,7 @@
                 {
 
                     _success = true;
-                    _nestedErrorMessage = "Tipo Polza activado...";
+                    _nestedErrorMessage = MessageEnum.ActivateOK.GetStringValue();
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -456,7 +452,7 @@
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = "!Problemas al activar Tipo Poliza...";
+                    _nestedErrorMessage = MessageEnum.ActivateNotOK.GetStringValue();
                     Console.WriteLine(serviceResponse.Message);
                     OpenNested();
 
@@ -505,7 +501,7 @@
                 if (serviceResponse.Processed)
                 {
                     _success = true;
-                    _nestedErrorMessage = "Tipo Poliza Inactivado...";
+                    _nestedErrorMessage = MessageEnum.DeactivateOK.GetStringValue();
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -515,7 +511,7 @@
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = "!Problemas al Inactivar Tipo Poliza...";
+                    _nestedErrorMessage = MessageEnum.DeactivateNotOK.GetStringValue();
                     Console.WriteLine(serviceResponse.Message);
                     OpenNested();
 
