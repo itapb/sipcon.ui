@@ -16,20 +16,20 @@
 
 <PageTitle>Vehiculos</PageTitle>
 <MudBreadcrumbs Items="_itemsNavigate"></MudBreadcrumbs>
-<MudText Typo="Typo.h5" GutterBottom="true">Vehiculos</MudText>
+@* <MudText Typo="Typo.h5" GutterBottom="true">Vehiculos</MudText> *@
 <InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
 
 <MudDataGrid @ref="_mudDataGrid"
-MultiSelection="true" 
-SelectedItems="@_selectedVehicles"
-SortMode="SortMode.Multiple"
-Filterable="true"
-FixedHeader Height="calc(92vh - 235px)"
-Hideable="true"
-Loading="_loading"
-Bordered="true"
-Dense="true"
-ServerData="LoadGridData">
+             MultiSelection="true" 
+             SelectedItems="@_selectedVehicles"
+             SortMode="SortMode.Multiple"
+             Filterable="true"
+             FixedHeader Height="calc(92vh - 235px)"
+             Hideable="true"
+             Loading="_loading"
+             Bordered="true"
+             Dense="true"
+             ServerData="LoadGridData">
 
     <ToolBarContent>
         <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="() => ClickAddVehicle()"></MudIconButton>
@@ -145,8 +145,8 @@ ServerData="LoadGridData">
 
     private List<BreadcrumbItem> _itemsNavigate =
     [
-        new("Home",href: "home", icon: Icons.Material.Filled.Home),
-        new("Vehiculos",  href: null, disabled: true, icon: Icons.Material.Filled.CardTravel),
+        new("Home",href: null, icon: Icons.Material.Filled.Home),
+        new("Vehiculos",  href: "vehicles", disabled: true, icon: Icons.Material.Filled.CardTravel),
     ];
 
 
@@ -281,7 +281,7 @@ ServerData="LoadGridData">
                 await UnavailableItemsAsync(module.IdAction, module.ActionName);
                 break;
             default:
-                Console.WriteLine($"Acción no reconocida: {module.ActionName}");
+                Console.WriteLine($"{MessageEnum.ActionsError.GetStringValue()}: {module.ActionName}");
                 break;
         }
     }
@@ -309,13 +309,13 @@ ServerData="LoadGridData">
             if (file.Size == 0)
             {
                 _success = false;
-                _nestedErrorMessage = "!Archivo esta vacio, Error importar Archivo...";
+                _nestedErrorMessage = MessageEnum.ImportError.GetStringValue();
                 OpenNested();
             }
             else if (file.Size > maxAllowedSize)
             {
                 _success = false;
-                _nestedErrorMessage = "!Tamaño del archivo excede el limite maximo permitido de 10MB....";
+                _nestedErrorMessage = MessageEnum.ImportErrorMaxByte.GetStringValue();
                 OpenNested();
             }
             else
@@ -334,7 +334,7 @@ ServerData="LoadGridData">
                 if (serviceResponse.Processed)
                 {
                     _success = true;
-                    _nestedErrorMessage = "Vehiculo cargados Satisfactoriamente...";
+                    _nestedErrorMessage = MessageEnum.ImportOK.GetStringValue();
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -344,7 +344,7 @@ ServerData="LoadGridData">
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = "!Problemas al Importar Vehiculo(s)...";
+                    _nestedErrorMessage = MessageEnum.ImportNotOK.GetStringValue();
                     OpenNested();
 
                 }
@@ -369,13 +369,13 @@ ServerData="LoadGridData">
             if (file.Size == 0)
             {
                 _success = false;
-                _nestedErrorMessage = "!Archivo esta vacio, Error carga Archivo...";
+                _nestedErrorMessage = MessageEnum.ImportError.GetStringValue();
                 OpenNested();
             }
             else if (file.Size > maxAllowedSize)
             {
                 _success = false;
-                _nestedErrorMessage = "!Tamaño del archivo excede el limite maximo permitido de 10MB....";
+                _nestedErrorMessage = MessageEnum.ImportErrorMaxByte.GetStringValue();
                 OpenNested();
             }
             else
@@ -394,7 +394,7 @@ ServerData="LoadGridData">
                 if (serviceResponse.Processed)
                 {
                     _success = true;
-                    _nestedErrorMessage = "Vehiculo cargado Satisfactoriamente...";
+                    _nestedErrorMessage = MessageEnum.ImportOK.GetStringValue();
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -404,7 +404,7 @@ ServerData="LoadGridData">
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = "!Problemas al Importar Vehiculo(s)...";
+                    _nestedErrorMessage = MessageEnum.ImportNotOK.GetStringValue();
                     OpenNested();
 
                 }
@@ -430,7 +430,7 @@ ServerData="LoadGridData">
         else
         {
             _success = false;
-            _nestedErrorMessage = "!Problemas al exportar Vehiculos...";
+            _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue();
             Console.WriteLine(serviceResponse.Message);
             OpenNested();
 
@@ -440,7 +440,6 @@ ServerData="LoadGridData">
 
     private async Task ActivateItemsAsync(int moduleId, string moduleActionName )
     {
-        Console.WriteLine("Activate Vehiculos...");
         if (_selectedVehicles.Any())
         {
             var option = new DialogOptions
@@ -451,7 +450,7 @@ ServerData="LoadGridData">
                     BackdropClick = false
                 };
             bool? result = await DialogService.ShowMessageBox(
-                "Confirmar Activación",
+                "Activar Vehiculo",
                 $"Seguro de Activar Vehiculos seleccionados? ",
                 yesText: "Si", noText: "No", "", option);
 
@@ -474,7 +473,7 @@ ServerData="LoadGridData">
                 if (serviceResponse.Processed)
                 {
                     _success = true;
-                    _nestedErrorMessage = "Vehiculo activado...";
+                    _nestedErrorMessage = MessageEnum.ActivateOK.GetStringValue();
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -484,7 +483,7 @@ ServerData="LoadGridData">
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = "!Problemas al activar Vehiculos...";
+                    _nestedErrorMessage = MessageEnum.ActivateNotOK.GetStringValue();
                     Console.WriteLine(serviceResponse.Message);
                     OpenNested();
 
@@ -499,7 +498,6 @@ ServerData="LoadGridData">
 
     private async Task DesactivateItemsAsync(int moduleId, string moduleActionName)
     {
-        Console.WriteLine("Inactivar Vehiculos...");
         if (_selectedVehicles.Any())
         {
             var option = new DialogOptions
@@ -510,8 +508,8 @@ ServerData="LoadGridData">
                     BackdropClick = false
                 };
             bool? result = await DialogService.ShowMessageBox(
-                "Confirmar Inactivar Vehiculo",
-                $"Seguro de Inactivar Vehiculo seleccionado(s)? ",
+                "Inactivar Vehiculo",
+                $"Seguro de Inactivar Vehiculo seleccionado? ",
                 yesText: "Si", noText: "No", "", option);
 
             if (result == true)
@@ -533,7 +531,7 @@ ServerData="LoadGridData">
                 if (serviceResponse.Processed)
                 {
                     _success = true;
-                    _nestedErrorMessage = "Vehiculo Inactivado...";
+                    _nestedErrorMessage = MessageEnum.DeactivateOK.GetStringValue();
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -543,7 +541,7 @@ ServerData="LoadGridData">
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = "!Problemas al Inactivar Vehiculo(s)...";
+                    _nestedErrorMessage = MessageEnum.DeactivateNotOK.GetStringValue();
                     Console.WriteLine(serviceResponse.Message);
                     OpenNested();
 
@@ -558,7 +556,7 @@ ServerData="LoadGridData">
 
     private async Task AssignItemsAsync(int moduleId, string moduleActionName)
     {
-        Console.WriteLine("Asignar concesionario Vehiculo(s)...");
+        
         if (_selectedVehicles.Any())
         {
             var _DealerList = await ModuleActionsService.GetDealerOption(_iduser);
@@ -591,7 +589,7 @@ ServerData="LoadGridData">
                 if (serviceResponse.Processed)
                 {
                     _success = true;
-                    _nestedErrorMessage = "Vehiculo Asignados...";
+                    _nestedErrorMessage = MessageEnum.AssignOK.GetStringValue();
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -601,7 +599,7 @@ ServerData="LoadGridData">
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = "!Problemas al Asignar Concecionarios...";
+                    _nestedErrorMessage = MessageEnum.AssignNotOK.GetStringValue();
                     Console.WriteLine(serviceResponse.Message);
                     OpenNested();
 
@@ -617,7 +615,7 @@ ServerData="LoadGridData">
 
     private async Task UnassignItemsAsync(int moduleId, string moduleActionName)
     {
-        Console.WriteLine("Desasignar Concesionario a Vehiculos...");
+        
         if (_selectedVehicles.Any())
         {
 
@@ -649,7 +647,7 @@ ServerData="LoadGridData">
                 if (serviceResponse.Processed)
                 {
                     _success = true;
-                    _nestedErrorMessage = "Concesionario desasignado...";
+                    _nestedErrorMessage = MessageEnum.UnassignOK.GetStringValue();
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -659,7 +657,7 @@ ServerData="LoadGridData">
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = "!Problemas al desasignar Concesionario...";
+                    _nestedErrorMessage = MessageEnum.UnassignNotOK.GetStringValue();
                     Console.WriteLine(serviceResponse.Message);
                     OpenNested();
 
@@ -675,7 +673,7 @@ ServerData="LoadGridData">
 
     private async Task AvailableItemsAsync(int moduleId, string moduleActionName)
     {
-        Console.WriteLine("Vehiculos Disponibles...");
+        
         if (_selectedVehicles.Any())
         {
             var option = new DialogOptions
@@ -686,7 +684,7 @@ ServerData="LoadGridData">
                     BackdropClick = false
                 };
             bool? result = await DialogService.ShowMessageBox(
-                "Confirmar Vehiculo Disponibles",
+                "Vehiculo Disponibles",
                 $"Seguro de Habilitar Vehiculos seleccionados? ",
                 yesText: "Si", noText: "No", "", option);
 
@@ -709,7 +707,7 @@ ServerData="LoadGridData">
                 if (serviceResponse.Processed)
                 {
                     _success = true;
-                    _nestedErrorMessage = "Vehiculo Habilitados...";
+                    _nestedErrorMessage = MessageEnum.AvailableOK.GetStringValue();
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -719,7 +717,7 @@ ServerData="LoadGridData">
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = "!Problemas al Habilitar Vehiculo(s)...";
+                    _nestedErrorMessage = MessageEnum.AvailableNotOK.GetStringValue();
                     Console.WriteLine(serviceResponse.Message);
                     OpenNested();
 
@@ -734,8 +732,7 @@ ServerData="LoadGridData">
 
     private async Task UnavailableItemsAsync(int moduleId, string moduleActionName)
     {
-        Console.WriteLine("Vehiculos No Disponibles...");
-        
+                
         if (_selectedVehicles.Any())
         {
 
@@ -767,7 +764,7 @@ ServerData="LoadGridData">
                 if (serviceResponse.Processed)
                 {
                     _success = true;
-                    _nestedErrorMessage = "Vehiculo no Disponibles...";
+                    _nestedErrorMessage = MessageEnum.UnavailableOK.GetStringValue();
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -777,7 +774,7 @@ ServerData="LoadGridData">
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = "!Problemas al Inhabilitar Vehiculo(s)...";
+                    _nestedErrorMessage = MessageEnum.UnavailableNotOK.GetStringValue();
                     Console.WriteLine(serviceResponse.Message);
                     OpenNested();
 

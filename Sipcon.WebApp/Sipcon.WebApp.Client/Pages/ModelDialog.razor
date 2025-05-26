@@ -255,7 +255,7 @@
         else
         {
             _model = new Model();
-            _errorModalMessage = "(Problemas al cargar Modelo) Modelo no encontrado...";
+            _errorModalMessage = MessageEnum.GetError.GetStringValue();
             Console.WriteLine(serviceResponse.Message);
             OpenNested();
         }
@@ -286,14 +286,14 @@
                         await GetModel();
                     }
                 }
-                _errorModalMessage = "Modelo guardado Satisfactoriamente...";
+                _errorModalMessage = MessageEnum.SaveOK.GetStringValue();
                 _successModal = true;
 
             }
             else
             {
                 _successModal = false;
-                _errorModalMessage = "Problemas al guardar Modelo...";
+                _errorModalMessage = MessageEnum.SaveNotOK.GetStringValue(); ;
                 Console.WriteLine(serviceResponse.Message);
 
             }

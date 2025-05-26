@@ -22,6 +22,7 @@ namespace Sipcon.WebApp.Client.Models
         [Required]
         public int Id { get; set; } = 0;
 
+        
         [Required]
         public bool IsActive { get; set; } = true;
 

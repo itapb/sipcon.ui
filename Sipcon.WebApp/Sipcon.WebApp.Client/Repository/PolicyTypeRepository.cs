@@ -336,7 +336,6 @@
             return result;
         }
 
-
         public async Task<ApiResponse<bool>> ImportPolicyTypes(int IdUser, MultipartFormDataContent FormData)
         {
             ApiResponse<bool> result;

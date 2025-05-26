@@ -110,17 +110,10 @@
             List<Vehicle> vehicles = ([]);
             try
             {
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
-                    IgnoreReadOnlyProperties = true,
-                    WriteIndented = true
-                };
-
+                
                 vehicles.Add(Vehicle);
 
-                var response = await _http.PostAsJsonAsync($"api/Vehicle/PostVehicles?userId={IdUser}", vehicles, options);
+                var response = await _http.PostAsJsonAsync($"api/Vehicle/PostVehicles?userId={IdUser}", vehicles);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -170,19 +163,21 @@
             List<Vehicle> vehicles  = ([]);
             try
             {
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
-                    IgnoreReadOnlyProperties = true,
-                    WriteIndented = true
-                };
-
                 vehicles.Add(Vehicle);
+
+                //var options = new JsonSerializerOptions
+                //{
+                //    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                //    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
+                //    IgnoreReadOnlyProperties = true,
+                //    WriteIndented = true
+                //};
+
+
 
                 //var json = JsonSerializer.Serialize(vehicles, options);
 
-                
+
                 //var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 //var request = new HttpRequestMessage(HttpMethod.Post, $"http://10.23.212.20/sipconapi/api/Vehicle/Post_Vehicles?userId={IdUser}")
@@ -199,7 +194,7 @@
 
                 //var response = await _http.SendAsync(request);
 
-                var response = await _http.PostAsJsonAsync($"api/Vehicle/PostVehicles?userId={IdUser}", vehicles, options);
+                var response = await _http.PostAsJsonAsync($"api/Vehicle/PostVehicles?userId={IdUser}", vehicles);
 
                 if (!response.IsSuccessStatusCode)
                 {
