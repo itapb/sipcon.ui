@@ -1,6 +1,7 @@
 ﻿@page "/parts"
 
-<MudBreadcrumbs Items="ItemsNavigate"></MudBreadcrumbs>
+@* <MudBreadcrumbs Items="ItemsNavigate"></MudBreadcrumbs> *@
+<CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
 <InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
 @if (PartId == null)
 {
@@ -10,6 +11,7 @@
             <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddPart" Color="Color.Info"></MudIconButton>
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshPart"></MudIconButton>
             <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
                 @foreach (var strmodulo in Modules!)
                 {
@@ -227,4 +229,8 @@ else
     // }
     private async Task ClickAddPart(MouseEventArgs ev) => await OpenPartForm(0);
     private async Task ClickEditPart(Part item) => await OpenPartForm(item.Id);
+    private async Task ClickRefreshPart(MouseEventArgs ev)
+    {
+        await PartMudDataGrid!.ReloadServerData();
+    }
 }

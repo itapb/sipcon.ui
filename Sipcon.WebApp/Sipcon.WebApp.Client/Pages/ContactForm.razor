@@ -45,10 +45,10 @@
                                 <MudTextField @bind-Value="SelectedContact.Reference" Label="Reference" For="@(() => SelectedContact.Reference)" MaxLength="4" Class="@($"{strDictionary["Reference"]}")" />
                             </MudItem>
                             <MudItem xs="6">
-                                        <MudTextField Value="SelectedContact.FirstName" ValueChanged="@((string value) => { SelectedContact.FirstName = value.ToUpper(); })" Immediate=" true" Label="@($"{strDictionary["nameLabel"]}")" For="@(() => SelectedContact.FirstName)" MaxLength="100" Class="uppercase-mud-textfield" Required="true" />
+                                        <MudTextField @bind-Value="SelectedContact.FirstName"  Immediate=" true" Label="@($"{strDictionary["nameLabel"]}")" For="@(() => SelectedContact.FirstName)" MaxLength="100" Required="true" />
                                </MudItem>
                             <MudItem xs="6">
-                                        <MudTextField Value="SelectedContact.LastName" ValueChanged="@((string value) => { SelectedContact.LastName = value.ToUpper(); })"  Immediate="true" Label="Apellidos" For="@(() => SelectedContact.LastName)" MaxLength="100" Class="@($"uppercase-mud-textfield{strDictionary["LastName"]}")" Required="@(((SelectedContact.IsCustomer ?? false) || (SelectedContact.IsUser ?? false)) && IsRifVorE == true)" RequiredError="Apellido es requerido" />
+                                        <MudTextField @bind-Value="SelectedContact.LastName"  Immediate="true" Label="Apellidos" For="@(() => SelectedContact.LastName)" MaxLength="100" Class="@($"{strDictionary["LastName"]}")" Required="@(((SelectedContact.IsCustomer ?? false) || (SelectedContact.IsUser ?? false)) && IsRifVorE == true)" RequiredError="Apellido es requerido" />
                             </MudItem>
                             <MudItem xs="6">
                                 <MudTextField @bind-Value="SelectedContact.Address" Label="@($"{strDictionary["addressLabel"]}")" For="@(() => SelectedContact.Address)" MaxLength="150" Required="true" />
@@ -65,10 +65,10 @@
                                 <MudTextField @bind-Value="SelectedContact.Email" Label="Email" For="@(() => SelectedContact.Email)" MaxLength="50" Required="true" />
                             </MudItem>
                             <MudItem xs="4">
-                                <MudTextField @bind-Value="SelectedContact.Phone1" Label="Teléfono 1" For="@(() => SelectedContact.Phone1)" MaxLength="12" Mask="@(new PatternMask("0000-00000000"))" Required="true" />
+                                <MudTextField @bind-Value="SelectedContact.Phone1" Label="Teléfono 1" For="@(() => SelectedContact.Phone1)" MaxLength="11" Mask="@(new PatternMask("0000-0000000"))" Required="true" />
                             </MudItem>
                             <MudItem xs="4">
-                                <MudTextField @bind-Value="SelectedContact.Phone2" Label="Teléfono 2" For="@(() => SelectedContact.Phone2)" MaxLength="12" Mask="@(new PatternMask("0000-00000000"))" />
+                                <MudTextField @bind-Value="SelectedContact.Phone2" Label="Teléfono 2" For="@(() => SelectedContact.Phone2)" MaxLength="11" Mask="@(new PatternMask("0000-0000000"))" />
                             </MudItem>
                             <MudItem xs="4">
                                 <MudSelect T="Brand" Label="Marca" ToStringFunc="@ConvertBrandFunc" Class="@($"{strDictionary["BrandName"]}")" Required="(SelectedContact.IsSupplier ?? false)" RequiredError="Marca es requerido" ValueChanged="OnBrandValueChanged" Value="BrandSelected">

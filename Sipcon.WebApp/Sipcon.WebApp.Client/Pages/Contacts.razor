@@ -1,6 +1,7 @@
 ﻿@page "/contacts"
 
-<MudBreadcrumbs Items="ItemsNavigate"></MudBreadcrumbs>
+@* <MudBreadcrumbs Items="ItemsNavigate"></MudBreadcrumbs> *@
+<CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
 @if (ContactId == null)
 {
     @* <MudText Typo="Typo.h5" GutterBottom="true">Contactos</MudText> *@
@@ -9,6 +10,7 @@
             <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddContact" Color="Color.Info"></MudIconButton>
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s=>OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshContact"></MudIconButton>
             <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
                 @foreach (var strmodulo in Modules!)
                 {
@@ -28,7 +30,7 @@
             <PropertyColumn Property="x => x.Vat" Title="Rif" Sortable="false" Filterable="false" />
             <PropertyColumn Property="x => x.FirstName" title="Nombre" />
             <PropertyColumn Property="x => x.LastName" title="Apellido" />
-            <PropertyColumn Property="x => x.Phone1" title="Telefono1" />
+            <PropertyColumn Property="x => x.Phone1" title="Telefono Principal" />
             <PropertyColumn Property="x => x.Reference" title="Referencia" />
             <PropertyColumn Property="x => x.Type" title="Tipo"/>
             <TemplateColumn>
@@ -76,7 +78,7 @@ else
         await Task.CompletedTask;
     }
     protected override async Task OnInitializedAsync()
-    {
+    {       
         Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=CONTACTOS-CONTACTOS&userId={Useful.userId}");        
     }
     private async Task<GridData<Contact>> ServerReload(GridState<Contact> state)
@@ -173,4 +175,9 @@ else
    
     private async Task ClickAddContact(MouseEventArgs ev) => await OpenContactForm(0);
     private async Task ClickEditContact(Contact item) => await OpenContactForm(item.Id);
+
+    private async Task ClickRefreshContact(MouseEventArgs ev)
+    {        
+        await ContactMudDataGrid!.ReloadServerData();       
+    }
 }

@@ -9,6 +9,7 @@
             <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddWarehouse" Color="Color.Info"></MudIconButton>
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshWarehouse"></MudIconButton>
             <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
                 @foreach (var strmodulo in Modules!)
                 {
@@ -216,4 +217,8 @@ else
     // }
     private async Task ClickAddWarehouse(MouseEventArgs ev) => await OpenWarehouseForm(0);
     private async Task ClickEditWarehouse(Warehouse item) => await OpenWarehouseForm(item.Id);
+    private async Task ClickRefreshWarehouse(MouseEventArgs ev)
+    {
+        await WarehouseMudDataGrid!.ReloadServerData();
+    }
 }
