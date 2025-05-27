@@ -175,7 +175,7 @@ else
     }
     string[] Sizes = ["S", "M", "L"];
     string[] Ratings = ["A", "B", "C", "D", "E", "F"];
-    string mMessage = "Respuestos";
+    //string mMessage = "Respuestos";
     bool AnySelectedCheckbox = false;
     private List<RelatedModel>? RelatedModels;
     private Func<RelatedModel?, string> ConvertModelFunc = model => model?.ModelName!;
@@ -238,7 +238,7 @@ else
 
             if (partId == 0)
             {
-                mMessage = "Agregar Respuesto";
+                //mMessage = "Agregar Respuesto";
                 this.With(t =>
                 {
                     t.AnySelectedCheckbox = true; t.TaxSelected = null; t.UmSelected = null;
@@ -258,7 +258,7 @@ else
 
             }else if (partId > 0)
             {
-                mMessage = "Modificar Respuesto";               
+                //mMessage = "Modificar Respuesto";               
                 AnySelectedCheckbox = true;
                 BrandSelected = Brands?.FirstOrDefault(f => f.Id == SelectedPart?.BrandId);
                 TaxSelected = Taxes?.FirstOrDefault(f => f.Id == SelectedPart?.TaxId);
@@ -304,7 +304,7 @@ else
                     if (!result!.Canceled)
                     {
                         MudDialog?.Close(DialogResult.Ok(true));
-                        mMessage = "Respuestos";
+                       // mMessage = "Respuestos";
                         SelectedPart = null;
                         PartId = null;
                     }
@@ -325,7 +325,7 @@ else
     }
     private void CancelClick()
     {
-        mMessage = "Respuestos"; SelectedPart = null; PartId = null; MudDialog?.Cancel();
+        SelectedPart = null; PartId = null; MudDialog?.Cancel();
     }
     private void FilterRealtedModels(int? supplierId)
     {

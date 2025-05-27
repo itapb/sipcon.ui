@@ -87,7 +87,7 @@
                                     <MudSelectItem Value="false">Femenino</MudSelectItem>
                                 </MudSelect>
                             </MudItem>
-                             <MudItem xs="6" Elevation="2"Class="@(($"mud-width-full{strDictionary["Supplier"]}"))">
+                             <MudItem xs="6"  Class="@(($"mud-width-full{strDictionary["Supplier"]}"))">
                                         <MudSelect T="Related" Label="Planta" MultiSelection="true" SelectAll="false" FullWidth="true" SelectedValues="SelectedRelatedSuppliers" SelectedValuesChanged="OnSelectedRelatedSuppliers" Required="((SelectedContact.IsDealer ?? false) || ((SelectedContact.IsUser ?? false) && (AnySelectedDealer == false && AnySelectedSupplier == false)))" RequiredError="Algun requerido"  MultiSelectionTextFunc="@(new Func<List<string>, string>(GetSupplierMultiSelectionText))" @ref="supplierSelectRef">
                                      @foreach (var relatedsupplier in FilteredRelatedSuppliers ?? Enumerable.Empty<Related>())
                                          {
@@ -95,7 +95,7 @@
                                          }
                                  </MudSelect>
                              </MudItem>
-                             <MudItem xs="6" Elevation="2" Class="@(($"mud-width-full{strDictionary["Dealer"]}"))">
+                             <MudItem xs="6"  Class="@(($"mud-width-full{strDictionary["Dealer"]}"))">
                                         <MudSelect T="Related" Label="Concesionario" MultiSelection="true" SelectAll="false" FullWidth="true" SelectedValues="SelectedRelatedDealers" SelectedValuesChanged="OnSelectedRelatedDealers" Required="((SelectedContact.IsUser ?? false) && (AnySelectedSupplier == false && AnySelectedDealer == false))" RequiredError="Algun requerido" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetDealerMultiSelectionText))" @ref="dealerSelectRef">
                                      @foreach (var relateddealer in FilteredRelatedDealers ?? Enumerable.Empty<Related>())
                                          {
@@ -169,7 +169,7 @@ else
     private string GetTitle => ContactId switch { null => "Contactos", 0 => "Agregar Contacto", _ => "Editar Contacto" };
     bool FirstClickEditContact = false;
     bool IsCheckboxValid = false;
-    bool IsValidRelates = false;
+    //bool IsValidRelates = false;
     private Dictionary<string, string> strDictionary = new Dictionary<string, string>{{ "LastName", "" },{ "BrandName", "" },{ "Supplier", "" },{ "Dealer", "" },{ "Birthday", "" },
                                                                               { "Male", "" },{ "Suppliers", "" },{ "Dealers", "" },{ "Reference", "" },
                                                                               { "nameLabel", "Nombre" },{ "addressLabel", "Dirección" }, {"V","" },{"E","" },{ "J",""},{"G","" } };
@@ -195,7 +195,7 @@ else
     // private List<Related>? Dealers;    
     private City? CitySelected;
     private Brand? BrandSelected;    
-    string mMessage = "Contactos";
+   // string mMessage = "Contactos";
     string SelectedRifType = "V";
     string[] Rifs = ["V", "E", "J", "G"];
     private MudForm? form;
@@ -270,7 +270,7 @@ else
 
             if (contactId == 0)
             {
-                mMessage = "Agregar Contacto";
+                //mMessage = "Agregar Contacto";
                 SelectedContact.Birthday = DateTime.SpecifyKind(new DateTime(1980, 01, 01), DateTimeKind.Unspecified);
                 SelectedContact.IsActive = true;
                 BrandSelected = null;
@@ -284,7 +284,7 @@ else
             }
             else if (contactId > 0)
             {
-                mMessage = "Editar Contacto";
+               // mMessage = "Editar Contacto";
                 FirstClickEditContact = true;
                 SelectedRifType = SelectedContact!.Vat!.Substring(0, 1);
                 IsCheckboxValid = true;
@@ -474,7 +474,8 @@ else
         return Task.CompletedTask;
     }
     private void Cancel() { 
-        mMessage = "Contactos"; SelectedContact = null; 
+        //mMessage = "Contactos"; 
+        SelectedContact = null; 
         ContactId = null;
         MudDialog?.Cancel();
     }
@@ -503,7 +504,7 @@ else
                         if (!mdialog!.Canceled)
                         {
                             MudDialog?.Close(DialogResult.Ok(true));
-                            mMessage = "Contactos";
+                            //mMessage = "Contactos";
                             SelectedContact = null;
                             ContactId = null;
                         }

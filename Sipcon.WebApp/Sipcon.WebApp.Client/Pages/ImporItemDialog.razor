@@ -139,18 +139,18 @@
     [Parameter]
     public string Title { get; set; } = string.Empty;
 
-    private MudForm form;
-    private int _iduser = 1; 
+    private MudForm? form;
+    //private int _iduser = 1; 
 
 
     public class ModelFileUpload
     {
-        public IBrowserFile Files { get; set; } 
+        public IBrowserFile? Files { get; set; } 
     }
 
     private ModelFileUpload _model = new();
     private ModelFluentValidator _validationRules = new();
-    private MudFileUpload<IBrowserFile> _fileUpload;
+    private MudFileUpload<IBrowserFile>? _fileUpload;
     private bool _isValid;
     private bool _isTouched;
     private const string DefaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mt-4 mud-width-full mud-height-full";
@@ -171,7 +171,7 @@
 
     private async Task OnValidSubmit()
     {
-        await form.Validate();
+        await form!.Validate();
         if (form.IsValid)
         {
 
@@ -194,11 +194,11 @@
             RuleFor(x => x.Files)
                 .NotEmpty().WithMessage("Debe haber al menos un archivo. "); 
 
-            RuleFor(x => x.Files.Size )
+            RuleFor(x => x.Files!.Size )
                 // .NotNull().Equal(0).WithMessage("Archivo esta vacio...")
                 .LessThanOrEqualTo(10000).WithMessage("Archivo excede el limite maximo permitido de 10MB");
 
-            RuleFor(x => x.Files.ContentType).NotNull().Must(x => x.Equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") || x.Equals("application/vnd.ms-excel"))
+            RuleFor(x => x.Files!.ContentType).NotNull().Must(x => x.Equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") || x.Equals("application/vnd.ms-excel"))
                 .WithMessage("Tipo de archivo incorrecto ");
 
         }
