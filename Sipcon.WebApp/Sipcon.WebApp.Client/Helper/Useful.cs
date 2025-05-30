@@ -17,6 +17,24 @@ namespace Sipcon.WebApp.Client.Helper
             action(obj);
             return obj;
         }
+        internal static string GetTitle(this string? moduleCode)
+        {
+            return moduleCode switch
+            {
+                "Zone" => "Zonas",
+                "Warehouse" => "Almacen",
+                _ => ""
+            };
+        }
+        internal static string? GetmoduleName(this string? moduleCode)
+        {
+            return moduleCode switch
+            {
+                "Zone" => "INVENTARIO-ZONAS",
+                "Warehouse" => "INVENTARIO-ALMACEN",
+                _ => null
+            };
+        }
         internal static string? ToActionIcon(this string? actionDisplay)
         {
             return actionDisplay switch
@@ -32,10 +50,10 @@ namespace Sipcon.WebApp.Client.Helper
                 _ => Icons.Material.Filled.HelpOutline
             };
         }
-        internal static async Task OpenForm<T, TItem>(this IDialogService dialogService, int? Id, MudDataGrid<TItem>? MyMudDataGrid) where T : class, Microsoft.AspNetCore.Components.IComponent
+        internal static async Task OpenForm<TComponent, TModel>(this IDialogService dialogService, int? Id, MudDataGrid<TModel>? MyMudDataGrid) where TComponent : class, Microsoft.AspNetCore.Components.IComponent
         {
             var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
-            var dialogReference = await dialogService.ShowAsync<T>("", new DialogParameters { ["Value"] = Id }, options);
+            var dialogReference = await dialogService.ShowAsync<TComponent>("", new DialogParameters { ["Value"] = Id }, options);
             var dialogResult = await dialogReference.Result;
             if (!dialogResult!.Canceled)
                 await MyMudDataGrid!.ReloadServerData();

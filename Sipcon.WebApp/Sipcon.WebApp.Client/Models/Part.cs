@@ -100,7 +100,7 @@ namespace Sipcon.WebApp.Client.Models
         public string? BrandName { get; set; } = string.Empty;
         public string? SupplierReference { get; set; } = string.Empty;
 
-        public bool IsSelected { get; set; } = false;
+        
 
     }
 }

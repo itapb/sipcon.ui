@@ -3,6 +3,7 @@ using MudBlazor.Services;
 using Sipcon.WebApp.Client.Services;
 using Sipcon.WebApp.Client.Repository;
 using Sipcon.WebApp.Client.Utils;
+using Sipcon.WebApp.Client.Interfaces;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
@@ -20,8 +21,7 @@ builder.Services.AddScoped<IBrandService, BrandRepository>();
 builder.Services.AddScoped<IPolicyTypeService, PolicyTypeRepository>();
 builder.Services.AddScoped<ISupplierService, SupplierRepository>();
 builder.Services.AddScoped<IDealerService, DealerRepository>();
-
 builder.Services.AddTransient<UtilModuleActions>();
-
+builder.Services.AddScoped(typeof(MasterComp<,>));
 
 await builder.Build().RunAsync();
