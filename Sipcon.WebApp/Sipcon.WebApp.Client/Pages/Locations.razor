@@ -1,5 +1,6 @@
 ﻿@page "/locations"
-<MudBreadcrumbs Items="ItemsNavigate"></MudBreadcrumbs>
+@* <MudBreadcrumbs Items="ItemsNavigate"></MudBreadcrumbs> *@
+<CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
 @* <MudText Typo="Typo.h5" GutterBottom="true">Ubicaciones</MudText> *@
 @if (LocationId == null){
 <InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
@@ -9,6 +10,7 @@
             <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddLocation" Color="Color.Info"></MudIconButton>
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s=>OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshLocation"></MudIconButton>
             <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
                 @foreach (var strmodulo in Modules!)
                 {
@@ -218,4 +220,8 @@ else
    
     private async Task ClickAddLocation(MouseEventArgs ev) => await OpenLocationForm(0);
     private async Task ClickEditLocation(Location item) => await OpenLocationForm(item.Id);
+    private async Task ClickRefreshLocation(MouseEventArgs ev)
+    {
+        await LocationMudDataGrid!.ReloadServerData();
+    }
 }

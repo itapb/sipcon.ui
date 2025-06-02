@@ -29,7 +29,7 @@ builder.Services.AddScoped<ISupplierService, SupplierRepository>();
 builder.Services.AddScoped<IDealerService, DealerRepository>();
 
 builder.Services.AddTransient<UtilModuleActions>();
-
+builder.Services.AddScoped(typeof(MasterComp<,>));
 
 var app = builder.Build();
 AppSettingsHelper.AppSettingsConfigure(app.Services.GetRequiredService<IConfiguration>());

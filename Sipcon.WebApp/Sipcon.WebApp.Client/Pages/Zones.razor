@@ -1,25 +1,24 @@
 ﻿@page "/zones"
-
-<MudBreadcrumbs Items="ItemsNavigate"></MudBreadcrumbs>
-@* <MudText Typo="Typo.h5" GutterBottom="true">Zonas</MudText> *@
-<InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
+<CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
+<InputFile OnChange="masterComp.OnInputFileChange" accept=".xlsx" style="display:none" />
 @if(ZoneId==null){
-<MudDataGrid @ref="ZoneMudDataGrid" T="Zone" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 260px)" Loading="_loading" @bind-CurrentPage="ZoneCurrentPage">
+<MudDataGrid @ref="masterComp.EntityMudDataGrid" T="Zone" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 260px)" Loading="masterComp.loading" @bind-CurrentPage="masterComp.CurrentPage">
     <ToolBarContent>
-        <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddZone" Color="Color.Info"></MudIconButton>
-        <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="masterComp.ClickAdd" Color="Color.Info"></MudIconButton>
+        <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => masterComp.OnSearch(s))" Value="masterComp.searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
         <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="masterComp.ClickRefresh"></MudIconButton>
         <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
-            @foreach (var strmodulo in Modules!)
+                @foreach (var strmodulo in masterComp.Modules!)
                 {
-                    <MudMenuItem Label="@strmodulo.ActionDisplay" Icon="@(strmodulo.ActionDisplay.ToActionIcon())" IconColor="@Color.Info" OnClick="@(() => ClickMenuZone(strmodulo.ActionName))" />
+                    <MudMenuItem Label="@strmodulo.ActionDisplay" Icon="@(strmodulo.ActionDisplay.ToActionIcon())" IconColor="@Color.Info" OnClick="@(() => masterComp.ClickMenu(strmodulo.ActionName))" />
                 }
             </MudMenu>
         </ToolBarContent>
         <Columns>
             <TemplateColumn>
                 <HeaderTemplate>
-                    <MudCheckBox @bind-Value="IsAllCheckBoxSelected" @bind-Value:after="AfterAsyncAllCheck" />
+                    <MudCheckBox @bind-Value="masterComp.IsAllCheckBoxSelected" @bind-Value:after="masterComp.AfterAsyncAllCheck" />
                 </HeaderTemplate>
                 <CellTemplate>
                     <MudCheckBox @bind-Value="@context.Item.IsSelected" />
@@ -38,7 +37,7 @@
             </TemplateColumn>
             <TemplateColumn>
                 <CellTemplate>
-                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditZone(context.Item)" />
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => masterComp.ClickEdit(context.Item)" />
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
@@ -50,33 +49,25 @@
 else{
     <ZoneForm @bind-Value="ZoneId" />
 }
-@code {
-    [Inject] private HttpClient Http { get; set; } = default!;
-    [Inject] private IDialogService DialogService { get; set; } = default!;
-    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+@code {    
+    [Inject] private MasterComp<Zone, ZoneForm> masterComp { get; set; } = default!;
     private int? ZoneId;
     List<BreadcrumbItem> ItemsNavigate = [new("Home", href: "", icon: Icons.Material.Filled.Home), new("Inventario", href: "zones", icon: Icons.Material.Filled.Inventory), new("Zona", href: "zones", icon: Icons.Material.Filled.Map)];
-    string searchString = "";
-   // string mMessage = "Zonas";
-    private int ZoneCurrentPage = 0;
-    bool IsAllCheckBoxSelected = false;
-    bool _loading = true;
 
-    private MudDataGrid<Zone>? ZoneMudDataGrid;
-    private List<Module>? Modules;
+
 
     protected override async Task OnInitializedAsync()
-    {
-        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-ZONAS&userId={Useful.userId}");
+    {          
+        await masterComp.FillModules();
     }
     private async Task<GridData<Zone>> ServerReload(GridState<Zone> state)
     {
-        IsAllCheckBoxSelected = false;
-        _loading = true;
+        masterComp.IsAllCheckBoxSelected = false;
+        masterComp.loading = true;
         var mOffset = state.Page * state.PageSize;
         var totalItems = 0;
         IEnumerable<Zone> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Zone/GetAll?filter={searchString}&rowFrom={mOffset}&userId={Useful.userId}");
+        HttpResponseMessage response = await masterComp.Http.GetAsync($"api/Zone/GetAll?filter={masterComp.searchString}&rowFrom={mOffset}&userId={Useful.userId}");
 
         if (response.IsSuccessStatusCode)
         {
@@ -89,116 +80,12 @@ else{
             var errorMessage = await response.Content.ReadAsStringAsync();
             throw new Exception(errorMessage);
         }
-        _loading = false;
+        masterComp.loading = false;
 
         return new GridData<Zone> { TotalItems = totalItems, Items = data };
     }
 
-    private async Task ClickMenuZone(string? actionName)
-    {
-        if (actionName == "EXPORT")
-        {
-            _loading = true;
-            var ResultZonas = await Http.GetAsync($"api/Zone/Export?filter={searchString}&userId={Useful.userId}");
-            if (ResultZonas.IsSuccessStatusCode)
-            {
-                var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
-                var base64File = Convert.ToBase64String(fileContent);
-                var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
-                await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Zonas.xlsx");
-            }
-            _loading = false;
-            return;
-        }
-        else if (actionName == "IMPORT")
-        {
-            await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('[type=file]').click()");
-            return;
-        }
-        var SelectedActions = (ZoneMudDataGrid != null && ("ACTIVATE,DEACTIVATE".IndexOf(actionName!) > -1)) ?
-                            (ZoneMudDataGrid.FilteredItems.Where(item => item.IsSelected)
-                                                             .Select(item => new Client.Models.Action
-                                                             {
-                                                                 UserId = 1,
-                                                                 RecordId = item.Id,
-                                                                 ModuleId = Modules!.FirstOrDefault()?.Id,
-                                                                 actionName = actionName,
-                                                                 ActionComment = "",
-                                                                 RelatedId = 0
-                                                             }).ToList()
-                             ) : null;
 
-        var result_Post_Actions = (SelectedActions is not null && SelectedActions.Count > 0) ? await Http.PostAsync($"api/Zone/PostActions?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
-        if (result_Post_Actions is not null && result_Post_Actions.IsSuccessStatusCode)
-        {
-            var resultAction = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
-            if (resultAction?.data![0].updatedRows > 0)
-            {
-                var result = await DialogService.ShowDialog("Zona(s) Actualizado(s)!", "Zona", "OK", Color.Primary, Icons.Material.Filled.Commit);
-                await ZoneMudDataGrid!.ReloadServerData();
-            }
-        }
-        await Task.CompletedTask;
-
-    }
-
-
-    private async Task AfterAsyncAllCheck()
-    {
-        ZoneMudDataGrid?.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
-        await Task.CompletedTask;
-    }
-    private async Task OnSearch(string text)
-    {
-        if (text.Length == 0 || text.Length >= 3)
-        {
-            _loading = true;
-            searchString = text;
-            await ZoneMudDataGrid!.ReloadServerData();
-        }
-    }
-
-    private async Task OnInputFileChange(InputFileChangeEventArgs e)
-    {
-        if (e.FileCount == 1)
-        {
-            var file = e.File;
-            const long maxAllowedSize = 10 * 1024 * 1024; // 10MB
-            if (file.Size == 0)
-            {
-                await DialogService.ShowDialog("Archivo esta vacio", "Error de Archivo", "OK", Color.Error, Icons.Material.Filled.Error);
-            }
-            else if (file.Size > maxAllowedSize)
-            {
-                await DialogService.ShowDialog("Tamaño del archivo excede el limite maximo permitido de 10MB.", "Error de Archivo", "OK", Color.Error, Icons.Material.Filled.Error);
-            }
-            else
-            {
-                using var stream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
-
-                var content = new StreamContent(stream);
-                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
-
-                // Create a multipart form data content
-                var formData = new MultipartFormDataContent();
-                formData.Add(content, "file", file.Name);
-                _loading = true;
-
-                var response = await Http.PostAsync($"api/Zone/Import?userId={Useful.userId}", formData);
-                if (response.IsSuccessStatusCode)
-                {
-                    await DialogService.ShowDialog("Archivo cargado con exito!.", "Zona", "OK", Color.Info, Icons.Material.Filled.Commit);
-                    await ZoneMudDataGrid!.ReloadServerData();
-                }
-                else
-                {
-                    await DialogService.ShowDialog("Carga de archivo fallo!", "Error al cargar", "OK", Color.Error, Icons.Material.Filled.Error);
-                    _loading = false;
-                }
-            }
-        }
-        await Task.CompletedTask;
-    }
     // private async Task ClickAddZone(MouseEventArgs ev)
     // {
     //     ZoneId = 0;
@@ -209,7 +96,5 @@ else{
     //     ZoneId = item.Id;
     //     await Task.CompletedTask;
     // }
-    private async Task OpenZoneForm(int? mId) => await DialogService.OpenForm<ZoneForm, Zone>(mId, ZoneMudDataGrid);
-    private async Task ClickAddZone(MouseEventArgs ev) => await OpenZoneForm(0);
-    private async Task ClickEditZone(Zone item) => await OpenZoneForm(item.Id);
+
 }

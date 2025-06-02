@@ -1,0 +1,15 @@
+﻿<MudBreadcrumbs Items="mItems">  
+    <ItemTemplate Context="item">  
+        @{var mColor = GetItemColor(item);}  
+        <MudLink Href="@item.Href" Color="@mColor">  
+            <MudIcon Icon="@item.Icon" Size="Size.Small"  Color="@mColor" />
+            @item.Text  
+        </MudLink>  
+    </ItemTemplate>  
+</MudBreadcrumbs>  
+
+@code {  
+    [Parameter] public List<BreadcrumbItem>? mItems { get; set; }  
+    private Color GetItemColor(BreadcrumbItem item) => mItems?.LastOrDefault() == item ? Color.Info : Color.Dark;  
+      
+}
