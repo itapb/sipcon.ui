@@ -112,17 +112,9 @@
             try
             {
 
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
-                    IgnoreReadOnlyProperties = true,
-                    WriteIndented = true
-                };
-
                 policyType.Add(PolicyType);
 
-                var response = await _http.PostAsJsonAsync($"api/PolicyType/PostPolicyType?userId={IdUser}", policyType, options);
+                var response = await _http.PostAsJsonAsync($"api/PolicyType/PostPolicyType?userId={IdUser}", policyType);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -172,17 +164,9 @@
             try
             {
 
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
-                    IgnoreReadOnlyProperties = true,
-                    WriteIndented = true
-                };
-
                 policyType.Add(PolicyType);
 
-                var response = await _http.PostAsJsonAsync($"api/PolicyType/PostPolicyType?userId={IdUser}", policyType, options);
+                var response = await _http.PostAsJsonAsync($"api/PolicyType/PostPolicyType?userId={IdUser}", policyType);
 
                 if (!response.IsSuccessStatusCode)
                 {

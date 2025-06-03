@@ -4,7 +4,6 @@
 @using Sipcon.WebApp.Client.Utils
 @using Sipcon.WebApp.Client.Enum
 @using FluentValidation
-@using Microsoft.AspNetCore.Components
 
 @inject IPolicyTypeService PolicyTypeService
 @inject IDialogService DialogService
@@ -22,12 +21,12 @@
 
                         <MudGrid Spacing="0" Justify="Justify.Center">
                             <MudItem xs="12" sm="4">
-                                <div class="d-flex justify-left">
-
-                                    <MudSwitch @bind-value="_model.IsActive" Label="Activo" LabelPlacement="Placement.End"
-                                               Color="Color.Success" 
-                                    UncheckedColor="Color.Default"
-                                    Disabled="@(ActionsModal == ActionsEnum.Create ? true : false)" />
+                                 <div class="d-flex justify-left">
+                                    
+                                     <MudSwitch @bind-Value="_model.IsActive" Label="Activo" LabelPlacement="Placement.End" 
+                                            Color="Color.Success" 
+                                            UncheckedColor="Color.Default"
+                                            Disabled="@(ActionsModal == ActionsEnum.Create ? true : false)" />
                                 </div>
                             </MudItem>
                             <MudItem xs="12" sm="2">
@@ -60,8 +59,8 @@
                         <MudCard>
 
                             <MudCardContent Style="padding-top: 0px;">
-                                <MudHidden @bind-value="_model.Id" />
-                                <MudHidden @bind-value="IdPolicyType" />
+                                <MudHidden @bind-Value="_model.Id" />
+                                <MudHidden @bind-Value="IdPolicyType" />
                                 <div class="d-flex justify-center" >
 
                                     <MudTooltip Text="Tipo Poliza">
@@ -89,24 +88,37 @@
                             </MudCardHeader>
                             <MudCardContent Style="padding-top: 0px;">
 
-
-                                <MudSelect @bind-Value="_model.BrandId" Label="Marca" AdornmentColor="Color.Default"
-                                Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                For="@(() => _model.BrandId)"
-                                Immediate="true">
-                                    @foreach (var item in _brandList)
-                                    {
-                                        <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
-                                    }
-                                </MudSelect>
                                 <MudTextField Typo="Typo.caption" @bind-Value="_model.Description" Label="Descripci&oacute;n"
-                                Variant="Variant.Text"
-                                Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                For="@(() => _model.Description)"
-                                Immediate="true" />
+                                              Variant="Variant.Text"
+                                              Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
+                                              For="@(() => _model.Description)"
+                                              Immediate="true" />
 
+                                <MudStack Row="true">
 
+                                    <MudSelect @bind-Value="_model.SupplierId" Label="Planta" AdornmentColor="Color.Default"
+                                               Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
+                                               For="@(() => _model.SupplierId)"
+                                               Immediate="true">
+                                        @foreach (var item in _supplierList)
+                                        {
+                                            <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
+                                        }
+                                    </MudSelect>
 
+                                    <MudSelect @bind-Value="_model.BrandId" Label="Marca" AdornmentColor="Color.Default"
+                                               Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
+                                               For="@(() => _model.BrandId)"
+                                               Immediate="true">
+                                        @foreach (var item in _brandList)
+                                        {
+                                            <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
+                                        }
+                                    </MudSelect>
+
+                                    
+
+                                </MudStack>
 
 
                             </MudCardContent>
@@ -256,12 +268,11 @@
     private IMudDialogInstance MudDialog { get; set; } = default!;
 
     [Parameter]
-    public int IdPolicyType { get; set; }
-
+    public int IdPolicyType { get; set; } 
     [Parameter]
     public ActionsEnum ActionsModal { get; set; }
 
-    private MudForm? form;
+    private MudForm form;
     private PolicyType _model { get; set; } = new PolicyType();
 
     private string _errorModalMessage = string.Empty;
@@ -272,7 +283,8 @@
     private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
 
     private IEnumerable<SelectOption> _brandList { get; set; } = new List<SelectOption>();
-    private IEnumerable<SelectOption> _policyTypeList { get; set; } = new List<SelectOption>();
+
+    private IEnumerable<SelectOption> _supplierList { get; set; } = new List<SelectOption>();
 
     PolicyTypeValidator _modelValidator = new PolicyTypeValidator();
 
@@ -285,7 +297,7 @@
         {
             _model = new PolicyType();
             _brandList = await ModuleActionsService.GetBrandOption(_iduser);
-            _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(_iduser);
+            _supplierList = await ModuleActionsService.GetSupplierOption(_iduser);
 
             await Task.Delay(100);
         }
@@ -309,7 +321,7 @@
             _model = serviceResponse.Data ?? new PolicyType();
 
             _brandList = await ModuleActionsService.GetBrandOption(_iduser);
-            _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(_iduser);
+            _supplierList = await ModuleActionsService.GetSupplierOption(_iduser);
 
             await Task.Delay(100);
             StateHasChanged();
@@ -328,7 +340,7 @@
 
     private async Task OnValidSubmit()
     {
-        await form!.Validate();
+        await form.Validate();
 
         if (form.IsValid)
         {
@@ -366,6 +378,8 @@
         await Task.CompletedTask;
 
     }
+
+
 
     private void Cancel()
     {
@@ -437,7 +451,7 @@
             RuleFor(x => x.GapMonths)
                 .NotNull().WithMessage("Campo requerido")
                 .NotEmpty().WithMessage("Campo requerido")
-                .InclusiveBetween(1, 15).WithMessage("Campo requerido entre {1 - 200.000} dias");
+                .InclusiveBetween(1, 15).WithMessage("Campo requerido entre {1 - 15} dias");
 
             RuleFor(x => x.TopMonths)
                 .NotNull().WithMessage("Campo requerido")
@@ -457,5 +471,4 @@
         };
 
     }
-
-}
+    }

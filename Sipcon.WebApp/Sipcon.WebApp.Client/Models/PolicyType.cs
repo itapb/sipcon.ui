@@ -34,8 +34,11 @@ namespace Sipcon.WebApp.Client.Models
         [Required]
         public int? BrandId { get; set; } = null;
 
-
         public string BrandName { get; set; } = string.Empty;
+
+        [Required]
+        public int? SupplierId { get; set; } = null;
+
 
         [Required]
         public bool IsActive { get; set; } = true;

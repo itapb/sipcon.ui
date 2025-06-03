@@ -92,6 +92,19 @@
         [StringValue("Problemas al inhabilitar Registros!...")]
         UnavailableNotOK,
 
+
+        // Activate
+        [StringValue("Registro bloqueado Satisfactoriamente...")]
+        LockOK,
+        [StringValue("Problemas al bloquear registros!...")]
+        LockNotOK,
+
+        // Desactivate
+        [StringValue("Registro desbloqueado Satisfactoriamente...")]
+        UnLockOK,
+        [StringValue("Problemas al desbloquear registros!...")]
+        UnLockNotOK,
+
     }
 
 }
