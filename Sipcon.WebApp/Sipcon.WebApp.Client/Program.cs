@@ -20,6 +20,10 @@ builder.Services.AddScoped<IBrandService, BrandRepository>();
 builder.Services.AddScoped<IPolicyTypeService, PolicyTypeRepository>();
 builder.Services.AddScoped<ISupplierService, SupplierRepository>();
 builder.Services.AddScoped<IDealerService, DealerRepository>();
+builder.Services.AddScoped<IPolicyService, PolicyRepository>();
+builder.Services.AddScoped<IPayMethodService, PayMethodRepository>();
+builder.Services.AddScoped<IContactService, ContactRepository>();
+
 
 builder.Services.AddTransient<UtilModuleActions>();
 

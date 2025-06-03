@@ -44,9 +44,20 @@ namespace Sipcon.WebApp.Client.Models
 
         public string SupplierReference { get; set; } = string.Empty;
 
+        private int? _dealerId;
         [Required]
         //[JsonIgnore(Condition = JsonIgnoreCondition.Never)]
-        public int? DealerId { get; set; } = null;
+        public int? DealerId
+        {
+            get { return _dealerId; }
+            set
+            {
+                if (value > 0)
+                    _dealerId = value;
+                else
+                    _dealerId = null;
+            }
+        }
 
         public string DealerName { get;  set; } = string.Empty;
 
@@ -62,6 +73,10 @@ namespace Sipcon.WebApp.Client.Models
 
         [Required]
         public bool IsActive { get; set; } = true;
+
+        public int? PolicyTypeId { get; set; } = null;
+
+        public string PolicyTypeName { get; set; } = string.Empty;
 
 
     }

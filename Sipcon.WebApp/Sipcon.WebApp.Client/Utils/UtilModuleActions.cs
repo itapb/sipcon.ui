@@ -13,7 +13,8 @@ namespace Sipcon.WebApp.Client.Utils
         ISupplierService SupplierService,
         IDealerService DealerService,
         IBrandService BrandService,
-        IPolicyTypeService PolicyTypeService
+        IPolicyTypeService PolicyTypeService,
+        IPayMethodService PayMethodService
         ) 
     {
 
@@ -57,7 +58,12 @@ namespace Sipcon.WebApp.Client.Utils
                         case "UNAVAILABLE":
                             _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.CarCrash, module.Id, module.ActionName, Color.Info));
                             break;
-
+                        case "LOCK":
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.Lock, module.Id, module.ActionName, Color.Info));
+                            break;
+                        case "UNLOCK":
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.LockOpen, module.Id, module.ActionName, Color.Info));
+                            break;
                         default:
                             Console.WriteLine($"Acción no reconocida: {module.ActionName}");
                             break;
@@ -143,7 +149,10 @@ namespace Sipcon.WebApp.Client.Utils
 
                 foreach (var item in _List.ToList())
                 {
+                    
                     _itemsSelect.Add(new SelectOption(item.Id, item.FirstName));
+                    
+                    
                 }
             }
             return _itemsSelect;
@@ -184,6 +193,27 @@ namespace Sipcon.WebApp.Client.Utils
                 foreach (var item in _List.ToList())
                 {
                     _itemsSelect.Add(new SelectOption(item.Id, item.Description));
+                }
+            }
+            return _itemsSelect;
+
+        }
+
+
+        public async Task<List<SelectOption>> GetPayMethodOption(int IdUser)
+        {
+            List<SelectOption> _itemsSelect = new([]);
+
+
+            var moduleResponse = await PayMethodService.GetPayMethods(IdUser);
+            if (moduleResponse.Processed)
+            {
+                List<PayMethod> _List = moduleResponse.Data ?? new List<PayMethod>();
+
+
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Id, item.Name));
                 }
             }
             return _itemsSelect;
