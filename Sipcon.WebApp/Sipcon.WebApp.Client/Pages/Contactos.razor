@@ -112,7 +112,7 @@ else
 				<MudDatePicker @bind-Date="Selectedcontact.Birthday" Label="Fecha Nacimiento" Class="@($"{strVisible["Birthday"]}")" />
 			</MudItem>
 			<MudItem xs="4">
-				<MudSelect T="bool" @bind-Value="Selectedcontact.Male" Label="Genero" Class="@($"{strVisible["Male"]}")">
+				<MudSelect T="bool?" @bind-Value="Selectedcontact.Male" Label="Genero" Class="@($"{strVisible["Male"]}")">
 					<MudSelectItem Value="true">Masculino</MudSelectItem>
 					<MudSelectItem Value="false">Femenino</MudSelectItem>
 				</MudSelect>
@@ -433,7 +433,7 @@ else
 		Mensaje = "Nuevo Contacto";
 		IsNewContact = true;
 		isCheckboxValid = false;
-		Selectedcontact = new Contact() { Id = 0, IsCustomer = false, IsDealer = false, IsSupplier = false, IsUser = false, Male = true, Type = "" };
+		Selectedcontact = new Contact() { Id = 0, IsCustomer = false, IsDealer = false, IsSupplier = false, IsUser = false, Type = "" };
 		Suppliers = relateds!.Where(r => r.RecordId == 0 && r.IsSupplier == true).ToList();
 		Dealers = relateds!.Where(r => r.RecordId == 0 && r.IsDealer == true).ToList();
 		await Task.CompletedTask;
@@ -457,8 +457,7 @@ else
         await Task.CompletedTask;
     }
 	private async Task PerformSearch()
-	{
-		
+	{		
 		contacts = await Http.GetFromJsonAsync<List<Contact>>($"api/Contact/GetAll?filter={_searchString}&rowFrom=0&idUser=1");	
 		await Task.CompletedTask;
 	}

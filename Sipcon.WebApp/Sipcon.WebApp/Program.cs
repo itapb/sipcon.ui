@@ -3,6 +3,7 @@ using Sipcon.WebApp.Components;
 using Sipcon.WebApp.Client.Services;
 using Sipcon.WebApp.Client.Repository;
 using Sipcon.WebApp.Client.Utils;
+using Sipcon.WebApp;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -31,9 +32,10 @@ builder.Services.AddScoped<IPayMethodService, PayMethodRepository>();
 builder.Services.AddScoped<IContactService, ContactRepository>();
 
 builder.Services.AddTransient<UtilModuleActions>();
-
+builder.Services.AddScoped(typeof(MasterComp<,>));
 
 var app = builder.Build();
+AppSettingsHelper.AppSettingsConfigure(app.Services.GetRequiredService<IConfiguration>());
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -45,7 +47,7 @@ else
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
-app.UsePathBase("/sipconapp/");
+app.UsePathBase(AppSettingsHelper.GetAppSetting("pathBase"));//app.UsePathBase("/sipconapp/");
 //app.UseHttpsRedirection();
 app.UseRouting();
 app.UseAntiforgery();

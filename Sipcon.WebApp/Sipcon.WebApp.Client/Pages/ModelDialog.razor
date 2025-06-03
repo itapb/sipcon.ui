@@ -26,7 +26,7 @@
                                     <div class="d-flex justify-left">
 
                                         <MudSwitch @bind-Value="_model.IsActive" Label="Activo" LabelPlacement="Placement.End" Color="Color.Success" Disabled="@(ActionsModal == ActionsEnum.Create ? true : false)" />
-                                        <MudHidden @bind-Value="IdModel" />
+                                        <MudHidden @bind-value="IdModel" />
 
                                     </div>
                                 </MudItem>
@@ -87,7 +87,7 @@
                                 </CardHeaderActions>
                             </MudCardHeader>
                             <MudCardContent Style="padding-top: 0px;">
-                                <MudHidden @bind-Value="_model.Id" />
+                                <MudHidden @bind-value="_model.Id" />
                                 <MudTextField Typo="Typo.caption" @bind-Value="_model.Name" Label="Nombre" Variant="Variant.Text"
                                               Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
                                               For="@(() => _model.Name)"
@@ -200,7 +200,7 @@
     [Parameter]
     public ActionsEnum ActionsModal { get; set; }
 
-    private MudForm form;
+    private MudForm? form;
     private Model _model { get; set; } = new Model();
 
     private string _errorModalMessage = string.Empty;
@@ -266,7 +266,7 @@
 
     private async Task OnValidSubmit()
     {
-        await form.Validate();
+        await form!.Validate();
 
         if (form.IsValid)
         {

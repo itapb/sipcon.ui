@@ -117,7 +117,7 @@
     public string Title { get; set; } = string.Empty;
 
 
-    private MudForm form;
+    private MudForm? form;
     private string _returnValue = string.Empty;
     private string _errorMessage = string.Empty;
 
@@ -130,7 +130,7 @@
 
     private async Task OnValidSubmit()
     {
-        await form.Validate();
+        await form!.Validate();
         if (form.IsValid)
         {
             MudDialog.Close(DialogResult.Ok(_returnValue));

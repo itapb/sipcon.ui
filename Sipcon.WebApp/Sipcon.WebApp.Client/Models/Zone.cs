@@ -5,13 +5,16 @@ namespace Sipcon.WebApp.Client.Models
     public class Zone : Record
     {
 
-        [Required(ErrorMessage = "Zona es requerida.")]
+        [Required(ErrorMessage = "Campo requerido.")]
         public string? Name { get; set; }
 
         [Required]
         public Int32? WarehouseId { get; set; }
         public string? WarehouseName { get; set; }
-        public bool IsSelected { get; set; } = false;
+
+        [Required]
+        public string? Size { get; set; }
+       
 
     }
 }
