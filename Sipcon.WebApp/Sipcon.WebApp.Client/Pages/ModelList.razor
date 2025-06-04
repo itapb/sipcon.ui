@@ -15,8 +15,8 @@
 
 
 <PageTitle>Modelos</PageTitle>
-<MudBreadcrumbs Items="_itemsNavigate"></MudBreadcrumbs>
-@* <MudText Typo="Typo.h5" GutterBottom="true">Modelos</MudText> *@
+<CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
+
 <InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
 
 <MudDataGrid @ref="_mudDataGrid"
@@ -33,8 +33,12 @@
 
     <ToolBarContent>
         <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddModel()"></MudIconButton>
-        <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
-                        AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" OnKeyDown="HandleKeyDownSearch"></MudTextField>
+        <MudTextField @bind-Value="_searchString" Placeholder="Buscar" Adornment="Adornment.Start" Immediate="true"
+                      Typo="Typo.caption"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      OnAdornmentClick="() => ClickSearch()"
+                      IconSize="Size.Medium" Class="mt-0" 
+                      OnKeyDown="HandleKeyDownSearch"></MudTextField>
         <MudSpacer />
         <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
         <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
@@ -127,7 +131,7 @@
     private List<BreadcrumbItem> _itemsNavigate =
                 [
         new("Home", href: null, icon: Icons.Material.Filled.Home),
-        new("Modelos", href: "models", disabled: true, icon: Icons.Material.Filled.Policy )
+        new("Modelos", href: "models", disabled: false, icon: Icons.Material.Filled.Policy )
     ];
 
 
@@ -179,6 +183,17 @@
             }
 
         }
+    }
+
+    private async Task ClickSearch()
+    {
+
+        if (_searchString.Length >= 3)
+        {
+            Console.WriteLine($"Buscando: {_searchString}");
+            await _mudDataGrid!.ReloadServerData();
+        }
+
     }
 
 

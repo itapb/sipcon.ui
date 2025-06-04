@@ -11,6 +11,7 @@
 @inject IContactService ContactService
 @inject IDialogService DialogService
 @inject UtilModuleActions ModuleActionsService
+@inject IJSRuntime JSRuntime
 
 
 <MudForm Model="@_model" @ref="@form" Validation="@(_modelValidator.ValidateValue)" ValidationDelay="0" >
@@ -26,10 +27,15 @@
                             <MudItem xs="12" sm="4">
                                 <div class="d-flex justify-left">
 
-                                    @*   <MudSwitch @bind-Value="_model.IsActive" Label="Activo" LabelPlacement="Placement.End" 
-                                    Color="Color.Success" 
-                                    UncheckedColor="Color.Default"
-                                    ReadOnly="@(ActionsModal == ActionsEnum.Create ? true : false)" /> *@
+                                    @if (ActionsModal != ActionsEnum.Create)
+                                    {
+                                        <MudIconButton Icon="@Icons.Custom.FileFormats.FilePdf" Variant="Variant.Filled" 
+                                                        Color="Color.Default" 
+                                                        Size="Size.Large" 
+                                                        OnClick="() => ClickExportPdf()">
+                                        </MudIconButton>
+                                    }
+                                    
                                 </div>
                             </MudItem>
                             <MudItem xs="12" sm="2">
@@ -164,7 +170,7 @@
                                         Label="Forma Pago" 
                                         Typo="Typo.caption"
                                         AdornmentColor="Color.Default"
-                                        Margin="Margin.Dense" ReadOnly="@(!_model.IsActive )"
+                                                   Margin="Margin.Dense" ReadOnly="@(!_model.IsActive || _isReadOnly)"
                                         For="@(() => _model.PayMethodId)"
                                         Immediate="true">
                                             @foreach (var item in _PayMethodList)
@@ -229,20 +235,30 @@
                                         <MudHidden @bind-Value="_model.VehicleId" />
                                         <MudStack Row="true">
                                             <MudStack Row="false">
+                                                <MudStack Row="true">
+                                                   
 
-                                                <MudTextField Typo="Typo.caption" @bind-Value="_searchVin"
-                                                Placeholder="VIN"
-                                                OnKeyUp="HandleKeyDownSearchVehicle"
-                                                OnAdornmentClick="() => ClicSearchVehicle()"
-                                                Adornment="Adornment.End"
-                                                AdornmentIcon="@Icons.Material.Filled.Search"
-                                                IconSize="Size.Medium"
-                                                MaxLength="20"
-                                                Margin="Margin.Dense"
-                                                ReadOnly="@(!_model.IsActive || _isReadOnly)"/>
+                                                    <MudTextField Typo="Typo.caption" @bind-Value="_searchVin"
+                                                    Placeholder="Buscar"
+                                                    OnKeyUp="HandleKeyDownSearchVehicle"
+                                                    OnAdornmentClick="() => ClicSearchVehicle()"
+                                                    Adornment="Adornment.End"
+                                                    AdornmentIcon="@Icons.Material.Filled.Search"
+                                                    IconSize="Size.Medium"
+                                                    MaxLength="20"
+                                                    Margin="Margin.Dense"
+                                                    ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                    Disabled="@(!_model.IsActive || _isReadOnly)" />
 
+                                                    <MudCheckBox @bind-Value="_SearchFor" Style="font-size: 14px" 
+                                                                 Size="Size.Small" 
+                                                                 Color="Color.Info"
+                                                                 Disabled="@(!_model.IsActive || _isReadOnly)">
+                                                        <b style="font-size: 14px">@(_SearchFor == true ? "VIN" : "Placa")</b>
+                                                    </MudCheckBox>
+                                                   
+                                                </MudStack>
                                                 <MudText Typo="Typo.caption" Style="margin-top: -14px;"><b>VIN: </b> @_model.Vin</MudText>
-
                                             </MudStack>
 
                                             @* <MudSpacer /> *@
@@ -329,7 +345,8 @@
                                                 IconSize="Size.Medium"
                                                 MaxLength="12"
                                                 Margin="Margin.Dense"
-                                                ReadOnly="@(!_model.IsActive || _isReadOnly)"/>
+                                                ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                             Disabled="@(!_model.IsActive || _isReadOnly)" />
 
                                                 <MudText Typo="Typo.caption" Style="margin-top: -14px;"><b>RIF: </b> @_model.Vat</MudText>
 
@@ -444,6 +461,8 @@
     bool _isReadOnly = false;
     string _searchVat = string.Empty;
     string _searchVin = string.Empty;
+    bool _SearchFor = true; 
+    SearchByEnum _searchBy = SearchByEnum.VIN;
 
     private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
     private int _idDealer = 0;
@@ -510,7 +529,16 @@
     private async Task GetVehicle()
     {
         var _vehicle = new Vehicle();
-        var serviceResponse = await VehicleService.GetVehicleByVIN(_searchVin, _iduser, _idDealer);
+
+        if (_SearchFor)
+        {
+            _searchBy = SearchByEnum.VIN;
+        }
+        else
+        {
+            _searchBy = SearchByEnum.Plate;
+        }
+        var serviceResponse = await VehicleService.GetVehicleBy(_searchVin, _iduser, _idDealer, _searchBy);
         if (serviceResponse.Processed)
         {
             _vehicle = serviceResponse.Data ?? new Vehicle();
@@ -609,6 +637,29 @@
 
         }
 
+    }
+
+    private async Task ClickExportPdf()
+    {
+        var serviceResponse = await PolicyService.ExportPdfPolicy(_iduser, _model.Id);
+        if (serviceResponse.Processed)
+        {
+            _successModal = true;
+            _errorModalMessage = "";
+
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+            var fileUrl = $"data:application/pdf;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Poliza.pdf");
+
+        }
+        else
+        {
+            _successModal = false;
+            _errorModalMessage = MessageEnum.ExportNotOK.GetStringValue();
+            Console.WriteLine(serviceResponse.Message);
+            OpenNested();
+
+        }
     }
 
 

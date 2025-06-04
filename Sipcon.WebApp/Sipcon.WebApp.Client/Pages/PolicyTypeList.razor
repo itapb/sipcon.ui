@@ -15,8 +15,8 @@
 
 
 <PageTitle>Tipo Poliza</PageTitle>
-<MudBreadcrumbs Items="_itemsNavigate"></MudBreadcrumbs>
-@* <MudText Typo="Typo.h5" GutterBottom="true">Tipo Poliza</MudText> *@
+<CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
+
 <InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
 
 <MudDataGrid @ref="_mudDataGrid"
@@ -33,8 +33,13 @@
 
     <ToolBarContent>
         <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddPolicyType()"></MudIconButton>
-        <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
-                        AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" OnKeyDown="HandleKeyDownSearch"></MudTextField>
+        <MudTextField @bind-Value="_searchString" Placeholder="Buscar" Adornment="Adornment.Start" Immediate="true"
+                      Typo="Typo.caption"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      OnAdornmentClick="() => ClickSearch()"
+                      IconSize="Size.Medium" Class="mt-0" 
+                      OnKeyDown="HandleKeyDownSearch">
+        </MudTextField>
         <MudSpacer />
         <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
         <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
@@ -131,7 +136,7 @@
     private List<BreadcrumbItem> _itemsNavigate =
                 [
         new("Home", href: null, icon: Icons.Material.Filled.Home),
-        new("Tipo Poliza",  href: "policytypes", disabled: true, icon: Icons.Material.Filled.Policy),
+        new("Tipo Poliza",  href: "policytypes", disabled: false, icon: Icons.Material.Filled.Policy),
     ];
 
 
@@ -183,6 +188,17 @@
             }
 
         }
+    }
+
+    private async Task ClickSearch()
+    {
+
+        if (_searchString.Length >= 3)
+        {
+            Console.WriteLine($"Buscando: {_searchString}");
+            await _mudDataGrid!.ReloadServerData();
+        }
+
     }
 
 

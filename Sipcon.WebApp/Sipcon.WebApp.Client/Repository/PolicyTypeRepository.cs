@@ -18,7 +18,7 @@
 
             try
             {
-                result = await _http.GetFromJsonAsync<ApiResponse<List<PolicyType>>>($"api/PolicyType/GetAll?rowFrom={RowFrom}&userId={IdUser}");
+                result = await _http.GetFromJsonAsync<ApiResponse<List<PolicyType>>>($"api/PolicyType/GetAll?filter={Filter}&rowFrom={RowFrom}&userId={IdUser}");
 
 
                 result = result is null ? new ApiResponse<List<PolicyType>>()

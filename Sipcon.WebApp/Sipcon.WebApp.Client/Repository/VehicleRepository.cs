@@ -2,6 +2,7 @@
 {
     using Sipcon.WebApp.Client.Services;
     using Sipcon.WebApp.Client.Models;
+    using Sipcon.WebApp.Client.Enum;
     using System.Net.Http.Json;
     using System.Text.Json;
     using System.Text.Json.Serialization;
@@ -104,12 +105,12 @@
             return result;
         }
 
-        public async Task<ApiResponse<Vehicle>> GetVehicleByVIN(string VIN, int IdUser, int IdDealer)
+        public async Task<ApiResponse<Vehicle>> GetVehicleBy(string Search, int IdUser, int IdDealer, SearchByEnum SearchBy)
         {
             ApiResponse<Vehicle>? result;
             try
             {
-                result = await _http.GetFromJsonAsync<ApiResponse<Vehicle>>($"api/Vehicle/GetOneBy?userId={IdUser}&filter={VIN}&filterBy=1");
+                result = await _http.GetFromJsonAsync<ApiResponse<Vehicle>>($"api/Vehicle/GetOneBy?userId={IdUser}&filter={Search}&filterBy={(int)SearchBy}");
 
                 result = (result is null) ? new ApiResponse<Vehicle>()
                 {
