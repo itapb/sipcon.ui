@@ -93,13 +93,13 @@
         UnavailableNotOK,
 
 
-        // Activate
+        // Bloquear
         [StringValue("Registro bloqueado Satisfactoriamente...")]
         LockOK,
         [StringValue("Problemas al bloquear registros!...")]
         LockNotOK,
 
-        // Desactivate
+        // Desbloquear
         [StringValue("Registro desbloqueado Satisfactoriamente...")]
         UnLockOK,
         [StringValue("Problemas al desbloquear registros!...")]

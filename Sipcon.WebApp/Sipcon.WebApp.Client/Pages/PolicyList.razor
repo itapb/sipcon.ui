@@ -15,7 +15,8 @@
 
 
 <PageTitle>Poliza</PageTitle>
-<MudBreadcrumbs Items="_itemsNavigate"></MudBreadcrumbs>
+@* <MudBreadcrumbs Items="_itemsNavigate"></MudBreadcrumbs> *@
+<CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
 
 <MudDataGrid @ref="_mudDataGrid"
 MultiSelection="true" 
@@ -32,10 +33,11 @@ ServerData="LoadGridData">
     <ToolBarContent>
         <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddPolicy()"></MudIconButton>
         <MudTextField @bind-Value="_searchString" Placeholder="buscar" Adornment="Adornment.Start" Immediate="true"
-        AdornmentIcon="@Icons.Material.Filled.Search" 
+        Typo="Typo.caption"
+        AdornmentIcon="@Icons.Material.Filled.Search"
+        OnAdornmentClick="() => ClickSearch()"
         IconSize="Size.Medium" Class="mt-0" 
-        OnKeyDown="HandleKeyDownSearch"
-        >
+        OnKeyUp="HandleKeyDownSearch">
         </MudTextField>
         <MudSpacer />
         <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
@@ -67,7 +69,7 @@ ServerData="LoadGridData">
         <TemplateColumn T="Policy" Title="PLACA">
             <CellTemplate>
 
-                <MudText Typo="Typo.caption" Align="Align.Start"><b>@context.Item.Plate.ToUpper()</b> </MudText>
+                <MudText Typo="Typo.caption" Align="Align.Start">@context.Item.Plate.ToUpper()</MudText>
 
             </CellTemplate>
         </TemplateColumn>
@@ -87,22 +89,29 @@ ServerData="LoadGridData">
 
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="Policy" Title="ESTATUS">
+        <TemplateColumn T="Policy" Title="ESTATUS" CellStyleFunc="@_cellStyleFunc">
             <CellTemplate>
-                @if (context.Item.ExpirationDate is not null)
-                {
-                    <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.ExpirationDate.Value <= DateTime.Now ? context.Item.EstatusName.ToUpper() : context.Item.EstatusName.ToUpper() + " - VIGENTE") </MudText>
-                }
-                else
-                {
-                    <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.EstatusName.ToUpper()) </MudText>
-                } 
+                <div class="d-flex justify-center" >
+                    @if (context.Item.ExpirationDate is not null)
+                    {
+                        <MudText Typo="Typo.caption" Align="Align.Start">
+                            @(context.Item.ExpirationDate.Value <= DateTime.Now ? context.Item.EstatusName.ToUpper() : context.Item.EstatusName.ToUpper() + " - VIGENTE")
+                        </MudText>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.caption" Align="Align.Start">
+                            @(context.Item.EstatusName.ToUpper())
+                        </MudText>
+                    }
+                </div>
+
 
             </CellTemplate>
         </TemplateColumn>
 
-       @*  <TemplateColumn T="Policy" Title="FECHA EXP.">
-                 
+        @*  <TemplateColumn T="Policy" Title="FECHA EXP.">
+
             <CellTemplate>
                 <div class="d-flex justify-center">
                     <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.ExpirationDate is null ? "" : context.Item.ExpirationDate.Value.ToString("dd-MMM-yyyy")) </MudText>
@@ -111,11 +120,15 @@ ServerData="LoadGridData">
         </TemplateColumn> *@
         <TemplateColumn >
             <CellTemplate>
-                <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditPolicy(context.Item)" />
+                <MudStack Row="true">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditPolicy(context.Item)" />
+                    <MudIconButton Icon="@Icons.Custom.FileFormats.FilePdf" Color="Color.Default" Size="Size.Small" OnClick="() => ClickExportPdf(context.Item)"></MudIconButton>
+                </MudStack>
+
             </CellTemplate>
         </TemplateColumn>
     </Columns>
-        
+
     <PagerContent>
         <MudDataGridPager T="Policy" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
     </PagerContent>
@@ -136,7 +149,7 @@ ServerData="LoadGridData">
 
     </DialogContent>
     <DialogActions>
-            
+
         <MudButton Color="Color.Info" OnClick="CloseNested" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
 
     </DialogActions>
@@ -165,7 +178,7 @@ ServerData="LoadGridData">
     private List<BreadcrumbItem> _itemsNavigate =
                 [
         new("Home", href: null, icon: Icons.Material.Filled.Home),
-        new("Poliza",  href: "policy", disabled: true, icon: Icons.Material.Filled.Policy),
+        new("Poliza",  href: "policy", disabled: false, icon: Icons.Material.Filled.Policy),
     ];
 
 
@@ -194,7 +207,7 @@ ServerData="LoadGridData">
             }
             else { _itemsModules = new List<ModuleAction>([]); }
 
-           
+
         }
         else
         {
@@ -219,6 +232,17 @@ ServerData="LoadGridData">
         }
     }
 
+    private async Task ClickSearch()
+    {
+
+        if (_searchString.Length >= 3 )
+        {
+            Console.WriteLine($"Buscando: {_searchString}");
+            await _mudDataGrid!.ReloadServerData();
+        }
+
+    }
+
 
     private async Task HandleOnClickRefresh()
     {
@@ -229,7 +253,7 @@ ServerData="LoadGridData">
 
     private async Task ClickEditPolicy(Policy item)
     {
-        
+
 
         DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = false, NoHeader = true };
 
@@ -243,6 +267,29 @@ ServerData="LoadGridData">
         }
 
         await Task.CompletedTask;
+    }
+
+    private async Task ClickExportPdf(Policy item)
+    {
+        var serviceResponse = await PolicyService.ExportPdfPolicy(_iduser, item.Id);
+        if (serviceResponse.Processed)
+        {
+            _success = true;
+            _nestedErrorMessage = "";
+
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+            var fileUrl = $"data:application/pdf;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Poliza.pdf");
+
+        }
+        else
+        {
+            _success = false;
+            _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue();
+            Console.WriteLine(serviceResponse.Message);
+            OpenNested();
+
+        }
     }
 
 
@@ -259,11 +306,11 @@ ServerData="LoadGridData">
             await _mudDataGrid!.ReloadServerData();
             StateHasChanged();
         }
-       
+
         await Task.CompletedTask;
     }
 
-    
+
     private void OpenNested() => _nestedVisible = true;
 
     private void CloseNested() => _nestedVisible = false;
@@ -305,7 +352,7 @@ ServerData="LoadGridData">
 
             var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
             var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
-            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "TipoPoliza.xlsx");
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Poliza.xlsx");
 
         }
         else
@@ -461,7 +508,7 @@ ServerData="LoadGridData">
 
     private async Task LockItemsAsync(int moduleId, string moduleActionName)
     {
-        
+
         if (selectedPolicy.Any())
         {
             var option = new DialogOptions
@@ -576,6 +623,36 @@ ServerData="LoadGridData">
         selectedPolicy = new([]);
         await Task.CompletedTask;
     }
-   
+
+    private Func<Policy, string> _cellStyleFunc => x =>
+    {
+        string style = "";
+
+        if (x.EstatusName.ToUpper() == "CREADO")
+            style += "";
+
+        else if (x.EstatusName.ToUpper() == "ACTIVADO")
+        {
+            style += "color:#fff";
+            style += ";background-color:#0099f3";
+        }
+
+
+        else if (x.EstatusName.ToUpper() == "BLOQUEADO")
+        {
+            style += "color:#fff";
+            style += ";background-color:#757575";
+        }
+        else 
+        {
+            style += "color:#fff";
+            style += ";background-color:#FF7043";
+        }
+        style += ";font-weight:bold";
+        style += ";font-style:italic";
+       
+
+        return style;
+    };
 
 }
