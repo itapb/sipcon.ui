@@ -1,0 +1,78 @@
+﻿@page "/receptions"
+<h3>Recepcion</h3>
+@if (IsReceptionFormOpen)
+{
+    <ReceptionForm />
+}
+else
+{
+    <MudDataGrid @ref="ReceptionMudDataGrid" T="Reception" Items="@receptions" Striped="true" Hover="true" Filterable="false" FixedHeader Height="calc(100vh - 190px)">
+        <ToolBarContent>
+            <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="ClickAddReception"></MudIconButton>
+            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshContact"></MudIconButton>
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+
+            </MudMenu>
+        </ToolBarContent>
+        <Columns>
+            <TemplateColumn>
+                <HeaderTemplate>
+                    <MudCheckBox @bind-Value="IsAllCheckBoxSelected" @bind-Value:after="AfterAsyncAllCheck" />
+                </HeaderTemplate>
+                <CellTemplate>
+                    <MudCheckBox @bind-Value="IsSelected" />
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.ReceptionNumber" Title="Nro Recepcion" />
+            <PropertyColumn Property="x => x.ReceptionDate" Title="Fecha" />
+            <PropertyColumn Property="x => x.ReceptionType" Title="Tipo" />
+            <PropertyColumn Property="x => x.Reference" Title="Referencia" />
+            <PropertyColumn Property="x => x.Status" Title="Estado" />
+            <PropertyColumn Property="x => x.User" Title="Usuario" />
+        </Columns>
+    </MudDataGrid>
+}
+
+@code {
+    private bool IsReceptionFormOpen = false;
+    private bool IsSelected = false;
+    private bool IsAllCheckBoxSelected = false;
+    private MudDataGrid<Reception>? ReceptionMudDataGrid;
+    record Reception(string ReceptionNumber, DateTime ReceptionDate, string ReceptionType, string Reference, string Status, string User);
+    private List<Reception> receptions = new()
+    {
+        new("R001", DateTime.Now, "Type1", "Ref001", "Pending", "User1"),
+        new("R002", DateTime.Now.AddDays(-1), "Type2", "Ref002", "Completed", "User2"),
+        new("R003", DateTime.Now.AddDays(-2), "Type3", "Ref003", "Cancelled", "User3"),
+        new("R004", DateTime.Now.AddDays(-3), "Type1", "Ref004", "Pending", "User4"),
+        new("R005", DateTime.Now.AddDays(-4), "Type2", "Ref005", "Completed", "User5"),
+        new("R006", DateTime.Now.AddDays(-5), "Type3", "Ref006", "Cancelled", "User6"),
+        new("R007", DateTime.Now.AddDays(-6), "Type1", "Ref007", "Pending", "User7"),
+        new("R008", DateTime.Now.AddDays(-7), "Type2", "Ref008", "Completed", "User8"),
+        new("R009", DateTime.Now.AddDays(-8), "Type3", "Ref009", "Cancelled", "User9")
+
+
+    };
+    private string searchString = string.Empty;
+    private void ClickRefreshContact(MouseEventArgs args)
+    {
+        throw new NotImplementedException();
+    }
+    private async Task OnSearch(string text)
+    {
+        await Task.CompletedTask;
+        searchString = text;
+
+    }
+    private async Task ClickAddReception(MouseEventArgs ev)
+    {
+        IsReceptionFormOpen = true; 
+        await Task.CompletedTask;
+    }
+    private async Task AfterAsyncAllCheck()
+    {
+        await Task.CompletedTask;
+    }
+   }
