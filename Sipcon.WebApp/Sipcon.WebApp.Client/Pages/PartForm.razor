@@ -297,6 +297,7 @@ else
             var result_Post_Part = await Http.PostAsync($"api/Part/PostPart?userId={Useful.userId}", new StringContent(strJsonPostPart, null, "application/json"));
             if (result_Post_Part.IsSuccessStatusCode)
             {
+                var content = await result_Post_Part.Content.ReadAsStringAsync();
                 var sucessContent = await result_Post_Part.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
                 if ((sucessContent?.data![0].insertedRows == 1 || sucessContent?.data![0].updatedRows == 1))
                 {

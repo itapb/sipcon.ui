@@ -1,5 +1,106 @@
 ﻿<h3>PartsCatalog</h3>
+<MudDataGrid @ref="PartsCatalogMudDataGrid" T="Part" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" FixedHeader Height="calc(100vh - 190px)" @bind-CurrentPage="ContactCurrentPage">
+    <ToolBarContent>
+       
+        <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshPartsCatalog"></MudIconButton>
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
 
+        </MudMenu>
+    </ToolBarContent>
+    <Columns>
+        <TemplateColumn>
+            <HeaderTemplate>
+                <MudCheckBox @bind-Value="IsAllCheckBoxSelected" @bind-Value:after="AfterAsyncAllCheck" />
+            </HeaderTemplate>
+            <CellTemplate>
+                <MudCheckBox @bind-Value="@context.Item.IsSelected" />
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.InnerCode" Title="Codigo Parte" />
+        <PropertyColumn Property="x => x.BarCode" Title="Descripcion" />
+        <PropertyColumn Property="x => x.Price" Title="Precio" />
+        <PropertyColumn Property="x => x.Stock" Title="Existencia" />
+        <TemplateColumn>
+            <CellTemplate>
+                <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Add" OnClick="() => ClickAddPart(context.Item)" />
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+</MudDataGrid>
 @code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    private MudForm? form;
+    private MudDataGrid<Part>? PartsCatalogMudDataGrid;
 
+    bool IsAllCheckBoxSelected = false;
+    bool _loading = true;
+    string searchString = "";
+    private int ContactCurrentPage = 0;
+
+    private async Task AfterAsyncAllCheck()
+    {
+        if (PartsCatalogMudDataGrid != null)
+            PartsCatalogMudDataGrid.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
+        await Task.CompletedTask;
+    }
+    private async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            _loading = true;
+            searchString = text;
+            await PartsCatalogMudDataGrid!.ReloadServerData();
+        }
+    }
+    private async Task<GridData<Part>> ServerReload(GridState<Part> state)
+    {
+        IsAllCheckBoxSelected = false;
+        _loading = true;
+        var totalItems = 0;
+        var mOffset = state.Page * state.PageSize;
+        IEnumerable<Part> data;
+        HttpResponseMessage response = await Http.GetAsync($"api/Part/GetAll?rowFrom={mOffset}&filter={searchString}&userId={Useful.userId}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Part>>>();
+            totalItems = content2!.total ?? 0;
+            data = content2!.data ?? new List<Part>();
+        }
+        else
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
+        if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Part> sortDefinition)
+        {
+            switch (sortDefinition.SortBy)
+            {
+                case nameof(Part.InnerCode):
+                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.MasterCode);
+                    break;
+                case nameof(Part.MasterCode):
+                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.InnerCode);
+                    break;
+                case nameof(Part.Description):
+                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.Description);
+                    break;
+                case nameof(Part.Price):
+                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.Price);
+                    break;
+            }
+        }
+        _loading = false;
+        return new GridData<Part> { TotalItems = totalItems, Items = data };
+    }
+    private async Task ClickRefreshPartsCatalog(MouseEventArgs ev)
+    {
+        await PartsCatalogMudDataGrid!.ReloadServerData();
+    }
+    private async Task ClickAddPart(Part item)
+    {
+       
+        await Task.CompletedTask;
+    }
 }

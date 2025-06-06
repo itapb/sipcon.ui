@@ -1,5 +1,71 @@
 ﻿<h3>PartToReception</h3>
 
-@code {
+    <div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
+        <MudPaper Elevation="2" Class="pa-3">
+            <MudGrid Spacing="2">
+                <MudItem xs="12">
+                    <MudTextField T="int?" Label="Cantidad" @bind-Value="Quantity"></MudTextField>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudSelect T="Location" Label="Ubicacion Origen" ToStringFunc="@ConvertLocationFunc" Value="SourceLocationSelected" ValueChanged="OnSourceLocationValueChanged" RequiredError="Campo requerido." Required="true">
+                        @foreach (var location in SourceLocations!)
+                        {
+                            <MudSelectItem Value="location" />
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudSelect T="Location" Label="Ubicacion Destino" ToStringFunc="@ConvertLocationFunc" Value="TargetLocationSelected" ValueChanged="OnTargetLocationValueChanged">
+                        @foreach (var location in TargetLocations!)
+                        {
+                            <MudSelectItem Value="location" />
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudStack Row="true" Justify="Justify.Center">
+                        <MudStack Row="true" Spacing="4">
+                            <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" />
+                            <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" />
+                        </MudStack>
+                    </MudStack>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </div>
 
+@code {
+    int? Quantity = 12;
+    Location? SourceLocationSelected;
+    Location? TargetLocationSelected;
+    List<Location>? Locations = new()
+    {
+        new Location { Name = "CROS01",ZoneId = 34,ZoneName = "DESPACHO",WarehouseName = "DEPOSITO5X",Mapping = 22,  TypeId = "R",TypeName = "RECEPCION",Id = 29, IsActive = true, IsSelected = false, Total=0},
+        new Location { Name = "DES01",ZoneId = 34,ZoneName = "DESPACHO",WarehouseName = "DEPOSITO5X",Mapping = 4455, TypeId = "D",TypeName = "DESPACHO",Id = 26, IsActive = true, IsSelected = false, Total=0},
+        new Location { Name = "DES02",ZoneId = 34,ZoneName = "DESPACHO",WarehouseName = "DEPOSITO5X",Mapping = 677,  TypeId = "R",TypeName = "RECEPCION",Id = 28, IsActive = true, IsSelected = false, Total=0},
+        new Location { Name = "REC01",ZoneId = 33,ZoneName = "RECEPCION",WarehouseName = "DEPOSITO5X",Mapping = 0,  TypeId = "R",TypeName = "RECEPCION",Id = 23, IsActive = true, IsSelected = false, Total=0},
+        new Location { Name = "REC02",ZoneId = 33,ZoneName = "RECEPCION",WarehouseName = "DEPOSITO5X",Mapping = 0,  TypeId = "R",TypeName = "RECEPCION",Id = 29, IsActive = true, IsSelected = false, Total=0},
+        new Location { Name = "SUELO01",ZoneId = 33,ZoneName = "RECEPCION",WarehouseName = "DEPOSITO5X",Mapping = 12,  TypeId = "R",TypeName = "RECEPCION",Id = 31, IsActive = true, IsSelected = false, Total=0},
+        new Location { Name = "TESt",ZoneId = 33,ZoneName = "chichaJo9**3",WarehouseName = "VENTA22",Mapping = 34,  TypeId = "A",TypeName = "ALMACENAJE",Id = 30, IsActive = true, IsSelected = false, Total=0},
+        new Location { Name = "UB01",ZoneId = 32,ZoneName = "ZONA Z",WarehouseName = "DEPOSITO5X",Mapping = 0,  TypeId = "A",TypeName = "ALMACENAJE",Id = 2, IsActive = true, IsSelected = false, Total=0},
+        new Location { Name = "UB02",ZoneId = 2,ZoneName = "ZONA A22COOO",WarehouseName = "SOBRE STOCK",Mapping = 0,  TypeId = "A",TypeName = "ALMACENAJE",Id = 3, IsActive = true, IsSelected = false, Total=0},
+        new Location { Name = "UB03",ZoneId = 2,ZoneName = "ZONA A22COOO",WarehouseName = "SOBRE STOCK",Mapping = 0,  TypeId = "A",TypeName = "ALMACENAJE",Id = 4, IsActive = true, IsSelected = false, Total=0},
+        new Location { Name = "UB04",ZoneId = 4,ZoneName = "ZONA C",WarehouseName = "DEPOSITO5X",Mapping = 0,  TypeId = "A",TypeName = "ALMACENAJE",Id = 5, IsActive = true, IsSelected = false, Total=0},
+    };
+
+    List<Location>? SourceLocations => Locations!.Where(r => r.TypeId == "R").ToList();
+    List<Location>? TargetLocations => Locations!.Where(r => r.TypeId == "A").ToList();
+
+    private Func<Location?, string> ConvertLocationFunc = location => location?.Name!;
+
+    private Task OnSourceLocationValueChanged(Location selectedSourceLocation)
+    {
+        SourceLocationSelected = selectedSourceLocation;
+        return Task.CompletedTask;
+    }
+    private Task OnTargetLocationValueChanged(Location selectedTargetLocation)
+    {
+        TargetLocationSelected = selectedTargetLocation;
+        return Task.CompletedTask;
+    }
 }

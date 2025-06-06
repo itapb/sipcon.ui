@@ -13,7 +13,7 @@ namespace Sipcon.WebApp.Client.Models
         public string? ZoneName { get; set; }
         public string? WarehouseName { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Campo requerido.")]
         [Range(1, int.MaxValue, ErrorMessage ="Debe ser un valor mayor que cero")]
         public Int32? Mapping { get; set; }
         [Required]
