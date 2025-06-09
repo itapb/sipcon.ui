@@ -16,7 +16,7 @@
 
 <MudForm Model="@_model" @ref="@form" Validation="@(_modelValidator.ValidateValue)" ValidationDelay="0" >
     <MudDialog Class="blur dialog-background" ActionsClass="dialog-background-surface">
-        <DialogContent >
+        <DialogContent>
             <MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
 
                 <MudCard>
@@ -29,13 +29,13 @@
 
                                     @if (ActionsModal != ActionsEnum.Create)
                                     {
-                                        <MudIconButton Icon="@Icons.Custom.FileFormats.FilePdf" Variant="Variant.Filled" 
-                                                        Color="Color.Default" 
-                                                        Size="Size.Large" 
-                                                        OnClick="() => ClickExportPdf()">
+                                        <MudIconButton Icon="@Icons.Custom.FileFormats.FilePdf" Variant="Variant.Filled"
+                                                       Color="Color.Default"
+                                                       Size="Size.Large"
+                                                       OnClick="() => ClickExportPdf()">
                                         </MudIconButton>
                                     }
-                                    
+
                                 </div>
                             </MudItem>
                             <MudItem xs="12" sm="2">
@@ -61,343 +61,367 @@
                 </MudCard>
 
             </MudContainer>
-            <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
+            <div id="unique_id_scroll_section" class="ma-0" style="height:400px;overflow: auto;">
 
-                <MudGrid Spacing="1" Justify="Justify.Center">
-                    <MudItem xs="12" sm="4">
-                        <MudGrid Spacing="1" Justify="Justify.Center">
+                <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
 
-                            @* Datos Poliza *@
-                            <MudItem xs="12" sm="12">
-                                <MudCard>
-                                    <MudCardHeader>
-                                        <CardHeaderContent>
+                    <MudGrid Spacing="1" Justify="Justify.Center">
+                        <MudItem xs="12" sm="4">
+                            <MudGrid Spacing="1" Justify="Justify.Center">
 
-                                            <MudGrid Spacing="0" Justify="Justify.Center">
-                                                <MudItem xs="12" sm="8">
+                                @* Datos Poliza *@
+                                <MudItem xs="12" sm="12">
+                                    <MudCard>
+                                        <MudCardHeader>
+                                            <CardHeaderContent>
 
-
-                                                    <div class="d-flex justify-left">
-
-
-                                                        <MudStack Row="true">
-                                                            <MudIcon Icon="@Icons.Material.Filled.Policy" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
-                                                            <MudText Typo="Typo.h6">Poliza</MudText>
-
-                                                        </MudStack>
-                                                    </div>
-                                                </MudItem>
-
-                                                <MudItem xs="12" sm="4">
+                                                <MudGrid Spacing="0" Justify="Justify.Center">
+                                                    <MudItem xs="12" sm="8">
 
 
-                                                    <MudText Typo="Typo.button" Align="Align.Center" Color="Color.Primary">@_model.EstatusName</MudText>
+                                                        <div class="d-flex justify-left">
 
-                                                    <div class="d-flex align-end">
-                                                        <div class="d-flex flex-column">
-                                                            <MudText Typo="Typo.caption"><b>Nro. Poliza: </b> @_model.Number</MudText>
+
+                                                            <MudStack Row="true">
+                                                                <MudIcon Icon="@Icons.Material.Filled.Policy" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
+                                                                <MudText Typo="Typo.h6">Poliza</MudText>
+
+                                                            </MudStack>
+                                                        </div>
+                                                    </MudItem>
+
+                                                    <MudItem xs="12" sm="4">
+
+
+                                                        <MudText Typo="Typo.button" Align="Align.Center" Color="Color.Primary">@_model.EstatusName</MudText>
+
+                                                        <div class="d-flex align-end">
+                                                            <div class="d-flex flex-column">
+                                                                <MudText Typo="Typo.caption"><b>Nro. Poliza: </b> @_model.Number</MudText>
+                                                            </div>
+
                                                         </div>
 
-                                                    </div>
+                                                    </MudItem>
+                                                </MudGrid>
 
-                                                </MudItem>
-                                            </MudGrid>
+                                            </CardHeaderContent>
 
-                                        </CardHeaderContent>
-
-                                    </MudCardHeader>
-                                    <MudCardContent Style="padding-top: 0px;">
-                                        <MudHidden @bind-Value="_model.Id" />
-                                        <MudHidden @bind-Value="IdPolicy" />
+                                        </MudCardHeader>
+                                        <MudCardContent Style="padding-top: 0px;">
+                                            <MudHidden @bind-Value="_model.Id" />
+                                            <MudHidden @bind-Value="IdPolicy" />
 
 
-                                        @* <MudSpacer /> *@
-                                        <MudFlexBreak />
+                                            @* <MudSpacer /> *@
+                                            <MudFlexBreak />
 
-                                        <div class="d-flex align-end justify-space-between mud-width-full">
-                                            <div class="d-flex flex-column">
-                                                <MudText Typo="Typo.caption"><b>Activacion: </b> @(_model.ActivationDate is null ? "" : _model.ActivationDate.Value.ToString("dd-MMM-yyyy"))</MudText>
-                                                <MudText Typo="Typo.caption"><b>Bloqueada: </b> @(_model.LockDate is null ? "" : _model.LockDate.Value.ToString("dd-MMM-yyyy")) </MudText>
-                                                <MudText Typo="Typo.caption"><b>Expiracion: </b> @(_model.ExpirationDate is null ? "" : _model.ExpirationDate.Value.ToString("dd-MMM-yyyy"))</MudText>
+                                            <div class="d-flex align-end justify-space-between mud-width-full">
+                                                <div class="d-flex flex-column">
+                                                    <MudText Typo="Typo.caption"><b>Activacion: </b> @(_model.ActivationDate is null ? "" : _model.ActivationDate.Value.ToString("dd-MMM-yyyy"))</MudText>
+                                                    <MudText Typo="Typo.caption"><b>Bloqueada: </b> @(_model.LockDate is null ? "" : _model.LockDate.Value.ToString("dd-MMM-yyyy")) </MudText>
+                                                    <MudText Typo="Typo.caption"><b>Expiracion: </b> @(_model.ExpirationDate is null ? "" : _model.ExpirationDate.Value.ToString("dd-MMM-yyyy"))</MudText>
+                                                </div>
+
                                             </div>
 
-                                        </div>
+                                        </MudCardContent>
 
-                                    </MudCardContent>
+                                    </MudCard>
+                                </MudItem>
 
-                                </MudCard>
-                            </MudItem>
-
-                            @* Datos Factura *@
-                            <MudItem xs="12" sm="12">
-                                <MudCard>
-                                    <MudCardHeader>
-                                        <CardHeaderContent>
-                                            <MudStack Row="true">
-                                                <MudIcon Icon="@Icons.Material.Outlined.Payments" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
-                                                <MudText Typo="Typo.subtitle2">Factura</MudText>
-                                            </MudStack>
-
-                                        </CardHeaderContent>
-
-                                    </MudCardHeader>
-                                    <MudCardContent Style="padding-top: 0px;">
-
-                                        @*  <MudStack Row="true"> *@
-                                        <MudTextField Typo="Typo.caption" @bind-Value="_model.InvoiceNumber"
-                                        Label="Nro. Factura"
-                                        MaxLength="20"
-                                        Variant="Variant.Text"
-                                        Margin="Margin.Dense" ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                        For="@(() => _model.InvoiceNumber)"
-                                        Immediate="true" />
-
-                                        <MudDatePicker @bind-Date="_model.InvoiceDate"
-                                        style="font-size: 14px;margin-top: 14px;"
-                                        ShowToolbar="false"
-                                        DateFormat="dd/MM/yyyy"
-                                        Variant="Variant.Text"
-                                        Label="Fecha"
-                                        PickerVariant="PickerVariant.Inline" Modal="false"
-                                        Margin="Margin.Dense" ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                        For="@(() => _model.InvoiceDate)" />
-                                        @* </MudStack> *@
-
-
-
-                                        <MudSelect @bind-Value="_model.PayMethodId"
-                                        style="font-size: 14px"
-                                        Label="Forma Pago" 
-                                        Typo="Typo.caption"
-                                        AdornmentColor="Color.Default"
-                                                   Margin="Margin.Dense" ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                        For="@(() => _model.PayMethodId)"
-                                        Immediate="true">
-                                            @foreach (var item in _PayMethodList)
-                                            {
-                                                <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
-                                            }
-                                        </MudSelect>
-
-                                        <MudNumericField Typo="Typo.caption" @bind-Value="_model.InvoiceAmount" 
-                                        Label="Monto"
-                                        Variant="Variant.Text"
-                                        HideSpinButtons="true"
-                                        Format="N2" Culture="@(CultureInfo.GetCultureInfo("de-DE"))"
-                                        Margin="Margin.Dense" 
-                                        ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                        For="@(() => _model.InvoiceAmount)"
-                                        Immediate="true" />
-
-
-                                    </MudCardContent>
-
-                                </MudCard>
-                            </MudItem>
-
-
-                        </MudGrid>
-
-                    </MudItem>
-                    <MudItem xs="12" sm="8">
-                        <MudGrid Spacing="1" Justify="Justify.Center">
-
-                            <MudItem xs="12">
-                                <MudCard>
-                                    <MudCardHeader>
-                                        <CardHeaderContent>
-
-                                            <MudGrid Spacing="0" Justify="Justify.Center">
-                                                <MudItem xs="12" sm="8">
-                                                    <div class="d-flex justify-left">
-                                                        <MudStack Row="true">
-                                                            <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
-                                                            <MudText Typo="Typo.h6">Vehiculo</MudText>
-
-                                                        </MudStack>
-                                                    </div>
-                                                </MudItem>
-
-                                                <MudItem xs="12" sm="4">
-
-                                                    <div class="d-flex justify-end">
-                                                        @*  <MudIconButton Icon="@Icons.Material.Filled.AddCard"></MudIconButton> *@
-                                                    </div>
-
-                                                </MudItem>
-                                            </MudGrid>
-
-
-                                        </CardHeaderContent>
-
-                                    </MudCardHeader>
-                                    <MudCardContent Style="padding-top: 0px;">
-                                        <MudHidden @bind-Value="_model.VehicleId" />
-                                        <MudStack Row="true">
-                                            <MudStack Row="false">
+                                @* Datos Factura *@
+                                <MudItem xs="12" sm="12">
+                                    <MudCard>
+                                        <MudCardHeader>
+                                            <CardHeaderContent>
                                                 <MudStack Row="true">
-                                                   
+                                                    <MudIcon Icon="@Icons.Material.Outlined.Payments" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
+                                                    <MudText Typo="Typo.h6">Factura</MudText>
+                                                </MudStack>
+
+                                            </CardHeaderContent>
+
+                                        </MudCardHeader>
+                                        <MudCardContent Style="padding-top: 0px;">
+
+                                            @*  <MudStack Row="true"> *@
+                                            <MudTextField Typo="Typo.caption" @bind-Value="_model.InvoiceNumber"
+                                                          Label="Nro. Factura"
+                                                          MaxLength="20"
+                                                          Variant="Variant.Text"
+                                                          Margin="Margin.Dense" ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                          For="@(() => _model.InvoiceNumber)"
+                                                          Immediate="true" />
+
+                                            <MudDatePicker @bind-Date="_model.InvoiceDate"
+                                                           style="font-size: 14px;margin-top: 14px;"
+                                                           ShowToolbar="false"
+                                                           DateFormat="dd/MM/yyyy"
+                                                           Mask="@maskDate"
+                                                           Variant="Variant.Text"
+                                                           Label="Fecha"
+                                                           PickerVariant="PickerVariant.Inline" Modal="false"
+                                                           Margin="Margin.Dense" ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                           For="@(() => _model.InvoiceDate)" />
+                                            @* </MudStack> *@
+
+
+
+                                            <MudSelect @bind-Value="_model.PayMethodId"
+                                                       style="font-size: 14px"
+                                                       Label="Forma Pago"
+                                                       Typo="Typo.caption"
+                                                       AdornmentColor="Color.Default"
+                                                       Margin="Margin.Dense" ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                       For="@(() => _model.PayMethodId)"
+                                                       Immediate="true">
+                                                @foreach (var item in _PayMethodList)
+                                                {
+                                                    <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
+                                                }
+                                            </MudSelect>
+
+                                            <MudNumericField Typo="Typo.caption" @bind-Value="_model.InvoiceAmount"
+                                                             Label="Monto"
+                                                             Variant="Variant.Text"
+                                                             Margin="Margin.Dense"
+                                                             HideSpinButtons="true"
+                                                             Format="N2" Culture="@CultureInfo.GetCultureInfo("de-DE")"
+                                                             ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                             For="@(() => _model.InvoiceAmount)"
+                                                             Immediate="false" />
+
+
+                                        </MudCardContent>
+
+                                    </MudCard>
+                                </MudItem>
+
+
+                            </MudGrid>
+
+                        </MudItem>
+                        <MudItem xs="12" sm="8">
+                            <MudGrid Spacing="1" Justify="Justify.Center">
+
+                                <MudItem xs="12">
+                                    <MudCard>
+                                        <MudCardHeader>
+                                            <CardHeaderContent>
+
+                                                <MudGrid Spacing="0" Justify="Justify.Center">
+                                                    <MudItem xs="12" sm="8">
+                                                        <div class="d-flex justify-left">
+                                                            <MudStack Row="true">
+                                                                <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
+                                                                <MudText Typo="Typo.h6">Vehiculo</MudText>
+
+                                                            </MudStack>
+                                                        </div>
+                                                    </MudItem>
+
+                                                    <MudItem xs="12" sm="4">
+
+                                                        <div class="d-flex justify-center">
+                                                            <MudStack Row="true">
+                                                                <MudText Class="nested" Color="Color.Error" Style="font-weight:bold;font-style:italic;"><p>@_errorSearchVehicle</p> </MudText>
+                                                            </MudStack>
+                                                        </div>
+
+                                                    </MudItem>
+                                                </MudGrid>
+
+
+                                            </CardHeaderContent>
+
+                                        </MudCardHeader>
+                                        <MudCardContent Style="padding-top: 0px;">
+                                            <MudHidden @bind-Value="_model.VehicleId" />
+
+                                            <MudStack Row="false">
+
+                                                <MudStack Row="true">
 
                                                     <MudTextField Typo="Typo.caption" @bind-Value="_searchVin"
-                                                    Placeholder="Buscar"
-                                                    OnKeyUp="HandleKeyDownSearchVehicle"
-                                                    OnAdornmentClick="() => ClicSearchVehicle()"
-                                                    Adornment="Adornment.End"
-                                                    AdornmentIcon="@Icons.Material.Filled.Search"
-                                                    IconSize="Size.Medium"
-                                                    MaxLength="20"
-                                                    Margin="Margin.Dense"
-                                                    ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                                    Disabled="@(!_model.IsActive || _isReadOnly)" />
+                                                                  Placeholder="Buscar"
+                                                                  OnKeyUp="HandleKeyDownSearchVehicle"
+                                                                  OnAdornmentClick="() => ClicSearchVehicle()"
+                                                                  Adornment="Adornment.End"
+                                                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                                                  IconSize="Size.Medium"
+                                                                  MaxLength="20"
+                                                                  Margin="Margin.Dense"
+                                                                  ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                                  Disabled="@(!_model.IsActive || _isReadOnly)" />
 
-                                                    <MudCheckBox @bind-Value="_SearchFor" Style="font-size: 14px" 
-                                                                 Size="Size.Small" 
-                                                                 Color="Color.Info"
-                                                                 Disabled="@(!_model.IsActive || _isReadOnly)">
-                                                        <b style="font-size: 14px">@(_SearchFor == true ? "VIN" : "Placa")</b>
-                                                    </MudCheckBox>
-                                                   
+
+                                                    <MudTextField Typo="Typo.caption" @bind-Value="_model.Vin"
+                                                                  Label="Vin"
+                                                                  Variant="Variant.Filled"
+                                                                  Margin="Margin.Dense"
+                                                                  ReadOnly="true"
+                                                                  For="@(() => _model.Vin)"
+                                                                  Immediate="true" />
+
                                                 </MudStack>
-                                                <MudText Typo="Typo.caption" Style="margin-top: -14px;"><b>VIN: </b> @_model.Vin</MudText>
+
+                                                <MudCheckBox @bind-Value="_SearchFor" Style="margin-top: -44px;font-size: 14px"
+                                                             Size="Size.Small"
+                                                             Color="Color.Info"
+                                                             Disabled="@(!_model.IsActive || _isReadOnly)">
+                                                    <b style="font-size: 14px">@(_SearchFor == true ? "VIN" : "Placa")</b>
+                                                </MudCheckBox>
                                             </MudStack>
 
                                             @* <MudSpacer /> *@
 
-                                            <MudTextField Typo="Typo.caption" @bind-Value="_model.Plate" 
-                                            Label="Placa" 
-                                            Variant="Variant.Filled" 
-                                            Margin="Margin.Dense" 
-                                            ReadOnly="true"
-                                            For="@(() => _model.Plate)"
-                                            Immediate="true"/>
 
-                                        </MudStack>
 
-                                        <MudStack Row="true">
 
-                                            <MudTextField Typo="Typo.caption" @bind-Value="_model.EngineSerial" Label="Serial Motor" Variant="Variant.Filled" Margin="Margin.Dense" ReadOnly="true" />
-                                            <MudTextField Typo="Typo.caption" @bind-Value="_model.ModelName" Label="Modelo" Variant="Variant.Filled" Margin="Margin.Dense" ReadOnly="true" />
+                                            <MudStack Row="true">
 
-                                        </MudStack>
-
-                                        <MudStack Row="true">
-
-                                            <MudTextField Typo="Typo.caption" @bind-Value="_model.Year" Label="Año" Variant="Variant.Filled" Margin="Margin.Dense" ReadOnly="true" />
-                                            <MudTextField Typo="Typo.caption" @bind-Value="_model.Color" Label="Color" Variant="Variant.Filled" Margin="Margin.Dense" ReadOnly="true" />
-
-                                        </MudStack>
-
-                                        <MudStack Row="true">
-
-                                            <MudTextField Typo="Typo.caption" @bind-Value="_model.SupplierName" Label="Planta" Variant="Variant.Filled" Margin="Margin.Dense" ReadOnly="true" />
-                                            <MudTextField Typo="Typo.caption" @bind-Value="_model.BrandName" Label="Marca" Variant="Variant.Filled" Margin="Margin.Dense" ReadOnly="true" />
-                                            <MudTextField Typo="Typo.caption" @bind-Value="_model.DealerName" Label="Concecionario" Variant="Variant.Filled" Margin="Margin.Dense" ReadOnly="true" />
-
-                                        </MudStack>
-
-                                        <MudTextField Typo="Typo.caption" @bind-Value="_model.Description"
-                                        Label="Tipo Poliza"
-                                        Variant="Variant.Filled"
-                                        Margin="Margin.Dense"
-                                        ReadOnly="true" />
-                                    </MudCardContent>
-
-                                </MudCard>
-                            </MudItem>
-
-                            <MudItem xs="12" >
-                                <MudCard>
-                                    <MudCardHeader>
-                                        <CardHeaderContent>
-
-                                            <MudGrid Spacing="0" Justify="Justify.Center">
-                                                <MudItem xs="12" sm="8">
-                                                    <div class="d-flex justify-left">
-                                                        <MudStack Row="true">
-                                                            <MudIcon Icon="@Icons.Material.Filled.ManageAccounts" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
-                                                            <MudText Typo="Typo.h6">Cliente</MudText>
-
-                                                        </MudStack>
-                                                    </div>
-                                                </MudItem>
-
-                                                <MudItem xs="12" sm="4">
-                                                    <div class="d-flex justify-end">
-                                                        <MudIconButton Icon="@Icons.Material.Filled.AddCard"></MudIconButton>
-                                                    </div>
-                                                </MudItem>
-                                            </MudGrid>
-
-                                        </CardHeaderContent>
-
-                                    </MudCardHeader>
-                                    <MudCardContent Style="padding-top: 0px;">
-                                        <MudHidden @bind-Value="_model.CustomerId" />
-                                        <MudStack Row="true">
-                                            <MudStack Row="false">
-
-                                                <MudTextField Typo="Typo.caption" @bind-Value="@_searchVat"
-                                                Placeholder="RIF"
-                                                OnKeyUp="HandleKeyDownSearchContact"
-                                                OnAdornmentClick="() => ClicSearchContact()"
-                                                Adornment="Adornment.End"
-                                                AdornmentIcon="@Icons.Material.Filled.Search"
-                                                IconSize="Size.Medium"
-                                                MaxLength="12"
-                                                Margin="Margin.Dense"
-                                                ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                                             Disabled="@(!_model.IsActive || _isReadOnly)" />
-
-                                                <MudText Typo="Typo.caption" Style="margin-top: -14px;"><b>RIF: </b> @_model.Vat</MudText>
+                                                <MudTextField Typo="Typo.caption" @bind-Value="_model.EngineSerial" Label="Serial Motor" Variant="Variant.Filled" Margin="Margin.Dense" ReadOnly="true" />
+                                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Plate"
+                                                              Label="Placa"
+                                                              Variant="Variant.Filled"
+                                                              Margin="Margin.Dense"
+                                                              ReadOnly="true" />
 
                                             </MudStack>
 
-                                            @* <MudSpacer /> *@
+                                            <MudStack Row="true">
 
-                                            <MudTextField Typo="Typo.caption" @bind-Value="_model.FirstName" 
-                                            Label="Nombres"
-                                            Variant="Variant.Filled"
-                                            Margin="Margin.Dense" ReadOnly="true"
-                                            For="@(() => _model.FirstName)"
-                                            Immediate="true" />
+                                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Year" Label="Año" Variant="Variant.Filled" Margin="Margin.Dense" ReadOnly="true" />
+                                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Color" Label="Color" Variant="Variant.Filled" Margin="Margin.Dense" ReadOnly="true" />
 
-                                            <MudTextField Typo="Typo.caption" @bind-Value="_model.LastName"
-                                            Label="Nombres"
-                                            Variant="Variant.Filled"
-                                            Margin="Margin.Dense" ReadOnly="true"
-                                            For="@(() => _model.LastName)"
-                                            Immediate="true" />
-                                        </MudStack>
+                                            </MudStack>
+
+                                            <MudStack Row="true">
+
+                                                <MudTextField Typo="Typo.caption" @bind-Value="_model.SupplierName" Label="Planta" Variant="Variant.Filled" Margin="Margin.Dense" ReadOnly="true" />
+                                                <MudTextField Typo="Typo.caption" @bind-Value="_model.BrandName" Label="Marca" Variant="Variant.Filled" Margin="Margin.Dense" ReadOnly="true" />
+                                                <MudTextField Typo="Typo.caption" @bind-Value="_model.DealerName" Label="Concesionario" Variant="Variant.Filled" Margin="Margin.Dense" ReadOnly="true" />
+
+                                            </MudStack>
+
+                                            <MudStack Row="true">
+                                                <MudTextField Typo="Typo.caption" @bind-Value="_model.ModelName" Label="Modelo" Variant="Variant.Filled" Margin="Margin.Dense" ReadOnly="true" />
+                                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Description"
+                                                              Label="Tipo Poliza"
+                                                              Variant="Variant.Filled"
+                                                              Margin="Margin.Dense"
+                                                              ReadOnly="true" />
+
+                                            </MudStack>
+                                        </MudCardContent>
+
+                                    </MudCard>
+                                </MudItem>
+
+                                <MudItem xs="12">
+                                    <MudCard>
+                                        <MudCardHeader>
+                                            <CardHeaderContent>
+
+                                                <MudGrid Spacing="0" Justify="Justify.Center">
+                                                    <MudItem xs="12" sm="6">
+                                                        <div class="d-flex justify-left">
+                                                            <MudStack Row="true">
+                                                                <MudIcon Icon="@Icons.Material.Filled.ManageAccounts" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
+                                                                <MudText Typo="Typo.h6">Cliente</MudText>
+
+                                                            </MudStack>
+                                                        </div>
+                                                    </MudItem>
+
+                                                    <MudItem xs="12" sm="6">
+                                                        <div class="d-flex justify-end">
+                                                            <MudStack Row="true">
+                                                                <MudText Class="nested" Color="Color.Error" Style="font-weight:bold;font-style:italic;"><p>@_errorSearchContact</p> </MudText>
+                                                                <MudIconButton Icon="@Icons.Material.Filled.AddCard"></MudIconButton>
+                                                            </MudStack>
+                                                        </div>
+                                                    </MudItem>
+                                                </MudGrid>
+
+                                            </CardHeaderContent>
+
+                                        </MudCardHeader>
+                                        <MudCardContent Style="padding-top: 0px;">
+                                            <MudHidden @bind-Value="_model.CustomerId" />
+                                            <MudStack Row="true">
+                                                <MudStack Row="false">
+
+                                                    <MudTextField Typo="Typo.caption" @bind-Value="@_searchVat"
+                                                                  Placeholder="Buscar"
+                                                                  OnKeyUp="HandleKeyDownSearchContact"
+                                                                  OnAdornmentClick="() => ClicSearchContact()"
+                                                                  Adornment="Adornment.End"
+                                                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                                                  IconSize="Size.Medium"
+                                                                  MaxLength="12"
+                                                                  Margin="Margin.Dense"
+                                                                  ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                                  Disabled="@(!_model.IsActive || _isReadOnly)" />
+
+                                                    @* <MudText Typo="Typo.caption" Style="margin-top: -14px;"><b>RIF: </b> @_model.Vat</MudText> *@
+
+                                                </MudStack>
+
+                                                @* <MudSpacer /> *@
+
+                                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Vat"
+                                                              Label="RIF"
+                                                              Variant="Variant.Filled"
+                                                              Margin="Margin.Dense"
+                                                              ReadOnly="true"
+                                                              For="@(() => _model.Vat)"
+                                                              Immediate="true" />
 
 
+                                            </MudStack>
 
-                                        <MudTextField Typo="Typo.caption" @bind-Value="_model.Direction" Label="Direcci&oacute;n"
-                                        Variant="Variant.Filled"
-                                        Margin="Margin.Dense" ReadOnly="true"/>
+                                            <MudTextField Typo="Typo.caption" T="string" Text="@(_model.LastName + " " + _model.FirstName)"
+                                                          Label="Apellidos y Nombres"
+                                                          Variant="Variant.Filled"
+                                                          Margin="Margin.Dense"
+                                                          ReadOnly="true" />
 
-                                        <MudStack Row="true">
+                                            <MudTextField Typo="Typo.caption" @bind-Value="_model.Direction" Label="Direcci&oacute;n"
+                                                          Variant="Variant.Filled"
+                                                          Margin="Margin.Dense" ReadOnly="true" />
 
-                                            <MudTextField Typo="Typo.caption" @bind-Value="_model.Phone" Label="Telefono"
-                                            Variant="Variant.Filled"
-                                            Margin="Margin.Dense" ReadOnly="true" />
+                                            <MudStack Row="true">
 
-                                            <MudTextField Typo="Typo.caption" @bind-Value="_model.Email" Label="Email"
-                                            Variant="Variant.Filled"
-                                            Margin="Margin.Dense" ReadOnly="true" />
+                                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Phone" Label="Telefono"
+                                                              Variant="Variant.Filled"
+                                                              Margin="Margin.Dense" ReadOnly="true" />
 
-                                        </MudStack>
+                                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Email" Label="Email"
+                                                              Variant="Variant.Filled"
+                                                              Margin="Margin.Dense" ReadOnly="true" />
 
-                                    </MudCardContent>
+                                            </MudStack>
 
-                                </MudCard>
-                            </MudItem>
+                                        </MudCardContent>
+
+                                    </MudCard>
+                                </MudItem>
 
 
-                        </MudGrid>
-                    </MudItem>
-                </MudGrid>
+                            </MudGrid>
+                        </MudItem>
+                    </MudGrid>
 
-            </MudContainer>
+                </MudContainer>
+                <MudScrollToTop TopOffset="100"
+                                Selector="#unique_id_scroll_section"
+                                VisibleCssClass="visible absolute"
+                                HiddenCssClass="invisible">
+
+                </MudScrollToTop>
+            </div>
 
             <MudDialog @bind-Visible="_nestedModalVisible">
                 <TitleContent>
@@ -417,6 +441,8 @@
             </MudDialog>
 
         </DialogContent>
+         
+
 
     </MudDialog>
 </MudForm>
@@ -451,10 +477,12 @@
     [Parameter]
     public ActionsEnum ActionsModal { get; set; }
 
-    private MudForm form;
+    private MudForm? form;
     private Policy _model { get; set; } = new Policy();
 
     private string _errorModalMessage = string.Empty;
+    private string _errorSearchContact = string.Empty;
+    private string _errorSearchVehicle = string.Empty;
     private bool _nestedModalVisible = false;
     private bool _successModal = false;
 
@@ -472,6 +500,7 @@
 
     PolicyValidator _modelValidator = new PolicyValidator();
 
+    IMask maskDate = new DateMask("dd/MM/yyyy");
 
 
     protected override async Task OnInitializedAsync()
@@ -538,10 +567,17 @@
         {
             _searchBy = SearchByEnum.Plate;
         }
+
         var serviceResponse = await VehicleService.GetVehicleBy(_searchVin, _iduser, _idDealer, _searchBy);
         if (serviceResponse.Processed)
         {
             _vehicle = serviceResponse.Data ?? new Vehicle();
+            _errorSearchVehicle = string.Empty;
+            form!.ResetValidation();
+        }
+        else
+        {
+            _errorSearchVehicle = MessageEnum.SearchVehicleNotOK.GetStringValue();
         }
         _model.VehicleId = _vehicle.Id;
         _model.Vin = _vehicle.Vin;
@@ -564,10 +600,18 @@
     {
         var serviceResponse = await ContactService.GetContactByVAT(_searchVat, _iduser);
         var _contact = new Contact();
+
         if (serviceResponse.Processed)
         {
             _contact = serviceResponse.Data ?? new Contact();
+            _errorSearchContact = string.Empty;
+            form!.ResetValidation();
         }
+        else
+        {
+            _errorSearchContact = MessageEnum.SearchContactNotOK.GetStringValue();
+        }
+        
        
         _model.VehicleId = _contact.Id;
         _model.CustomerId = _contact.Id;
@@ -665,7 +709,7 @@
 
     private async Task OnValidSubmit()
     {
-        await form.Validate();
+        await form!.Validate();
 
         if (form.IsValid)
         {
@@ -770,28 +814,6 @@
                 .NotNull().WithMessage("Campo requerido")
                 .NotEmpty().WithMessage("Campo requerido")
                 .Length(1, 20).WithMessage("Campo requerido entre 1-20 carácteres");
-
-            RuleFor(x => x.Plate)
-                .NotNull().WithMessage("Campo requerido")
-                .NotEmpty().WithMessage("Campo requerido");
-
-            RuleFor(x => x.FirstName)
-                .NotNull().WithMessage("Campo requerido")
-                .NotEmpty().WithMessage("Campo requerido");
-
-            RuleFor(x => x.LastName)
-                .NotNull().WithMessage("Campo requerido")
-                .NotEmpty().WithMessage("Campo requerido");
-
-
-            // RuleFor(x => x.VehicleId)
-            //     .NotEmpty().WithMessage("Campo requerido")
-            //     .GreaterThan(0).WithMessage("Campo requerido.");
-
-            // RuleFor(x => x.CustomerId)
-            //        .NotEmpty().WithMessage("Campo requerido")
-            //        .GreaterThan(0).WithMessage("Campo requerido.");
-
 
         }
 
