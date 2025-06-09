@@ -40,7 +40,13 @@
         [StringValue("Acción no reconocida!...")]
         ActionsError,
 
+        // Vehicle
+        [StringValue("Vehiculo no existe!...")]
+        SearchVehicleNotOK,
 
+        // Contact
+        [StringValue("Cliente no existe!...")]
+        SearchContactNotOK,
 
         // Imports
         [StringValue("Archivo importado Satisfactoriamente...")]
