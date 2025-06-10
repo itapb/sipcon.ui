@@ -5,6 +5,7 @@ namespace Sipcon.WebApp.Client.Helper
     internal static class Useful
     {
         internal static int userId = 1;
+        internal static int supplierId = 4069;
         internal static string OkSavedMessage = "Registro guardado satisfactoriamente.";
         internal static async Task<DialogResult?> ShowDialog(this IDialogService dialogService, string? strMessage, string strTitle, string strPrimaryButton, Color mColor, string? strIcon)
         {
@@ -47,6 +48,8 @@ namespace Sipcon.WebApp.Client.Helper
                 "Desasignar" => Icons.Material.Filled.GroupRemove,
                 "Disponible" => Icons.Material.Filled.CheckCircle,
                 "No Disponible" => Icons.Material.Filled.Cancel,
+                "Generar" => Icons.Material.Outlined.Task,
+                "Rechazar" => Icons.Material.Filled.ThumbDown,
                 _ => Icons.Material.Filled.HelpOutline
             };
         }

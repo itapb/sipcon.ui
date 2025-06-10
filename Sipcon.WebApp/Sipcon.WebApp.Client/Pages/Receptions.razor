@@ -1,20 +1,23 @@
 ﻿@page "/receptions"
-<h3>Recepcion</h3>
-@if (IsReceptionFormOpen)
+<CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
+@if (MovementId != null)
 {
-    <ReceptionForm />
+    <ReceptionForm @bind-Value="MovementId" />
   @*   <PartToReception /> *@
 }
 else
 {
-    <MudDataGrid @ref="ReceptionMudDataGrid" T="Reception" Items="@receptions" Striped="true" Hover="true" Filterable="false" FixedHeader Height="calc(100vh - 190px)">
+    <MudDataGrid @ref="MovementMudDataGrid" T="Movement" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" FixedHeader Height="calc(100vh - 220px)" Loading="Loading" @bind-CurrentPage="ReceptionCurrentPage">
         <ToolBarContent>
             <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="ClickAddReception"></MudIconButton>
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             <MudSpacer />
             <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshContact"></MudIconButton>
             <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
-
+                @foreach (var strmodulo in Modules!)
+                {
+                    <MudMenuItem Label="@strmodulo.ActionDisplay" Icon="@(strmodulo.ActionDisplay.ToActionIcon())" IconColor="@Color.Info" OnClick="@(() => ClickMenuMovement(strmodulo.ActionName))" />
+                }
             </MudMenu>
         </ToolBarContent>
         <Columns>
@@ -23,39 +26,39 @@ else
                     <MudCheckBox @bind-Value="IsAllCheckBoxSelected" @bind-Value:after="AfterAsyncAllCheck" />
                 </HeaderTemplate>
                 <CellTemplate>
-                    <MudCheckBox @bind-Value="IsSelected" />
+                    <MudCheckBox @bind-Value="context.Item.IsSelected" />
                 </CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.ReceptionNumber" Title="Nro Recepcion" />
-            <PropertyColumn Property="x => x.ReceptionDate" Title="Fecha" />
-            <PropertyColumn Property="x => x.ReceptionType" Title="Tipo" />
+            <PropertyColumn Property="x => x.Id" Title="Nro" />
+            <PropertyColumn Property="x => x.Created" Title="Fecha" />
+            <PropertyColumn Property="x => x.TypeName" Title="Tipo" />
             <PropertyColumn Property="x => x.Reference" Title="Referencia" />
-            <PropertyColumn Property="x => x.Status" Title="Status" />
-            <PropertyColumn Property="x => x.User" Title="Usuario" />
+            <PropertyColumn Property="x => x.StatusName" Title="Status" />
+            <PropertyColumn Property="x => x.AssignTo" Title="Usuario" />
+            <TemplateColumn StickyRight="true">
+                <CellTemplate>
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditReception(context.Item)" />
+                </CellTemplate>
+            </TemplateColumn>
         </Columns>
+        <PagerContent>
+            <MudDataGridPager T="Movement" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        </PagerContent>
     </MudDataGrid>
 }
 
 @code {
-    private bool IsReceptionFormOpen = false;
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    List<BreadcrumbItem> ItemsNavigate = [new("Home", href: "", icon: Icons.Material.Filled.Home), new("Inventario", href: "receptions", icon: Icons.Material.Filled.Inventory), new("Procesos", href: "receptions", icon: Icons.Material.Filled.Hardware), new("Recepcion", href: "receptions", icon: Icons.Material.Filled.AddBusiness)];
+    private int? MovementId = 4;    
     private bool IsSelected = false;
     private bool IsAllCheckBoxSelected = false;
-    private MudDataGrid<Reception>? ReceptionMudDataGrid;
-    record Reception(string ReceptionNumber, DateTime ReceptionDate, string ReceptionType, string Reference, string Status, string User);
-    private List<Reception> receptions = new()
-    {
-        new("R001", DateTime.Now, "Type1", "Ref001", "Pending", "User1"),
-        new("R002", DateTime.Now.AddDays(-1), "Type2", "Ref002", "Completed", "User2"),
-        new("R003", DateTime.Now.AddDays(-2), "Type3", "Ref003", "Cancelled", "User3"),
-        new("R004", DateTime.Now.AddDays(-3), "Type1", "Ref004", "Pending", "User4"),
-        new("R005", DateTime.Now.AddDays(-4), "Type2", "Ref005", "Completed", "User5"),
-        new("R006", DateTime.Now.AddDays(-5), "Type3", "Ref006", "Cancelled", "User6"),
-        new("R007", DateTime.Now.AddDays(-6), "Type1", "Ref007", "Pending", "User7"),
-        new("R008", DateTime.Now.AddDays(-7), "Type2", "Ref008", "Completed", "User8"),
-        new("R009", DateTime.Now.AddDays(-8), "Type3", "Ref009", "Cancelled", "User9")
+    int ReceptionCurrentPage = 0;
+    bool Loading = false;
+    private MudDataGrid<Movement>? MovementMudDataGrid;
+    private List<Module>? Modules;
 
-
-    };
     private string searchString = string.Empty;
     private void ClickRefreshContact(MouseEventArgs args)
     {
@@ -63,17 +66,83 @@ else
     }
     private async Task OnSearch(string text)
     {
-        await Task.CompletedTask;
-        searchString = text;
-
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            Loading = true;
+            searchString = text;
+            await MovementMudDataGrid!.ReloadServerData();
+        }
     }
     private async Task ClickAddReception(MouseEventArgs ev)
-    {
-        IsReceptionFormOpen = true; 
+    {        
+
         await Task.CompletedTask;
     }
     private async Task AfterAsyncAllCheck()
     {
+        if (MovementMudDataGrid != null)
+            MovementMudDataGrid.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
         await Task.CompletedTask;
     }
-   }
+    private async Task ClickEditReception(Movement item)
+    {
+        MovementId = item.Id;
+        await Task.CompletedTask;
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-RECEPCION&userId={Useful.userId}");
+    }
+    private async Task<GridData<Movement>> ServerReload(GridState<Movement> state)
+    {
+        IsAllCheckBoxSelected = false;
+        Loading = true;
+        var totalItems = 0;
+        var mOffset = state.Page * state.PageSize;
+        IEnumerable<Movement> data;       
+        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetMovements?userId={Useful.userId}&supplierId={Useful.supplierId}&typeId=R&rowfrom={mOffset}&filter={searchString}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Movement>>>();
+            totalItems = content2!.total ?? 0;
+            data = content2!.data ?? new List<Movement>();
+        }
+        else
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
+        if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Movement> sortDefinition)
+        {
+            switch (sortDefinition.SortBy)
+            {
+                case nameof(Movement.Id):
+                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.Id);
+                    break;
+                case nameof(Movement.Created):
+                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.Created);
+                    break;
+                case nameof(Movement.TypeName):
+                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.TypeName);
+                    break;
+                case nameof(Movement.Reference):
+                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.Reference);
+                    break;
+                case nameof(Movement.StatusName):
+                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.StatusName);
+                    break;
+                case nameof(Movement.AssignTo):
+                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.AssignTo);
+                    break;
+            }
+        }
+        Loading = false;
+        return new GridData<Movement> { TotalItems = totalItems, Items = data };
+    }
+
+    private async Task ClickMenuMovement(string? actionName)
+    {
+        await Task.CompletedTask;
+    }
+
+}

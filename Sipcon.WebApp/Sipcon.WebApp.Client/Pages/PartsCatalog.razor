@@ -1,25 +1,28 @@
-﻿<h3>PartsCatalog</h3>
-<MudDataGrid @ref="PartsCatalogMudDataGrid" T="Part" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" FixedHeader Height="calc(100vh - 190px)" @bind-CurrentPage="ContactCurrentPage">
+﻿  <MudGrid Spacing="0">
+                <MudItem xs="12">
+                    <MudPaper Elevation="2" Class="jpv1-dialog-background-title pa-3" Square="true">
+                    <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                        <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                            <MudStack Row="true">
+                                <MudText Typo="Typo.h6" Color="Color.Info">Catalogo Respuestos</MudText>
+                            </MudStack>
+                            <MudStack>
+                               <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="CloseClick" />
+                            </MudStack>
+                        </MudStack>
+                    </MudPaper></MudPaper>
+                </MudItem>
+                <MudItem xs="12">
+<MudDataGrid @ref="PartsCatalogMudDataGrid" T="Part" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" FixedHeader Height="calc(100vh - 280px)" @bind-CurrentPage="ContactCurrentPage">
     <ToolBarContent>
        
         <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
         <MudSpacer />
         <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshPartsCatalog"></MudIconButton>
-        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
-
-        </MudMenu>
     </ToolBarContent>
     <Columns>
-        <TemplateColumn>
-            <HeaderTemplate>
-                <MudCheckBox @bind-Value="IsAllCheckBoxSelected" @bind-Value:after="AfterAsyncAllCheck" />
-            </HeaderTemplate>
-            <CellTemplate>
-                <MudCheckBox @bind-Value="@context.Item.IsSelected" />
-            </CellTemplate>
-        </TemplateColumn>
         <PropertyColumn Property="x => x.InnerCode" Title="Codigo Parte" />
-        <PropertyColumn Property="x => x.BarCode" Title="Descripcion" />
+        <PropertyColumn Property="x => x.Description" Title="Descripcion" />
         <PropertyColumn Property="x => x.Price" Title="Precio" />
         <PropertyColumn Property="x => x.Stock" Title="Existencia" />
         <TemplateColumn>
@@ -28,10 +31,18 @@
             </CellTemplate>
         </TemplateColumn>
     </Columns>
+    <PagerContent>
+        <MudDataGridPager T="Part" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+    </PagerContent>
 </MudDataGrid>
+</MudItem>
+</MudGrid>
 @code {
     [Inject] private HttpClient Http { get; set; } = default!;
-    private MudForm? form;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;   
+    [Parameter] public int? MovementId { get; set; }
+   
     private MudDataGrid<Part>? PartsCatalogMudDataGrid;
 
     bool IsAllCheckBoxSelected = false;
@@ -39,12 +50,6 @@
     string searchString = "";
     private int ContactCurrentPage = 0;
 
-    private async Task AfterAsyncAllCheck()
-    {
-        if (PartsCatalogMudDataGrid != null)
-            PartsCatalogMudDataGrid.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
-        await Task.CompletedTask;
-    }
     private async Task OnSearch(string text)
     {
         if (text.Length == 0 || text.Length >= 3)
@@ -100,7 +105,19 @@
     }
     private async Task ClickAddPart(Part item)
     {
-       
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
+        NewMovementDetail AnewMovementDetail = new NewMovementDetail
+        {
+            Id = 0,
+            PartId = item.Id,
+            MovementId = MovementId           
+        };
+        var dialogReference = await DialogService.ShowAsync<PartToReception>("", new DialogParameters { ["newMovementDetail"] = AnewMovementDetail }, options);
+        var dialogResult = await dialogReference.Result;
         await Task.CompletedTask;
+    }
+    private void CloseClick(MouseEventArgs args)
+    {
+        MudDialog?.Close(DialogResult.Ok(true));
     }
 }
