@@ -58,11 +58,11 @@ else
     bool Loading = false;
     private MudDataGrid<Movement>? MovementMudDataGrid;
     private List<Module>? Modules;
-
+    DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
     private string searchString = string.Empty;
-    private void ClickRefreshContact(MouseEventArgs args)
+    private async Task ClickRefreshContact(MouseEventArgs args)
     {
-        throw new NotImplementedException();
+        await MovementMudDataGrid!.ReloadServerData(); 
     }
     private async Task OnSearch(string text)
     {
@@ -142,7 +142,58 @@ else
 
     private async Task ClickMenuMovement(string? actionName)
     {
+        var mActions = MovementMudDataGrid?.FilteredItems.Where(item => item.IsSelected)
+                                                                  .Select(item => new Client.Models.Action
+                                                                 {
+                                                                     UserId = Useful.userId,
+                                                                     RecordId = item.Id,
+                                                                     ModuleId = Modules!.FirstOrDefault()?.Id,
+                                                                     actionName = actionName,
+                                                                     ActionComment = item.StatusName,
+                                                                     RelatedId = 0
+                                                                 }).ToList();
+
+        var AssignActions = mActions?.Where(item => item.actionName?.ToUpper() == "ASSIGN" && item.ActionComment?.ToUpper() == "GENERADO").ToList();
+        var UnAssignActions = mActions?.Where(item => item.actionName?.ToUpper() == "UNASSIGN" && item.ActionComment?.ToUpper() == "ASIGNADO").ToList();
+        var GenerateActions = mActions?.Where(item => item.actionName?.ToUpper() == "GENERATE" && item.ActionComment?.ToUpper() == "CREADO").ToList();
+        var DeclineActions = mActions?.Where(item => item.actionName?.ToUpper() == "DECLINE" && (item.actionName?.ToUpper() is "CREADO" or "GENERADO")).ToList();
+        if (AssignActions?.Count > 0)
+        {
+            var dialogReference = await DialogService.ShowAsync<AssignUserToReception>("", new DialogParameters { ["SelectedActions"] = AssignActions }, options);
+            var dialogResult = await dialogReference.Result;
+            if (!dialogResult!.Canceled)
+            {
+                await MovementMudDataGrid!.ReloadServerData();
+            }
+        }
+        else if (UnAssignActions?.Count > 0)
+            await PostMovementAction(UnAssignActions); 
+        else if (GenerateActions?.Count > 0)
+            await PostMovementAction(GenerateActions);
+        else if (DeclineActions?.Count > 0)
+            await PostMovementAction(DeclineActions);
+
         await Task.CompletedTask;
     }
-
+    private async Task PostMovementAction(List<Models.Action>? actions)
+    {
+        actions?.ToList().ForEach(m => m.ActionComment = "");
+        var result_Post_Actions = (actions?.Count > 0) ? await Http.PostAsync($"api/Inventory/PostMovementActions?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json")) : null;
+        if ((result_Post_Actions?.IsSuccessStatusCode ?? false))
+        {            
+            var rest = result_Post_Actions.Content.ReadAsStringAsync();
+            await DialogService.ShowDialog(Useful.OkSavedMessage, "Recepcion", "OK", Color.Info, Icons.Material.Filled.Commit);
+            await MovementMudDataGrid!.ReloadServerData();
+        }
+        else if (result_Post_Actions?.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflictContent = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+            await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        else
+        {
+            var errorMessage = await result_Post_Actions!.Content.ReadAsStringAsync() ?? "";
+            throw new Exception(errorMessage);
+        }
+    }
 }

@@ -1,56 +1,95 @@
-﻿<div>
-    <MudForm @ref="form">
-        <MudGrid Spacing="0">
-            <MudItem xs="12">
-                <MudPaper Elevation="2" Class="jpv1-dialog-background-title pa-3" Square="true">
-                    <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
-                        <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
-                            <MudStack Row="true">
-                                <MudText Typo="Typo.h6" Color="Color.Info">Asignar</MudText>
+﻿@if (Contacts == null)
+{
+    <LoadingForm IsMudDialog="@(MudDialog != null)" />
+}
+else
+{
+    <div>
+        <MudForm @ref="form">
+            <MudGrid Spacing="0">
+                <MudItem xs="12">
+                    <MudPaper Elevation="2" Class="jpv1-dialog-background-title pa-3" Square="true">
+                        <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                            <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                                <MudStack Row="true">
+                                    <MudText Typo="Typo.h6" Color="Color.Info">Asignar</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Spacing="2">
+                                    <MudButton OnClick="CancelClick">Cancelar</MudButton>
+                                    <MudFab StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" OnClick="SaveClick" Size="Size.Small" Label="Aceptar"></MudFab>
+                                </MudStack>
                             </MudStack>
-                            <MudStack Row="true" Spacing="2">
-                                <MudButton OnClick="CancelClick">Cancelar</MudButton>
-                                <MudFab StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" OnClick="SaveClick" Size="Size.Small" Label="Aceptar"></MudFab>
+                        </MudPaper>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudPaper Elevation="2" Class="pa-3 jpv1-dialog-body-background" Square="true">
+                        <MudPaper Elevation="2" Class="pa-3 mud-text-align-center">
+                            <MudStack Row="false">
+                                <MudText Typo="Typo.h6" GutterBottom="true">Usuarios</MudText>
+                                <MudSelect T="Contact" ToStringFunc="@ConvertContactFunc" Required="true" ValueChanged="OnContactValueChanged" RequiredError="Campo requerido" Value="ContactSelected">
+                                    @foreach (var contact in Contacts!)
+                                    {
+                                        <MudSelectItem Value="contact" />
+                                    }
+                                </MudSelect>
                             </MudStack>
-                        </MudStack>
+                        </MudPaper>
                     </MudPaper>
-                </MudPaper>
-            </MudItem>
-            <MudItem xs="12">
-                <MudPaper Elevation="2" Class="pa-3 jpv1-dialog-body-background" Square="true">
-                    <MudPaper Elevation="2" Class="pa-3 mud-text-align-center">
-                        <MudStack Row="false">
-                            <MudText Typo="Typo.h6" GutterBottom="true">Usuarios</MudText>                            
-                            <MudSelect T="Contact" Label="Usario" ToStringFunc="@ConvertContactFunc" Required="true" ValueChanged="OnContactValueChanged" RequiredError="Campo requerido" Value="ContactSelected">
-                                @foreach (var contact in Contacts!)
-                                {
-                                    <MudSelectItem Value="contact" />
-                                }
-                            </MudSelect>
-                        </MudStack>
-                    </MudPaper>
-                </MudPaper>
-            </MudItem>
-        </MudGrid>
-    </MudForm>
-</div>
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </div>
+}
+
 
 @code {
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public List<Models.Action>? SelectedActions { get; set; }
+
     private MudForm? form;
     private Contact? ContactSelected;
     private Func<Contact?, string> ConvertContactFunc = contact => contact?.FirstName + " " + contact?.LastName!;
 
     private List<Contact>? Contacts = default;
+
+    protected override async Task OnInitializedAsync()
+    {
+        HttpResponseMessage locationResponse = await Http.GetAsync($"api/Contact/GetUsersByModule?moduleName=INVENTARIO-MOVIL-RECEPCION&supplierId={Useful.supplierId}");
+
+        if (locationResponse.IsSuccessStatusCode)
+        {
+            var content2 = await locationResponse.Content.ReadFromJsonAsync<WebApiResponse<List<Contact>>>();
+            Contacts = content2!.data ?? new List<Contact>();
+        }
+    }
     private void CancelClick(MouseEventArgs args)
     {
-        throw new NotImplementedException();
+        MudDialog?.Close();
     }
-    private void SaveClick(MouseEventArgs args)
+    private async Task SaveClick(MouseEventArgs args)
     {
-        throw new NotImplementedException();
+        await form!.Validate();
+        if (form.IsValid)
+        {
+            int ContactId = ContactSelected?.Id ?? 0;
+            SelectedActions?.ToList().ForEach(m => { m.RelatedId = ContactId; m.ActionComment = ""; });
+            var result_Post_Actions = (SelectedActions is not null && SelectedActions.Count > 0) ? await Http.PostAsync($"api/Inventory/PostMovementActions?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
+            if (result_Post_Actions is not null && result_Post_Actions.IsSuccessStatusCode)
+            {
+                var rest = result_Post_Actions.Content.ReadAsStringAsync();
+                await DialogService.ShowDialog(Useful.OkSavedMessage, "Recepcion", "OK", Color.Info, Icons.Material.Filled.Commit);
+                MudDialog?.Close(DialogResult.Ok(true));
+            }
+            else if (result_Post_Actions?.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                // var res = await result_Post_Actions.Content.ReadAsStringAsync();
+                var conflictContent = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+                await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+        }
     }
     private void OnContactValueChanged(Contact selectedContact)
     {
