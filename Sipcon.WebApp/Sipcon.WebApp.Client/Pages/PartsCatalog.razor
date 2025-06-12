@@ -4,7 +4,7 @@
                     <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
                         <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
                             <MudStack Row="true">
-                                <MudText Typo="Typo.h6" Color="Color.Info">Catalogo Respuestos</MudText>
+                                <MudText Typo="Typo.h6" Color="Color.Info">Catalogo Repuestos</MudText>
                             </MudStack>
                             <MudStack>
                                <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="CloseClick" />
@@ -45,7 +45,7 @@
    
     private MudDataGrid<Part>? PartsCatalogMudDataGrid;
 
-    bool IsAllCheckBoxSelected = false;
+    
     bool _loading = true;
     string searchString = "";
     private int ContactCurrentPage = 0;
@@ -60,13 +60,12 @@
         }
     }
     private async Task<GridData<Part>> ServerReload(GridState<Part> state)
-    {
-        IsAllCheckBoxSelected = false;
+    {        
         _loading = true;
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Part> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Part/GetAll?rowFrom={mOffset}&filter={searchString}&userId={Useful.userId}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Part/GetAll?rowFrom={mOffset}&filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Part>>>();
@@ -112,7 +111,7 @@
             PartId = item.Id,
             MovementId = MovementId           
         };
-        var dialogReference = await DialogService.ShowAsync<PartToReception>("", new DialogParameters { ["newMovementDetail"] = AnewMovementDetail }, options);
+        var dialogReference = await DialogService.ShowAsync<PartToMovementDetail>("", new DialogParameters { ["newMovementDetail"] = AnewMovementDetail }, options);
         var dialogResult = await dialogReference.Result;
         await Task.CompletedTask;
     }

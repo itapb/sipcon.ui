@@ -1,18 +1,21 @@
-﻿ <div id="scrollableGridContentStyled" style="overflow-y: auto;  padding: 8px; background-color: #f0f0f0;">
+﻿<InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
+<div id="scrollableGridContentStyled" style="overflow-y: auto;  padding: 8px; background-color: #f0f0f0;">
     <MudGrid Spacing="2">
         <MudItem xs="12" sm="9">
             <MudStack>
                 <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
                     <MudStack Row="true" Spacing="2">
-                        <MudFab StartIcon="@Icons.Material.Filled.Update" Color="Color.Info" Size="Size.Small" Label="Guardar" OnClick="GuardarClick" Disabled="@IsGenerated"></MudFab>
-                        <MudButton OnClick="CerrarClick">Cerrar</MudButton>
+                        <MudFab StartIcon="@Icons.Material.Filled.Update" Color="Color.Info" Size="Size.Small" Label="Guardar" OnClick="SaveClick" Disabled="@IsGenerated"></MudFab>
+                        <MudButton OnClick="CloseClick">Cerrar</MudButton>
                     </MudStack>
                 </MudPaper>
                 <MudPaper Elevation="2">
-                        <MudDataGrid @ref="MovementDetailsMudDataGrid" T="MovementDetails" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 230px)" Loading="Loading" @bind-CurrentPage="PartCurrentPage">
+                        <MudDataGrid @ref="MovementDetailsMudDataGrid" T="MovementDetails" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 220px)" Loading="Loading" @bind-CurrentPage="PartCurrentPage">
                         <ToolBarContent>
-                            <MudIconButton Icon="@Icons.Material.Filled.PlaylistAdd" Size="Size.Large" OnClick="ClickAddReceptionDetail" Color="Color.Info" Disabled="@IsGenerated"></MudIconButton>
-                            <MudIconButton Icon="@Icons.Material.Filled.PlaylistRemove" Size="Size.Large" OnClick="ClickRemoveReceptionDetail" Color="Color.Info" Disabled="@IsGenerated"></MudIconButton>
+                            <MudIconButton Icon="@Icons.Material.Filled.PlaylistAdd" Size="Size.Medium" OnClick="ClickAddMovementDetail" Color="Color.Info" Disabled="@IsGenerated"></MudIconButton>
+                            <MudIconButton Icon="@Icons.Material.Filled.PlaylistRemove" Size="Size.Medium" OnClick="ClickRemoveMovementDetails" Color="Color.Info" Disabled="@IsGenerated"></MudIconButton>
+                            <MudSpacer />
+                            <MudIconButton Icon="@Icons.Material.Filled.Upload" Size="Size.Medium" OnClick="ClickImportReceptionDetail" Color="Color.Info" Disabled="@IsGenerated"></MudIconButton>
                         </ToolBarContent>
                         <Columns>
                             <TemplateColumn>
@@ -90,6 +93,7 @@
 @code {
     [Inject] private HttpClient Http { get; set; } = default!;   
     [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
     [Parameter] public int? Value { get; set; }
     [Parameter] public EventCallback<int?> ValueChanged { get; set; }
     DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
@@ -111,7 +115,7 @@
     private int ProductValue = 0;
     private decimal CostValue = 0;
 
-    private bool IsSelected = false;
+    
     private bool IsAllCheckBoxSelected = false;
 
     bool Loading = false;
@@ -136,7 +140,7 @@
             DestinationId = item.DestinationId,
             RequiredQty = item.RequiredQty
         };
-        var dialogReference = await DialogService.ShowAsync<PartToReception>("", new DialogParameters { ["newMovementDetail"] = AnewMovementDetail }, options);
+        var dialogReference = await DialogService.ShowAsync<PartToMovementDetail>("", new DialogParameters { ["newMovementDetail"] = AnewMovementDetail }, options);
         var dialogResult = await dialogReference.Result;
         if (!dialogResult!.Canceled)
         {
@@ -168,7 +172,7 @@
             var masterMovementDetails = content2!.data ?? new MasterMovementDetails();
             MasterMovement = masterMovementDetails.Movement;
             data = masterMovementDetails.Details!;
-            IsGenerated = MasterMovement!.StatusName.ToUpper() == "GENERADO";
+            IsGenerated = !(MasterMovement!.StatusName.ToUpper() == "CREADO");
             getTotals(data);
         }
         else
@@ -205,11 +209,11 @@
         return new GridData<MovementDetails> { TotalItems = totalItems, Items = data };
     }
 
-    private void CerrarClick()
+    private void CloseClick()
     {
         MovementId = null; 
     }
-    private async Task ClickAddReceptionDetail(MouseEventArgs ev)
+    private async Task ClickAddMovementDetail(MouseEventArgs ev)
     {       
         var dialogReference = await DialogService.ShowAsync<PartsCatalog>("", new DialogParameters { ["MovementId"] = MasterMovement!.Id }, options);
         var dialogResult = await dialogReference.Result;
@@ -219,11 +223,25 @@
         }
         await Task.CompletedTask;
     }
-    private async Task ClickRemoveReceptionDetail(MouseEventArgs ev)
-    {       
+    private async Task ClickRemoveMovementDetails(MouseEventArgs ev)
+    {
+        var mActions = MovementDetailsMudDataGrid?.FilteredItems.Where(item => item.IsSelected)
+                                                     .Select(item => new Client.Models.Action
+                                                     {
+                                                         UserId = Useful.userId,
+                                                         RecordId = item.Id,
+                                                         ModuleId = 0,
+                                                         actionName = "DECLINE",
+                                                         ActionComment = "",
+                                                         RelatedId = 0
+                                                     }).ToList();
+        if (mActions?.Count > 0)
+        {
+            await DeleteMovementDetailAction(mActions);
+        }
         await Task.CompletedTask;
     }
-    private async Task GuardarClick(MouseEventArgs args)
+    private async Task SaveClick(MouseEventArgs args)
     {
         var strMasterMovement = System.Text.Json.JsonSerializer.Serialize(MasterMovement);
         var result_MasterMovement = await Http.PostAsync($"api/Inventory/PostMovements?userId={Useful.userId}", new StringContent($"[{strMasterMovement}]", null, "application/json"));
@@ -232,7 +250,7 @@
             var sucessContent = await result_MasterMovement.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
             if ((sucessContent?.data![0].insertedRows == 1 || sucessContent?.data![0].updatedRows == 1))
             {
-                var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Recepcion", "OK", Color.Info, Icons.Material.Filled.Commit);
+                var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Guardar", "OK", Color.Info, Icons.Material.Filled.Commit);
                 if (!result!.Canceled)
                 {
                     MovementId =null;
@@ -268,8 +286,75 @@
         if (result_PostMovementActions is not null && result_PostMovementActions.IsSuccessStatusCode)
         {
             var rest = result_PostMovementActions.Content.ReadAsStringAsync();
-            await DialogService.ShowDialog(Useful.OkSavedMessage, "Recepcion", "OK", Color.Info, Icons.Material.Filled.Commit);
+            await DialogService.ShowDialog(Useful.OkSavedMessage, "Accion", "OK", Color.Info, Icons.Material.Filled.Commit);
             MovementId = null;
         }
+    }
+
+    private async Task DeleteMovementDetailAction(List<Models.Action>? actions)
+    {        
+        var result_Post_Actions = (actions?.Count > 0) ? await Http.PostAsync($"api/Inventory/DeleteMovementDetail?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json")) : null;
+        if ((result_Post_Actions?.IsSuccessStatusCode ?? false))
+        {
+            var rest = result_Post_Actions.Content.ReadAsStringAsync();
+            await DialogService.ShowDialog(Useful.OkSavedMessage, "Remover", "OK", Color.Info, Icons.Material.Filled.Commit);
+            await MovementDetailsMudDataGrid!.ReloadServerData();
+        }
+        else if (result_Post_Actions?.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflictContent = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+            await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        else
+        {
+            var errorMessage = await result_Post_Actions!.Content.ReadAsStringAsync() ?? "";
+            throw new Exception(errorMessage);
+        }
+    }
+    private async Task ClickImportReceptionDetail(MouseEventArgs args)
+    {
+        await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('[type=file]').click()");
+        return;
+    }
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        if (e.FileCount == 1)
+        {
+            var file = e.File;
+            const long maxAllowedSize = 10 * 1024 * 1024; // 10MB
+            if (file.Size == 0)
+            {
+                await DialogService.ShowDialog("Archivo esta vacio", "Error de Archivo", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+            else if (file.Size > maxAllowedSize)
+            {
+                await DialogService.ShowDialog("Tamaño del archivo excede el limite maximo permitido de 10MB.", "Error de Archivo", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+            else
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
+
+                var content = new StreamContent(stream);
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+                // Create a multipart form data content
+                var formData = new MultipartFormDataContent();
+                formData.Add(content, "file", file.Name);
+                Loading = true;
+
+                var response = await Http.PostAsync($"api/Inventory/ImportMovementDetail?userId={Useful.userId}&movementId={MovementId}", formData);
+                if (response.IsSuccessStatusCode)
+                {
+                    await DialogService.ShowDialog("Archivo cargado con exito!.", "Importar", "OK", Color.Info, Icons.Material.Filled.Commit);
+                    await MovementDetailsMudDataGrid!.ReloadServerData();
+                }
+                else
+                {
+                    await DialogService.ShowDialog("Carga de archivo fallo!", "Error al cargar", "OK", Color.Error, Icons.Material.Filled.Error);
+                    Loading = false;
+                }
+            }
+        }
+        await Task.CompletedTask;
     }
 }

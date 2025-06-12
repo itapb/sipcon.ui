@@ -4,13 +4,13 @@
 }
 else
 {
-    <h3>PartToReception</h3>
     <MudForm @ref="form">
     <div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
         <MudPaper Elevation="2" Class="pa-3">
+                <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
             <MudGrid Spacing="2">
-                <MudItem xs="12">
-                        <MudTextField T="int?" Label="Cantidad" @bind-Value="newMovementDetail.RequiredQty" For="@(() => newMovementDetail.RequiredQty)" Required="true"></MudTextField>
+                <MudItem xs="12">                    
+                        <MudTextField T="int?" Label="Cantidad" @bind-Value="newMovementDetail.RequiredQty" For="@(() => newMovementDetail.RequiredQty)" Required="true"></MudTextField>                
                 </MudItem>
                 <MudItem xs="12">
                     <MudSelect T="Location" Label="Ubicacion Origen" ToStringFunc="@ConvertLocationFunc" Value="SourceLocationSelected" ValueChanged="OnSourceLocationValueChanged" RequiredError="Campo requerido." Required="true">
@@ -37,17 +37,17 @@ else
                     </MudStack>
                 </MudItem>
             </MudGrid>
+                </MudFocusTrap>
         </MudPaper>
     </div>
     </MudForm>
 }
-
 @code {
     [Inject] private HttpClient Http { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
-    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;    
     string TypeIdSource = "R";
-    string TypeIdTarget = "A";
+    string TypeIdTarget = "A";    
 
     private MudForm? form;
     Location? SourceLocationSelected;
@@ -57,12 +57,12 @@ else
     List<Location>? SourceLocations;
     List<Location>? TargetLocations;
     [Parameter] public NewMovementDetail? newMovementDetail { get; set; } = default!;
-
     private Func<Location?, string> ConvertLocationFunc = location => location?.Name!;
+
     protected override async Task OnInitializedAsync()
     {
         // await Task.Delay(3000); // Simulate a delay for loading
-        await LoadLocations();
+        await LoadLocations();       
     }
     private async Task LoadLocations()
     {
@@ -102,7 +102,7 @@ else
                 var sucessContent = await result_newMovementDetail.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
                 if ((sucessContent?.data![0].insertedRows == 1 || sucessContent?.data![0].updatedRows == 1))
                 {
-                    var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Recepcion", "OK", Color.Info, Icons.Material.Filled.Commit);
+                    var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Agregar", "OK", Color.Info, Icons.Material.Filled.Commit);
                     if (!result!.Canceled)
                     {
                         MudDialog?.Close(DialogResult.Ok(true));                        
