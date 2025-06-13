@@ -1,0 +1,435 @@
+﻿@page "/maintenance"
+
+
+@using Sipcon.WebApp.Client.Models
+@using Sipcon.WebApp.Client.Services
+@using Sipcon.WebApp.Client.Utils
+@using Sipcon.WebApp.Client.Enum
+@using System.Text.Json
+
+
+@inject IMaintenanceService MaintenanceService
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+@inject IJSRuntime JSRuntime
+
+
+<PageTitle>Mantenimiento</PageTitle>
+<CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
+
+<MudDataGrid @ref="_mudDataGrid"
+MultiSelection="true" 
+SelectedItems="@selectedMaintenance"
+SortMode="SortMode.Multiple"
+Filterable="true"
+FixedHeader Height="calc(92vh - 235px)"
+Hideable="true"
+Loading="_loading"
+Bordered="false"
+Dense="true"
+ServerData="LoadGridData">
+
+    <ToolBarContent>
+        <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddMaintenance()"></MudIconButton>
+        <MudTextField @bind-Value="_searchString" Placeholder="buscar" Adornment="Adornment.Start" Immediate="true"
+        Typo="Typo.caption"
+        AdornmentIcon="@Icons.Material.Filled.Search"
+        OnAdornmentClick="() => ClickSearch()"
+        IconSize="Size.Medium" Class="mt-0" 
+        OnKeyUp="HandleKeyDownSearch">
+        </MudTextField>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+            @foreach (var module in _itemsModules)
+            {
+                <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
+                Label="@module.Text"
+                OnClick="() => HandleMenuClick(module)" />
+            }
+        </MudMenu>
+    </ToolBarContent>
+    <Columns>
+        <SelectColumn T="Maintenance" />
+        <TemplateColumn T="Maintenance" Title="NRO.ORDEN">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.End">@context.Item.OrderNumber</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn T="Maintenance" Title="VIN">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary">@context.Item.Vin.ToUpper()</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn T="Maintenance" Title="PLACA">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Start">@context.Item.Plate.ToUpper()</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn T="Maintenance" Title="KM" >
+            <CellTemplate>
+                <div class="d-flex justify-end">
+                    <MudText Typo="Typo.caption" Align="Align.End">
+                        @(context.Item.Km?.ToString("N0"))
+                    </MudText>
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
+        @* <PropertyColumn Property="x => x.Vat" Title="RIF" Sortable="false" Filterable="false" /> *@
+        <TemplateColumn T="Maintenance" Title="CLIENTE">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.CustomerName.ToUpper() + " " + context.Item.CustomerLastName.ToUpper()) </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn T="Maintenance" Title="CONCESIONARIO">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.DealerServiceCod.ToUpper())</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        @* <PropertyColumn Property="x => x.ServiceTypeName" Title="SERVICIO" Sortable="false" Filterable="false" /> *@
+        <TemplateColumn T="Maintenance" Title="ESTATUS" CellStyleFunc="@_cellStyleFunc">
+            <CellTemplate>
+                <div class="d-flex justify-center" >
+                    <MudText Typo="Typo.caption" Align="Align.Start">
+                        @(context.Item.EstatusName.ToUpper())
+                    </MudText>
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn >
+            <CellTemplate>
+                <MudStack Row="true">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditMaintenance(context.Item)" />
+                    @if (context.Item.EstatusName.ToUpper() != "CREADO")
+                    {
+                        <MudIconButton Icon="@Icons.Custom.FileFormats.FilePdf" Color="Color.Default" Size="Size.Small" OnClick="() => ClickExportPdf(context.Item)"></MudIconButton>
+                    }
+                    
+                </MudStack>
+
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+
+    <PagerContent>
+        <MudDataGridPager T="Maintenance" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+    </PagerContent>
+</MudDataGrid>
+
+<MudDialog @bind-Visible="_nestedVisible">
+    <TitleContent>
+        <MudStack Row="true">
+            <MudIcon Icon="@Icons.Material.Filled.CarCrash" Color="@(_success ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
+            <MudText Typo="Typo.h6">Mantenimiento</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+
+        <MudStack Row="true">
+            <MudText Class="nested"><p>@_nestedErrorMessage!</p> </MudText>
+        </MudStack>
+
+    </DialogContent>
+    <DialogActions>
+
+        <MudButton Color="Color.Info" OnClick="CloseNested" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
+
+    </DialogActions>
+</MudDialog>
+
+
+
+@code {
+    private IEnumerable<Maintenance> _Maintenances = new List<Maintenance>();
+    private string _nestedErrorMessage = string.Empty;
+    private bool _nestedVisible;
+    bool _success = false;
+
+    private int _rowCount = 0;
+    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
+    private int _iddealer = 5103; // Cambia esto por el ID del usuario que estás utilizando
+    private int _rowsTotal = 0; 
+
+    private string _searchString = string.Empty;
+    private bool _loading = true;
+    private string _moduleName = "SERVICIOS-MANTENIMIENTO";
+
+    private MudDataGrid<Maintenance>? _mudDataGrid;
+    private HashSet<Maintenance> selectedMaintenance = new([]);
+    private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
+
+    private List<BreadcrumbItem> _itemsNavigate =
+                [
+        new("Home", href: null, icon: Icons.Material.Filled.Home),
+        new("Mantenimiento",  href: "maintenance", disabled: false, icon: Icons.Material.Filled.CarCrash),
+    ];
+
+
+    private async Task<GridData<Maintenance>> LoadGridData(GridState<Maintenance> state)
+    {
+
+        _rowCount = state.Page * state.PageSize;
+
+        await GetMaintenances();
+
+        return new GridData<Maintenance> { TotalItems = _rowsTotal, Items = _Maintenances };
+    }
+
+    private async Task GetMaintenances()
+    {
+        _loading = true;
+        var serviceResponse = await MaintenanceService.GetMaintenances(_iduser, _iddealer, _rowCount, _searchString);
+        if (serviceResponse.Processed)
+        {
+            _Maintenances = serviceResponse.Data;
+            _rowsTotal = serviceResponse.Total;
+
+            if (_Maintenances.Count() > 0)
+            {
+                _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
+            }
+            else { _itemsModules = new List<ModuleAction>([]); }
+
+
+        }
+        else
+        {
+            Console.WriteLine($"Error: {serviceResponse.Message}");
+            _Maintenances = new List<Maintenance>();
+            _rowsTotal = 0;
+            _itemsModules = new List<ModuleAction>([]);
+        }
+        _loading = false;
+    }
+
+
+    private async Task HandleKeyDownSearch(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            if (_searchString.Length >= 3 || _searchString == string.Empty)
+            {
+                Console.WriteLine($"Buscando: {_searchString}");
+                await _mudDataGrid!.ReloadServerData();
+            }
+
+        }
+    }
+
+    private async Task ClickSearch()
+    {
+
+        if (_searchString.Length >= 3 )
+        {
+            Console.WriteLine($"Buscando: {_searchString}");
+            await _mudDataGrid!.ReloadServerData();
+        }
+
+    }
+
+
+    private async Task HandleOnClickRefresh()
+    {
+        _searchString = string.Empty;
+        await _mudDataGrid!.ReloadServerData();
+    }
+
+
+    private async Task ClickEditMaintenance(Maintenance item)
+    {
+
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = false, NoHeader = true };
+
+        var parameters = new DialogParameters<MaintenanceDialog> { { x => x.IdMaintenance, item.Id }, { x => x.ActionsModal, ActionsEnum.Edit } };
+        var dialog = await DialogService.ShowAsync<MaintenanceDialog>("simple dialog", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            await _mudDataGrid!.ReloadServerData();
+            StateHasChanged();
+        }
+
+        await Task.CompletedTask;
+    }
+
+    private async Task ClickExportPdf(Maintenance item)
+    {
+        var serviceResponse = await MaintenanceService.ExportPdfMaintenance(_iduser, _iddealer, item.Id);
+        if (serviceResponse.Processed)
+        {
+            _success = true;
+            _nestedErrorMessage = "";
+
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+            var fileUrl = $"data:application/pdf;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Mantenimiento.pdf");
+
+        }
+        else
+        {
+            _success = false;
+            _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue();
+            Console.WriteLine(serviceResponse.Message);
+            OpenNested();
+
+        }
+    }
+
+
+    private async Task ClickAddMaintenance()
+    {
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = false, NoHeader = true };
+
+        var parameters = new DialogParameters<MaintenanceDialog> { { x => x.IdMaintenance, 0 }, { x => x.ActionsModal, ActionsEnum.Create } };
+        var dialog = await DialogService.ShowAsync<MaintenanceDialog>("simple dialog", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            await _mudDataGrid!.ReloadServerData();
+            StateHasChanged();
+        }
+
+        await Task.CompletedTask;
+    }
+
+
+    private void OpenNested() => _nestedVisible = true;
+
+    private void CloseNested() => _nestedVisible = false;
+
+
+    private async Task HandleMenuClick(ModuleAction module)
+    {
+        switch (module.ActionName)
+        {
+            case "EXPORT":
+                await ExportItemsAsync();
+                break;
+            case "GENERATE":
+                await GenerateItemsAsync(module.IdAction, module.ActionName);
+                break;
+            default:
+                Console.WriteLine($"{MessageEnum.ActionsError.GetStringValue()}: {module.ActionName}");
+                break;
+        }
+    }
+
+
+    private async Task ExportItemsAsync()
+    {
+        var serviceResponse = await MaintenanceService.ExportMaintenances(_iduser, _iddealer, _searchString);
+        if (serviceResponse.Processed)
+        {
+            _success = true;
+            _nestedErrorMessage = "";
+
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+            var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Mantenimiento.xlsx");
+
+        }
+        else
+        {
+            _success = false;
+            _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue();
+            Console.WriteLine(serviceResponse.Message);
+            OpenNested();
+
+        }
+    }
+
+    private async Task GenerateItemsAsync(int moduleId, string moduleActionName)
+    {
+        Console.WriteLine("Generar Mantenimiento...");
+        if (selectedMaintenance.Any())
+        {
+            var option = new DialogOptions
+                {
+                    CloseButton = false,
+                    MaxWidth = MaxWidth.Small,
+                    FullWidth = true,
+                    BackdropClick = false
+                };
+            bool? result = await DialogService.ShowMessageBox(
+                "Generar Mantenimiento",
+                $"Seguro de Generar Mantenimiento? ",
+                yesText: "Si", noText: "No", "", option);
+
+            if (result == true)
+            {
+                List<PostAction> ActionList = ([]);
+
+                foreach (var policy in selectedMaintenance)
+                {
+                    var VehicleAction = new PostAction
+                        {
+                            RecordId = policy.Id,
+                            ModuleId = moduleId,
+                            ActionName = moduleActionName
+                        };
+                    ActionList.Add(VehicleAction);
+                }
+
+                var serviceResponse = await MaintenanceService.ActionsMaintenance(ActionList, _iduser);
+                if (serviceResponse.Processed)
+                {
+
+                    _success = true;
+                    _nestedErrorMessage = MessageEnum.GenerateOK.GetStringValue();
+
+                    OpenNested();
+                    await _mudDataGrid!.ReloadServerData();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = MessageEnum.GenerateNotOK.GetStringValue();
+                    Console.WriteLine(serviceResponse.Message);
+                    OpenNested();
+
+                }
+            }
+
+        }
+
+        selectedMaintenance = new([]);
+        await Task.CompletedTask;
+    }
+
+
+    private Func<Maintenance, string> _cellStyleFunc => x =>
+    {
+        string style = "";
+
+        if (x.EstatusName.ToUpper() == "CREADO")
+            style += "";
+
+        else if (x.EstatusName.ToUpper() == "APROBADO")
+        {
+            style += "color:#fff";
+            style += ";background-color:#0099F3";
+        }
+
+
+        else if (x.EstatusName.ToUpper() == "PROCESADO")
+        {
+            style += "color:#fff";
+            style += ";background-color:#757575";
+        }
+        else 
+        {
+            style += "color:#fff";
+            style += ";background-color:#FF7043";
+        }
+        style += ";font-weight:bold";
+        style += ";font-style:italic";
+       
+
+        return style;
+    };
+
+}

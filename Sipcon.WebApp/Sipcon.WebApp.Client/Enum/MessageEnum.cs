@@ -111,6 +111,12 @@
         [StringValue("Problemas al desbloquear registros!...")]
         UnLockNotOK,
 
+        // Generate
+        [StringValue("Registro Generado Satisfactoriamente...")]
+        GenerateOK,
+        [StringValue("Problemas al Generar registros!...")]
+        GenerateNotOK,
+
     }
 
 }

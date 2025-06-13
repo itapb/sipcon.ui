@@ -82,7 +82,7 @@ ServerData="LoadGridData">
 
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="Policy" Title="CONSECIONARIO">
+        <TemplateColumn T="Policy" Title="CONCSESIONARIO">
             <CellTemplate>
 
                 <MudText Typo="Typo.caption" Align="Align.Start">@context.Item.DealerCod.ToUpper()</MudText>
@@ -369,28 +369,28 @@ ServerData="LoadGridData">
         }
     }
 
-    private async Task ExportPdfAsync()
-    {
-        var serviceResponse = await PolicyService.ExportPdfPolicy(_iduser, _iduser);
-        if (serviceResponse.Processed)
-        {
-            _success = true;
-            _nestedErrorMessage = "";
+    // private async Task ExportPdfAsync()
+    // {
+    //     var serviceResponse = await PolicyService.ExportPdfPolicy(_iduser, _iduser);
+    //     if (serviceResponse.Processed)
+    //     {
+    //         _success = true;
+    //         _nestedErrorMessage = "";
 
-            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
-            var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
-            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Poliza.xlsx");
+    //         var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+    //         var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+    //         await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Poliza.xlsx");
 
-        }
-        else
-        {
-            _success = false;
-            _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue();
-            Console.WriteLine(serviceResponse.Message);
-            OpenNested();
+    //     }
+    //     else
+    //     {
+    //         _success = false;
+    //         _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue();
+    //         Console.WriteLine(serviceResponse.Message);
+    //         OpenNested();
 
-        }
-    }
+    //     }
+    // }
 
     private async Task ActivateItemsAsync(int moduleId, string moduleActionName)
     {
