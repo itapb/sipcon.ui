@@ -5,7 +5,7 @@
             <MudStack>
                 <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
                     <MudStack Row="true" Spacing="2">
-                        <MudFab StartIcon="@Icons.Material.Filled.Update" Color="Color.Info" Size="Size.Small" Label="Guardar" OnClick="SaveClick" Disabled="@IsGenerated"></MudFab>
+                        <MudFab StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" Size="Size.Small" Label="Guardar" OnClick="SaveClick" Disabled="@IsGenerated"></MudFab>
                         <MudButton OnClick="CloseClick">Cerrar</MudButton>
                     </MudStack>
                 </MudPaper>
@@ -115,7 +115,7 @@
     private int ProductValue = 0;
     private decimal CostValue = 0;
 
-    
+
     private bool IsAllCheckBoxSelected = false;
 
     bool Loading = false;
@@ -270,6 +270,12 @@
     }
     private async Task GenerateClick(MouseEventArgs args)
     {
+        if (MovementDetailsMudDataGrid?.FilteredItems.Count() == 0)
+        {
+            await DialogService.ShowDialog("No hay detalles para generar el movimiento.", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            return;
+        }
+
         var SelectedActions = MovementDetailsMudDataGrid?.FilteredItems.Count() > 0 ?
                               new Client.Models.Action{
                                   UserId = Useful.userId,
@@ -280,7 +286,7 @@
                                   RelatedId = 0
                               }
                               : null;
-
+   
         var strMovementActions = System.Text.Json.JsonSerializer.Serialize(SelectedActions);
         var result_PostMovementActions = (SelectedActions is not null) ? await Http.PostAsync($"api/Inventory/PostMovementActions?userId={SelectedActions.UserId}", new StringContent($"[{strMovementActions}]", null, "application/json")) : null;
         if (result_PostMovementActions is not null && result_PostMovementActions.IsSuccessStatusCode)

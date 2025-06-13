@@ -3,7 +3,7 @@ using Sipcon.WebApp.Client.Pages;
 namespace Sipcon.WebApp.Client.Helper
 {
     internal static class Useful
-    {
+    { 
         internal static int userId = 1;
         internal static int supplierId = 4069;
         internal static string OkSavedMessage = "Registro guardado satisfactoriamente.";
@@ -40,6 +40,7 @@ namespace Sipcon.WebApp.Client.Helper
         {
             return actionDisplay switch
             {
+                "Home" => Icons.Material.Filled.Home,
                 "Activar" => Icons.Material.Filled.VerifiedUser,
                 "Desactivar" => Icons.Material.Filled.Dangerous,
                 "Importar" => Icons.Material.Filled.Upload,
@@ -50,6 +51,10 @@ namespace Sipcon.WebApp.Client.Helper
                 "No Disponible" => Icons.Material.Filled.CarCrash,
                 "Generar" => Icons.Material.Outlined.Task,
                 "Rechazar" => Icons.Material.Filled.ThumbDown,
+                "Inventario" => Icons.Material.Filled.Inventory,
+                "Procesos" => Icons.Material.Filled.Hardware,
+                "Recepcion" => Icons.Material.Filled.AddBusiness,
+                "Traslado" => Icons.Material.Filled.MoveDown,
                 _ => Icons.Material.Filled.HelpOutline
             };
         }

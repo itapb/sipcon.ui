@@ -1,13 +1,14 @@
-﻿@page "/movements/{TypeId}"
+﻿@* @page "/movements/{TypeId}"
 
 @if (!IsValidTypeId)
 {
     <MudAlert Severity="Severity.Error">Tipo de Movimiento Invalido!</MudAlert>
     return;
-}
+} *@
 
 <CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
-@if (MovementId != null)
+@* <CustomBreadcrumbs2 />
+ *@@if (MovementId != null)
 {
     <MovementForm @bind-Value="MovementId" />
   @*   <PartToReception /> *@
@@ -57,15 +58,12 @@ else
 @code {
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
+    List<BreadcrumbItem> ItemsNavigate = new();    
 
-    List<BreadcrumbItem>? ItemsNavigate;    
-
-    [Parameter]
-    public string? TypeId { get; set; } // Recepcion
-    private bool IsValidTypeId => TypeId == "r" || TypeId == "t";
-
+    [Parameter]   
+    public string? TypeId { get; set; } 
     private int? MovementId = null;    //4
-    private bool IsSelected = false;
+
     private bool IsAllCheckBoxSelected = false;
     int ReceptionCurrentPage = 0;
     bool Loading = false;
@@ -73,6 +71,11 @@ else
     private List<Module>? Modules;
     DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
     private string searchString = string.Empty;
+    protected override async Task OnParametersSetAsync()
+    {
+       
+    }
+
     private async Task ClickRefreshMovement(MouseEventArgs args)
     {
         await MovementMudDataGrid!.ReloadServerData(); 
@@ -115,15 +118,15 @@ else
     }
     protected override async Task OnInitializedAsync()
     {
-        string strHref = $"movements/{TypeId}";
-        string MovementTitle = "Recepcion";
-
-        ItemsNavigate = new List<BreadcrumbItem>{new("Home", href: "", icon: Icons.Material.Filled.Home),new("Inventario", href: strHref, icon: Icons.Material.Filled.Inventory),
-        new("Procesos", href: strHref, icon: Icons.Material.Filled.Hardware),new(MovementTitle, href: strHref, icon: Icons.Material.Filled.AddBusiness)};
-
-        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-RECEPCION&userId={Useful.userId}");
+        await LoadDataAsync();
     }
+    private async Task LoadDataAsync()
+    {      
+        string MovementTitle = TypeId switch { "r" => "Recepcion", "t" => "Traslado", _ => "Recepcion" };
+        $"Home,Inventario,Procesos,{MovementTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : $"movements/{TypeId}"), icon: s.ToActionIcon())));
 
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-{MovementTitle.ToUpper()}&userId={Useful.userId}");
+    }
     Func<Movement, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
     {         
             nameof(Movement.Id) => o => o.Id ?? 0,
