@@ -48,27 +48,22 @@ else
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public List<Models.Action>? SelectedActions { get; set; }
-
+    [Parameter] public string? moduleName { get; set; }
     private MudForm? form;
     private Contact? ContactSelected;
     private Func<Contact?, string> ConvertContactFunc = contact => contact?.FirstName + " " + contact?.LastName!;
-
     private List<Contact>? Contacts = default;
 
     protected override async Task OnInitializedAsync()
     {
-        HttpResponseMessage locationResponse = await Http.GetAsync($"api/Contact/GetUsersByModule?moduleName=INVENTARIO-MOVIL-RECEPCION&supplierId={Useful.supplierId}");
-
+        HttpResponseMessage locationResponse = await Http.GetAsync($"api/Contact/GetUsersByModule?moduleName={moduleName}&supplierId={Useful.supplierId}");
         if (locationResponse.IsSuccessStatusCode)
         {
             var content2 = await locationResponse.Content.ReadFromJsonAsync<WebApiResponse<List<Contact>>>();
             Contacts = content2!.data ?? new List<Contact>();
         }
-    }
-    private void CancelClick(MouseEventArgs args)
-    {
-        MudDialog?.Close();
-    }
+    } 
+
     private async Task SaveClick(MouseEventArgs args)
     {
         await form!.Validate();
@@ -76,8 +71,9 @@ else
         {
             int ContactId = ContactSelected?.Id ?? 0;
             SelectedActions?.ToList().ForEach(m => { m.RelatedId = ContactId; m.ActionComment = ""; });
-            var result_Post_Actions = (SelectedActions is not null && SelectedActions.Count > 0) ? await Http.PostAsync($"api/Inventory/PostMovementActions?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
-            if (result_Post_Actions is not null && result_Post_Actions.IsSuccessStatusCode)
+
+            var result_Post_Actions = (SelectedActions?.Count > 0) ? await Http.PostAsync($"api/Inventory/PostMovementActions?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
+            if ((result_Post_Actions?.IsSuccessStatusCode ?? false))
             {
                 var rest = result_Post_Actions.Content.ReadAsStringAsync();
                 await DialogService.ShowDialog(Useful.OkSavedMessage, "Recepcion", "OK", Color.Info, Icons.Material.Filled.Commit);
@@ -91,8 +87,7 @@ else
             }
         }
     }
-    private void OnContactValueChanged(Contact selectedContact)
-    {
-        ContactSelected = selectedContact;
-    }
+    private void CancelClick(MouseEventArgs args) => MudDialog?.Close();
+    private void OnContactValueChanged(Contact selectedContact) =>  ContactSelected = selectedContact;
+    
 }

@@ -26,5 +26,7 @@ namespace Sipcon.WebApp.Client.Models
         [Required( ErrorMessage ="Campo requerido")]
         [Range(1, int.MaxValue , ErrorMessage ="Debe ser mayor que creo")]
         public int? RequiredQty { get; set; }
+
+        public int? Stock { get; set; } = 0;
     }
 }

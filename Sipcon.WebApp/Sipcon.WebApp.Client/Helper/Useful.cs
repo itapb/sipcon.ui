@@ -66,5 +66,7 @@ namespace Sipcon.WebApp.Client.Helper
             if (!dialogResult!.Canceled)
                 await MyMudDataGrid!.ReloadServerData();
         }
+
+        internal static async Task<bool> AsyncDialogResultIsOk(IDialogReference? dialogReference) => !((await dialogReference!.Result)!.Canceled);
     }
 }

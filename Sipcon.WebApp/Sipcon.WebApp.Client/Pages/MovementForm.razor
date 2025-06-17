@@ -9,8 +9,8 @@
                         <MudButton OnClick="CloseClick">Cerrar</MudButton>
                     </MudStack>
                 </MudPaper>
-                <MudPaper Elevation="2">
-                        <MudDataGrid @ref="MovementDetailsMudDataGrid" T="MovementDetails" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 220px)" Loading="Loading" @bind-CurrentPage="PartCurrentPage">
+                <MudPaper Elevation="2" Style="height: 100%;">
+                        <MudDataGrid @ref="MovementDetailsMudDataGrid" T="MovementDetails" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 262px)" Loading="Loading" @bind-CurrentPage="PartCurrentPage">
                         <ToolBarContent>
                             <MudIconButton Icon="@Icons.Material.Filled.PlaylistAdd" Size="Size.Medium" OnClick="ClickAddMovementDetail" Color="Color.Info" Disabled="@IsGenerated"></MudIconButton>
                             <MudIconButton Icon="@Icons.Material.Filled.PlaylistRemove" Size="Size.Medium" OnClick="ClickRemoveMovementDetails" Color="Color.Info" Disabled="@IsGenerated"></MudIconButton>
@@ -44,23 +44,23 @@
             </MudStack>
         </MudItem>
         <MudItem xs="12" sm="3">
-            <MudStack Style="height: 100%; flex: 1 1 auto;">
+            <MudStack Style="height: 100%; ">
                 <MudPaper Elevation="2" Class="pa-2 mud-text-align-center flex-grow-1">
                     <MudGrid Spacing="2">
                         <MudItem xs="12"><MudText Typo="Typo.h6" Color="Color.Info">Datos Generales:</MudText></MudItem>
                         @if (MasterMovement == null)
                         {
-                            <MudItem xs="12"><MudTextField T="string" ReadOnly="true" Value="@("Cargando..")" Variant="Variant.Text" Margin="Margin.Dense" /></MudItem>
+                            <MudItem xs="12"><MudTextField T="string" ReadOnly="true" Value="@("Cargando..")" Variant="Variant.Text" /></MudItem>
                         }
                         else
                         {
                             <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterMovement.TypeName" Adornment="Adornment.Start" AdornmentText="Tipo :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
                             <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterMovement.Id" Adornment="Adornment.Start" AdornmentText="Nro Doc :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
                             <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterMovement.Created" Adornment="Adornment.Start" AdornmentText="Fecha :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
-                            <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterMovement.CreatedBy" Adornment="Adornment.Start" AdornmentText="Usuario :" Variant="Variant.Text" Margin="Margin.Dense" Class="align-right-input" /></MudItem>
-                            <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterMovement.StatusName" Adornment="Adornment.Start" AdornmentText="Estatus :" Variant="Variant.Text" Margin="Margin.Dense" Class="align-right-input" /></MudItem>
-                            <MudItem xs="12"><MudTextField ReadOnly="@IsGenerated" @bind-Value="MasterMovement.Reference" Label="Referencia" Variant="Variant.Text" Margin="Margin.Dense" /></MudItem>
-                            <MudItem xs="12"><MudTextField ReadOnly="@IsGenerated" @bind-Value="MasterMovement.Comment" Label="Observacion" Variant="Variant.Text" Margin="Margin.Dense" /></MudItem>
+                            <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterMovement.CreatedBy" Adornment="Adornment.Start" AdornmentText="Usuario :" Variant="Variant.Text"  Class="align-right-input" /></MudItem>
+                            <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterMovement.StatusName" Adornment="Adornment.Start" AdornmentText="Estatus :" Variant="Variant.Text"  Class="align-right-input" /></MudItem>
+                            <MudItem xs="12"><MudTextField ReadOnly="@IsGenerated" @bind-Value="MasterMovement.Reference" Label="Referencia" Variant="Variant.Text" /></MudItem>
+                            <MudItem xs="12"><MudTextField ReadOnly="@IsGenerated" @bind-Value="MasterMovement.Comment" Label="Observacion" Variant="Variant.Text" /></MudItem>
                         }
 
                     </MudGrid>
@@ -68,16 +68,14 @@
                 <MudPaper Elevation="2" Class="pa-2 mud-text-align-center flex-grow-1">
                     <MudGrid Spacing="2">
                         <MudItem xs="12"><MudText Typo="Typo.h6" Color="Color.Info">Totales:</MudText></MudItem>
-                        <MudItem xs="12"><MudTextField ReadOnly="true" Adornment="Adornment.Start" Margin="Margin.Dense" @bind-Value="UnitValue" AdornmentText="Unidad :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
-                        <MudItem xs="12"><MudTextField ReadOnly="true" Adornment="Adornment.Start" Margin="Margin.Dense" @bind-Value="ProductValue" AdornmentText="Productos :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
-                        <MudItem xs="12"><MudTextField ReadOnly="true" Adornment="Adornment.Start" Margin="Margin.Dense" @bind-Value="CostValue" AdornmentText="Costo :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
+                        <MudItem xs="12"><MudTextField ReadOnly="true" Adornment="Adornment.Start" @bind-Value="UnitValue" AdornmentText="Unidad :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
+                        <MudItem xs="12"><MudTextField ReadOnly="true" Adornment="Adornment.Start" @bind-Value="ProductValue" AdornmentText="Productos :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
+                        <MudItem xs="12"><MudTextField ReadOnly="true" Adornment="Adornment.Start" @bind-Value="CostValue" AdornmentText="Costo :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
                     </MudGrid>
                 </MudPaper>
-                <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                <MudPaper Elevation="2" Class="pa-2 mud-text-align-center flex-grow-0">
                     <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd" StretchItems="StretchItems.Start">
-                        <MudFab StartIcon="@Icons.Material.Filled.CheckCircleOutline" Color="Color.Info" Size="Size.Small" Label="Generar" OnClick="GenerateClick" Disabled="@IsGenerated">
-
-                        </MudFab>
+                        <MudFab StartIcon="@Icons.Material.Filled.CheckCircleOutline" Color="Color.Info" Size="Size.Small" Label="Generar" OnClick="GenerateClick" Disabled="@IsGenerated" />
                     </MudStack>
                 </MudPaper>
             </MudStack>
@@ -117,20 +115,18 @@
 
 
     private bool IsAllCheckBoxSelected = false;
-
     bool Loading = false;
     private Movement? MasterMovement;
     private MudDataGrid<MovementDetails>? MovementDetailsMudDataGrid = new();
 
     private async Task AfterAsyncAllCheck()
     {
-        if (MovementDetailsMudDataGrid != null)
-            MovementDetailsMudDataGrid.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
-        //StateHasChanged();
-        await Task.CompletedTask;
+         MovementDetailsMudDataGrid?.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
+         await Task.CompletedTask;
     }
     private async Task ClickEditReceptionDetail(MovementDetails item)
     {
+        Type tipoCatalogo = MasterMovement?.TypeId == "R" ? typeof(PartToMovementDetail) : typeof(InventoryToMovementDetail);
         NewMovementDetail AnewMovementDetail = new NewMovementDetail
         {
             Id = item.Id,
@@ -138,15 +134,13 @@
             MovementId = item.MovementId,
             LocationId = item.LocationId,
             DestinationId = item.DestinationId,
-            RequiredQty = item.RequiredQty
+            RequiredQty = item.RequiredQty,
+            Stock = item.Stock,
+            
         };
-        var dialogReference = await DialogService.ShowAsync<PartToMovementDetail>("", new DialogParameters { ["newMovementDetail"] = AnewMovementDetail }, options);
-        var dialogResult = await dialogReference.Result;
-        if (!dialogResult!.Canceled)
-        {
-            await MovementDetailsMudDataGrid!.ReloadServerData();
-        }
-
+        var dialogReference = await DialogService.ShowAsync(tipoCatalogo,"", new DialogParameters { ["newMovementDetail"] = AnewMovementDetail }, options);
+        if (!((await dialogReference.Result)!.Canceled))
+            await MovementDetailsMudDataGrid!.ReloadServerData();       
     }
 
     private void getTotals(IEnumerable<MovementDetails> data)
@@ -156,6 +150,16 @@
         ProductValue = filteredData.Count();
         CostValue = filteredData.Sum(x => x.SubTotal);
     }
+    Func<MovementDetails, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    {
+        nameof(MovementDetails.PartInnerCode) => o => o.PartInnerCode ?? "",
+        nameof(MovementDetails.PartDescription) => o => o.PartDescription ?? "",
+        nameof(MovementDetails.LocationName) => o => o.LocationName ?? "",
+        nameof(MovementDetails.RequiredQty) => o => o.RequiredQty ?? 0,
+        nameof(MovementDetails.RealQty) => o => o.RealQty ?? 0,
+        nameof(MovementDetails.TypeName) => o => o.TypeName,
+        _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto
+    };
 
     private async Task<GridData<MovementDetails>> ServerReload(GridState<MovementDetails> state)
     {
@@ -182,47 +186,23 @@
         }
         if (state.SortDefinitions.FirstOrDefault() is SortDefinition<MovementDetails> sortDefinition)
         {
-            switch (sortDefinition.SortBy)
-            {
-                case nameof(MovementDetails.PartInnerCode):
-                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.PartInnerCode);
-                    break;
-                case nameof(MovementDetails.PartDescription):
-                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.PartDescription);
-                    break;
-                case nameof(MovementDetails.LocationName):
-                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.LocationName);
-                    break;
-                case nameof(MovementDetails.RequiredQty):
-                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.RequiredQty);
-                    break;
-                case nameof(MovementDetails.RealQty):
-                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.RealQty);
-                    break;
-                case nameof(MovementDetails.TypeName):
-                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.TypeName);
-                    break;
-            }
+            data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
         }
         Loading = false;
         StateHasChanged();
         return new GridData<MovementDetails> { TotalItems = totalItems, Items = data };
     }
 
-    private void CloseClick()
-    {
-        MovementId = null; 
-    }
+    private void CloseClick() => MovementId = null; 
+    
     private async Task ClickAddMovementDetail(MouseEventArgs ev)
-    {       
-        var dialogReference = await DialogService.ShowAsync<PartsCatalog>("", new DialogParameters { ["MovementId"] = MasterMovement!.Id }, options);
-        var dialogResult = await dialogReference.Result;
-        if (!dialogResult!.Canceled)
-        {
+    {         
+        Type tipoCatalogo = MasterMovement?.TypeId == "R" ? typeof(PartsCatalog) : typeof(InventoryCatalog);
+        var dialogReference = await DialogService.ShowAsync(tipoCatalogo,"", new DialogParameters { ["MovementId"] = MasterMovement!.Id }, options);        
+        if ((await dialogReference.Result) is DialogResult dialogResult && !dialogResult.Canceled)
             await MovementDetailsMudDataGrid!.ReloadServerData();
-        }
-        await Task.CompletedTask;
     }
+
     private async Task ClickRemoveMovementDetails(MouseEventArgs ev)
     {
         var mActions = MovementDetailsMudDataGrid?.FilteredItems.Where(item => item.IsSelected)
@@ -236,11 +216,9 @@
                                                          RelatedId = 0
                                                      }).ToList();
         if (mActions?.Count > 0)
-        {
-            await DeleteMovementDetailAction(mActions);
-        }
-        await Task.CompletedTask;
+            await DeleteMovementDetailAction(mActions);      
     }
+
     private async Task SaveClick(MouseEventArgs args)
     {
         var strMasterMovement = System.Text.Json.JsonSerializer.Serialize(MasterMovement);
@@ -248,13 +226,10 @@
         if (result_MasterMovement.IsSuccessStatusCode)
         {
             var sucessContent = await result_MasterMovement.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
-            if ((sucessContent?.data![0].insertedRows == 1 || sucessContent?.data![0].updatedRows == 1))
+            if (sucessContent?.data![0] is ({insertedRows: 1 } or {updatedRows: 1 }))
             {
                 var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Guardar", "OK", Color.Info, Icons.Material.Filled.Commit);
-                if (!result!.Canceled)
-                {
-                    MovementId =null;
-                }
+                if (!result!.Canceled) MovementId =null;                
             }
         }
         else if (result_MasterMovement.StatusCode == System.Net.HttpStatusCode.Conflict)
@@ -270,12 +245,6 @@
     }
     private async Task GenerateClick(MouseEventArgs args)
     {
-        if (MovementDetailsMudDataGrid?.FilteredItems.Count() == 0)
-        {
-            await DialogService.ShowDialog("No hay detalles para generar el movimiento.", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
-            return;
-        }
-
         var SelectedActions = MovementDetailsMudDataGrid?.FilteredItems.Count() > 0 ?
                               new Client.Models.Action{
                                   UserId = Useful.userId,
@@ -287,9 +256,15 @@
                               }
                               : null;
    
+        if (SelectedActions is null)
+        {
+            await DialogService.ShowDialog("No hay detalles para generar el movimiento.", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            return;
+        }
+
         var strMovementActions = System.Text.Json.JsonSerializer.Serialize(SelectedActions);
         var result_PostMovementActions = (SelectedActions is not null) ? await Http.PostAsync($"api/Inventory/PostMovementActions?userId={SelectedActions.UserId}", new StringContent($"[{strMovementActions}]", null, "application/json")) : null;
-        if (result_PostMovementActions is not null && result_PostMovementActions.IsSuccessStatusCode)
+        if ((result_PostMovementActions?.IsSuccessStatusCode ?? false))
         {
             var rest = result_PostMovementActions.Content.ReadAsStringAsync();
             await DialogService.ShowDialog(Useful.OkSavedMessage, "Accion", "OK", Color.Info, Icons.Material.Filled.Commit);
