@@ -117,6 +117,18 @@
         [StringValue("Problemas al Generar registros!...")]
         GenerateNotOK,
 
+
+        // Generate
+        [StringValue("Registro pre-Aprobado Satisfactoriamente...")]
+        ToApproveOK,
+        [StringValue("Problemas al pre-Aprobar registros!...")]
+        ToApproveNotOK,
+
+        // Generate
+        [StringValue("Registro Aprobado Satisfactoriamente...")]
+        ApproveOK,
+        [StringValue("Problemas al Aprobar registros!...")]
+        ApproveNotOK,
     }
 
 }

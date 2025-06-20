@@ -68,34 +68,78 @@
         </TemplateColumn>
         <TemplateColumn T="Vehicle" Title="VIN">
             <CellTemplate>
-
-                <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary">@context.Item.Vin</MudText>
-
+                <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Vin.ToUpper()</MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn T="Vehicle" Title="Placa">
             <CellTemplate>
 
                 <MudStack Row="false">
-                    <MudText Typo="Typo.caption" Align="Align.Start"><b>@context.Item.Plate</b> </MudText>
+                    <MudText Typo="Typo.caption" Align="Align.Start"><b>@context.Item.Plate.ToUpper()</b></MudText>
                 </MudStack>
 
             </CellTemplate>
         </TemplateColumn>
-        <PropertyColumn Property="x => x.Year" Title="Año" Sortable="false" Filterable="false" />
+        <TemplateColumn T="Vehicle" Title="Año">
+            <CellTemplate>
+                <div class="d-flex justify-end">
+                    <MudText Typo="Typo.caption" Align="Align.End">
+                        @(context.Item.Year?.ToString("N0"))
+                    </MudText>
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
         <PropertyColumn Property="x => x.ColorName" Title="Color" Sortable="false" Filterable="false" />
         <PropertyColumn Property="x => x.ModelName" Title="Modelo" Sortable="false" Filterable="false" />
         <PropertyColumn Property="x => x.SupplierName" Title="Planta" Sortable="false" Filterable="false" />
-        <PropertyColumn Property="x => x.EstatusName" Title="Estatus" Sortable="false" Filterable="false" />
+        <TemplateColumn T="Vehicle" Title="ESTATUS">
+            <CellTemplate>
+                <div class="d-flex justify-center">
+                    @if (context.Item.EstatusName != null)
+                    {
+                        string style = "";
 
-        <TemplateColumn T="Vehicle" Title="Activo">
+                        if (context.Item.EstatusName.ToUpper() == "CREADO")
+                            style += "";
+                        else if (context.Item.EstatusName.ToUpper() == "DISPONIBLE")
+                        {
+                            style += "color:#fff";
+                            style += ";background-color:#0099F3";
+                        }
+                        else if (context.Item.EstatusName.ToUpper() == "ASIGNADO")
+                        {
+                            style += "color:#fff";
+                            style += ";background-color:#0099F3";
+                        }
+                        else if (context.Item.EstatusName.ToUpper() == "NO DISPONIBLE")
+                        {
+                            style += "color:#fff";
+                            style += ";background-color:#757575";
+                        }
+                        else
+                        {
+                            style += "color:#fff";
+                            style += ";background-color:#FF7043";
+                        }
+                        style += ";font-size: 11px";
+                        style += ";font-style:italic";
+
+                        <MudChip T="string" Style="@style" Label="true" Disabled="true">
+                            @(context.Item.EstatusName.ToUpper())
+                        </MudChip>
+                    }
+
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
+       @*  <TemplateColumn T="Vehicle" Title="Activo">
             <CellTemplate>
                 <div class="d-flex justify-center">
                     <MudIcon Icon="@(context.Item.IsActive ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.IsActive ? Color.Success : Color.Error)" Size="Size.Medium" />
                 </div>
 
             </CellTemplate>
-        </TemplateColumn>
+        </TemplateColumn> *@
         <TemplateColumn >
             <CellTemplate>
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditVehicle(context.Item)" />

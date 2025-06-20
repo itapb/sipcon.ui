@@ -6,7 +6,7 @@
 @using FluentValidation
 @using System.Globalization
 
-@inject IMaintenanceService MaintenanceService
+@inject IAssistenceService AssistenceService
 @inject IPolicyService PolicyService
 @inject IDialogService DialogService
 @inject UtilModuleActions ModuleActionsService
@@ -25,7 +25,6 @@
                         <MudGrid Spacing="0" Justify="Justify.Center">
                             <MudItem xs="12" sm="4">
                                 <div class="d-flex justify-left">
-
 
                                 </div>
                             </MudItem>
@@ -61,7 +60,7 @@
                         <MudItem xs="12" sm="12">
                             <MudGrid Spacing="1" Justify="Justify.Center">
 
-                                @* Buscar Poliza *@
+                                @* Buscar Datos Servicio *@
                                 <MudItem xs="12" sm="12">
                                     <MudCard Elevation="0">
                                         <MudCardHeader>
@@ -83,7 +82,7 @@
 
                                                     <MudDatePicker @bind-Date="_model.ServiceDate"
                                                                    Style="font-size: 14px;line-height: 0.8rem;"
-                                                                   Placeholder="Fecha Servicio"
+                                                                   Placeholder="Fecha Asistencia"
                                                                    Variant="Variant.Text"
                                                                    PickerVariant="PickerVariant.Inline"
                                                                    Margin="Margin.None"
@@ -117,12 +116,6 @@
                                     </MudCard>
                                 </MudItem>
 
-                            </MudGrid>
-                        </MudItem>
-
-                        <MudItem xs="12" sm="8">
-                            <MudGrid Spacing="1" Justify="Justify.Center">
-
                                 @* Datos Servicio *@
                                 <MudItem xs="12" sm="12">
                                     <MudCard Elevation="0">
@@ -130,7 +123,7 @@
                                             <CardHeaderContent>
                                                 <MudStack Row="true">
                                                     <MudIcon Icon="@Icons.Material.Outlined.CarRepair" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
-                                                    <MudText Typo="Typo.subtitle2">Datos Servicio </MudText>
+                                                    <MudText Typo="Typo.subtitle2">Datos Asistencia T&eacute;cnica </MudText>
 
                                                 </MudStack>
                                             </CardHeaderContent>
@@ -138,28 +131,8 @@
                                         </MudCardHeader>
 
                                         <MudCardContent Style="padding-top: 0px;">
+
                                             <MudStack Row="true">
-
-                                                <MudDatePicker @bind-Date="_model.InvoiceDate"
-                                                               Label="Fecha Factura"
-                                                               Style="font-size: 12px"
-                                                               ShowToolbar="false"
-                                                               DateFormat="dd/MM/yyyy"
-                                                               Mask="@maskDate"
-                                                               Variant="Variant.Text"
-                                                               PickerVariant="PickerVariant.Inline" Modal="false"
-                                                               Margin="Margin.Dense"
-                                                               ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                                               For="@(() => _model.InvoiceDate)" />
-
-                                                <MudTextField Typo="Typo.caption" @bind-Value="_model.InvoiceNumber"
-                                                              Label="Nro. Factura"
-                                                              MaxLength="20"
-                                                              Variant="Variant.Text"
-                                                              Margin="Margin.Dense"
-                                                              ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                                              For="@(() => _model.InvoiceNumber)" />
-
                                                 <MudNumericField Typo="Typo.caption" @bind-Value="_model.OrderNumber"
                                                                  Label="Nro.Orden"
                                                                  Variant="Variant.Text"
@@ -169,23 +142,53 @@
                                                                  ReadOnly="@(!_model.IsActive || _isReadOnly)"
                                                                  For="@(() => _model.OrderNumber)" />
                                             </MudStack>
-                                            <MudTextField Typo="Typo.caption" @bind-Value="_model.DealerReport"
-                                                          Label="Reporte Concesionario"
-                                                          Lines="3"
-                                                          MaxLength="500"
-                                                          Variant="Variant.Text"
-                                                          Margin="Margin.None"
-                                                          ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                                          Disabled="@(!_model.IsActive || _isReadOnly)" />
+                                            <MudSpacer />
+                                            <MudSpacer />
+
+                                            <MudStack Row="true">
+
+                                                
+
+                                                <MudTextField Typo="Typo.caption" @bind-Value="_model.CustomerReport"
+                                                              Label="Reporte Cliente"
+                                                              Lines="3"
+                                                              MaxLength="500"
+                                                              Variant="Variant.Text"
+                                                              Margin="Margin.None"
+                                                              ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                              Disabled="@(!_model.IsActive || _isReadOnly)" 
+                                                              For="@(() => _model.CustomerReport)" />
+
+                                                <MudTextField Typo="Typo.caption" @bind-Value="_model.DealerReport"
+                                                              Label="Reporte Concesionario"
+                                                              Lines="3"
+                                                              MaxLength="500"
+                                                              Variant="Variant.Text"
+                                                              Margin="Margin.None"
+                                                              ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                              Disabled="@(!_model.IsActive || _isReadOnly)" 
+                                                              For="@(() => _model.DealerReport)" />
+
+                                                <MudTextField Typo="Typo.caption" @bind-Value="_model.TechnicalSolution"
+                                                              Label="Solucion Tecnica"
+                                                              Lines="3"
+                                                              MaxLength="500"
+                                                              Variant="Variant.Text"
+                                                              Margin="Margin.None"
+                                                              ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                              Disabled="@(!_model.IsActive || _isReadOnly)"
+                                                              For="@(() => _model.TechnicalSolution)" />
+
+                                            </MudStack>
 
                                         </MudCardContent>
                                     </MudCard>
                                 </MudItem>
 
                                 @* ///Vehicle *@
-                                <MudItem xs="12" sm="6">
+                                <MudItem xs="12" sm="4">
                                     <MudCard Elevation="2">
-                                      
+
                                         <MudCardHeader Style="padding-bottom: 0px;">
                                             <CardHeaderContent>
 
@@ -219,7 +222,7 @@
                                                           Variant="Variant.Text"
                                                           Margin="Margin.None"
                                                           ReadOnly="true"
-                                                          For="@(() => _model.Vin)"/>
+                                                          For="@(() => _model.Vin)" />
 
 
                                             <MudStack Row="true">
@@ -242,24 +245,20 @@
                                                               Margin="Margin.None"
                                                               ReadOnly="true" />
 
-                                                
+
 
                                             </MudStack>
 
-                                            <MudTextField Typo="Typo.caption" T="string" Text="@_model.DealerSaleName"
+                                            <MudTextField Typo="Typo.caption" T="string" Text="@_model.DealerServiceName"
                                                           Label="Concesionario"
                                                           Variant="Variant.Text"
                                                           Margin="Margin.None"
                                                           ReadOnly="true" />
 
-                                         
-
-                                                @*<MudTextField Typo="Typo.caption" @bind-Value="_modelPolicy.SupplierName" Label="Planta" Variant="Variant.Text" Margin="Margin.Dense" ReadOnly="true" />
-                                                <MudTextField Typo="Typo.caption" @bind-Value="_modelPolicy.BrandName" Label="Marca" Variant="Variant.Text" Margin="Margin.Dense" ReadOnly="true" /> *@
                                             <MudTextField Typo="Typo.caption" T="string" Text="@_model.ModelName"
-                                                          Label="Modelo" 
-                                                          Variant="Variant.Text" 
-                                                          Margin="Margin.None" 
+                                                          Label="Modelo"
+                                                          Variant="Variant.Text"
+                                                          Margin="Margin.None"
                                                           ReadOnly="true" />
 
 
@@ -269,7 +268,7 @@
                                 </MudItem>
 
                                 @* ///Customer *@
-                                <MudItem xs="12" sm="6">
+                                <MudItem xs="12" sm="4">
                                     <MudCard Elevation="2">
                                         <MudCardHeader Style="padding-bottom: 0px;">
                                             <CardHeaderContent>
@@ -298,27 +297,26 @@
 
                                         </MudCardHeader>
                                         <MudCardContent Style="padding-top: 0px;">
-                                            <MudHidden @bind-Value="_model.CustomerId" />
+                                            <MudHidden @bind-Value="_modelPolicy.CustomerId" />
 
 
-                                            <MudTextField Typo="Typo.caption" @bind-Value="_model.Vat"
+                                            <MudTextField Typo="Typo.caption" T="string" Text="@_modelPolicy.Vat"
                                                           Label="RIF"
                                                           Variant="Variant.Text"
                                                           Margin="Margin.None"
-                                                          ReadOnly="true"
-                                                          For="@(() => _model.Vat)" />
+                                                          ReadOnly="true" />
 
                                             <MudStack Row="true">
-                                                <MudTextField Typo="Typo.caption" T="string" Text="@(_model.CustomerLastName + " " + _model.CustomerName)"
+                                                <MudTextField Typo="Typo.caption" T="string" Text="@(_modelPolicy.LastName + " " + _modelPolicy.FirstName)"
                                                               Label="Apellidos y Nombres"
                                                               Variant="Variant.Text"
                                                               Margin="Margin.None"
                                                               ReadOnly="true" />
                                             </MudStack>
 
-                                            
 
-                                            <MudTextField Typo="Typo.caption" T="string" Text="@_model.CustomerPhone"
+
+                                            <MudTextField Typo="Typo.caption" T="string" Text="@_modelPolicy.Phone"
                                                           Label="Tel&eacute;fono"
                                                           Adornment="Adornment.Start"
                                                           AdornmentIcon="@Icons.Material.Filled.Phone"
@@ -339,17 +337,11 @@
 
                                     </MudCard>
                                 </MudItem>
-                                
-                            </MudGrid>
-
-                        </MudItem>
-
-                        <MudItem xs="12" sm="4">
-                            <MudGrid Spacing="1" Justify="Justify.Center">
 
                                 @* Datos Poliza *@
-                                <MudItem xs="12" sm="12">
-                                    <MudCard Elevation="2" Style="min-height:420px;">
+                                <MudItem xs="12" sm="4">
+
+                                    <MudCard Elevation="2" Style="min-height:237px;">
                                         <MudCardHeader>
                                             <CardHeaderContent>
 
@@ -413,7 +405,7 @@
                                         </MudCardHeader>
                                         <MudCardContent Style="padding-top: 0px;">
                                             <MudHidden @bind-Value="_model.Id" />
-                                            <MudHidden @bind-Value="IdMaintenance" />
+                                            <MudHidden @bind-Value="IdAssistence" />
 
                                             <MudFlexBreak />
 
@@ -427,36 +419,16 @@
 
                                             </div>
 
-                                            <MudFlexBreak />
-                                            <div class="d-flex justify-left">
-
-                                                <MudStack Row="true">
-                                                    <MudIcon Icon="@Icons.Material.Filled.History" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
-                                                    <MudText Typo="Typo.subtitle2">Historia</MudText>
-
-                                                </MudStack>
-                                            </div>
-                                            <MudDivider />
-
-                                            @if (_modelPolicyDetail.Id != 0)
-                                            {
-                                                <MudText Typo="Typo.caption">
-                                                    <b>Mantenimiento: </b> @(_modelPolicyDetail.KM?.ToString("N0") + "Km")
-                                                    <MudText Typo="Typo.caption">
-                                                        <b>Desde: </b> @(_modelPolicyDetail.FromKm?.ToString("N0") + "Km")
-                                                        <MudText Typo="Typo.caption"><b>Hasta: </b> @(_modelPolicyDetail.UpToKm?.ToString("N0") + "Km")</MudText>
-                                                    </MudText>
-                                                </MudText>
-                                            }
-
                                         </MudCardContent>
 
                                     </MudCard>
+
                                 </MudItem>
 
                             </MudGrid>
                         </MudItem>
 
+                     
                     </MudGrid>
 
                 </MudContainer>
@@ -481,7 +453,7 @@
                     </MudStack>
                 </DialogContent>
                 <DialogActions>
-                    <MudButton Color="Color.Info" OnClick="CloseNestedModal" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
+                    <MudButton Color="Color.Info" OnClick="@(_successModal? CloseNestedModal :CloseNestedModalError)" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
                 </DialogActions>
             </MudDialog>
 
@@ -518,12 +490,12 @@
     private IMudDialogInstance MudDialog { get; set; } = default!;
 
     [Parameter]
-    public int IdMaintenance { get; set; } 
+    public int IdAssistence { get; set; } 
     [Parameter]
     public ActionsEnum ActionsModal { get; set; }
 
     private MudForm? form;
-    private Maintenance _model { get; set; } = new Maintenance();
+    private Assistence _model { get; set; } = new Assistence();
 
     private Policy _modelPolicy { get; set; } = new Policy();
     private PolicyDetail _modelPolicyDetail { get; set; } = new PolicyDetail();
@@ -535,13 +507,11 @@
 
     bool _isReadOnly = false;
     string _searchVin = string.Empty;
-    // bool _SearchFor = true; 
-    // SearchByEnum _searchBy = SearchByEnum.VIN;
 
     private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
     private int _idDealer = 5103;
 
-    MaintenanceValidator _modelValidator = new MaintenanceValidator();
+    AssistenceValidator _modelValidator = new AssistenceValidator();
 
     IMask maskDate = new DateMask("dd/MM/yyyy");
 
@@ -551,14 +521,14 @@
 
         if (ActionsModal == ActionsEnum.Create)
         {
-            _model = new Maintenance();
+            _model = new Assistence();
             _isReadOnly = false;
 
             await Task.Delay(100);
         }
         else
         {
-            await GetMaintenance();
+            await GetAssistence();
 
         }
 
@@ -570,13 +540,13 @@
     }
 
 
-    private async Task GetMaintenance()
+    private async Task GetAssistence()
     {
 
-        var serviceResponse = await MaintenanceService.GetMaintenance(_iduser, _idDealer, IdMaintenance);
+        var serviceResponse = await AssistenceService.GetAssistence(_iduser, _idDealer, IdAssistence);
         if (serviceResponse.Processed)
         {
-            _model = serviceResponse.Data ?? new Maintenance();
+            _model = serviceResponse.Data ?? new Assistence();
             _isReadOnly = _model.EstatusName.ToUpper() == "CREADO" || _model.EstatusName.Trim() == string.Empty ? false : true;
 
             await Task.Delay(100);
@@ -584,7 +554,7 @@
         }
         else
         {
-            _model = new Maintenance();
+            _model = new Assistence();
             _errorModalMessage = MessageEnum.GetError.GetStringValue();
             Console.WriteLine(serviceResponse.Message);
             OpenNested();
@@ -618,22 +588,12 @@
             _errorSearchVehicle = MessageEnum.SearchVehicleNotOK.GetStringValue();
         }
 
-        _model.PolicyDetailId = _modelPolicyDetail.Id;
         _model.NumberPolicy = _modelPolicy.Number;
-
 
         _model.DealerId = _idDealer;
         @* 
         _model.DealerId  =  _modelPolicy.;
-        _model.DealerServiceName  =  _modelPolicy.;
-        _model.DealerServiceCod  =  _modelPolicy.;
-        _model.DealerAddress  =  _modelPolicy.;
-        _model.DealerServiceCity  =  _modelPolicy.;
-        _model.DealerServiceState  =  _modelPolicy.; *@
-
-        _model.DealerSaleId = 0;
-        _model.DealerSaleName = _modelPolicy.DealerName ?? string.Empty;
-        _model.DealerSaleCod = _modelPolicy.DealerCod;
+        *@
 
         _model.VehicleId = _modelPolicy.VehicleId;
         _model.Plate = _modelPolicy.Plate;
@@ -641,12 +601,6 @@
         _model.ModelId = 0;
         _model.ModelName = _modelPolicy.ModelName;
         _model.Year = _modelPolicy.Year;
-
-        _model.CustomerId = _modelPolicy.CustomerId;
-        _model.Vat = _modelPolicy.Vat;
-        _model.CustomerName = _modelPolicy.FirstName;
-        _model.CustomerLastName = _modelPolicy.LastName;
-        _model.CustomerPhone = _modelPolicy.Phone ?? string.Empty;
 
 
         await Task.CompletedTask;
@@ -681,7 +635,6 @@
 
     }
 
-
     private async Task OnValidSubmit()
     {
         await form!.Validate();
@@ -690,7 +643,7 @@
         {
             _errorModalMessage = "";
 
-            var serviceResponse = await MaintenanceService.UpdateMaintenance(_model, _iduser);
+            var serviceResponse = await AssistenceService.UpdateAssistence(_model, _iduser);
             if (serviceResponse.Processed)
             {
                 if (ActionsModal == ActionsEnum.Create)
@@ -700,8 +653,8 @@
                     var _result = _results.FirstOrDefault();
                     if (_result is not null)
                     {
-                        IdMaintenance = _result.LastId;
-                        await GetMaintenance();
+                        IdAssistence = _result.LastId;
+                        await GetAssistence();
                     }
                 }
                 _errorModalMessage = MessageEnum.SaveOK.GetStringValue();
@@ -747,42 +700,33 @@
 
     }
 
+    private async Task CloseNestedModalError()
+    {
+        _nestedModalVisible = false;
+
+        await Task.Delay(50);
+        await Task.CompletedTask;
+
+    }
+
+
 
     /// <summary>
     /// Validacion del formulario 
     /// </summary>
-    /// <typeparam name="Maintenance"></typeparam>
-    public class MaintenanceValidator : AbstractValidator<Maintenance>
+    /// <typeparam name="Assistence"></typeparam>
+    public class AssistenceValidator : AbstractValidator<Assistence>
     {
-        public MaintenanceValidator()
+        public AssistenceValidator()
         {
 
              RuleFor(x => x.OrderNumber)
                 .NotEmpty().WithMessage("Campo requerido")
-               .GreaterThan(0).WithMessage("Campo requerido.");
+                .NotNull().WithMessage("Campo requerido.");
             
             RuleFor(x => x.Km)
                 .NotEmpty().WithMessage("Campo requerido")
                 .GreaterThan(0).WithMessage("Campo requerido.");
-
-
-            RuleFor(x => x.InvoiceNumber)
-               .NotEmpty().WithMessage("Campo requerido")
-               .Length(5, 20).WithMessage("Campo requerido entre 5-20 carácteres");
-
-            RuleFor(x => x.InvoiceNumber)
-                .NotEmpty().WithMessage("Campo requerido")
-                .Length(5, 20).WithMessage("Campo requerido entre 5-20 carácteres");
-
-            RuleFor(x => x.InvoiceDate)
-                .NotEmpty().WithMessage("Campo requerido")
-                .Custom((value, context) =>
-                {
-                    if (value > DateTime.Now )
-                    {
-                        context.AddFailure($"Campo requerido menor a la fecha actual {(DateTime.Now.ToString("dd-MMM-yyyy"))}");
-                    }
-                });
 
             RuleFor(x => x.ServiceDate)
                .NotEmpty().WithMessage("Campo requerido")
@@ -794,31 +738,33 @@
                    }
                });
 
-            RuleFor(x => x.PolicyDetailId)
-                .NotEmpty().WithMessage("Campo requerido")
-                .GreaterThan(0).WithMessage("Campo requerido.");
-
             RuleFor(x => x.Vin)
                 .NotNull().WithMessage("Campo requerido")
                 .NotEmpty().WithMessage("Campo requerido")
                 .Length(1, 20).WithMessage("Campo requerido entre 1-20 carácteres");
 
-            RuleFor(x => x.Vat)
-                .NotNull().WithMessage("Campo requerido")
-                .NotEmpty().WithMessage("Campo requerido")
-                .Length(1, 20).WithMessage("Campo requerido entre 1-20 carácteres");
 
             RuleFor(x => x.DealerReport)
                .NotNull().WithMessage("Campo requerido")
                .NotEmpty().WithMessage("Campo requerido")
                .Length(10, 500).WithMessage("Campo requerido entre 10-500 carácteres");
 
+            RuleFor(x => x.CustomerReport)
+               .NotNull().WithMessage("Campo requerido")
+               .NotEmpty().WithMessage("Campo requerido")
+               .Length(10, 500).WithMessage("Campo requerido entre 10-500 carácteres");
+
+            RuleFor(x => x.TechnicalSolution)
+                .NotNull().WithMessage("Campo requerido")
+                .NotEmpty().WithMessage("Campo requerido")
+                .Length(10, 500).WithMessage("Campo requerido entre 10-500 carácteres");
+
         }
 
 
         public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
         {
-            var result = await ValidateAsync(ValidationContext<Maintenance>.CreateWithOptions((Maintenance)model, x => x.IncludeProperties(propertyName)));
+            var result = await ValidateAsync(ValidationContext<Assistence>.CreateWithOptions((Assistence)model, x => x.IncludeProperties(propertyName)));
             if (result.IsValid)
                 return Array.Empty<string>();
             return result.Errors.Select(e => e.ErrorMessage);

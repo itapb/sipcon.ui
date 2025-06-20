@@ -66,9 +66,25 @@
             </CellTemplate>
         </TemplateColumn>
         <PropertyColumn Property="x => x.Description" Title="Descripti&oacute;n" Sortable="false" Filterable="false" />
-        <PropertyColumn Property="x => x.KM" Title="KM Frecuencia" Sortable="false" Filterable="false" />
+        <TemplateColumn T="PolicyType" Title="KM">
+            <CellTemplate>
+                <div class="d-flex justify-end">
+                    <MudText Typo="Typo.caption" Align="Align.End">
+                        @(context.Item.KM?.ToString("N0"))
+                    </MudText>
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
         <PropertyColumn Property="x => x.Months" Title="Mes Frecuencia" Sortable="false" Filterable="false" />
-        <PropertyColumn Property="x => x.TopKM" Title="Expiraci&oacute;n KM" Sortable="false" Filterable="false" />
+        <TemplateColumn T="PolicyType" Title="Expiraci&oacute;n KM">
+            <CellTemplate>
+                <div class="d-flex justify-end">
+                    <MudText Typo="Typo.caption" Align="Align.End">
+                        @(context.Item.TopKM?.ToString("N0"))
+                    </MudText>
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
         <PropertyColumn Property="x => x.TopMonths" Title="Expiraci&oacute;n Mes" Sortable="false" Filterable="false" />
 
 
