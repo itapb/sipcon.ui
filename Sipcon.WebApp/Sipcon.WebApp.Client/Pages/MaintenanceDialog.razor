@@ -96,8 +96,8 @@
 
                                                     <MudTextField Typo="Typo.caption" @bind-Value="_searchVin"
                                                                   Style="line-height: 0.8rem;"
-                                                                  Placeholder="Placa"
-                                                                  MaxLength="12"
+                                                                  Placeholder="Placa/Vin"
+                                                                  MaxLength="20"
                                                                   Variant="Variant.Text"
                                                                   Margin="Margin.None"
                                                                   ReadOnly="@(!_model.IsActive || _isReadOnly)"
@@ -597,7 +597,7 @@
 
         _modelPolicy = new Policy();
         _modelPolicyDetail = new PolicyDetail();
-        var serviceResponse = await PolicyService.GetPolicyBy(_searchVin, _iduser, SearchByEnum.Plate);
+        var serviceResponse = await PolicyService.GetPolicyBy(_searchVin, _iduser, SearchByEnum.Dual);
         if (serviceResponse.Processed)
         {
             _modelPolicy = serviceResponse.Data ?? new Policy();
