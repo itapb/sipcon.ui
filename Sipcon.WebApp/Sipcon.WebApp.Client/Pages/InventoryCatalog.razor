@@ -100,11 +100,8 @@
         }
         _loading = false;
         return new GridData<Inventory> { TotalItems = totalItems, Items = data };
-    }
-    private async Task ClickRefreshInventoryCatalog(MouseEventArgs ev)
-    {
-        await InventoryCatalogMudDataGrid!.ReloadServerData();
-    }
+    }  
+   
     private async Task ClickAddInventory(Inventory item)
     {
         var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
@@ -114,13 +111,12 @@
             PartId = item.PartId,
             MovementId = MovementId ,
             LocationId = item.LocationId,
+            Stock = item.Stock,
         };
         var dialogReference = await DialogService.ShowAsync<InventoryToMovementDetail>("", new DialogParameters { ["newMovementDetail"] = AnewMovementDetail }, options);
         var dialogResult = await dialogReference.Result;
         await Task.CompletedTask;
     }
-    private void CloseClick(MouseEventArgs args)
-    {
-        MudDialog?.Close(DialogResult.Ok(true));
-    }
+    private void CloseClick(MouseEventArgs args) => MudDialog?.Close(DialogResult.Ok(true));
+    private async Task ClickRefreshInventoryCatalog(MouseEventArgs ev) => await InventoryCatalogMudDataGrid!.ReloadServerData();
 }

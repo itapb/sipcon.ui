@@ -32,6 +32,7 @@ namespace Sipcon.WebApp.Client.Models
      
         public bool? IsDealer { get; set; }
         [Required(ErrorMessage = "Campo requerido.")]
+        public bool? IsProvider { get; set; } = false;
         public Int32? CityId { get; set; }       
         public string? CityName { get; set; }      
         public string? State { get; set; }
@@ -41,6 +42,16 @@ namespace Sipcon.WebApp.Client.Models
         public DateTime? Birthday { get; set; }
 
         public string? Type { get; set; }
-        
+
+        [Required]
+        public Int32? PayMethodId { get; set; } = 0;
+
+        [Required]
+        public Int32? GroupId { get; set; } = 0;
+
+        [Required]
+        public Int32? AgentId { get; set; } = 0;
+        public string? AgentName { get; set; } = string.Empty;
+
     }
 }

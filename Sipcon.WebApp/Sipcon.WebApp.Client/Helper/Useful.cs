@@ -13,6 +13,13 @@ namespace Sipcon.WebApp.Client.Helper
             var mdialog = await dialogService.ShowAsync<Dialog>(strTitle, parameters, new DialogOptions { BackdropClick = false, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true });
             return await mdialog.Result;
         }
+        internal static async Task<DialogResult?> ShowUnexpected(this IDialogService dialogService)
+        {
+            var parameters = new DialogParameters<Dialog> { { x => x.ContentText, "Intente mas tarde o consulte con administrador" }, { x => x.TitleText, "Error" }, { x => x.ButtonText, "Ok" }, { x => x.Color, Color.Error }, { x => x.strIcon, Icons.Material.Filled.Error } };
+            var mdialog = await dialogService.ShowAsync<Dialog>("Error", parameters, new DialogOptions { BackdropClick = false, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true });
+            return await mdialog.Result;
+        }
+        
         internal static T With<T>(this T obj, Action<T> action)
         {
             action(obj);
@@ -26,6 +33,10 @@ namespace Sipcon.WebApp.Client.Helper
                 "Warehouse" => "Almacen",
                 _ => ""
             };
+        }
+        internal static string TemplateLog(string mTitle, string mMessage)
+        {
+            return $"{mTitle} : Usuario : {userId}  Fecha : {DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}  Mensaje : {mMessage}";            
         }
         internal static string? GetmoduleName(this string? moduleCode)
         {
@@ -55,6 +66,8 @@ namespace Sipcon.WebApp.Client.Helper
                 "Procesos" => Icons.Material.Filled.Hardware,
                 "Recepcion" => Icons.Material.Filled.AddBusiness,
                 "Traslado" => Icons.Material.Filled.MoveDown,
+                "Imprimir" => Icons.Material.Filled.Print,
+                "Despacho" => Icons.Material.Filled.LocalShipping,
                 _ => Icons.Material.Filled.HelpOutline
             };
         }

@@ -1,6 +1,9 @@
-﻿<h3>ProcessForm</h3>
+﻿@page "/process-form"
+@using Sipcon.WebApp.Client.Layout
+@layout MobileLayout
 <div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
     <MudPaper Elevation="2" Class="pa-3">
+      
         <MudGrid Spacing="2">
             <MudItem xs="12" class="pa-3 blue darken-1 shades-text text-white mud-typography-h6">
                 Proceso : @processName
@@ -21,7 +24,7 @@
                 <MudTextField T="int" ReadOnly="true" Label="Cantidad Real" @bind-Value="RealQuantity"></MudTextField>
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" @bind-Value="BardCode" HelperText="Aqui escanee ubicacion..." Variant="Variant.Filled"></MudTextField>
+                    <MudTextField @ref="bardCodeField" T="string" @bind-Value="BardCode" HelperText="Aqui escanee ubicacion..." Variant="Variant.Filled"></MudTextField>
             </MudItem>
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.Center">
@@ -29,11 +32,12 @@
                         <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Add" Size="Size.Medium" />
                         <MudFab Color="Color.Surface" StartIcon="@Icons.Material.Filled.NavigateNext" Size="Size.Medium" />
                         <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" />
-                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" />
+                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Href="process-list" Size="Size.Medium" />
                     </MudStack>
                 </MudStack>
             </MudItem>
         </MudGrid>
+   
     </MudPaper>
 </div>
 
@@ -41,8 +45,16 @@
     string processName = "Picking";
     string locationName = "NA";
     string partDescription = "NA";
-    string serialNumber = "0001";
-    int TheoricalQuantity = 2;
+    string serialNumber = "0001";    
     int RealQuantity = 1;
     string BardCode = "1234567890";
+    private MudTextField<string>? bardCodeField;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && bardCodeField is not null)
+        {
+            await bardCodeField.FocusAsync();
+        }
+    }
 }

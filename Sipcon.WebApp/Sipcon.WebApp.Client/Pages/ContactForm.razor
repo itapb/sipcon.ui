@@ -28,6 +28,7 @@
                                     <MudCheckBox @bind-Value="SelectedContact.IsDealer" Label="Concesionario" @bind-Value:after="AfterAsyncDealer" Required="!IsCheckboxValid" RequiredError="" />
                                     <MudCheckBox @bind-Value="SelectedContact.IsCustomer" Label="Cliente" @bind-Value:after="AfterAsyncCustomer" Required="!IsCheckboxValid" RequiredError="" />
                                     <MudCheckBox @bind-Value="SelectedContact.IsUser" Label="Usuario" @bind-Value:after="AfterAsyncUser" Required="!IsCheckboxValid" RequiredError="" />
+                                    <MudCheckBox @bind-Value="SelectedContact.IsProvider" Label="Proveedor" @bind-Value:after="AfterAsyncProvider" Required="!IsCheckboxValid" RequiredError="" />
                                 </MudStack>
                             </MudItem>
                             <MudItem xs="6">
@@ -70,6 +71,26 @@
                             <MudItem xs="4">
                                 <MudTextField @bind-Value="SelectedContact.Phone2" Label="Teléfono Secundario" For="@(() => SelectedContact.Phone2)" MaxLength="13" />
                             </MudItem>
+                            @if (SelectedContact.IsDealer ?? false)
+                            {
+                                <MudItem xs="4">
+                                     <MudSelect T="PayMethod2" Label="Condicion Pago" ToStringFunc="@ConvertPayMethodFunc" ValueChanged="OnPayMethodValueChanged" Value="PayMethodSelected" RequiredError="Campo requerido." Required="(SelectedContact.IsDealer ?? false)">
+                                        @foreach (var paymethod in PayMethods!)
+                                        {
+                                            <MudSelectItem Value="paymethod" />
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                        <MudItem xs="4"><MudTextField @bind-Value="SelectedContact.AgentName" Label="Represetante" MaxLength="50" RequiredError="Campo requerido." Required="(SelectedContact.IsDealer ?? false)" ReadOnly="true" Adornment="Adornment.End" OnAdornmentClick="ContactClick" AdornmentIcon="@Icons.Material.Filled.Search" /></MudItem>
+                                <MudItem xs="4">
+                                     <MudSelect T="Models.Group" Label="Tipo" ToStringFunc="@ConvertContactGroupFunc" Value="ContactGroupSelected" ValueChanged="OnContactGroupValueChanged" RequiredError="Campo requerido." Required="(SelectedContact.IsDealer ?? false)">
+                                        @foreach (var contactgroup in ContactGroups!)
+                                        {
+                                            <MudSelectItem Value="contactgroup" />
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                            }else{
                             <MudItem xs="4">
                                 <MudSelect T="Brand" Label="Marca" ToStringFunc="@ConvertBrandFunc" Class="@($"{strDictionary["BrandName"]}")" Required="(SelectedContact.IsSupplier ?? false)" RequiredError="Campo requerido." ValueChanged="OnBrandValueChanged" Value="BrandSelected">
                                     @foreach (var brand in Brands!)
@@ -89,6 +110,7 @@
                                     }
                                 </MudSelect>
                             </MudItem>
+                             }
                              <MudItem xs="6"  Class="@(($"mud-width-full{strDictionary["Supplier"]}"))">
                                         <MudSelect T="Related" Label="Planta" MultiSelection="true" SelectAll="false" FullWidth="true" SelectedValues="SelectedRelatedSuppliers" SelectedValuesChanged="OnSelectedRelatedSuppliers" Required="((SelectedContact.IsDealer ?? false) || ((SelectedContact.IsUser ?? false) && (AnySelectedDealer == false && AnySelectedSupplier == false)))" RequiredError="Algun requerido"  MultiSelectionTextFunc="@(new Func<List<string>, string>(GetSupplierMultiSelectionText))" @ref="supplierSelectRef">
                                      @foreach (var relatedsupplier in FilteredRelatedSuppliers ?? Enumerable.Empty<Related>())
@@ -123,6 +145,14 @@ else
 }
 
 @code {
+    string AgentName = string.Empty;
+    List<PayMethod2>? PayMethods;
+    PayMethod2? PayMethodSelected;
+    private Func<PayMethod2?, string> ConvertPayMethodFunc = paymethod => paymethod?.Name!;    
+    List<Models.Group>? ContactGroups;
+    Models.Group? ContactGroupSelected;
+    private Func<Models.Group?, string> ConvertContactGroupFunc = contactgroup => contactgroup?.Name!;
+
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
@@ -149,7 +179,8 @@ else
             }
         }
     }
-    private record Gender(string Name, bool? Value);
+    private record Gender(string Name, bool? Value);  
+
     private List<Gender> Genders = new() { new Gender("Masculino", true), new Gender("Femenino", false) };
     private Func<Gender?, string> ConvertGenderFunc = gender => gender?.Name!;
     private Gender? GenderSelected;
@@ -232,6 +263,8 @@ else
         var ContactDetailsResult = await Http.GetFromJsonAsync<ContactDetails>($"api/Contact/GetOne_WithContext?contactId={contactId}&userId={Useful.userId}");
         if (ContactDetailsResult != null)
         {
+            PayMethods = ContactDetailsResult.PayMethods;
+            ContactGroups = ContactDetailsResult.Groups;
             Cities = ContactDetailsResult!.Cities;
             Brands = ContactDetailsResult.Brands;
             Relateds = ContactDetailsResult.Relateds;
@@ -271,6 +304,9 @@ else
                 CitySelected = Cities!.FirstOrDefault(c => c.Id == SelectedContact.CityId);
                 GenderSelected = Genders.FirstOrDefault(x => x.Value == SelectedContact.Male);
 
+                PayMethodSelected = PayMethods!.FirstOrDefault(x => x.Id == SelectedContact.PayMethodId);
+                ContactGroupSelected = ContactGroups!.FirstOrDefault(x => x.Id == SelectedContact.GroupId);
+
                 SelectedRelatedSuppliers = new HashSet<Related>(FilteredRelatedSuppliers?.Where(m => m.IsRelated) ?? Enumerable.Empty<Related>());                
                 SelectedRelatedDealers = new HashSet<Related>(FilteredRelatedDealers?.Where(m => m.IsRelated) ?? Enumerable.Empty<Related>());
             }
@@ -279,8 +315,8 @@ else
         await Task.CompletedTask;
     }
     private Task ValidateCheckBox()
-    {
-        IsCheckboxValid = (SelectedContact!.IsSupplier ?? false) || (SelectedContact.IsDealer ?? false) || (SelectedContact.IsCustomer ?? false) || (SelectedContact.IsUser ?? false);
+    {        
+        IsCheckboxValid = (SelectedContact!.IsSupplier ?? false) || (SelectedContact.IsDealer ?? false) || (SelectedContact.IsCustomer ?? false) || (SelectedContact.IsUser ?? false) || (SelectedContact.IsProvider ?? false);
         return Task.CompletedTask;
     }
     private Task AfterAsync()
@@ -308,7 +344,7 @@ else
         SelectedContact.IsSupplier = false;
         bool isIUser = SelectedContact!.IsUser ?? false;
         bool isICustomer = SelectedContact.IsCustomer ?? false;
-
+        bool IsProvider = SelectedContact.IsProvider ?? false;
         if (isIUser == true)
         {
             SelectedContact!.Type = "Usuario";
@@ -325,7 +361,7 @@ else
             strDictionary["Dealer"] = " invisible";
             strDictionary["BrandName"] = " invisible";
         }
-        else if (isICustomer == false && isIUser == false)
+        else if (isICustomer == false && isIUser == false && IsProvider == false)
         {
             strDictionary["BrandName"] = "";
             strDictionary["Supplier"] = "";
@@ -334,6 +370,52 @@ else
         }
         ValidateCheckBox();
         return Task.CompletedTask;
+    }
+    private Task AfterAsyncProvider()
+    {
+        bool isICustomer = SelectedContact!.IsCustomer ?? false;
+        bool isIUser = SelectedContact.IsUser ?? false;
+        bool IsProvider = SelectedContact.IsProvider ?? false;
+        if (FirstClickEditContact == false && isICustomer == true) SelectedRifType = "V";
+
+        var localIsRifVorE = IsRifVorE;
+        strDictionary["V"] = "";
+        strDictionary["E"] = "";
+        strDictionary["LastName"] = IsRifVorE ? "" : " invisible";
+
+        SelectedContact!.IsDealer = false;
+        SelectedContact.IsSupplier = false;        
+
+        if (IsProvider == true && isICustomer == false && isIUser == false)
+        {
+            SelectedContact!.Type = "Proveedor";
+            strDictionary["BrandName"] = " invisible";
+            strDictionary["Supplier"] = " invisible";
+            strDictionary["Dealer"] = " invisible";
+            strDictionary["Reference"] = " invisible";
+        }
+        else if (isICustomer == false && isIUser == true)
+        {
+            SelectedContact!.Type = "Usuario";
+            strDictionary["BrandName"] = " invisible";
+            strDictionary["Reference"] = " invisible";
+            strDictionary["Supplier"] = "";
+            strDictionary["Dealer"] = "";
+            strDictionary["Birthday"] = localIsRifVorE ? "" : " invisible";
+            strDictionary["Male"] = localIsRifVorE ? "" : " invisible";
+        }
+        else if (IsProvider == false & isICustomer == false && isIUser == false)
+        {
+            strDictionary["BrandName"] = "";
+            strDictionary["Supplier"] = "";
+            strDictionary["Dealer"] = "";
+            strDictionary["Birthday"] = localIsRifVorE ? "" : " invisible";
+            strDictionary["Male"] = localIsRifVorE ? "" : " invisible";
+            strDictionary["Reference"] = "";
+        }
+        AfterAsync();
+        ValidateCheckBox();
+        return Task.CompletedTask;        
     }
     private Task NewContactUI()
     {
@@ -347,6 +429,7 @@ else
         SelectedContact!.IsDealer = false;
         SelectedContact.IsCustomer = false;
         SelectedContact.IsUser = false;
+        SelectedContact.IsProvider = false;
         bool isISupplier = SelectedContact.IsSupplier ?? false;
         strDictionary["BrandName"] = "";
         strDictionary["Supplier"] = isISupplier ? " invisible" : "";       
@@ -371,6 +454,7 @@ else
         SelectedContact!.IsSupplier = false;
         SelectedContact.IsCustomer = false;
         SelectedContact.IsUser = false;
+        SelectedContact.IsProvider = false;
         bool isIDealer = SelectedContact.IsDealer ?? false;
         strDictionary["BrandName"] = isIDealer ? " invisible" : "";
         strDictionary["Dealer"] = isIDealer ? " invisible" : "";
@@ -395,6 +479,7 @@ else
     {
         bool isICustomer = SelectedContact!.IsCustomer ?? false;
         bool isIUser = SelectedContact.IsUser ?? false;
+        bool IsProvider = SelectedContact.IsProvider ?? false;
         if (FirstClickEditContact == false && isICustomer == true) SelectedRifType = "V";
 
         var localIsRifVorE = IsRifVorE;
@@ -423,7 +508,7 @@ else
             strDictionary["Birthday"] = localIsRifVorE ? "" : " invisible";
             strDictionary["Male"] = localIsRifVorE ? "" : " invisible";
         }
-        else if (isICustomer == false && isIUser == false)
+        else if (isICustomer == false && isIUser == false && IsProvider == false)
         {
             strDictionary["BrandName"] = "";
             strDictionary["Supplier"] = "";
@@ -453,6 +538,20 @@ else
         SelectedContact!.CityName = selectedBrand?.Name;
         return Task.CompletedTask;
     }
+
+    private Task OnPayMethodValueChanged(PayMethod2 selectedPayMethod)
+    {
+        PayMethodSelected = selectedPayMethod;
+        SelectedContact!.PayMethodId = selectedPayMethod?.Id;    
+        return Task.CompletedTask;
+    }
+    private Task OnContactGroupValueChanged(Models.Group selectedContactGroup)
+    {
+        ContactGroupSelected = selectedContactGroup;
+        SelectedContact!.GroupId = selectedContactGroup?.Id;
+        return Task.CompletedTask;
+    }
+
     private void Cancel() {       
         SelectedContact = null; 
         ContactId = null;
@@ -506,5 +605,16 @@ else
     {
         throw new NotImplementedException();
     }
-    
+    private async Task ContactClick(MouseEventArgs args)
+    {
+        DialogOptions options2 = new DialogOptions { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
+        var dialogReference = await DialogService.ShowAsync<ContactsCatalog>("", new DialogParameters { ["ContactId"] = SelectedContact!.Id, ["ContactName"] = SelectedContact!.FirstName, ["ContactType"] = "U" }, options2);
+        if ((await dialogReference.Result) is DialogResult dialogResult && !dialogResult.Canceled && dialogResult.Data is not null)
+        {
+            dynamic contactData = dialogResult.Data;
+            SelectedContact!.AgentId = contactData.ContactId;
+            SelectedContact!.AgentName = contactData.ContactName;
+        }
+
+    }
 }

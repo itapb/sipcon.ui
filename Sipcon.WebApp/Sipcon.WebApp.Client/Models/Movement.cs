@@ -26,5 +26,8 @@ namespace Sipcon.WebApp.Client.Models
         public string CreatedBy { get; set; } = string.Empty;
 
         public string AssignTo { get; set; } = string.Empty;
+
+        public Int32? ContactId { get; set; }
+        public string ContactName { get; set; } = string.Empty;
     }
 }

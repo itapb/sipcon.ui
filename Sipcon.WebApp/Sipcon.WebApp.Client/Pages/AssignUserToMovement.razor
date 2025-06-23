@@ -46,6 +46,8 @@ else
 @code {
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private ILogger<AssignUserToMovement> Logger { get; set; } = default!;
+
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public List<Models.Action>? SelectedActions { get; set; }
     [Parameter] public string? moduleName { get; set; }
@@ -76,13 +78,14 @@ else
             if ((result_Post_Actions?.IsSuccessStatusCode ?? false))
             {
                 var rest = result_Post_Actions.Content.ReadAsStringAsync();
-                await DialogService.ShowDialog(Useful.OkSavedMessage, "Recepcion", "OK", Color.Info, Icons.Material.Filled.Commit);
+                await DialogService.ShowDialog(Useful.OkSavedMessage, "Asignar", "OK", Color.Info, Icons.Material.Filled.Commit);
                 MudDialog?.Close(DialogResult.Ok(true));
             }
             else if (result_Post_Actions?.StatusCode == System.Net.HttpStatusCode.Conflict)
             {
                 // var res = await result_Post_Actions.Content.ReadAsStringAsync();
                 var conflictContent = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+                Logger.LogError(Useful.TemplateLog("Asignar Usuario a Movimiento", conflictContent?.message!));
                 await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
             }
         }
