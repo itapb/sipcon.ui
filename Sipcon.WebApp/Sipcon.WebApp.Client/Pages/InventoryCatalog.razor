@@ -59,6 +59,15 @@
             await InventoryCatalogMudDataGrid!.ReloadServerData();
         }
     }
+    Func<Inventory, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    {
+        nameof(Inventory.PartInnerCode) => o => o.PartInnerCode ?? "",
+        nameof(Inventory.PartName) => o => o.PartName ?? "",
+        nameof(Inventory.Price) => o => o.Price ?? 0m,
+        nameof(Inventory.Stock) => o => o.Stock ?? 0m,
+        nameof(Inventory.LocationName) => o => o.LocationName ?? "",
+        _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto
+    };
     private async Task<GridData<Inventory>> ServerReload(GridState<Inventory> state)
     {        
         _loading = true;
@@ -79,24 +88,7 @@
         }
         if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Inventory> sortDefinition)
         {
-            switch (sortDefinition.SortBy)
-            {
-                case nameof(Inventory.PartInnerCode):
-                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.PartInnerCode);
-                    break;
-                case nameof(Inventory.PartName):
-                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.PartName);
-                    break;
-                case nameof(Inventory.Price):
-                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.Price);
-                    break;
-                case nameof(Inventory.Stock):
-                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.Stock);
-                    break;
-                case nameof(Inventory.LocationName):
-                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.LocationName);
-                    break;
-            }
+            data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
         }
         _loading = false;
         return new GridData<Inventory> { TotalItems = totalItems, Items = data };

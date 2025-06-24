@@ -59,6 +59,15 @@
             await PartsCatalogMudDataGrid!.ReloadServerData();
         }
     }
+    Func<Part, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    {
+        nameof(Part.InnerCode) => o => o.InnerCode ?? "",
+        nameof(Part.MasterCode) => o => o.MasterCode ?? "",
+        nameof(Part.Description) => o => o.Description ?? "",
+        nameof(Part.Price) => o => o.Price ?? 0m,
+        nameof(Part.Stock) => o => o.Stock ?? 0,
+        _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto
+    };
     private async Task<GridData<Part>> ServerReload(GridState<Part> state)
     {        
         _loading = true;
@@ -79,21 +88,7 @@
         }
         if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Part> sortDefinition)
         {
-            switch (sortDefinition.SortBy)
-            {
-                case nameof(Part.InnerCode):
-                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.MasterCode);
-                    break;
-                case nameof(Part.MasterCode):
-                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.InnerCode);
-                    break;
-                case nameof(Part.Description):
-                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.Description);
-                    break;
-                case nameof(Part.Price):
-                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.Price);
-                    break;
-            }
+            data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
         }
         _loading = false;
         return new GridData<Part> { TotalItems = totalItems, Items = data };
