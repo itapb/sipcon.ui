@@ -68,6 +68,7 @@ namespace Sipcon.WebApp.Client.Helper
                 "Traslado" => Icons.Material.Filled.MoveDown,
                 "Imprimir" => Icons.Material.Filled.Print,
                 "Despacho" => Icons.Material.Filled.LocalShipping,
+                "Inactivar" => Icons.Material.Filled.Dangerous,
                 _ => Icons.Material.Filled.HelpOutline
             };
         }
