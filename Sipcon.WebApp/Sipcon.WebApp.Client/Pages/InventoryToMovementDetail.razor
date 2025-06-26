@@ -1,0 +1,123 @@
+﻿@if (newMovementDetail == null || SourceLocations == null || TargetLocations == null)
+{
+    <LoadingForm IsMudDialog="@(MudDialog != null)" />
+}
+else
+{
+    <MudForm @ref="form">
+        <div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
+            <MudPaper Elevation="2" Class="pa-3">
+                <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12">
+                            <MudTextField T="int?" Label="Cantidad" @bind-Value="newMovementDetail.RequiredQty" For="@(() => newMovementDetail.RequiredQty)" Required="true" Validation="@(new Func<int?, string>(ValidateInteger))"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudSelect T="Location" Label="Ubicacion Origen" ToStringFunc="@ConvertLocationFunc" Value="SourceLocationSelected" ValueChanged="OnSourceLocationValueChanged" RequiredError="Campo requerido." Required="true">
+                                @foreach (var location in SourceLocations!)
+                                {
+                                    <MudSelectItem Value="location" />
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudSelect T="Location" Label="Ubicacion Destino" ToStringFunc="@ConvertLocationFunc" Value="TargetLocationSelected" ValueChanged="OnTargetLocationValueChanged">
+                                @foreach (var location in TargetLocations!)
+                                {
+                                    <MudSelectItem Value="location" />
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudStack Row="true" Justify="Justify.Center">
+                                <MudStack Row="true" Spacing="4">
+                                    <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="CheckClick" />
+                                    <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="CloseClick" />
+                                </MudStack>
+                            </MudStack>
+                        </MudItem>
+                    </MudGrid>
+                </MudFocusTrap>
+            </MudPaper>
+        </div>
+    </MudForm>
+}
+@code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    string TypeIdSource = "A";
+    string TypeIdTarget = "A";
+
+    private MudForm? form;
+    Location? SourceLocationSelected;
+    Location? TargetLocationSelected;
+    List<Location>? Locations;
+
+    List<Location>? SourceLocations;
+    List<Location>? TargetLocations;
+    [Parameter] public NewMovementDetail? newMovementDetail { get; set; } = default!;
+    private Func<Location?, string> ConvertLocationFunc = location => location?.Name!;
+
+    protected override async Task OnInitializedAsync() => await LoadLocations();
+
+    private async Task LoadLocations()
+    {
+        HttpResponseMessage locationResponse = await Http.GetAsync($"api/Location/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&rowfrom=0");
+        if (locationResponse.IsSuccessStatusCode)
+        {
+            var content2 = await locationResponse.Content.ReadFromJsonAsync<WebApiResponse<List<Location>>>();
+            Locations = content2!.data ?? new List<Location>();
+            SourceLocations = Locations!.Where(r => r.TypeId == TypeIdSource && r.Id == newMovementDetail!.LocationId).ToList();
+            TargetLocations = Locations!.Where(r => r.TypeId == TypeIdTarget).ToList();
+            SourceLocationSelected = SourceLocations!.FirstOrDefault(r => r.Id == newMovementDetail!.LocationId);
+            TargetLocationSelected = TargetLocations!.FirstOrDefault(r => r.Id == newMovementDetail!.DestinationId);
+        }
+    }
+    private Task OnSourceLocationValueChanged(Location selectedSourceLocation)
+    {
+        SourceLocationSelected = selectedSourceLocation;
+        newMovementDetail!.LocationId = selectedSourceLocation.Id;
+        return Task.CompletedTask;
+    }
+    private Task OnTargetLocationValueChanged(Location selectedTargetLocation)
+    {
+        TargetLocationSelected = selectedTargetLocation;
+        newMovementDetail!.DestinationId = selectedTargetLocation.Id;
+        return Task.CompletedTask;
+    }
+    private async Task CheckClick(MouseEventArgs args)
+    {
+        await form!.Validate();
+        if (form.IsValid)
+        {
+            var strnewMovementDetail = System.Text.Json.JsonSerializer.Serialize(newMovementDetail);
+            var result_newMovementDetail = await Http.PostAsync($"api/Inventory/PostMovementDetail?userId={Useful.userId}", new StringContent($"[{strnewMovementDetail}]", null, "application/json"));
+            if (result_newMovementDetail.IsSuccessStatusCode)
+            {
+                var sucessContent = await result_newMovementDetail.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
+                if (sucessContent?.data![0] is ({insertedRows : 1 } or {updatedRows : 1 }))
+                    {
+                    var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Agregar", "OK", Color.Info, Icons.Material.Filled.Commit);
+                    if (!result!.Canceled)
+                        MudDialog?.Close(DialogResult.Ok(true));
+                }
+            }
+            else if (result_newMovementDetail.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                var conflictContent = await result_newMovementDetail.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+                await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+            else
+            {
+                var errorMessage = await result_newMovementDetail.Content.ReadAsStringAsync();
+                throw new Exception(errorMessage);
+            }
+        }
+    }
+
+    private void CloseClick(MouseEventArgs args) => MudDialog?.Cancel();
+
+    private string ValidateInteger(int? value) => (value.HasValue && value > newMovementDetail?.Stock) ? $"El valor debe ser menor o igual a {newMovementDetail?.Stock}." : string.Empty;
+    
+ }

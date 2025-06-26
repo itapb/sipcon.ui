@@ -21,12 +21,19 @@
                     <MudStack Row="false">
                         <MudText Typo="Typo.h6" GutterBottom="true">@GetTitle</MudText>
                         <MudTextField T="string" @bind-Value="SelectedLocation.Name" Label="Ubicacion" For="@(() => SelectedLocation.Name)" MaxLength="20" />
-                        <MudSelect T="Zone" Label="Zona" ToStringFunc="@ConvertZoneFunc" Required="true" ValueChanged="OnZoneValueChanged" RequiredError="Zona es requerido" Value="ZoneSelected">
+                        <MudSelect T="Zone" Label="Zona" ToStringFunc="@ConvertZoneFunc" Required="true" ValueChanged="OnZoneValueChanged" RequiredError="campo requerido" Value="ZoneSelected">
                             @foreach (var zone in Zones!)
                             {
                                 <MudSelectItem Value="zone" />
                             }
                         </MudSelect>
+                        <MudSelect T="LocationType" Label="Tipo Ubicacion" ToStringFunc="@ConvertLocationTypeFunc" Value="LocationTypeSelected" ValueChanged="OnLocationTypeValueChanged" RequiredError="Campo requerido." Required="true">
+                            @foreach (var locationtype in LocationTypes!)
+                            {
+                                <MudSelectItem Value="locationtype" />
+                            }
+                        </MudSelect>
+                        <MudTextField T="int?" @bind-Value="SelectedLocation.Mapping" Label="Mapeo" For="@(() => SelectedLocation.Mapping)" RequiredError="campo requerido" Required="true" Mask="@(new PatternMask("0000000000"))"/>
                     </MudStack>
                 </MudPaper></MudPaper>
             </MudItem>
@@ -63,6 +70,19 @@ else
         }
     }
     private string GetTitle => LocationId switch { null => "Ubicaciones", 0 => "Agregar Ubicacion", _ => "Editar Ubicacion" };
+    
+    private record LocationType(string TypeId, string TypeName);
+    private List<LocationType> LocationTypes = new() { new LocationType("A", "ALMACENAJE"), new LocationType("D", "DESPACHO"), new LocationType("R", "RECEPCION") };
+    private Func<LocationType?, string> ConvertLocationTypeFunc = locationtype => locationtype?.TypeName!;
+    private LocationType? LocationTypeSelected;
+    private Task OnLocationTypeValueChanged(LocationType selectedLocationType)
+    {
+        LocationTypeSelected = selectedLocationType;
+        SelectedLocation!.TypeId = selectedLocationType?.TypeId;
+        SelectedLocation!.TypeName = selectedLocationType?.TypeName;
+        return Task.CompletedTask;
+    }
+    
     protected override async Task OnInitializedAsync()
     {
         await LoadLocation(LocationId!.Value);
@@ -119,6 +139,7 @@ else
             Zones = zonesContent!.data;
             SelectedLocation = locationId > 0 ? locationContent!.data : new Location() { Id = 0, Name = null, WarehouseName = null, IsActive = true, ZoneId = null, ZoneName = null, IsSelected = false };
             ZoneSelected = locationId > 0 ? Zones!.FirstOrDefault(c => c.Id == SelectedLocation!.ZoneId): null;
+            LocationTypeSelected = locationId > 0 ? LocationTypes.FirstOrDefault(c => c.TypeId == SelectedLocation!.TypeId) : null;
         }
         else
         {

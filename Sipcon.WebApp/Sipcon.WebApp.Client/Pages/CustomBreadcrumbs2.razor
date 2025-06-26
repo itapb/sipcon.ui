@@ -1,0 +1,42 @@
+﻿<MudBreadcrumbs Items="Items">  
+    <ItemTemplate Context="item">  
+        @{var mColor = GetItemColor(item);}  
+        <MudLink Href="@item.Href" Color="@mColor">  
+            <MudIcon Icon="@item.Icon" Size="Size.Small"  Color="@mColor" />
+            @item.Text  
+        </MudLink>  
+    </ItemTemplate>  
+</MudBreadcrumbs>  
+
+@code {
+        [Inject] NavigationManager NavigationManager { get; set; } = default!;
+    public List<BreadcrumbItem>? Items { get; set; }  
+    private Color GetItemColor(BreadcrumbItem item) => Items?.LastOrDefault() == item ? Color.Info : Color.Dark;  
+
+    protected override void OnInitialized()
+    {
+        BuildBreadcrumbs(NavigationManager.Uri);
+        NavigationManager.LocationChanged += (s, e) => BuildBreadcrumbs(e.Location);
+    }
+
+    private void BuildBreadcrumbs(string uri)
+    {
+        var strDictionary = new Dictionary<string, string> { { "movements/r", "Home,Inventario,Procesos,Recepcion" } };
+        var relativePath2 = "movements/r";
+        var baseUri = NavigationManager.BaseUri;
+        var relativePath = uri.Replace(baseUri, "");
+        var segments = relativePath.Split('/', StringSplitOptions.RemoveEmptyEntries);       
+        Items = new List<BreadcrumbItem> {new BreadcrumbItem("Home", href: "/")};
+
+        strDictionary[relativePath2].Split(',').ToList().ForEach(s => Items.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : relativePath2), icon: s.ToActionIcon())));
+        var path = "";
+        foreach (var segment in segments)
+        {
+            path += $"/{segment}";
+            Items.Add(new BreadcrumbItem(segment, href: path));
+        }
+
+        StateHasChanged();
+    }
+
+}
