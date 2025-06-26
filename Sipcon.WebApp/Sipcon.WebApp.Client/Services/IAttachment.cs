@@ -5,9 +5,9 @@
     public interface IAttachmentService
     {
 
-        public Task<ApiResponse<List<Attachment>>> GetAttachments(int IdRecord, int IdModule);
-        public Task<ApiResponse<Attachment>> GetAttachment(int IdAttachment, int IdUser);
-        public Task<ApiResponse<bool>> CreateAttachment(int IdRecord, int IdModule, int IdUser, MultipartFormDataContent FormData);
+        public Task<ApiResponse<List<Attachment>>> GetAttachments(int IdRecord, string ModuleName);
+        public Task<ApiResponse<List<byte>>> GetAttachment(int IdAttachment, int IdUser);
+        public Task<ApiResponse<bool>> CreateAttachment(int IdRecord, string ModuleName, int IdUser, MultipartFormDataContent FormData);
         public Task<ApiResponse<bool>> DeleteAttachment(int IdAttachment, int IdUser);
 
     }

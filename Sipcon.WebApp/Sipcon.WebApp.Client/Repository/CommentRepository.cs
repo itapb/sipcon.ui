@@ -11,13 +11,13 @@
         private readonly HttpClient _http = http;
 
 
-        public async Task<ApiResponse<List<Comment>>> GetComments(int IdUser, int IdDealer, int RowFrom = 0, string Filter = "")
+        public async Task<ApiResponse<List<Comment>>> GetComments(int IdRecord, string ModuleName)
         {
             ApiResponse<List<Comment>>? result;
 
             try
             {
-                result = await _http.GetFromJsonAsync<ApiResponse<List<Comment>>>($"api/Comment/GetAll?filter={Filter}&rowFrom={RowFrom}&userId={IdUser}&serviceTypeId=2&dealerId={IdDealer}");
+                result = await _http.GetFromJsonAsync<ApiResponse<List<Comment>>>($"api/Comment/GetAll?moduleName={ModuleName}&recordId={IdRecord}");
 
 
                 result = result is null ? new ApiResponse<List<Comment>>()
@@ -72,7 +72,7 @@
                     IsActive = Comment.IsActive,
                     Content = Comment.Content,
                     RecordId = Comment.RecordId,
-                    ModuleId = Comment.ModuleId
+                    ModuleName = Comment.ModuleName
 
                 };
 

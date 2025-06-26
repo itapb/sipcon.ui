@@ -13,11 +13,21 @@
 @inject IAssistenceService AssistenceService
 @inject IPolicyService PolicyService
 @inject UtilModuleActions ModuleActionsService
+@inject IAttachmentService AttachmentService
+@inject ICommentService CommentService
+@inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
 
 
 <PageTitle>Asistencia Tecnica</PageTitle>
-<CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
+
+<MudStack Row="true">
+    <CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
+    <MudSpacer />
+    <MudSpacer />
+    <MudIconButton Icon="@Icons.Material.Outlined.KeyboardReturn" Color="Color.Info" Href="assistence" />
+
+</MudStack>
 
 <MudContainer>
     <MudGrid>
@@ -61,7 +71,7 @@
                                           Variant="Variant.Text"
                                           Margin="Margin.None"
                                           ReadOnly="true"
-                                          Disabled="true" />
+                                           />
 
 
                             <MudStack Row="true">
@@ -71,21 +81,21 @@
                                               Variant="Variant.Text"
                                               Margin="Margin.None"
                                               ReadOnly="true"
-                                              Disabled="true" />
+                                               />
 
                                 <MudTextField Typo="Typo.caption" T="string" Text="@_model.Year"
                                               Label="Año"
                                               Variant="Variant.Text"
                                               Margin="Margin.None"
                                               ReadOnly="true"
-                                              Disabled="true" />
+                                               />
 
                                 <MudTextField Typo="Typo.caption" T="string" Text="@_modelPolicy.Color"
                                               Label="Color"
                                               Variant="Variant.Text"
                                               Margin="Margin.None"
                                               ReadOnly="true"
-                                              Disabled="true" />
+                                               />
 
 
 
@@ -96,14 +106,14 @@
                                           Variant="Variant.Text"
                                           Margin="Margin.None"
                                           ReadOnly="true"
-                                          Disabled="true" />
+                                           />
 
                             <MudTextField Typo="Typo.caption" T="string" Text="@_model.ModelName"
                                           Label="Modelo"
                                           Variant="Variant.Text"
                                           Margin="Margin.None"
                                           ReadOnly="true"
-                                          Disabled="true" />
+                                           />
 
 
                         </MudCardContent>
@@ -149,7 +159,7 @@
                                           Variant="Variant.Text"
                                           Margin="Margin.None"
                                           ReadOnly="true"
-                                          Disabled="true" />
+                                           />
 
                             <MudStack Row="true">
                                 <MudTextField Typo="Typo.caption" T="string" Text="@(_modelPolicy.LastName + " " + _modelPolicy.FirstName)"
@@ -157,7 +167,7 @@
                                               Variant="Variant.Text"
                                               Margin="Margin.None"
                                               ReadOnly="true"
-                                              Disabled="true" />
+                                               />
                             </MudStack>
 
 
@@ -169,7 +179,7 @@
                                           Variant="Variant.Text"
                                           Margin="Margin.None"
                                           ReadOnly="true"
-                                          Disabled="true" />
+                                           />
 
 
                             <MudTextField Typo="Typo.caption" T="string" Text="@_modelPolicy.Email"
@@ -179,7 +189,7 @@
                                           Variant="Variant.Text"
                                           Margin="Margin.None"
                                           ReadOnly="true"
-                                          Disabled="true" />
+                                           />
 
                         </MudCardContent>
 
@@ -245,7 +255,7 @@
                                     style += ";font-style:italic";
 
 
-                                    <MudChip T="string" Style="@style" Label="true" Disabled="true">@_modelPolicy.EstatusName</MudChip>
+                                    <MudChip T="string" Style="@style" Label="true" >@_modelPolicy.EstatusName</MudChip>
                                 }
 
                             </CardHeaderActions>
@@ -274,7 +284,7 @@
                 </MudItem>
             </MudGrid>
         </MudItem>
-        <MudItem xs="12" sm="8">
+        <MudItem xs="12" sm="7">
 
              <MudGrid Spacing="1" Justify="Justify.Center">
 
@@ -306,7 +316,7 @@
                                                  HideSpinButtons="true"
                                                  Format="N0" Culture="@CultureInfo.GetCultureInfo("de-DE")"
                                                  ReadOnly="true"
-                                                 Disabled="true" />
+                                                  />
 
                                 <MudDatePicker @bind-Date="_model.ServiceDate"
                                                Style="font-size: 14px;line-height: 0.8rem;"
@@ -319,7 +329,7 @@
                                                DateFormat="dd/MM/yyyy"
                                                Mask="@maskDate"
                                                ReadOnly="true"
-                                               Disabled="true" />
+                                                />
 
                                 <MudNumericField Typo="Typo.caption" @bind-Value="_model.OrderNumber"
                                                  Label="Nro.Orden"
@@ -328,7 +338,7 @@
                                                  HideSpinButtons="true"
                                                  Culture="@CultureInfo.GetCultureInfo("de-DE")"
                                                  ReadOnly="true"
-                                                 Disabled="true" />
+                                                  />
 
 
                             </MudStack>
@@ -344,7 +354,7 @@
                                                 Variant="Variant.Text"
                                                 Margin="Margin.None"
                                                 ReadOnly="true"
-                                                Disabled="true" />
+                                                 />
 
                                 <MudTextField Typo="Typo.caption" @bind-Value="_model.DealerReport"
                                                 Label="Reporte Concesionario"
@@ -353,7 +363,7 @@
                                                 Variant="Variant.Text"
                                                 Margin="Margin.None"
                                                 ReadOnly="true"
-                                                Disabled="true" />
+                                                 />
 
                                 <MudTextField Typo="Typo.caption" @bind-Value="_model.TechnicalSolution"
                                                 Label="Solucion Tecnica"
@@ -362,7 +372,7 @@
                                                 Variant="Variant.Text"
                                                 Margin="Margin.None"
                                                 ReadOnly="true"
-                                                Disabled="true" />
+                                                 />
 
                             @* </MudStack> *@
 
@@ -377,7 +387,8 @@
 
         </MudItem>
 
-        <MudItem xs="12" sm="4">
+        @* File Attachment *@
+        <MudItem xs="12" sm="5">
             <MudCard Elevation="0">
                 <MudCardHeader Style="padding-bottom: 0px;">
                     <CardHeaderContent>
@@ -391,33 +402,33 @@
                 </MudCardHeader>
 
                 <MudCardContent Style="padding-top: 0px;">
-                    <MudDivider />
-                    <MudStack Row="true">
-                        <div Class="rounded mud-paper-outlined d-flex align-center pa-3 ma-2">
-                            <MudIcon Icon="@Icons.Custom.FileFormats.FileDocument" Color="Color.Inherit" Class="mr-2" />
-                            evidencia_01.jpeg
-                        </div>
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="delete" />
-                    </MudStack>
 
-                    <MudStack Row="true">
-                        <div Class="rounded mud-paper-outlined d-flex align-center pa-3 ma-2">
-                            <MudIcon Icon="@Icons.Custom.FileFormats.FileDocument" Color="Color.Inherit" Class="mr-2" />
-                            evidencia_02.png
-                        </div>
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="delete" />
-                    </MudStack>
+                     <div id="unique_id_scroll_section" class="ma-0" style="height:230px;overflow: auto;">
 
-                    <MudStack Row="true">
-                        <div Class="rounded mud-paper-outlined d-flex align-center pa-3 ma-2">
-                            <MudIcon Icon="@Icons.Custom.FileFormats.FileDocument" Color="Color.Inherit" Class="mr-2" />
-                            evidencia_01.pdf
-                        </div>
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="delete" />
-                    </MudStack>
+                        <MudContainer Class="dialog-background-surface py-1 pt-0 pa-1">
+                            <MudDivider />
 
+                            @foreach (var item in _attachment)
+                            {
+                                <MudStack Row="true">
+                                    <div class="rounded mud-paper-outlined d-flex align-center pa-1 ma-2">
+                                        <MudIcon Icon="@Icons.Custom.FileFormats.FileDocument" Color="Color.Inherit" Class="mr-2" />
+                                        @item.FileName
+                                    </div>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Class="mt-2" Style="height: 29px;width: 29px;" Variant="Variant.Filled" Color="Color.Info" Size="Size.Small" OnClick="() => ClickDeleteAttachment(item.Id)" />
+                                    <MudIconButton Icon="@Icons.Material.Outlined.FileDownload" Class="mt-2" Style="height: 29px;width: 29px;" Variant="Variant.Filled" Color="Color.Info" Size="Size.Small" OnClick="() => ClickExportAttachment(item.Id, item.FileName)" />
+                                </MudStack>
+                            }
+                        </MudContainer>
+                        <MudScrollToTop TopOffset="100"
+                                        Selector="#unique_id_scroll_section"
+                                        VisibleCssClass="visible absolute"
+                                        HiddenCssClass="invisible">
 
-                    <MudFileUpload T="IBrowserFile" FilesChanged="UploadFiles">
+                        </MudScrollToTop>
+                    </div>
+
+                    <MudFileUpload T="IBrowserFile" Accept=".pdf,.png,.pneg,.jpg,.jpeg" FilesChanged="ClickUploadFiles">
                         <ActivatorContent>
                             <MudDivider />
 
@@ -435,7 +446,9 @@
 
         </MudItem>
 
-        <MudItem xs="12" sm="12">
+
+        @* Messages *@
+        <MudItem xs="12" sm="8">
             <MudCard Elevation="0">
                 <MudCardHeader Style="padding-bottom: 0px;">
                     <CardHeaderContent>
@@ -450,79 +463,108 @@
 
                 <MudCardContent Style="padding-top: 0px;">
 
-                    <MudPaper Class="pa-4 mt-4">
+                    <MudPaper Class="pa-1 mt-2">
                         <MudStack Row="true">
-                            <MudTextField Typo="Typo.caption" T="string" Text="@_modelPolicy.Vat"
+                            <MudTextField Typo="Typo.caption" @bind-Value="@_strComment"
                                           Label="Mensaje"
+                                          Style="line-height: 8px;"
                                           Variant="Variant.Outlined"
                                           Margin="Margin.None"
-                                           />
-                            <MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.Send" Color="Color.Info" Size="Size.Small">Enviar</MudButton>
+                                          Required = "true"/>
+
+                            <MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.Send" 
+                                        Style="height: 41px;margin-top: 9px;"  
+                                        Color="Color.Info" 
+                                        Size="Size.Small" 
+                                        OnClick="() => ClickAddComment()">Enviar</MudButton>
                         </MudStack>
                     </MudPaper>
 
-                   
-                    <MudStack Row="true">
-                        <div Class="d-flex align-start pa-3 ma-2">
-                            <MudCard Style="min-width:420px">
-                                <MudCardHeader>
-                                    <CardHeaderAvatar>
-                                        <MudAvatar Color="Color.Secondary">I</MudAvatar>
-                                    </CardHeaderAvatar>
-                                    <CardHeaderContent>
-                                        <MudText Typo="Typo.body1">Istra Croatia</MudText>
-                                        <MudText Typo="Typo.body2">Error en escaneo de fallas.</MudText>
-                                    </CardHeaderContent>
-                                    <CardHeaderActions>
-                                        <MudText Typo="Typo.caption">@DateTime.Now.ToString("dd,MMM yyyy") </MudText>
-                                    </CardHeaderActions>
-                                </MudCardHeader>
-                            </MudCard>
-                        </div>
-                    </MudStack>
+                    <div id="scroll_section_messages" class="ma-0" style="height:430px;overflow: auto;">
 
-                    <MudStack Row="true">
-                        <MudSpacer />
-                        <MudSpacer />
-                        <div Class="d-flex align-center pa-3 ma-2">
-                            <MudCard Style="min-width:420px">
-                                <MudCardHeader>
-                                    <CardHeaderAvatar>
-                                        <MudAvatar Color="Color.Secondary">I</MudAvatar>
-                                    </CardHeaderAvatar>
-                                    <CardHeaderContent>
-                                        <MudText Typo="Typo.body1">Istra Croatia</MudText>
-                                        <MudText Typo="Typo.body2">Error en escaneo de fallas.</MudText>
-                                    </CardHeaderContent>
-                                    <CardHeaderActions>
-                                        <MudText Typo="Typo.caption">@DateTime.Now.ToString("dd,MMM yyyy") </MudText>
-                                    </CardHeaderActions>
-                                </MudCardHeader>
-                            </MudCard>
-                        </div>
-                        
-                    </MudStack>
+                        <MudContainer Class="dialog-background-surface py-1 pt-0 pa-1">
+                            <MudDivider />
+
+                            @if (_comment.Count > 0)
+                            {
+
+                                string index = _comment.OrderByDescending(x => x.DateComment).ToList().First().UserName.Substring(0, 1);
+                                string style = "padding-top: 20px;";
+                                foreach (var item in _comment.OrderByDescending(x => x.DateComment).ToList())
+                                {
+
+                                    var position = index == item.UserName.Substring(0, 1) ? ChatBubblePosition.Start : ChatBubblePosition.End;
+
+
+                                    <div class="d-flex align-start ma-2" style="@style">
+                                        <MudChat ChatPosition="@position">
+                                            <MudChatHeader Name="@(item.UserName + item.UserLastName)" Time="@item.DateComment.ToString("dd, MMM yyyy")" />
+                                            <MudAvatar Color="Color.Secondary">@item.UserName.Substring(0, 1)</MudAvatar>
+                                            <MudChatBubble Style="min-width:420px">@item.Content</MudChatBubble>
+                                            @*  <MudChatFooter Text="Delivered" /> *@
+                                        </MudChat>
+                                    </div>
+
+                                }
+                            }
+                        </MudContainer>
+                        <MudScrollToTop TopOffset="100"
+                                        Selector="#scroll_section_messages"
+                                        VisibleCssClass="visible absolute"
+                                        HiddenCssClass="invisible">
+
+                        </MudScrollToTop>
+                    </div>
 
                 </MudCardContent>
             </MudCard>
 
         </MudItem>
+
+
     </MudGrid>
 </MudContainer>
 
+<MudDialog @bind-Visible="_nestedVisible">
+    <TitleContent>
+        <MudStack Row="true">
+            <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="@(_success? Color.Default: Color.Error)" Style="font-size: 2rem;"></MudIcon>
+            <MudText Typo="Typo.h6">Vehiculo</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+
+        <MudStack Row="true">
+            <MudText Class="nested"><p>@_nestedErrorMessage!</p> </MudText>
+        </MudStack>
+
+    </DialogContent>
+    <DialogActions>
+
+        <MudButton Color="Color.Info" OnClick="CloseNested" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
+
+    </DialogActions>
+</MudDialog>
 
 @code {
 
     [Parameter]
-    public string IdAssistence { get; set; }
+    public string IdAssistence { get; set; } = string.Empty;    
 
     private Assistence _model { get; set; } = new Assistence();
 
     private Policy _modelPolicy { get; set; } = new Policy();
-    private PolicyDetail _modelPolicyDetail { get; set; } = new PolicyDetail();
+    private List<Attachment> _attachment { get; set; } = new List<Attachment>();
+    private List<Comment> _comment { get; set; } = new List<Comment>();
+    
 
+    private string _moduleName = "SERVICIOS-ASISTENCIA TECNICA";
     private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
     private int _idDealer = 5103;
+    private string _nestedErrorMessage = string.Empty;
+    private bool _nestedVisible;
+    string _strComment = string.Empty;
+    bool _success = false;
 
 
     IMask maskDate = new DateMask("dd/MM/yyyy");
@@ -530,16 +572,8 @@
     private List<BreadcrumbItem> _itemsNavigate =
                 [
         new("Home", href: null, icon: Icons.Material.Filled.Home),
-        new("Asistencia Tècnica",  href: "assistence", disabled: false, icon: Icons.Material.Filled.CarCrash),
+        new("Asistencia Tècnica",  href: "assistencedetail", disabled: false, icon: Icons.Material.Filled.CarCrash),
     ];
-
-
-    IList<IBrowserFile> _files = new List<IBrowserFile>();
-    private void UploadFiles(IBrowserFile file)
-    {
-        _files.Add(file);
-        //TODO upload the files to the server
-    }
 
 
     protected override async Task OnInitializedAsync()
@@ -563,8 +597,12 @@
         {
             _model = serviceResponse.Data ?? new Assistence();
             await GetPolicyBy();
-            
-            await Task.Delay(100);
+
+            await GetAttachments();
+
+            await GetComments();
+
+            await Task.Delay(50);
             StateHasChanged();
         }
         else
@@ -577,21 +615,11 @@
 
     private async Task GetPolicyBy()
     {
-
         _modelPolicy = new Policy();
-        _modelPolicyDetail = new PolicyDetail();
         var serviceResponse = await PolicyService.GetPolicyBy(_model.Vin, _iduser, SearchByEnum.VIN);
         if (serviceResponse.Processed)
         {
             _modelPolicy = serviceResponse.Data ?? new Policy();
-
-
-            var serviceResponseDetail = await PolicyService.GetPolicyDetail(_modelPolicy.Id, _model.Km ?? 0, _model.ServiceDate ?? DateTime.Now);
-            if (serviceResponseDetail.Processed)
-            {
-                _modelPolicyDetail = serviceResponseDetail.Data ?? new PolicyDetail();
-            }
-
         }
 
         await Task.CompletedTask;
@@ -601,6 +629,206 @@
         StateHasChanged();
     }
 
+    private async Task GetAttachments()
+    {
+        var serviceResponse = await AttachmentService.GetAttachments(_model.Id, _moduleName);
+        if (serviceResponse.Processed)
+        {
+            _attachment = serviceResponse.Data ?? new List<Attachment>();
 
+            await Task.Delay(50);
+            StateHasChanged();
+        }
+
+        await Task.CompletedTask;
+    }
+
+    private async Task GetComments()
+    {
+        var serviceResponse = await CommentService.GetComments(_model.Id, _moduleName);
+        if (serviceResponse.Processed)
+        {
+            _comment = serviceResponse.Data ?? new List<Comment>();
+
+            await Task.Delay(50);
+            StateHasChanged();
+        }
+
+        await Task.CompletedTask;
+    }
+
+    private async Task ClickDeleteAttachment(int IdAttachment)
+    {
+        var option = new DialogOptions
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            BackdropClick = false
+        };
+        bool? result = await DialogService.ShowMessageBox(
+            "Archivos Adjuntos",
+            $"Seguro de Eliminar Archivo? ",
+            yesText: "Si", noText: "No", "", option);
+
+        if (result == true)
+        {
+            
+            var serviceResponse = await AttachmentService.DeleteAttachment(IdAttachment, _iduser);
+            if (serviceResponse.Processed)
+            {
+                await GetAttachments();
+
+                await Task.Delay(50);
+                StateHasChanged();
+            }
+
+            await Task.CompletedTask;
+        }
+    }
+
+    private async Task ClickExportAttachment(int IdAttachment, string FileName)
+    {
+        var serviceResponse = await AttachmentService.GetAttachment(IdAttachment, _iduser);
+        if (serviceResponse.Processed)
+        {
+            _success = true;
+            _nestedErrorMessage = "";
+
+            var applicationName = string.Empty;
+            var fileExtension = Path.GetExtension(FileName).ToLowerInvariant();
+            switch (fileExtension)
+            {
+                case ".jpg":
+                case ".jpeg":
+                    applicationName = "image/jpeg";
+                    break;
+                case ".png":
+                case ".pneg":
+                    applicationName = "image/png";
+                    break;
+                case ".mp4":
+                    applicationName = "video/mp4";
+                    break;
+                case ".pdf":
+                    applicationName = "application/pdf";
+                    break;
+                default:
+                    applicationName = "application/pdf";
+                    break;
+            }
+
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+            var fileUrl = $"data:{applicationName};base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, FileName);
+
+        }
+        else
+        {
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
+            OpenNested();
+
+        }
+    }
+
+    private async Task ClickUploadFiles(IBrowserFile file)
+    {
+        
+        const long maxAllowedSize = 10 * 1024 * 1024; // 10MB
+        if (file.Size == 0)
+        {
+            _success = false;
+            _nestedErrorMessage = MessageEnum.ImportError.GetStringValue();
+            OpenNested();
+        }
+        else if (file.Size > maxAllowedSize)
+        {
+            _success = false;
+            _nestedErrorMessage = MessageEnum.ImportErrorMaxByte.GetStringValue();
+            OpenNested();
+        }
+        else
+        {
+            using var stream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
+
+            var content = new StreamContent(stream);
+            content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+            // Create a multipart form data content
+            var formData = new MultipartFormDataContent();
+            formData.Add(content, "file", file.Name);
+
+
+            var serviceResponse = await AttachmentService.CreateAttachment(_model.Id, _moduleName, _iduser, formData);
+            if (serviceResponse.Processed)
+            {
+                _success = true;
+                _nestedErrorMessage = MessageEnum.ImportOK.GetStringValue();
+
+                await GetAttachments();
+                
+                StateHasChanged();
+
+            }
+            else
+            {
+                _success = false;
+                _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ImportNotOK.GetStringValue();
+                OpenNested();
+
+            }
+        }
+    }
+
+    private async Task ClickAddComment()
+    {
+        
+        if (_strComment.Length >= 15)
+        {
+            await SendComment();
+
+        }
+        await Task.CompletedTask;
+       
+    }
+
+    private async Task SendComment()
+    {
+
+        Comment _mensaje = new Comment
+        {
+            Id = 0,
+            IsActive = true,
+            Content = _strComment.Trim(),
+            RecordId = _model.Id,
+            ModuleName = _moduleName, 
+        };
+        var serviceResponse = await CommentService.CreateComment(_mensaje, _iduser);
+        if (serviceResponse.Processed)
+        {
+            _success = true;
+            _nestedErrorMessage = MessageEnum.ImportOK.GetStringValue();
+
+            _strComment = string.Empty;
+            await GetComments();
+        }
+        else
+        {
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue();
+            Console.WriteLine(serviceResponse.Message);
+            OpenNested();
+        }
+
+        StateHasChanged();
+        await Task.CompletedTask;
+
+    }
+
+
+    private void OpenNested() => _nestedVisible = true;
+
+    private void CloseNested() => _nestedVisible = false;
 
 }

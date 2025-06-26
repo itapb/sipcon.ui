@@ -13,7 +13,8 @@
         public Task<ApiResponse<List<ActionResult>>> ActionsPolicy(List<PostAction> PostActions, int IdUser);
         public Task<ApiResponse<List<byte>>> ExportPolicys(int IdUser, string Filter = "");
         public Task<ApiResponse<List<byte>>> ExportPdfPolicy(int IdUser, int IdPolicy);
-        public Task<ApiResponse<PolicyDetail>> GetPolicyDetail(int IdPolicy, int Km, DateTime DateService);
+        public Task<ApiResponse<List<PolicyDetail>>> GetOnePolicyDetails(int IdPolicy, int Km, DateTime DateService);
+        public Task<ApiResponse<List<PolicyDetail>>> GetLogPolicyDetails(int IdPolicy);
 
 
     }

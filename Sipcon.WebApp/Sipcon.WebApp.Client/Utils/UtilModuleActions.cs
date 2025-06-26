@@ -68,11 +68,16 @@ namespace Sipcon.WebApp.Client.Utils
                             _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Outlined.Task, module.Id, module.ActionName, Color.Info));
                             break;
                         case "TOAPPROVE":
-                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Outlined.Task, module.Id, module.ActionName, Color.Info));
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Outlined.ThumbUp, module.Id, module.ActionName, Color.Info));
                             break;
                         case "APPROVE":
-                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Outlined.Task, module.Id, module.ActionName, Color.Info));
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.ThumbUp, module.Id, module.ActionName, Color.Info));
                             break;
+                        case "DECLINE":
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Outlined.ThumbDown, module.Id, module.ActionName, Color.Info));
+                            break;
+                            
+
 
                         default:
                             Console.WriteLine($"Acción no reconocida: {module.ActionName}");
