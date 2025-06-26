@@ -76,48 +76,82 @@
 											<CardHeaderContent>
 
 												<MudGrid Spacing="0" Justify="Justify.Center">
-													<MudItem xs="12" sm="8">
-
+													<MudItem xs="12" sm="6">
 
 														<div class="d-flex justify-left">
-
-
 															<MudStack Row="true">
 																<MudIcon Icon="@Icons.Material.Filled.Policy" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
-																<MudText Typo="Typo.h6">Poliza</MudText>
-
+																<MudText Typo="Typo.h6">Poliza </MudText>
+																
 															</MudStack>
 														</div>
+
 													</MudItem>
 
-													<MudItem xs="12" sm="4">
-
-
-														<MudText Typo="Typo.button" Align="Align.Center" Color="Color.Primary">@_model.EstatusName</MudText>
-
-														<div class="d-flex align-end">
-															<div class="d-flex flex-column">
-																<MudText Typo="Typo.caption"><b>Nro. Poliza: </b> @_model.Number</MudText>
-															</div>
-
-														</div>
+													<MudItem xs="12" sm="6">
+													
 
 													</MudItem>
 												</MudGrid>
 
 											</CardHeaderContent>
+											<CardHeaderActions>
+												@if (_model.Id != 0)
+												{
+													if (_model.ExpirationDate is not null)
+													{
+														string style = "";
 
+														if (_model.EstatusName.ToUpper() == "CREADO")
+															style += "";
+														else if (_model.EstatusName.ToUpper() == "ACTIVADO")
+														{
+															style += "color:#fff";
+															style += ";background-color:#0099F3";
+														}
+														else if (_model.EstatusName.ToUpper() == "APROBADO")
+														{
+															style += "color:#fff";
+															style += ";background-color:#0099F3";
+														}
+														else if (_model.EstatusName.ToUpper() == "PROCESADO")
+														{
+															style += "color:#fff";
+															style += ";background-color:#757575";
+														}
+														else
+														{
+															style += "color:#fff";
+															style += ";background-color:#FF7043";
+														}
+														style += ";font-size: 9px";
+														style += ";font-style:italic";
+
+														<MudChip T="string" Style="@style" Label="true" Disabled="true">
+															@(_model.ExpirationDate.Value <= DateTime.Now ? _model.EstatusName.ToUpper() : _model.EstatusName.ToUpper() + " - VIGENTE")
+														</MudChip>
+													}
+													else
+													{
+
+														<MudChip T="string" Style="font-size: 9px;min-width: 112px;" Label="true" Color="Color.Default">
+															@(_model.EstatusName.ToUpper())
+														</MudChip>
+
+													}
+												}
+
+											</CardHeaderActions>
 										</MudCardHeader>
 										<MudCardContent Style="padding-top: 0px;">
 											<MudHidden @bind-Value="_model.Id" />
 											<MudHidden @bind-Value="IdPolicy" />
 
-
-											@* <MudSpacer /> *@
 											<MudFlexBreak />
 
 											<div class="d-flex align-end justify-space-between mud-width-full">
 												<div class="d-flex flex-column">
+													<MudText Typo="Typo.caption"><b>Nro. Poliza: </b> <MudText Typo="Typo.caption" Color="Color.Info">@(_model.Id != 0 ? " #" + _model.Number : "")</MudText></MudText>
 													<MudText Typo="Typo.caption"><b>Activacion: </b> @(_model.ActivationDate is null ? "" : _model.ActivationDate.Value.ToString("dd-MMM-yyyy"))</MudText>
 													<MudText Typo="Typo.caption"><b>Bloqueada: </b> @(_model.LockDate is null ? "" : _model.LockDate.Value.ToString("dd-MMM-yyyy")) </MudText>
 													<MudText Typo="Typo.caption"><b>Expiracion: </b> @(_model.ExpirationDate is null ? "" : _model.ExpirationDate.Value.ToString("dd-MMM-yyyy"))</MudText>
@@ -132,7 +166,7 @@
 
 								@* Datos Factura *@
 								<MudItem xs="12" sm="12">
-									<MudCard>
+									<MudCard Style="min-height: 370px;">
 										<MudCardHeader>
 											<CardHeaderContent>
 												<MudStack Row="true">
@@ -205,6 +239,7 @@
 						<MudItem xs="12" sm="8">
 							<MudGrid Spacing="1" Justify="Justify.Center">
 
+								@* Datos Vehiculo *@
 								<MudItem xs="12">
 									<MudCard>
 										<MudCardHeader>
@@ -239,7 +274,6 @@
 										<MudCardContent Style="padding-top: 0px;">
 											<MudHidden @bind-Value="_model.VehicleId" />
 
-											<MudStack Row="false">
 
 												<MudStack Row="true">
 
@@ -255,36 +289,43 @@
 																  ReadOnly="@(!_model.IsActive || _isReadOnly)"
 																  Disabled="@(!_model.IsActive || _isReadOnly)" />
 
-
-													<MudTextField Typo="Typo.caption" @bind-Value="_model.Vin"
-																  Label="Vin"
-																  Variant="Variant.Filled"
-																  Margin="Margin.Dense"
-																  ReadOnly="true"
-																  For="@(() => _model.Vin)"
-																  Immediate="true" />
+													<MudCheckBox @bind-Value="_SearchFor" Style="margin-top: -14px;font-size: 14px"
+																 Size="Size.Small"
+																 Color="Color.Info"
+																 Disabled="@(!_model.IsActive || _isReadOnly)">
+														<b style="font-size: 14px">@(_SearchFor == true ? "VIN" : "Placa")</b>
+													</MudCheckBox>
+													<MudSpacer />
+													
 
 												</MudStack>
 
-												<MudCheckBox @bind-Value="_SearchFor" Style="margin-top: -44px;font-size: 14px"
-															 Size="Size.Small"
-															 Color="Color.Info"
-															 Disabled="@(!_model.IsActive || _isReadOnly)">
-													<b style="font-size: 14px">@(_SearchFor == true ? "VIN" : "Placa")</b>
-												</MudCheckBox>
-											</MudStack>
-
-											@* <MudSpacer /> *@
+												
 
 
+											
 
+											
 
 											<MudStack Row="true">
 
-												<MudTextField Typo="Typo.caption" @bind-Value="_model.EngineSerial" Label="Serial Motor" Variant="Variant.Filled" Margin="Margin.Dense" ReadOnly="true" />
+												<MudTextField Typo="Typo.caption" @bind-Value="_model.Vin"
+															  Label="Vin"
+															  Variant="Variant.Text"
+															  Margin="Margin.Dense"
+															  ReadOnly="true"
+															  For="@(() => _model.Vin)"
+															  Immediate="true" />
+
 												<MudTextField Typo="Typo.caption" @bind-Value="_model.Plate"
 															  Label="Placa"
-															  Variant="Variant.Filled"
+															  Variant="Variant.Text"
+															  Margin="Margin.Dense"
+															  ReadOnly="true" />
+
+												<MudTextField Typo="Typo.caption" @bind-Value="_model.EngineSerial"
+															  Label="Serial Motor"
+															  Variant="Variant.Text"
 															  Margin="Margin.Dense"
 															  ReadOnly="true" />
 
@@ -292,24 +333,52 @@
 
 											<MudStack Row="true">
 
-												<MudTextField Typo="Typo.caption" @bind-Value="_model.Year" Label="Año" Variant="Variant.Filled" Margin="Margin.Dense" ReadOnly="true" />
-												<MudTextField Typo="Typo.caption" @bind-Value="_model.Color" Label="Color" Variant="Variant.Filled" Margin="Margin.Dense" ReadOnly="true" />
+												<MudTextField Typo="Typo.caption" @bind-Value="_model.Year" 
+															  Label="Año"
+															  Variant="Variant.Text"
+															  Margin="Margin.Dense" 
+															  ReadOnly="true" />
+
+												<MudTextField Typo="Typo.caption" @bind-Value="_model.Color" 
+															  Label="Color"
+															  Variant="Variant.Text"
+															  Margin="Margin.Dense" 
+														      ReadOnly="true" />
 
 											</MudStack>
 
 											<MudStack Row="true">
 
-												<MudTextField Typo="Typo.caption" @bind-Value="_model.SupplierName" Label="Planta" Variant="Variant.Filled" Margin="Margin.Dense" ReadOnly="true" />
-												<MudTextField Typo="Typo.caption" @bind-Value="_model.BrandName" Label="Marca" Variant="Variant.Filled" Margin="Margin.Dense" ReadOnly="true" />
-												<MudTextField Typo="Typo.caption" @bind-Value="_model.DealerName" Label="Concesionario" Variant="Variant.Filled" Margin="Margin.Dense" ReadOnly="true" />
+												<MudTextField Typo="Typo.caption" @bind-Value="_model.SupplierName" 
+															Label="Planta" 
+															Variant="Variant.Text" 
+															Margin="Margin.Dense" 
+															ReadOnly="true" />
+
+												<MudTextField Typo="Typo.caption" @bind-Value="_model.BrandName"
+															  Label="Marca" 
+															  Variant="Variant.Text"
+															  Margin="Margin.Dense" 
+															  ReadOnly="true" />
+
+												<MudTextField Typo="Typo.caption" @bind-Value="_model.DealerName" 
+															  Label="Concesionario"
+															  Variant="Variant.Text"
+															  Margin="Margin.Dense" 
+															  ReadOnly="true" />
 
 											</MudStack>
 
 											<MudStack Row="true">
-												<MudTextField Typo="Typo.caption" @bind-Value="_model.ModelName" Label="Modelo" Variant="Variant.Filled" Margin="Margin.Dense" ReadOnly="true" />
+												<MudTextField Typo="Typo.caption" @bind-Value="_model.ModelName" 
+															  Label="Modelo"
+															  Variant="Variant.Text"
+															  Margin="Margin.Dense" 
+															  ReadOnly="true" />
+
 												<MudTextField Typo="Typo.caption" @bind-Value="_model.Description"
 															  Label="Tipo Poliza"
-															  Variant="Variant.Filled"
+															  Variant="Variant.Text"
 															  Margin="Margin.Dense"
 															  ReadOnly="true" />
 
@@ -319,6 +388,7 @@
 									</MudCard>
 								</MudItem>
 
+								@* Datos Cliente *@
 								<MudItem xs="12">
 									<MudCard>
 										<MudCardHeader>
@@ -371,36 +441,56 @@
 
 												@* <MudSpacer /> *@
 
-												<MudTextField Typo="Typo.caption" @bind-Value="_model.Vat"
-															  Label="RIF"
-															  Variant="Variant.Filled"
-															  Margin="Margin.Dense"
-															  ReadOnly="true"
-															  For="@(() => _model.Vat)"
-															  Immediate="true" />
+												
 
 
 											</MudStack>
 
-											<MudTextField Typo="Typo.caption" T="string" Text="@(_model.LastName + " " + _model.FirstName)"
+											<MudSpacer />
+											<MudSpacer />
+
+											<MudStack Row="true">
+											
+													<MudTextField Typo="Typo.caption" @bind-Value="_model.Vat"
+														  Label="RIF"
+														  Variant="Variant.Text"
+														  Margin="Margin.Dense"
+														  ReadOnly="true"
+														  For="@(() => _model.Vat)"
+														  Immediate="true" />
+
+											
+													<MudTextField Typo="Typo.caption" T="string" Text="@(_model.LastName + " " + _model.FirstName)"
 														  Label="Apellidos y Nombres"
-														  Variant="Variant.Filled"
+														  Variant="Variant.Text"
 														  Margin="Margin.Dense"
 														  ReadOnly="true" />
 
-											<MudTextField Typo="Typo.caption" @bind-Value="_model.Direction" Label="Direcci&oacute;n"
-														  Variant="Variant.Filled"
-														  Margin="Margin.Dense" ReadOnly="true" />
+											</MudStack>
+@* 
+											<MudTextField Typo="Typo.caption" @bind-Value="_model.Direction" 
+														  Label="Direcci&oacute;n"
+														  Variant="Variant.Text"
+														  Margin="Margin.Dense" 
+														  ReadOnly="true" /> *@
 
 											<MudStack Row="true">
 
-												<MudTextField Typo="Typo.caption" @bind-Value="_model.Phone" Label="Telefono"
-															  Variant="Variant.Filled"
-															  Margin="Margin.Dense" ReadOnly="true" />
+												<MudTextField Typo="Typo.caption" @bind-Value="_model.Phone" 
+															  Label="Tel&eacute;fono"
+															  Adornment="Adornment.Start"
+															  AdornmentIcon="@Icons.Material.Filled.Phone"
+															  Variant="Variant.Text"
+															  Margin="Margin.Dense"
+															  ReadOnly="true" />
 
-												<MudTextField Typo="Typo.caption" @bind-Value="_model.Email" Label="Email"
-															  Variant="Variant.Filled"
-															  Margin="Margin.Dense" ReadOnly="true" />
+												<MudTextField Typo="Typo.caption" @bind-Value="_model.Email" 
+															  Label="Email"
+															  Adornment="Adornment.Start"
+															  AdornmentIcon="@Icons.Material.Filled.MailOutline"
+															  Variant="Variant.Text"
+															  Margin="Margin.Dense" 
+															  ReadOnly="true" />
 
 											</MudStack>
 
@@ -815,16 +905,39 @@
 				.NotEmpty().WithMessage("Campo requerido")
 				.Length(1, 20).WithMessage("Campo requerido entre 1-20 carácteres");
 
-		}
+            RuleFor(x => x.Plate)
+                .NotNull().WithMessage("Campo requerido")
+                .NotEmpty().WithMessage("Campo requerido");
+
+            RuleFor(x => x.FirstName)
+                .NotNull().WithMessage("Campo requerido")
+                .NotEmpty().WithMessage("Campo requerido");
+
+            RuleFor(x => x.LastName)
+                .NotNull().WithMessage("Campo requerido")
+                .NotEmpty().WithMessage("Campo requerido");
 
 
-		public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
-		{
-			var result = await ValidateAsync(ValidationContext<Policy>.CreateWithOptions((Policy)model, x => x.IncludeProperties(propertyName)));
-			if (result.IsValid)
-				return Array.Empty<string>();
-			return result.Errors.Select(e => e.ErrorMessage);
-		};
+            // RuleFor(x => x.VehicleId)
+            //     .NotEmpty().WithMessage("Campo requerido")
+            //     .GreaterThan(0).WithMessage("Campo requerido.");
 
-	}
-}
+            // RuleFor(x => x.CustomerId)
+            //        .NotEmpty().WithMessage("Campo requerido")
+            //        .GreaterThan(0).WithMessage("Campo requerido.");
+
+
+        }
+
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<Policy>.CreateWithOptions((Policy)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+
+    }
+    }
+      

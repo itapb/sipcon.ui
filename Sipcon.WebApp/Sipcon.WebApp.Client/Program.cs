@@ -24,7 +24,9 @@ builder.Services.AddScoped<IDealerService, DealerRepository>();
 builder.Services.AddScoped<IPolicyService, PolicyRepository>();
 builder.Services.AddScoped<IPayMethodService, PayMethodRepository>();
 builder.Services.AddScoped<IContactService, ContactRepository>();
-
+builder.Services.AddScoped<IMaintenanceService, MaintenanceRepository>();
+builder.Services.AddScoped<IAssistenceService, AssistenceRepository>();
+builder.Services.AddScoped<IAttachmentService, AttachmentRepository>();
 
 builder.Services.AddTransient<UtilModuleActions>();
 builder.Services.AddScoped(typeof(MasterComp<,>));

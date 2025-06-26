@@ -2,26 +2,25 @@
 {
     using Sipcon.WebApp.Client.Services;
     using Sipcon.WebApp.Client.Models;
-    using Sipcon.WebApp.Client.Enum;
     using System.Net.Http.Json;
 
 
 
-    public class PolicyRepository(HttpClient http) : IPolicyService
+    public class MaintenanceRepository(HttpClient http) : IMaintenanceService
     {
         private readonly HttpClient _http = http;
 
 
-        public async Task<ApiResponse<List<Policy>>> GetPolicys(int IdUser, int RowFrom = 0, string Filter = "")
+        public async Task<ApiResponse<List<Maintenance>>> GetMaintenances(int IdUser, int IdDealer, int RowFrom = 0, string Filter = "")
         {
-            ApiResponse<List<Policy>>? result;
+            ApiResponse<List<Maintenance>>? result;
 
             try
             {
-                result = await _http.GetFromJsonAsync<ApiResponse<List<Policy>>>($"api/Policy/GetAll?filter={Filter}&rowFrom={RowFrom}&userId={IdUser}");
+                result = await _http.GetFromJsonAsync<ApiResponse<List<Maintenance>>>($"api/Service/GetAll?filter={Filter}&rowFrom={RowFrom}&userId={IdUser}&serviceTypeId=1&dealerId={IdDealer}");
 
 
-                result = result is null ? new ApiResponse<List<Policy>>()
+                result = result is null ? new ApiResponse<List<Maintenance>>()
                 {
                     Processed = false,
                     Message = "La respuesta del servidor no contiene datos.",
@@ -32,7 +31,7 @@
             }
             catch (HttpRequestException httpEx)
             {
-                result = new ApiResponse<List<Policy>>()
+                result = new ApiResponse<List<Maintenance>>()
                 {
                     Processed = false,
                     Message = string.Concat("Error al realizar la solicitud HTTP: " , httpEx.Message)
@@ -41,7 +40,7 @@
             }
             catch (NotSupportedException notSupportedEx)
             {
-                result = new ApiResponse<List<Policy>>()
+                result = new ApiResponse<List<Maintenance>>()
                 {
                     Processed = false,
                     Message = string.Concat("El formato de la respuesta no es compatible: " , notSupportedEx.Message)
@@ -50,7 +49,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<List<Policy>>()
+                result = new ApiResponse<List<Maintenance>>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
@@ -61,24 +60,32 @@
 
         }
 
-        public async Task<ApiResponse<Policy>> GetPolicy(int IdPolicy, int IdUser) 
+        public async Task<ApiResponse<Maintenance>> GetMaintenance(int IdUser, int IdDealer, int IdMaintenance) 
         {
-            ApiResponse<Policy>? result;
+            ApiResponse<Maintenance>? result;
             try
             {
-                result = await _http.GetFromJsonAsync<ApiResponse<Policy>>($"api/Policy/GetOne?policyId={IdPolicy}&userId={IdUser}");
+                var resultlist = await _http.GetFromJsonAsync<ApiResponse<List<Maintenance>>>($"api/Service/GetOne?userId={IdUser}&serviceTypeId=1&dealerId={IdDealer}&serviceId={IdMaintenance}");
 
-                result = (result is null) ? new ApiResponse<Policy>()
-                {
-                    Processed = false,
-                    Message = "La respuesta del servidor no contiene datos."
+                
+                result = (resultlist is null) ? new ApiResponse<Maintenance>()
+                 {
+                     Processed = false,
+                     Message = "La respuesta del servidor no contiene datos."
 
-                } : result;
+                 } : new ApiResponse<Maintenance>()
+                 {
+                     Processed = resultlist.Processed,
+                     Total = resultlist.Total,
+                     Message = resultlist.Message,
+                     Data = resultlist.Data.FirstOrDefault() ?? new Maintenance()
+
+                 };
 
             }
             catch (HttpRequestException httpEx)
             {
-                result = new ApiResponse<Policy>()
+                result = new ApiResponse<Maintenance>()
                 {
                     Processed = false,
                     Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
@@ -87,7 +94,7 @@
             }
             catch (NotSupportedException notSupportedEx)
             {
-                result = new ApiResponse<Policy>()
+                result = new ApiResponse<Maintenance>()
                 {
                     Processed = false,
                     Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
@@ -96,7 +103,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<Policy>()
+                result = new ApiResponse<Maintenance>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
@@ -105,76 +112,35 @@
             return result;
         }
 
-        public async Task<ApiResponse<Policy>> GetPolicyBy(string Search, int IdUser, SearchByEnum SearchBy)
-        {
-            ApiResponse<Policy>? result;
-            try
-            {
-                result = await _http.GetFromJsonAsync<ApiResponse<Policy>>($"api/Policy/GetOneBy?userId={IdUser}&filter={Search}&filterBy={(int)SearchBy}");
-
-                result = (result is null) ? new ApiResponse<Policy>()
-                {
-                    Processed = false,
-                    Message = "La respuesta del servidor no contiene datos."
-                } : result;
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<Policy>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<Policy>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
-            catch (Exception ex)
-            {
-                result = new ApiResponse<Policy>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
-                };
-            }
-
-            return result;
-        }
-
-
-        public async Task<ApiResponse<List<ActionResult>>> CreatePolicy(Policy Policy, int IdUser)
+        public async Task<ApiResponse<List<ActionResult>>> CreateMaintenance(Maintenance Maintenance, int IdUser)
         {
             ApiResponse<List<ActionResult>>? result;
             try
             {
 
-                var _policy = new PolicyUp()
+                var _maintenance = new MaintenanceUp()
                 {
-                    Id = Policy.Id,
-                    IsActive = Policy.IsActive,
-                    VehicleId = Policy.VehicleId,
-                    CustomerId = Policy.CustomerId,
-                    InvoiceNumber = Policy.InvoiceNumber,
-                    InvoiceAmount = Policy.InvoiceAmount,
-                    InvoiceDate = Policy.InvoiceDate,
-                    PayMethodId = Policy.PayMethodId
+                    Id = Maintenance.Id,
+                    IsActive = Maintenance.IsActive,
+                    OrderNumber = Maintenance.OrderNumber ?? 0,
+                    ServiceDate = Maintenance.ServiceDate ?? DateTime.Now,
+                    DealerReport = Maintenance.DealerReport,
+                    PolicyDetailId = Maintenance.PolicyDetailId ?? 0,
+                    Km = Maintenance.Km ?? 0,
+                    DealerId = Maintenance.DealerId ?? 0,
+                    VehicleId = Maintenance.VehicleId ?? 0,
+                    CustomerId = Maintenance.CustomerId ?? 0,
+                    InvoiceNumber = Maintenance.InvoiceNumber,
+                    InvoiceDate = Maintenance.InvoiceDate ?? DateTime.Now
 
                 };
 
 
-                var response = await _http.PostAsJsonAsync($"api/Policy/PostPolicy?userId={IdUser}", _policy);
+                var response = await _http.PostAsJsonAsync($"api/Service/PostMaintenance?userId={IdUser}", _maintenance);
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error al crear el Policy: {response.StatusCode} - {response.ReasonPhrase}");
+                    throw new Exception($"Error al crear el Maintenance: {response.StatusCode} - {response.ReasonPhrase}");
                 }
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
@@ -213,32 +179,36 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> UpdatePolicy(Policy Policy, int IdUser)
+        public async Task<ApiResponse<List<ActionResult>>> UpdateMaintenance(Maintenance Maintenance, int IdUser)
         {
             ApiResponse<List<ActionResult>>? result;
 
             try
             {
-                var _policy = new PolicyUp()
-                { 
+                var _maintenance = new MaintenanceUp()
+                {
 
-                    Id              = Policy.Id,
-                    IsActive        = Policy.IsActive,
-                    VehicleId       = Policy.VehicleId,
-                    CustomerId      = Policy.CustomerId,
-                    InvoiceNumber   = Policy.InvoiceNumber,
-                    InvoiceAmount   = Policy.InvoiceAmount,
-                    InvoiceDate     = Policy.InvoiceDate,
-                    PayMethodId     = Policy.PayMethodId
+                    Id = Maintenance.Id,
+                    IsActive = Maintenance.IsActive,
+                    OrderNumber = Maintenance.OrderNumber ?? 0,
+                    ServiceDate = Maintenance.ServiceDate ?? DateTime.Now,
+                    DealerReport = Maintenance.DealerReport ?? string.Empty,
+                    PolicyDetailId = Maintenance.PolicyDetailId ?? 0,
+                    Km = Maintenance.Km ?? 0,
+                    DealerId = Maintenance.DealerId ?? 0,
+                    VehicleId = Maintenance.VehicleId ?? 0,
+                    CustomerId = Maintenance.CustomerId ?? 0,
+                    InvoiceNumber = Maintenance.InvoiceNumber,
+                    InvoiceDate = Maintenance.InvoiceDate ?? DateTime.Now
 
                 };
 
 
-                var response = await _http.PostAsJsonAsync($"api/Policy/PostPolicy?userId={IdUser}", _policy);
+                var response = await _http.PostAsJsonAsync($"api/Service/PostMaintenance?userId={IdUser}", _maintenance);
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error al crear el Policy: {response.StatusCode} - {response.ReasonPhrase}");
+                    throw new Exception($"Error al crear el Maintenance: {response.StatusCode} - {response.ReasonPhrase}");
                 }
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
@@ -277,7 +247,7 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> ActionsPolicy(List<PostAction> PostActions, int IdUser)
+        public async Task<ApiResponse<List<ActionResult>>> ActionsMaintenance(List<PostAction> PostActions, int IdUser)
         {
             ApiResponse<List<ActionResult>>? result;
             List<PostAction> PostActionList = ([]);
@@ -285,7 +255,7 @@
             {
 
 
-                var response = await _http.PostAsJsonAsync($"api/Policy/PostActions?userId={IdUser}", PostActions);
+                var response = await _http.PostAsJsonAsync($"api/Service/PostActions?userId={IdUser}&serviceTypeId=1", PostActions);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -330,7 +300,7 @@
 
         }
 
-        public async Task<ApiResponse<List<byte>>> ExportPolicys(int IdUser, string Filter = "")
+        public async Task<ApiResponse<List<byte>>> ExportMaintenances(int IdUser, int IdDealer, string Filter = "")
         {
             ApiResponse<List<byte>> result;
             string fileUrl = string.Empty;
@@ -338,7 +308,7 @@
             try
             {
                 
-                var response = await _http.GetAsync($"api/Policy/Export?filter={Filter}&userId={IdUser}");
+                var response = await _http.GetAsync($"api/Service/Export?filter={Filter}&userId={IdUser}&serviceTypeId=1&dealerId={IdDealer}");
                     
                     
                 if (!response.IsSuccessStatusCode)
@@ -385,7 +355,7 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<byte>>> ExportPdfPolicy(int IdUser, int IdPolicy )
+        public async Task<ApiResponse<List<byte>>> ExportPdfMaintenance(int IdUser, int IdDealer, int IdMaintenance)
         {
             ApiResponse<List<byte>> result;
             string fileUrl = string.Empty;
@@ -393,7 +363,7 @@
             try
             {
 
-                var response = await _http.GetAsync($"api/Policy/ExportPdf?policyId={IdPolicy}&userId={IdUser}");
+                var response = await _http.GetAsync($"api/Service/ExportPdf?userId={IdUser}&serviceTypeId=1&dealerId={IdDealer}&serviceId={IdMaintenance}");
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -436,50 +406,6 @@
                 };
             }
 
-            return result;
-        }
-
-        public async Task<ApiResponse<PolicyDetail>> GetPolicyDetail(int IdPolicy, int Km, DateTime DateService)
-        {
-            ApiResponse<PolicyDetail>? result;
-            try
-            {
-                result = await _http.GetFromJsonAsync<ApiResponse<PolicyDetail>>($"api/Policy/GetPolicyDetails?policyId={IdPolicy}&km={Km}&date={DateService.ToString("yyyy/MM/dd")}");
-
-                result = (result is null) ? new ApiResponse<PolicyDetail>()
-                {
-                    Processed = false,
-                    Message = "La respuesta del servidor no contiene datos."
-
-                } : result;
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<PolicyDetail>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<PolicyDetail>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
-            catch (Exception ex)
-            {
-                result = new ApiResponse<PolicyDetail>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
-                };
-            }
             return result;
         }
 

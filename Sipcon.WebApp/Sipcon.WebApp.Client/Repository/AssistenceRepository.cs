@@ -2,26 +2,25 @@
 {
     using Sipcon.WebApp.Client.Services;
     using Sipcon.WebApp.Client.Models;
-    using Sipcon.WebApp.Client.Enum;
     using System.Net.Http.Json;
 
 
 
-    public class PolicyRepository(HttpClient http) : IPolicyService
+    public class AssistenceRepository(HttpClient http) : IAssistenceService
     {
         private readonly HttpClient _http = http;
 
 
-        public async Task<ApiResponse<List<Policy>>> GetPolicys(int IdUser, int RowFrom = 0, string Filter = "")
+        public async Task<ApiResponse<List<Assistence>>> GetAssistences(int IdUser, int IdDealer, int RowFrom = 0, string Filter = "")
         {
-            ApiResponse<List<Policy>>? result;
+            ApiResponse<List<Assistence>>? result;
 
             try
             {
-                result = await _http.GetFromJsonAsync<ApiResponse<List<Policy>>>($"api/Policy/GetAll?filter={Filter}&rowFrom={RowFrom}&userId={IdUser}");
+                result = await _http.GetFromJsonAsync<ApiResponse<List<Assistence>>>($"api/Service/GetAll?filter={Filter}&rowFrom={RowFrom}&userId={IdUser}&serviceTypeId=2&dealerId={IdDealer}");
 
 
-                result = result is null ? new ApiResponse<List<Policy>>()
+                result = result is null ? new ApiResponse<List<Assistence>>()
                 {
                     Processed = false,
                     Message = "La respuesta del servidor no contiene datos.",
@@ -32,7 +31,7 @@
             }
             catch (HttpRequestException httpEx)
             {
-                result = new ApiResponse<List<Policy>>()
+                result = new ApiResponse<List<Assistence>>()
                 {
                     Processed = false,
                     Message = string.Concat("Error al realizar la solicitud HTTP: " , httpEx.Message)
@@ -41,7 +40,7 @@
             }
             catch (NotSupportedException notSupportedEx)
             {
-                result = new ApiResponse<List<Policy>>()
+                result = new ApiResponse<List<Assistence>>()
                 {
                     Processed = false,
                     Message = string.Concat("El formato de la respuesta no es compatible: " , notSupportedEx.Message)
@@ -50,7 +49,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<List<Policy>>()
+                result = new ApiResponse<List<Assistence>>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
@@ -61,24 +60,31 @@
 
         }
 
-        public async Task<ApiResponse<Policy>> GetPolicy(int IdPolicy, int IdUser) 
+        public async Task<ApiResponse<Assistence>> GetAssistence(int IdUser, int IdDealer, int IdAssistence) 
         {
-            ApiResponse<Policy>? result;
+            ApiResponse<Assistence>? result;
             try
             {
-                result = await _http.GetFromJsonAsync<ApiResponse<Policy>>($"api/Policy/GetOne?policyId={IdPolicy}&userId={IdUser}");
+                var resultlist = await _http.GetFromJsonAsync<ApiResponse<List<Assistence>>>($"api/Service/GetOne?userId={IdUser}&serviceTypeId=2&dealerId={IdDealer}&serviceId={IdAssistence}");
 
-                result = (result is null) ? new ApiResponse<Policy>()
+                result = (resultlist is null) ? new ApiResponse<Assistence>()
                 {
                     Processed = false,
                     Message = "La respuesta del servidor no contiene datos."
 
-                } : result;
+                } : new ApiResponse<Assistence>()
+                {
+                    Processed = resultlist.Processed,
+                    Total = resultlist.Total,
+                    Message = resultlist.Message,
+                    Data = resultlist.Data.FirstOrDefault() ?? new Assistence()
+
+                };
 
             }
             catch (HttpRequestException httpEx)
             {
-                result = new ApiResponse<Policy>()
+                result = new ApiResponse<Assistence>()
                 {
                     Processed = false,
                     Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
@@ -87,7 +93,7 @@
             }
             catch (NotSupportedException notSupportedEx)
             {
-                result = new ApiResponse<Policy>()
+                result = new ApiResponse<Assistence>()
                 {
                     Processed = false,
                     Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
@@ -96,7 +102,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<Policy>()
+                result = new ApiResponse<Assistence>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
@@ -105,76 +111,33 @@
             return result;
         }
 
-        public async Task<ApiResponse<Policy>> GetPolicyBy(string Search, int IdUser, SearchByEnum SearchBy)
-        {
-            ApiResponse<Policy>? result;
-            try
-            {
-                result = await _http.GetFromJsonAsync<ApiResponse<Policy>>($"api/Policy/GetOneBy?userId={IdUser}&filter={Search}&filterBy={(int)SearchBy}");
-
-                result = (result is null) ? new ApiResponse<Policy>()
-                {
-                    Processed = false,
-                    Message = "La respuesta del servidor no contiene datos."
-                } : result;
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<Policy>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<Policy>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
-            catch (Exception ex)
-            {
-                result = new ApiResponse<Policy>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
-                };
-            }
-
-            return result;
-        }
-
-
-        public async Task<ApiResponse<List<ActionResult>>> CreatePolicy(Policy Policy, int IdUser)
+        public async Task<ApiResponse<List<ActionResult>>> CreateAssistence(Assistence Assistence, int IdUser)
         {
             ApiResponse<List<ActionResult>>? result;
             try
             {
 
-                var _policy = new PolicyUp()
+                var _assistence = new AssistenceUp()
                 {
-                    Id = Policy.Id,
-                    IsActive = Policy.IsActive,
-                    VehicleId = Policy.VehicleId,
-                    CustomerId = Policy.CustomerId,
-                    InvoiceNumber = Policy.InvoiceNumber,
-                    InvoiceAmount = Policy.InvoiceAmount,
-                    InvoiceDate = Policy.InvoiceDate,
-                    PayMethodId = Policy.PayMethodId
+                    Id = Assistence.Id,
+                    IsActive = Assistence.IsActive,
+                    OrderNumber = Assistence.OrderNumber ?? 0,
+                    ServiceDate = Assistence.ServiceDate ?? DateTime.Now,
+                    CustomerReport = Assistence.CustomerReport,
+                    DealerReport = Assistence.DealerReport,
+                    TechnicalSolution = Assistence.TechnicalSolution,
+                    Km = Assistence.Km ?? 0,
+                    DealerId = Assistence.DealerId ?? 0,
+                    VehicleId = Assistence.VehicleId ?? 0
 
                 };
 
 
-                var response = await _http.PostAsJsonAsync($"api/Policy/PostPolicy?userId={IdUser}", _policy);
+                var response = await _http.PostAsJsonAsync($"api/Service/PostAssistence?userId={IdUser}", _assistence);
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error al crear el Policy: {response.StatusCode} - {response.ReasonPhrase}");
+                    throw new Exception($"Error al crear el Assistence: {response.StatusCode} - {response.ReasonPhrase}");
                 }
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
@@ -213,32 +176,34 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> UpdatePolicy(Policy Policy, int IdUser)
+        public async Task<ApiResponse<List<ActionResult>>> UpdateAssistence(Assistence Assistence, int IdUser)
         {
             ApiResponse<List<ActionResult>>? result;
 
             try
             {
-                var _policy = new PolicyUp()
-                { 
+                var _assistence = new AssistenceUp()
+                {
 
-                    Id              = Policy.Id,
-                    IsActive        = Policy.IsActive,
-                    VehicleId       = Policy.VehicleId,
-                    CustomerId      = Policy.CustomerId,
-                    InvoiceNumber   = Policy.InvoiceNumber,
-                    InvoiceAmount   = Policy.InvoiceAmount,
-                    InvoiceDate     = Policy.InvoiceDate,
-                    PayMethodId     = Policy.PayMethodId
+                    Id = Assistence.Id,
+                    IsActive = Assistence.IsActive,
+                    OrderNumber = Assistence.OrderNumber ?? 0,
+                    ServiceDate = Assistence.ServiceDate ?? DateTime.Now,
+                    CustomerReport = Assistence.CustomerReport,
+                    DealerReport = Assistence.DealerReport,
+                    TechnicalSolution = Assistence.TechnicalSolution,
+                    Km = Assistence.Km ?? 0,
+                    DealerId = Assistence.DealerId ?? 0,
+                    VehicleId = Assistence.VehicleId ?? 0
 
                 };
 
 
-                var response = await _http.PostAsJsonAsync($"api/Policy/PostPolicy?userId={IdUser}", _policy);
+                var response = await _http.PostAsJsonAsync($"api/Service/PostAssistence?userId={IdUser}", _assistence);
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error al crear el Policy: {response.StatusCode} - {response.ReasonPhrase}");
+                    throw new Exception($"Error al crear el Assistence: {response.StatusCode} - {response.ReasonPhrase}");
                 }
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
@@ -277,7 +242,7 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> ActionsPolicy(List<PostAction> PostActions, int IdUser)
+        public async Task<ApiResponse<List<ActionResult>>> ActionsAssistence(List<PostAction> PostActions, int IdUser)
         {
             ApiResponse<List<ActionResult>>? result;
             List<PostAction> PostActionList = ([]);
@@ -285,7 +250,7 @@
             {
 
 
-                var response = await _http.PostAsJsonAsync($"api/Policy/PostActions?userId={IdUser}", PostActions);
+                var response = await _http.PostAsJsonAsync($"api/Service/PostActions?userId={IdUser}&serviceTypeId=2", PostActions);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -330,7 +295,7 @@
 
         }
 
-        public async Task<ApiResponse<List<byte>>> ExportPolicys(int IdUser, string Filter = "")
+        public async Task<ApiResponse<List<byte>>> ExportAssistences(int IdUser, int IdDealer, string Filter = "")
         {
             ApiResponse<List<byte>> result;
             string fileUrl = string.Empty;
@@ -338,7 +303,7 @@
             try
             {
                 
-                var response = await _http.GetAsync($"api/Policy/Export?filter={Filter}&userId={IdUser}");
+                var response = await _http.GetAsync($"api/Service/Export?filter={Filter}&userId={IdUser}&serviceTypeId=2&dealerId={IdDealer}");
                     
                     
                 if (!response.IsSuccessStatusCode)
@@ -382,104 +347,6 @@
                 };
             }
 
-            return result;
-        }
-
-        public async Task<ApiResponse<List<byte>>> ExportPdfPolicy(int IdUser, int IdPolicy )
-        {
-            ApiResponse<List<byte>> result;
-            string fileUrl = string.Empty;
-
-            try
-            {
-
-                var response = await _http.GetAsync($"api/Policy/ExportPdf?policyId={IdPolicy}&userId={IdUser}");
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new Exception($"Error Export Poliza: {response.StatusCode} - {response.ReasonPhrase}");
-                }
-
-                var fileContent = await response.Content.ReadAsByteArrayAsync();
-                result = new ApiResponse<List<byte>>()
-                {
-                    Processed = true,
-                    Message = "Exportación exitosa.",
-                    Data = fileContent.ToList()
-                };
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<byte>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message),
-                    Data = []
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<byte>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message),
-                    Data = []
-                };
-            }
-            catch (Exception ex)
-            {
-                result = new ApiResponse<List<byte>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message),
-                    Data = []
-                };
-            }
-
-            return result;
-        }
-
-        public async Task<ApiResponse<PolicyDetail>> GetPolicyDetail(int IdPolicy, int Km, DateTime DateService)
-        {
-            ApiResponse<PolicyDetail>? result;
-            try
-            {
-                result = await _http.GetFromJsonAsync<ApiResponse<PolicyDetail>>($"api/Policy/GetPolicyDetails?policyId={IdPolicy}&km={Km}&date={DateService.ToString("yyyy/MM/dd")}");
-
-                result = (result is null) ? new ApiResponse<PolicyDetail>()
-                {
-                    Processed = false,
-                    Message = "La respuesta del servidor no contiene datos."
-
-                } : result;
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<PolicyDetail>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<PolicyDetail>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
-            catch (Exception ex)
-            {
-                result = new ApiResponse<PolicyDetail>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
-                };
-            }
             return result;
         }
 

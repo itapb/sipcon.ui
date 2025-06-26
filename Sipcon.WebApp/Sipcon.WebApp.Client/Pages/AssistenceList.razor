@@ -1,4 +1,4 @@
-﻿@page "/policy"
+﻿@page "/assistence"
 
 
 @using Sipcon.WebApp.Client.Models
@@ -8,19 +8,19 @@
 @using System.Text.Json
 
 
-@inject IPolicyService PolicyService
+@inject IAssistenceService AssistenceService
 @inject IDialogService DialogService
 @inject UtilModuleActions ModuleActionsService
 @inject IJSRuntime JSRuntime
+@inject NavigationManager UriHelper
 
 
-<PageTitle>Poliza</PageTitle>
-@* <MudBreadcrumbs Items="_itemsNavigate"></MudBreadcrumbs> *@
+<PageTitle>Asistencia</PageTitle>
 <CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
 
 <MudDataGrid @ref="_mudDataGrid"
 MultiSelection="true" 
-SelectedItems="@selectedPolicy"
+SelectedItems="@selectedAssistence"
 SortMode="SortMode.Multiple"
 Filterable="true"
 FixedHeader Height="calc(92vh - 235px)"
@@ -31,7 +31,7 @@ Dense="true"
 ServerData="LoadGridData">
 
     <ToolBarContent>
-        <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddPolicy()"></MudIconButton>
+        <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddAssistence()"></MudIconButton>
         <MudTextField @bind-Value="_searchString" Placeholder="buscar" Adornment="Adornment.Start" Immediate="true"
         Typo="Typo.caption"
         AdornmentIcon="@Icons.Material.Filled.Search"
@@ -51,46 +51,47 @@ ServerData="LoadGridData">
         </MudMenu>
     </ToolBarContent>
     <Columns>
-        <SelectColumn T="Policy" />
-        <TemplateColumn T="Policy" Title="POLIZA">
+        <SelectColumn T="Assistence" />
+        <TemplateColumn T="Assistence" Title="ORDEN">
             <CellTemplate>
-
-                <MudText Typo="Typo.caption" Align="Align.End">@context.Item.Number</MudText>
-
+                <MudText Typo="Typo.caption" Align="Align.End">@context.Item.OrderNumber</MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="Policy" Title="VIN">
+        <TemplateColumn T="Assistence" Title="VIN">
             <CellTemplate>
-
                 <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Vin.ToUpper()</MudText>
-
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="Policy" Title="PLACA">
+        <TemplateColumn T="Assistence" Title="PLACA">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.Start"><b>@context.Item.Plate.ToUpper()</b></MudText>
             </CellTemplate>
         </TemplateColumn>
+        <TemplateColumn T="Assistence" Title="KM" >
+            <CellTemplate>
+                <div class="d-flex justify-end">
+                    <MudText Typo="Typo.caption" Align="Align.End">
+                        @(context.Item.Km?.ToString("N0"))
+                    </MudText>
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
         @* <PropertyColumn Property="x => x.Vat" Title="RIF" Sortable="false" Filterable="false" /> *@
-        <TemplateColumn T="Policy" Title="CLIENTE">
+       @*  <TemplateColumn T="Assistence" Title="CLIENTE">
             <CellTemplate>
-
-                <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.FirstName.ToUpper() + " " + context.Item.LastName.ToUpper()) </MudText>
-
-
+                <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.CustomerName.ToUpper() + " " + context.Item.CustomerLastName.ToUpper()) </MudText>
+            </CellTemplate>
+        </TemplateColumn> *@
+        <TemplateColumn T="Assistence" Title="CONCESIONARIO">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.DealerServiceCod.ToUpper())</MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="Policy" Title="CONCESIONARIO">
+        <PropertyColumn Property="x => x.ServiceTypeName" Title="SERVICIO" Sortable="false" Filterable="false" />
+        <TemplateColumn T="Assistence" Title="ESTATUS">
             <CellTemplate>
-
-                <MudText Typo="Typo.caption" Align="Align.Start">@context.Item.DealerCod.ToUpper()</MudText>
-
-            </CellTemplate>
-        </TemplateColumn>
-        <TemplateColumn T="Policy" Title="ESTATUS" >
-            <CellTemplate>
-                <div class="d-flex justify-center" >
-                    @if (context.Item.ExpirationDate is not null)
+                <div class="d-flex justify-center">
+                    @if (context.Item.EstatusName != null)
                     {
                         string style = "";
 
@@ -120,42 +121,19 @@ ServerData="LoadGridData">
                         style += ";font-style:italic";
 
                         <MudChip T="string" Style="@style" Label="true" Disabled="true">
-                            @(context.Item.ExpirationDate.Value <= DateTime.Now ? context.Item.EstatusName.ToUpper() : context.Item.EstatusName.ToUpper() + " - VIGENTE")
-                        </MudChip>
-                    }
-                    else
-                    {
-
-                        <MudChip T="string" Style="font-size: 11px;min-width: 132px;" Label="true" Color="Color.Default">
                             @(context.Item.EstatusName.ToUpper())
                         </MudChip>
-
                     }
+                   
                 </div>
-
-
             </CellTemplate>
         </TemplateColumn>
-
-        @*  <TemplateColumn T="Policy" Title="FECHA EXP.">
-
-            <CellTemplate>
-                <div class="d-flex justify-center">
-                    <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.ExpirationDate is null ? "" : context.Item.ExpirationDate.Value.ToString("dd-MMM-yyyy")) </MudText>
-                </div>
-            </CellTemplate>
-        </TemplateColumn> *@
         <TemplateColumn >
             <CellTemplate>
                 <MudStack Row="true">
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditPolicy(context.Item)" />
-
-                    @if (context.Item.EstatusName.ToUpper() != "CREADO")
-                    {
-                        <MudIconButton Icon="@Icons.Custom.FileFormats.FilePdf" Color="Color.Default" Size="Size.Small" OnClick="() => ClickExportPdf(context.Item)"></MudIconButton>
-                    }
                     
-
+                    @* OnClick="() => ClickEditAssistence(context.Item)" *@
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" Href="@(" assistencedetail/" + context.Item.Id)" />
                 </MudStack>
 
             </CellTemplate>
@@ -163,15 +141,15 @@ ServerData="LoadGridData">
     </Columns>
 
     <PagerContent>
-        <MudDataGridPager T="Policy" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        <MudDataGridPager T="Assistence" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
     </PagerContent>
 </MudDataGrid>
 
 <MudDialog @bind-Visible="_nestedVisible">
     <TitleContent>
         <MudStack Row="true">
-            <MudIcon Icon="@Icons.Material.Filled.Policy" Color="@(_success ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
-            <MudText Typo="Typo.h6">Poliza</MudText>
+            <MudIcon Icon="@Icons.Material.Filled.CarCrash" Color="@(_success ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
+            <MudText Typo="Typo.h6">Asistencia</MudText>
         </MudStack>
     </TitleContent>
     <DialogContent>
@@ -191,50 +169,51 @@ ServerData="LoadGridData">
 
 
 @code {
-    private IEnumerable<Policy> _Policys = new List<Policy>();
+    private IEnumerable<Assistence> _Assistences = new List<Assistence>();
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
     bool _success = false;
 
     private int _rowCount = 0;
     private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
+    private int _iddealer = 5103; // Cambia esto por el ID del usuario que estás utilizando
     private int _rowsTotal = 0; 
 
     private string _searchString = string.Empty;
     private bool _loading = true;
-    private string _moduleName = "POLIZAS-POLIZAS";
+    private string _moduleName = "SERVICIOS-ASISTENCIA TECNICA";
 
-    private MudDataGrid<Policy>? _mudDataGrid;
-    private HashSet<Policy> selectedPolicy = new([]);
+    private MudDataGrid<Assistence>? _mudDataGrid;
+    private HashSet<Assistence> selectedAssistence = new([]);
     private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
 
     private List<BreadcrumbItem> _itemsNavigate =
                 [
         new("Home", href: null, icon: Icons.Material.Filled.Home),
-        new("Poliza",  href: "policy", disabled: false, icon: Icons.Material.Filled.Policy),
+        new("Asistencia",  href: "assistence", disabled: false, icon: Icons.Material.Filled.CarCrash),
     ];
 
 
-    private async Task<GridData<Policy>> LoadGridData(GridState<Policy> state)
+    private async Task<GridData<Assistence>> LoadGridData(GridState<Assistence> state)
     {
 
         _rowCount = state.Page * state.PageSize;
 
-        await GetPolicys();
+        await GetAssistences();
 
-        return new GridData<Policy> { TotalItems = _rowsTotal, Items = _Policys };
+        return new GridData<Assistence> { TotalItems = _rowsTotal, Items = _Assistences };
     }
 
-    private async Task GetPolicys()
+    private async Task GetAssistences()
     {
         _loading = true;
-        var serviceResponse = await PolicyService.GetPolicys(_iduser, _rowCount, _searchString);
+        var serviceResponse = await AssistenceService.GetAssistences(_iduser, _iddealer, _rowCount, _searchString);
         if (serviceResponse.Processed)
         {
-            _Policys = serviceResponse.Data;
+            _Assistences = serviceResponse.Data;
             _rowsTotal = serviceResponse.Total;
 
-            if (_Policys.Count() > 0)
+            if (_Assistences.Count() > 0)
             {
                 _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
             }
@@ -244,7 +223,8 @@ ServerData="LoadGridData">
         }
         else
         {
-            _Policys = new List<Policy>();
+            Console.WriteLine($"Error: {serviceResponse.Message}");
+            _Assistences = new List<Assistence>();
             _rowsTotal = 0;
             _itemsModules = new List<ModuleAction>([]);
         }
@@ -284,55 +264,20 @@ ServerData="LoadGridData">
     }
 
 
-    private async Task ClickEditPolicy(Policy item)
+    private async Task ClickEditAssistence(Assistence item)
     {
-
-
-        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = false, NoHeader = true };
-
-        var parameters = new DialogParameters<PolicyDialog> { { x => x.IdPolicy, item.Id }, { x => x.ActionsModal, ActionsEnum.Edit } };
-        var dialog = await DialogService.ShowAsync<PolicyDialog>("simple dialog", parameters, options);
-        var result = await dialog.Result;
-        if (!result!.Canceled)
-        {
-            await _mudDataGrid!.ReloadServerData();
-            StateHasChanged();
-        }
-
+        UriHelper.NavigateTo("assistencedetail/" + item.Id);
         await Task.CompletedTask;
     }
 
-    private async Task ClickExportPdf(Policy item)
-    {
-        var serviceResponse = await PolicyService.ExportPdfPolicy(_iduser, item.Id);
-        if (serviceResponse.Processed)
-        {
-            _success = true;
-            _nestedErrorMessage = "";
 
-            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
-            var fileUrl = $"data:application/pdf;base64,{base64File}";
-            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Poliza.pdf");
-
-        }
-        else
-        {
-            _success = false;
-            _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue();
-            Console.WriteLine(serviceResponse.Message);
-            OpenNested();
-
-        }
-    }
-
-
-    private async Task ClickAddPolicy()
+    private async Task ClickAddAssistence()
     {
 
         DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = false, NoHeader = true };
 
-        var parameters = new DialogParameters<PolicyDialog> { { x => x.IdPolicy, 0 }, { x => x.ActionsModal, ActionsEnum.Create } };
-        var dialog = await DialogService.ShowAsync<PolicyDialog>("simple dialog", parameters, options);
+        var parameters = new DialogParameters<AssistenceDialog> { { x => x.IdAssistence, 0 }, { x => x.ActionsModal, ActionsEnum.Create } };
+        var dialog = await DialogService.ShowAsync<AssistenceDialog>("simple dialog", parameters, options);
         var result = await dialog.Result;
         if (!result!.Canceled)
         {
@@ -356,17 +301,14 @@ ServerData="LoadGridData">
             case "EXPORT":
                 await ExportItemsAsync();
                 break;
-            case "ACTIVATE":
-                await ActivateItemsAsync(module.IdAction, module.ActionName);
+            case "GENERATE":
+                await GenerateItemsAsync(module.IdAction, module.ActionName);
                 break;
-            case "DEACTIVATE":
-                await DesactivateItemsAsync(module.IdAction, module.ActionName);
+            case "TOAPPROVE":
+                await ToApproveItemsAsync(module.IdAction, module.ActionName);
                 break;
-            case "LOCK":
-                await LockItemsAsync(module.IdAction, module.ActionName);
-                break;
-            case "UNLOCK":
-                await UnlockItemsAsync(module.IdAction, module.ActionName);
+            case "APPROVE":
+                await ApproveItemsAsync(module.IdAction, module.ActionName);
                 break;
             default:
                 Console.WriteLine($"{MessageEnum.ActionsError.GetStringValue()}: {module.ActionName}");
@@ -377,7 +319,7 @@ ServerData="LoadGridData">
 
     private async Task ExportItemsAsync()
     {
-        var serviceResponse = await PolicyService.ExportPolicys(_iduser, _searchString);
+        var serviceResponse = await AssistenceService.ExportAssistences(_iduser, _iddealer, _searchString);
         if (serviceResponse.Processed)
         {
             _success = true;
@@ -385,7 +327,7 @@ ServerData="LoadGridData">
 
             var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
             var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
-            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Poliza.xlsx");
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Asistencia.xlsx");
 
         }
         else
@@ -398,33 +340,10 @@ ServerData="LoadGridData">
         }
     }
 
-    // private async Task ExportPdfAsync()
-    // {
-    //     var serviceResponse = await PolicyService.ExportPdfPolicy(_iduser, _iduser);
-    //     if (serviceResponse.Processed)
-    //     {
-    //         _success = true;
-    //         _nestedErrorMessage = "";
-
-    //         var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
-    //         var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
-    //         await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Poliza.xlsx");
-
-    //     }
-    //     else
-    //     {
-    //         _success = false;
-    //         _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue();
-    //         Console.WriteLine(serviceResponse.Message);
-    //         OpenNested();
-
-    //     }
-    // }
-
-    private async Task ActivateItemsAsync(int moduleId, string moduleActionName)
+    private async Task GenerateItemsAsync(int moduleId, string moduleActionName)
     {
-        Console.WriteLine("Activar Poliza...");
-        if (selectedPolicy.Any())
+        Console.WriteLine("Generar Asistencia...");
+        if (selectedAssistence.Any())
         {
             var option = new DialogOptions
                 {
@@ -434,15 +353,15 @@ ServerData="LoadGridData">
                     BackdropClick = false
                 };
             bool? result = await DialogService.ShowMessageBox(
-                "Activar Poliza",
-                $"Seguro de Activar Poliza seleccionada? ",
+                "Generar Asistencia",
+                $"Seguro de Generar Asistencia? ",
                 yesText: "Si", noText: "No", "", option);
 
             if (result == true)
             {
                 List<PostAction> ActionList = ([]);
 
-                foreach (var policy in selectedPolicy)
+                foreach (var policy in selectedAssistence)
                 {
                     var VehicleAction = new PostAction
                         {
@@ -453,12 +372,12 @@ ServerData="LoadGridData">
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await PolicyService.ActionsPolicy(ActionList, _iduser);
+                var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, _iduser);
                 if (serviceResponse.Processed)
                 {
 
                     _success = true;
-                    _nestedErrorMessage = MessageEnum.ActivateOK.GetStringValue();
+                    _nestedErrorMessage = MessageEnum.GenerateOK.GetStringValue();
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -468,7 +387,7 @@ ServerData="LoadGridData">
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = MessageEnum.ActivateNotOK.GetStringValue();
+                    _nestedErrorMessage = MessageEnum.GenerateNotOK.GetStringValue();
                     Console.WriteLine(serviceResponse.Message);
                     OpenNested();
 
@@ -477,46 +396,49 @@ ServerData="LoadGridData">
 
         }
 
-        selectedPolicy = new([]);
+        selectedAssistence = new([]);
         await Task.CompletedTask;
     }
 
-    private async Task DesactivateItemsAsync(int moduleId, string moduleActionName)
+
+    private async Task ToApproveItemsAsync(int moduleId, string moduleActionName)
     {
-        if (selectedPolicy.Any())
+        Console.WriteLine("Por Aprobar Asistencia...");
+        if (selectedAssistence.Any())
         {
             var option = new DialogOptions
-                {
-                    CloseButton = false,
-                    MaxWidth = MaxWidth.Small,
-                    FullWidth = true,
-                    BackdropClick = false
-                };
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false
+            };
             bool? result = await DialogService.ShowMessageBox(
-                "Inactivar Poliza",
-                $"Seguro de Inactivar Poliza seleccionado? ",
+                "Pre Aprobar Asistencia Tècnica",
+                $"Seguro de pre-aprobar? ",
                 yesText: "Si", noText: "No", "", option);
 
             if (result == true)
             {
                 List<PostAction> ActionList = ([]);
 
-                foreach (var policy in selectedPolicy)
+                foreach (var policy in selectedAssistence)
                 {
                     var VehicleAction = new PostAction
-                        {
-                            RecordId = policy.Id,
-                            ModuleId = moduleId,
-                            ActionName = moduleActionName
-                        };
+                    {
+                        RecordId = policy.Id,
+                        ModuleId = moduleId,
+                        ActionName = moduleActionName
+                    };
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await PolicyService.ActionsPolicy(ActionList, _iduser);
+                var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, _iduser);
                 if (serviceResponse.Processed)
                 {
+
                     _success = true;
-                    _nestedErrorMessage = MessageEnum.DeactivateOK.GetStringValue();
+                    _nestedErrorMessage = MessageEnum.ToApproveOK.GetStringValue();
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -526,7 +448,7 @@ ServerData="LoadGridData">
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = MessageEnum.DeactivateNotOK.GetStringValue();
+                    _nestedErrorMessage = MessageEnum.ToApproveNotOK.GetStringValue();
                     Console.WriteLine(serviceResponse.Message);
                     OpenNested();
 
@@ -535,48 +457,48 @@ ServerData="LoadGridData">
 
         }
 
-        selectedPolicy = new([]);
+        selectedAssistence = new([]);
         await Task.CompletedTask;
     }
 
-    private async Task LockItemsAsync(int moduleId, string moduleActionName)
+    private async Task ApproveItemsAsync(int moduleId, string moduleActionName)
     {
-
-        if (selectedPolicy.Any())
+        Console.WriteLine("Aprobar Asistencia...");
+        if (selectedAssistence.Any())
         {
             var option = new DialogOptions
-                {
-                    CloseButton = false,
-                    MaxWidth = MaxWidth.Small,
-                    FullWidth = true,
-                    BackdropClick = false
-                };
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false
+            };
             bool? result = await DialogService.ShowMessageBox(
-                "Bloquear Poliza",
-                $"Seguro de Bloquear Poliza seleccionada? ",
+                "Aprobar Asistencia Tècnica",
+                $"Seguro de Aprobar? ",
                 yesText: "Si", noText: "No", "", option);
 
             if (result == true)
             {
                 List<PostAction> ActionList = ([]);
 
-                foreach (var policy in selectedPolicy)
+                foreach (var policy in selectedAssistence)
                 {
                     var VehicleAction = new PostAction
-                        {
-                            RecordId = policy.Id,
-                            ModuleId = moduleId,
-                            ActionName = moduleActionName
-                        };
+                    {
+                        RecordId = policy.Id,
+                        ModuleId = moduleId,
+                        ActionName = moduleActionName
+                    };
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await PolicyService.ActionsPolicy(ActionList, _iduser);
+                var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, _iduser);
                 if (serviceResponse.Processed)
                 {
 
                     _success = true;
-                    _nestedErrorMessage = MessageEnum.LockOK.GetStringValue();
+                    _nestedErrorMessage = MessageEnum.ApproveOK.GetStringValue();
 
                     OpenNested();
                     await _mudDataGrid!.ReloadServerData();
@@ -586,7 +508,7 @@ ServerData="LoadGridData">
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = MessageEnum.LockNotOK.GetStringValue();
+                    _nestedErrorMessage = MessageEnum.ApproveNotOK.GetStringValue();
                     Console.WriteLine(serviceResponse.Message);
                     OpenNested();
 
@@ -595,85 +517,25 @@ ServerData="LoadGridData">
 
         }
 
-        selectedPolicy = new([]);
+        selectedAssistence = new([]);
         await Task.CompletedTask;
     }
 
-    private async Task UnlockItemsAsync(int moduleId, string moduleActionName)
-    {
-        if (selectedPolicy.Any())
-        {
-            var option = new DialogOptions
-                {
-                    CloseButton = false,
-                    MaxWidth = MaxWidth.Small,
-                    FullWidth = true,
-                    BackdropClick = false
-                };
-            bool? result = await DialogService.ShowMessageBox(
-                "Desbloquear Poliza",
-                $"Seguro de desbloquear Poliza seleccionada? ",
-                yesText: "Si", noText: "No", "", option);
-
-            if (result == true)
-            {
-                List<PostAction> ActionList = ([]);
-
-                foreach (var policy in selectedPolicy)
-                {
-                    var VehicleAction = new PostAction
-                        {
-                            RecordId = policy.Id,
-                            ModuleId = moduleId,
-                            ActionName = moduleActionName
-                        };
-                    ActionList.Add(VehicleAction);
-                }
-
-                var serviceResponse = await PolicyService.ActionsPolicy(ActionList, _iduser);
-                if (serviceResponse.Processed)
-                {
-                    _success = true;
-                    _nestedErrorMessage = MessageEnum.UnLockOK.GetStringValue();
-
-                    OpenNested();
-                    await _mudDataGrid!.ReloadServerData();
-                    StateHasChanged();
-
-                }
-                else
-                {
-                    _success = false;
-                    _nestedErrorMessage = MessageEnum.UnLockNotOK.GetStringValue();
-                    Console.WriteLine(serviceResponse.Message);
-                    OpenNested();
-
-                }
-            }
-
-        }
-
-        selectedPolicy = new([]);
-        await Task.CompletedTask;
-    }
-
-    private Func<Policy, string> _cellStyleFunc => x =>
+    private Func<Assistence, string> _cellStyleFunc => x =>
     {
         string style = "";
 
         if (x.EstatusName.ToUpper() == "CREADO")
             style += "";
 
-        else if (x.EstatusName.ToUpper() == "ACTIVADO")
+        else if (x.EstatusName.ToUpper() == "APROBADO")
         {
             style += "color:#fff";
-
             style += ";background-color:#0099F3";
-
         }
 
 
-        else if (x.EstatusName.ToUpper() == "BLOQUEADO")
+        else if (x.EstatusName.ToUpper() == "PROCESADO")
         {
             style += "color:#fff";
             style += ";background-color:#757575";

@@ -64,6 +64,16 @@ namespace Sipcon.WebApp.Client.Utils
                         case "UNLOCK":
                             _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.LockOpen, module.Id, module.ActionName, Color.Info));
                             break;
+                        case "GENERATE":
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Outlined.Task, module.Id, module.ActionName, Color.Info));
+                            break;
+                        case "TOAPPROVE":
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Outlined.Task, module.Id, module.ActionName, Color.Info));
+                            break;
+                        case "APPROVE":
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Outlined.Task, module.Id, module.ActionName, Color.Info));
+                            break;
+
                         default:
                             Console.WriteLine($"Acción no reconocida: {module.ActionName}");
                             break;
