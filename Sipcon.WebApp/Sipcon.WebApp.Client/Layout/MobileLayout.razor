@@ -1,58 +1,31 @@
 ﻿@inherits LayoutComponentBase
-@using Microsoft.Extensions.Logging
-@inject ILogger<MainLayout> Logger
 
 <MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 <MudLayout>
-   <MudAppBar Elevation="1">
-       <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+   <MudAppBar Elevation="1">      
        <MudText Typo="Typo.h5" Class="ml-3">Sipcon</MudText>
        <MudSpacer />
        <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
-       <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
    </MudAppBar>
-   <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Variant="DrawerVariant.Mini">
-       <NavMenu />
-   </MudDrawer>
    <MudMainContent Class="pt-16 pa-4">
-        <ErrorBoundary @ref="errorBoundary">
-            <ChildContent>@Body</ChildContent>
-            <ErrorContent Context="ex">
-                <MudAlert Severity="Severity.Error" Dense="true" Class="my-2">Se ha producido un error. Inténtelo de nuevo más tarde.</MudAlert>
-                @{
-                    OnError(@ex);
-                }                
-                <p>@ex.Message</p>
-                <!--p>@ex.Message</!p-->
-            </ErrorContent>
-        </ErrorBoundary>
+       @Body
    </MudMainContent>
 </MudLayout>
 
 
-@* <div id="blazor-error-ui" data-nosnippet>
+<div id="blazor-error-ui" data-nosnippet>
    An unhandled error has occurred.
    <a href="." class="reload">Reload</a>
    <span class="dismiss">🗙</span>
-</div> *@
+</div>
 
 @code {
-   private ErrorBoundary? errorBoundary;
    private bool _drawerOpen = true;
    private bool _isDarkMode = false; // Set to false to start in light mode
    private MudTheme? _theme = null;
-
-   public void OnError(Exception error)
-   {
-       Logger.LogError(error.Message);
-   }
-   protected override void OnParametersSet()
-   {
-       errorBoundary?.Recover();
-   }
 
    protected override void OnInitialized()
    {

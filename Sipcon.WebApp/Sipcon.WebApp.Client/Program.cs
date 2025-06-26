@@ -29,7 +29,6 @@ builder.Services.AddScoped<IAssistenceService, AssistenceRepository>();
 builder.Services.AddScoped<IAttachmentService, AttachmentRepository>();
 builder.Services.AddScoped<ICommentService, CommentRepository>();
 
-
 builder.Services.AddTransient<UtilModuleActions>();
 builder.Services.AddScoped(typeof(MasterComp<,>));
 

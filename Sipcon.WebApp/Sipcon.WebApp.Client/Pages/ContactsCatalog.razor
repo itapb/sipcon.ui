@@ -1,0 +1,112 @@
+﻿  <MudGrid Spacing="0">
+                <MudItem xs="12">
+                    <MudPaper Elevation="2" Class="jpv1-dialog-background-title pa-3" Square="true">
+                    <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                        <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                            <MudStack Row="true">
+                                <MudText Typo="Typo.h6" Color="Color.Info">Proveedores</MudText>
+                            </MudStack>
+                            <MudStack>
+                               <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="CloseClick" />
+                            </MudStack>
+                        </MudStack>
+                    </MudPaper></MudPaper>
+                </MudItem>
+                <MudItem xs="12">
+<MudDataGrid @ref="ContactsCatalogMudDataGrid" T="Contact" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" FixedHeader Height="calc(100vh - 400px)" @bind-CurrentPage="ContactCurrentPage">
+    <ToolBarContent>
+       
+        <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshContactsCatalog"></MudIconButton>
+    </ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.Vat" Title="Codigo" />
+        <PropertyColumn Property="x => x.FirstName" Title="Razon Social" />
+        <TemplateColumn>
+            <CellTemplate>
+                <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Filled.NextPlan" OnClick="() => ClickSelectContact(context.Item)" />
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="Contact" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+    </PagerContent>
+</MudDataGrid>
+</MudItem>
+</MudGrid>
+@code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;   
+    [Parameter] public int? ContactId { get; set; }
+    [Parameter] public string? ContactName { get; set; }
+
+    [Parameter] public string? ContactType { get; set; }
+    private MudDataGrid<Contact>? ContactsCatalogMudDataGrid;
+
+
+    bool _loading = true;
+    string searchString = "";
+    private int ContactCurrentPage = 0;
+
+    private async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            _loading = true;
+            searchString = text;
+            await ContactsCatalogMudDataGrid!.ReloadServerData();
+        }
+    }
+    Func<Contact, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    {
+        nameof(Contact.Id) => o => o.Vat ?? "" ,
+        nameof(Contact.FirstName) => o => o.FirstName ?? "",
+        _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto
+    };
+    private async Task<GridData<Contact>> ServerReload(GridState<Contact> state)
+    {        
+        _loading = true;
+        var totalItems = 0;
+        var mOffset = state.Page * state.PageSize;
+        IEnumerable<Contact> data;
+        HttpResponseMessage response = await Http.GetAsync($"api/Contact/GetByContactType?rowFrom={mOffset}&filter={searchString}&userId={Useful.userId}&contactType={ContactType}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Contact>>>();
+            totalItems = content2!.total ?? 0;
+            data = content2!.data ?? new List<Contact>();
+        }
+        else
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
+        if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Contact> sortDefinition)
+        {
+           data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
+        }
+        _loading = false;
+        return new GridData<Contact> { TotalItems = totalItems, Items = data };
+    }
+    private async Task ClickRefreshContactsCatalog(MouseEventArgs ev)
+    {
+        await ContactsCatalogMudDataGrid!.ReloadServerData();
+    }
+    private async Task ClickSelectContact(Contact item)  
+    {  
+        MudDialog?.Close(DialogResult.Ok(new DialogResultData { ContactId = item.Id, ContactName = item.FirstName }));  
+        await Task.CompletedTask;  
+    }  
+
+    public class DialogResultData  
+    {  
+        public int? ContactId { get; set; }  
+        public string? ContactName { get; set; }  
+    }
+    private void CloseClick(MouseEventArgs args)
+    {
+        MudDialog?.Close();
+    }
+}
