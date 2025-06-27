@@ -10,6 +10,7 @@
 @inject IPolicyService PolicyService
 @inject IDialogService DialogService
 @inject UtilModuleActions ModuleActionsService
+@inject NavigationManager UriHelper
 @inject IJSRuntime JSRuntime
 
 
@@ -498,7 +499,7 @@
     private Assistence _model { get; set; } = new Assistence();
 
     private Policy _modelPolicy { get; set; } = new Policy();
-    private PolicyDetail _modelPolicyDetail { get; set; } = new PolicyDetail();
+    
 
     private string _errorModalMessage = string.Empty;
     private string _errorSearchVehicle = string.Empty;
@@ -564,21 +565,11 @@
 
     private async Task GetPolicyBy()
     {
-
         _modelPolicy = new Policy();
-        _modelPolicyDetail = new PolicyDetail();
         var serviceResponse = await PolicyService.GetPolicyBy(_searchVin, _iduser, SearchByEnum.Dual);
         if (serviceResponse.Processed)
         {
             _modelPolicy = serviceResponse.Data ?? new Policy();
-
-
-            var serviceResponseDetail = await PolicyService.GetPolicyDetail(_modelPolicy.Id, _model.Km ?? 0, _model.ServiceDate ?? DateTime.Now);
-            if (serviceResponseDetail.Processed)
-            {
-                _modelPolicyDetail = serviceResponseDetail.Data ?? new PolicyDetail();
-            }
-
 
             _errorSearchVehicle = string.Empty;
             form!.ResetValidation();
@@ -654,12 +645,13 @@
                     if (_result is not null)
                     {
                         IdAssistence = _result.LastId;
-                        await GetAssistence();
+                        UriHelper.NavigateTo("assistencedetail/" + IdAssistence);
+                        // await GetAssistence();
                     }
                 }
                 _errorModalMessage = MessageEnum.SaveOK.GetStringValue();
                 _successModal = true;
-
+                Cancel();
             }
             else
             {

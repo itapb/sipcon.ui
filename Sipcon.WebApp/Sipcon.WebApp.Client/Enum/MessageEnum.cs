@@ -118,17 +118,23 @@
         GenerateNotOK,
 
 
-        // Generate
+        // ToApprove
         [StringValue("Registro pre-Aprobado Satisfactoriamente...")]
         ToApproveOK,
         [StringValue("Problemas al pre-Aprobar registros!...")]
         ToApproveNotOK,
 
-        // Generate
+        // Approve
         [StringValue("Registro Aprobado Satisfactoriamente...")]
         ApproveOK,
         [StringValue("Problemas al Aprobar registros!...")]
         ApproveNotOK,
+
+        // Decline
+        [StringValue("Registro Rechazado Satisfactoriamente...")]
+        DeclineOK,
+        [StringValue("Problemas al Rechazar registros!...")]
+        DeclineNotOK,
     }
 
 }

@@ -341,6 +341,12 @@ ServerData="LoadGridData">
             case "GENERATE":
                 await GenerateItemsAsync(module.IdAction, module.ActionName);
                 break;
+            case "APPROVE":
+                await ApproveItemsAsync(module.IdAction, module.ActionName);
+                break;
+            case "DECLINE":
+                await DeclineItemsAsync(module.IdAction, module.ActionName);
+                break;
             default:
                 Console.WriteLine($"{MessageEnum.ActionsError.GetStringValue()}: {module.ActionName}");
                 break;
@@ -364,7 +370,7 @@ ServerData="LoadGridData">
         else
         {
             _success = false;
-            _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue();
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
             Console.WriteLine(serviceResponse.Message);
             OpenNested();
 
@@ -392,15 +398,15 @@ ServerData="LoadGridData">
             {
                 List<PostAction> ActionList = ([]);
 
-                foreach (var policy in selectedMaintenance)
+                foreach (var Item in selectedMaintenance)
                 {
-                    var VehicleAction = new PostAction
+                    var _Action = new PostAction
                         {
-                            RecordId = policy.Id,
+                            RecordId = Item.Id,
                             ModuleId = moduleId,
                             ActionName = moduleActionName
                         };
-                    ActionList.Add(VehicleAction);
+                    ActionList.Add(_Action);
                 }
 
                 var serviceResponse = await MaintenanceService.ActionsMaintenance(ActionList, _iduser);
@@ -418,7 +424,7 @@ ServerData="LoadGridData">
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = MessageEnum.GenerateNotOK.GetStringValue();
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GenerateNotOK.GetStringValue();
                     Console.WriteLine(serviceResponse.Message);
                     OpenNested();
 
@@ -430,6 +436,125 @@ ServerData="LoadGridData">
         selectedMaintenance = new([]);
         await Task.CompletedTask;
     }
+
+
+    private async Task ApproveItemsAsync(int moduleId, string moduleActionName)
+    {
+        Console.WriteLine("Aprobar Mantenimiento...");
+        if (selectedMaintenance.Any())
+        {
+
+            DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+            var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Aprobar Mantenimiento..." } };
+            var dialog = await DialogService.ShowAsync<TextItemDialog>("simple dialog", parameters, options);
+
+            StateHasChanged();
+
+            var result = await dialog.Result;
+            if (!result!.Canceled)
+            {
+                var _SupplierReport = (string)(result.Data ?? string.Empty);
+                List<PostAction> ActionList = ([]);
+
+                foreach (var item in selectedMaintenance)
+                {
+                    var _Action = new PostAction
+                    {
+                        RecordId = item.Id,
+                        ModuleId = moduleId,
+                        ActionName = moduleActionName,
+                        ActionComment = _SupplierReport
+                    };
+                    ActionList.Add(_Action);
+                }
+
+                var serviceResponse = await MaintenanceService.ActionsMaintenance(ActionList, _iduser);
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = MessageEnum.ApproveOK.GetStringValue();
+
+                    OpenNested();
+                    await _mudDataGrid!.ReloadServerData();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ApproveNotOK.GetStringValue();
+                    Console.WriteLine(serviceResponse.Message);
+                    OpenNested();
+
+                }
+
+            }
+
+        }
+
+        selectedMaintenance = new([]);
+        await Task.CompletedTask;
+    }
+
+    private async Task DeclineItemsAsync(int moduleId, string moduleActionName)
+    {
+        Console.WriteLine("Rechazar Mantenimiento...");
+        if (selectedMaintenance.Any())
+        {
+
+            DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+            var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Rechazar Mantenimiento..." } };
+            var dialog = await DialogService.ShowAsync<TextItemDialog>("simple dialog", parameters, options);
+
+            StateHasChanged();
+
+            var result = await dialog.Result;
+            if (!result!.Canceled)
+            {
+                var _SupplierReport = (string)(result.Data ?? string.Empty);
+                List<PostAction> ActionList = ([]);
+
+                foreach (var item in selectedMaintenance)
+                {
+                    var _Action = new PostAction
+                    {
+                        RecordId = item.Id,
+                        ModuleId = moduleId,
+                        ActionName = moduleActionName,
+                        ActionComment = _SupplierReport
+                    };
+                    ActionList.Add(_Action);
+                }
+
+                var serviceResponse = await MaintenanceService.ActionsMaintenance(ActionList, _iduser);
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = MessageEnum.DeclineOK.GetStringValue();
+
+                    OpenNested();
+                    await _mudDataGrid!.ReloadServerData();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.DeclineNotOK.GetStringValue();
+                    Console.WriteLine(serviceResponse.Message);
+                    OpenNested();
+
+                }
+
+            }
+
+        }
+
+        selectedMaintenance = new([]);
+        await Task.CompletedTask;
+    }
+
+
 
 
     private Func<Maintenance, string> _cellStyleFunc => x =>

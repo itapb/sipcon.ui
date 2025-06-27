@@ -15,14 +15,14 @@
         private readonly HttpClient _http = http;
 
         
-        public async Task<ApiResponse<List<Attachment>>> GetAttachments(int IdRecord, int IdModule)
+        public async Task<ApiResponse<List<Attachment>>> GetAttachments(int IdRecord, string ModuleName)
         {
             ApiResponse<List<Attachment>>? result;
 
             try
             {
             
-                result = await _http.GetFromJsonAsync<ApiResponse<List<Attachment>>>($"api/Attachment/GetAll?recordId={IdRecord}&moduleId={IdModule}");
+                result = await _http.GetFromJsonAsync<ApiResponse<List<Attachment>>>($"api/Attachment/GetAll?moduleName={ModuleName}&recordId={IdRecord}");
 
                 result = (result is null) ? new ApiResponse<List<Attachment>>()
                 {
@@ -62,56 +62,63 @@
 
         }
 
-        public async Task<ApiResponse<Attachment>> GetAttachment(int IdAttachment, int IdUser) 
+        public async Task<ApiResponse<List<byte>>> GetAttachment(int IdAttachment, int IdUser) 
         {
-            ApiResponse<Attachment>? result;
+            ApiResponse<List<byte>> result;
             try
             {
-                result = await _http.GetFromJsonAsync<ApiResponse<Attachment>>($"api/Attachment/GetOne?userId={IdUser}&id={IdAttachment}");
-
-                result = (result is null) ? new ApiResponse<Attachment>()
+                var response = await _http.GetAsync($"api/Attachment/GetOne?userId={IdUser}&attachmentId={IdAttachment}");
+                if (!response.IsSuccessStatusCode)
                 {
-                    Processed = false,
-                    Message = "La respuesta del servidor no contiene datos."
-                } : result;
+                    throw new Exception($"Error Export Attachment: {response.StatusCode} - {response.ReasonPhrase}");
+                }
+
+                var fileContent = await response.Content.ReadAsByteArrayAsync();
+                result = new ApiResponse<List<byte>>()
+                {
+                    Processed = true,
+                    Message = "Exportación exitosa.",
+                    Data = fileContent.ToList()
+                };
 
             }
             catch (HttpRequestException httpEx)
             {
-                result = new ApiResponse<Attachment>()
+                result = new ApiResponse<List<byte>>()
                 {
                     Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
+                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message),
+                    Data = []
                 };
-
             }
             catch (NotSupportedException notSupportedEx)
             {
-                result = new ApiResponse<Attachment>()
+                result = new ApiResponse<List<byte>>()
                 {
                     Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
+                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message),
+                    Data = []
                 };
-
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<Attachment>()
+                result = new ApiResponse<List<byte>>()
                 {
                     Processed = false,
-                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message),
+                    Data = []
                 };
             }
 
             return result;
         }
 
-        public async Task<ApiResponse<bool>> CreateAttachment(int IdRecord, int IdModule, int IdUser, MultipartFormDataContent FormData)
+        public async Task<ApiResponse<bool>> CreateAttachment(int IdRecord, string ModuleName, int IdUser, MultipartFormDataContent FormData)
         {
             ApiResponse<bool> result;
             try
             {
-                var response = await _http.PostAsync($"api/Attachment/PostAttachment?userId={IdUser}&recordId={IdRecord}&moduleId={IdModule}", FormData);
+                var response = await _http.PostAsync($"api/Attachment/PostAttachment?userId={IdUser}&recordId={IdRecord}&moduleName={ModuleName}", FormData);
                 if (!response.IsSuccessStatusCode)
                 {
                     throw new Exception($"Error Crear Attachment: {response.StatusCode} - {response.ReasonPhrase}");
@@ -161,7 +168,7 @@
             ApiResponse<bool> result;
             try
             {
-                var response = await _http.PostAsync($"api/Attachment/Delete_Attachment?userId={IdUser}&id={IdAttachment}", null);
+                var response = await _http.PostAsync($"api/Attachment/Delete_Attachment?userId={IdUser}&attachmentId={IdAttachment}", null);
                 if (!response.IsSuccessStatusCode)
                 {
                     throw new Exception($"Error Eliminar Attachment: {response.StatusCode} - {response.ReasonPhrase}");

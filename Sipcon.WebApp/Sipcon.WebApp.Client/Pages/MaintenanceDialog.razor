@@ -10,6 +10,7 @@
 @inject IPolicyService PolicyService
 @inject IDialogService DialogService
 @inject UtilModuleActions ModuleActionsService
+@inject NavigationManager UriHelper
 @inject IJSRuntime JSRuntime
 
 
@@ -428,6 +429,8 @@
                                             </div>
 
                                             <MudFlexBreak />
+                                           
+                                            <MudDivider />
                                             <div class="d-flex justify-left">
 
                                                 <MudStack Row="true">
@@ -436,18 +439,28 @@
 
                                                 </MudStack>
                                             </div>
-                                            <MudDivider />
 
-                                            @if (_modelPolicyDetail.Id != 0)
-                                            {
-                                                <MudText Typo="Typo.caption">
-                                                    <b>Mantenimiento: </b> @(_modelPolicyDetail.KM?.ToString("N0") + "Km")
-                                                    <MudText Typo="Typo.caption">
-                                                        <b>Desde: </b> @(_modelPolicyDetail.FromKm?.ToString("N0") + "Km")
-                                                        <MudText Typo="Typo.caption"><b>Hasta: </b> @(_modelPolicyDetail.UpToKm?.ToString("N0") + "Km")</MudText>
-                                                    </MudText>
-                                                </MudText>
-                                            }
+                                            <div id="scroll_section_policydetail" class="ma-0" style="height:207px;overflow: auto;">
+                                                <MudContainer Class="dialog-background-surface py-1 pt-0 pa-1">
+                                                    <MudTimeline TimelinePosition="TimelinePosition.Start">
+
+                                                        @foreach (var item in _policyDetail)
+                                                        {
+                                                            <MudTimelineItem TimelineAlign="TimelineAlign.End" Color="@(item.Valid == "PENDIENTE" ? Color.Info : Color.Default)" Size="Size.Small">
+                                                                <MudText Typo="Typo.body2" Style="font-size: 11px;">@item.Valid  <b>@(item.FromKm?.ToString("N0") + "-" + item.UpToKm?.ToString("N0") + " kms.") </b> </MudText>
+                                                                <MudText Typo="Typo.body2" Class="mud-text-secondary" Style="font-size: 11px;">@("Km: " + item.KM?.ToString("N0") + "  -  " + item.Date?.ToString("dd MMM yyyy"))</MudText>
+                                                            </MudTimelineItem>
+                                                        }
+
+                                                    </MudTimeline>
+                                                </MudContainer>
+                                                <MudScrollToTop TopOffset="100"
+                                                                Selector="#scroll_section_policydetail"
+                                                                VisibleCssClass="visible absolute"
+                                                                HiddenCssClass="invisible">
+
+                                                </MudScrollToTop>
+                                            </div>
 
                                         </MudCardContent>
 
@@ -523,10 +536,11 @@
     public ActionsEnum ActionsModal { get; set; }
 
     private MudForm? form;
+    
     private Maintenance _model { get; set; } = new Maintenance();
-
     private Policy _modelPolicy { get; set; } = new Policy();
     private PolicyDetail _modelPolicyDetail { get; set; } = new PolicyDetail();
+    private List<PolicyDetail> _policyDetail { get; set; } = new List<PolicyDetail>();
 
     private string _errorModalMessage = string.Empty;
     private string _errorSearchVehicle = string.Empty;
@@ -596,6 +610,7 @@
     {
 
         _modelPolicy = new Policy();
+        _policyDetail = new List<PolicyDetail>();
         _modelPolicyDetail = new PolicyDetail();
         var serviceResponse = await PolicyService.GetPolicyBy(_searchVin, _iduser, SearchByEnum.Dual);
         if (serviceResponse.Processed)
@@ -603,10 +618,16 @@
             _modelPolicy = serviceResponse.Data ?? new Policy();
 
 
-            var serviceResponseDetail = await PolicyService.GetPolicyDetail(_modelPolicy.Id, _model.Km ?? 0, _model.ServiceDate ?? DateTime.Now);
+            var serviceResponseDetail = await PolicyService.GetOnePolicyDetails(_modelPolicy.Id, _model.Km ?? 0, _model.ServiceDate ?? DateTime.Now);
             if (serviceResponseDetail.Processed)
             {
-                _modelPolicyDetail = serviceResponseDetail.Data ?? new PolicyDetail();
+                _modelPolicyDetail = serviceResponseDetail.Data.FirstOrDefault() ?? new PolicyDetail();
+            }
+
+            var serviceResponselist = await PolicyService.GetLogPolicyDetails(_modelPolicy.Id);
+            if (serviceResponselist.Processed)
+            {
+                _policyDetail = serviceResponselist.Data ?? new List<PolicyDetail>();
             }
 
 
@@ -659,7 +680,7 @@
 
     private async Task ClicSearchVehicle()
     {
-        
+
         if (_model.ServiceDate is null || _model.ServiceDate.Value.ToString().Length == 0)
         {
             _errorSearchVehicle = "Indique Fecha Servicio...";
@@ -701,12 +722,14 @@
                     if (_result is not null)
                     {
                         IdMaintenance = _result.LastId;
-                        await GetMaintenance();
+                        UriHelper.NavigateTo("maintenancedetail/" + IdMaintenance);
+                       
+                        // await GetMaintenance();
                     }
                 }
                 _errorModalMessage = MessageEnum.SaveOK.GetStringValue();
                 _successModal = true;
-
+                Cancel();
             }
             else
             {
