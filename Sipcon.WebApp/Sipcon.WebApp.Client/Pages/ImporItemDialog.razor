@@ -46,13 +46,13 @@
                                                    @ondragenter="@SetDragClass"
                                                    @ondragleave="@ClearDragClass"
                                                    @ondragend="@ClearDragClass" 
-                                                   Accept=".xls, .xlsx" MaximumFileCount="100">
+                                                   Accept=".xls,.xlsx,.pdf,.png,.pneg,.jpg,.jpeg,.mp4" MaximumFileCount="100">
                                         <ActivatorContent>
                                             <MudPaper Height="300px"
                                             Outlined="true"
                                             Class="@_dragClass">
                                                 <MudText Typo="Typo.h6">
-                                                    Arrastre y suelte el archivo aquí o haga clic.
+                                                    Arrastre y suelte el archivo aquí o haga click.
                                                 </MudText>
 
                                                 @if (_fileUpload?.Files?.Name is not null)
@@ -189,14 +189,20 @@
     {
         public ModelFluentValidator()
         {
-            RuleFor(x => x.Files)
+            RuleFor(x => x.Files == null ? string.Empty : x.Files!.Name)
+                .NotNull().WithMessage("Debe haber al menos un archivo. ")
                 .NotEmpty().WithMessage("Debe haber al menos un archivo. "); 
 
-            RuleFor(x => x.Files!.Size )
-                // .NotNull().Equal(0).WithMessage("Archivo esta vacio...")
-                .LessThanOrEqualTo(10000).WithMessage("Archivo excede el limite maximo permitido de 10MB");
+            RuleFor(x => x.Files == null ? 0 : x.Files!.Size).NotNull().LessThanOrEqualTo(10000).WithMessage("Archivo excede el limite maximo permitido de 10MB");
 
-            RuleFor(x => x.Files!.ContentType).NotNull().Must(x => x.Equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") || x.Equals("application/vnd.ms-excel"))
+            RuleFor(x => x.Files == null ? string.Empty : x.Files!.ContentType).NotNull().Must(x => x.Equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    || x.Equals("application/vnd.ms-excel")
+                    || x.Equals("application/pdf")
+                    || x.Equals("image/jpeg")
+                    || x.Equals("image/gif")
+                    || x.Equals("image/png")
+                    || x.Equals("video/mp4")
+                    )
                 .WithMessage("Tipo de archivo incorrecto ");
 
         }

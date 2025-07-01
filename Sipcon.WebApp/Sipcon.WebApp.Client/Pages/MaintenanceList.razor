@@ -76,17 +76,21 @@ ServerData="LoadGridData">
             </CellTemplate>
         </TemplateColumn>
         @* <PropertyColumn Property="x => x.Vat" Title="RIF" Sortable="false" Filterable="false" /> *@
-        <TemplateColumn T="Maintenance" Title="CLIENTE">
+        @* <TemplateColumn T="Maintenance" Title="CLIENTE">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.CustomerName.ToUpper() + " " + context.Item.CustomerLastName.ToUpper()) </MudText>
             </CellTemplate>
-        </TemplateColumn>
-        <TemplateColumn T="Maintenance" Title="CONCESIONARIO">
+        </TemplateColumn> *@
+        <TemplateColumn T="Maintenance" Title="COD. CONC.">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.DealerServiceCod.ToUpper())</MudText>
             </CellTemplate>
         </TemplateColumn>
-        @* <PropertyColumn Property="x => x.ServiceTypeName" Title="SERVICIO" Sortable="false" Filterable="false" /> *@
+        <TemplateColumn T="Maintenance" Title="FECHA">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.ServiceDate?.ToString("dd MMM yyyy"))</MudText>
+            </CellTemplate>
+        </TemplateColumn>
         <TemplateColumn T="Maintenance" Title="ESTATUS">
             <CellTemplate>
                 <div class="d-flex justify-center">
