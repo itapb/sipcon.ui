@@ -482,9 +482,14 @@
                             <MudTextField Typo="Typo.caption" @bind-Value="@_strComment"
                                           Label="Mensaje"
                                           Style="line-height: 8px;"
+                                          Counter="500"
+                                          MaxLength="500"
+                                          HelperText="Minimo 15 car&aacute;cteres"
+                                          Validation="@(new Func<string, IEnumerable<string>>(MaxCharacters))"
                                           Variant="Variant.Outlined"
                                           Margin="Margin.None"
-                                          Required="true" />
+                                          Immediate="true" />
+
 
                             <MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.Send"
                                        Style="height: 41px;margin-top: 9px;"
@@ -588,6 +593,13 @@
 
 
     IMask maskDate = new DateMask("dd/MM/yyyy");
+
+    private IEnumerable<string> MaxCharacters(string ch)
+    {
+        if (!string.IsNullOrEmpty(ch) && ch?.Length < 15)
+            yield return "Entre 15-500 carácteres";
+    }
+
 
     private List<BreadcrumbItem> _itemsNavigate =
                 [
