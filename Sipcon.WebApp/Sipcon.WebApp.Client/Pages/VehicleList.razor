@@ -54,7 +54,7 @@
     </ToolBarContent>
     <Columns>
         <SelectColumn T="Vehicle" />
-        <TemplateColumn T="Vehicle" Title="Marca">
+        <TemplateColumn T="Vehicle" Title="MARCA">
             <CellTemplate>
 
                 <div class="d-flex justify-center" style="height: 45px;">
@@ -71,7 +71,7 @@
                 <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Vin.ToUpper()</MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="Vehicle" Title="Placa">
+        <TemplateColumn T="Vehicle" Title="PLACA">
             <CellTemplate>
 
                 <MudStack Row="false">
@@ -80,7 +80,7 @@
 
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="Vehicle" Title="Año">
+        <TemplateColumn T="Vehicle" Title="AÑO">
             <CellTemplate>
                 <div class="d-flex justify-end">
                     <MudText Typo="Typo.caption" Align="Align.End">
@@ -89,9 +89,15 @@
                 </div>
             </CellTemplate>
         </TemplateColumn>
-        <PropertyColumn Property="x => x.ColorName" Title="Color" Sortable="false" Filterable="false" />
-        <PropertyColumn Property="x => x.ModelName" Title="Modelo" Sortable="false" Filterable="false" />
-        <PropertyColumn Property="x => x.SupplierName" Title="Planta" Sortable="false" Filterable="false" />
+        <PropertyColumn Property="x => x.ColorName" Title="COLOR" Sortable="false" Filterable="false" />
+        <TemplateColumn T="Vehicle" Title="MODELO">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Start">
+                    @(context.Item.ModelName.ToUpper())
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.SupplierName" Title="PLANTA" Sortable="false" Filterable="false" />
         <TemplateColumn T="Vehicle" Title="ESTATUS">
             <CellTemplate>
                 <div class="d-flex justify-center">
@@ -404,7 +410,7 @@
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = MessageEnum.ImportNotOK.GetStringValue();
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ImportNotOK.GetStringValue();
                     OpenNested();
 
                 }
@@ -464,7 +470,7 @@
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = MessageEnum.ImportNotOK.GetStringValue();
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ImportNotOK.GetStringValue();
                     OpenNested();
 
                 }
@@ -490,7 +496,7 @@
         else
         {
             _success = false;
-            _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue();
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
             Console.WriteLine(serviceResponse.Message);
             OpenNested();
 
@@ -543,7 +549,7 @@
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = MessageEnum.ActivateNotOK.GetStringValue();
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ActivateNotOK.GetStringValue();
                     Console.WriteLine(serviceResponse.Message);
                     OpenNested();
 
@@ -601,7 +607,7 @@
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = MessageEnum.DeactivateNotOK.GetStringValue();
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.DeactivateNotOK.GetStringValue();
                     Console.WriteLine(serviceResponse.Message);
                     OpenNested();
 
@@ -619,7 +625,7 @@
         
         if (_selectedVehicles.Any())
         {
-            var _DealerList = await ModuleActionsService.GetDealerOption(_iduser);
+            var _DealerList = await ModuleActionsService.GetDealerOption(_iduser, 4069); //cambiar para el idSupplier logueado
 
             DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
             var parameters = new DialogParameters<SelectItemDialog> { { x => x.SelectList, _DealerList }, { x => x.Title, "Asignar Concesionario Vehiculo..." } };
@@ -659,7 +665,7 @@
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = MessageEnum.AssignNotOK.GetStringValue();
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.AssignNotOK.GetStringValue();
                     Console.WriteLine(serviceResponse.Message);
                     OpenNested();
 
@@ -717,7 +723,7 @@
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = MessageEnum.UnassignNotOK.GetStringValue();
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.UnassignNotOK.GetStringValue();
                     Console.WriteLine(serviceResponse.Message);
                     OpenNested();
 
@@ -777,7 +783,7 @@
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = MessageEnum.AvailableNotOK.GetStringValue();
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.AvailableNotOK.GetStringValue();
                     Console.WriteLine(serviceResponse.Message);
                     OpenNested();
 
@@ -834,14 +840,11 @@
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = MessageEnum.UnavailableNotOK.GetStringValue();
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.UnavailableNotOK.GetStringValue();
                     Console.WriteLine(serviceResponse.Message);
                     OpenNested();
-
                 }
-
             }
-
         }
 
         _selectedVehicles = new([]);

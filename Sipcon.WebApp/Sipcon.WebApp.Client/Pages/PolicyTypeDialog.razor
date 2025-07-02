@@ -362,12 +362,14 @@
 
     private async Task OnBrandValueChanged(int BrandId)
     {
-        form?.ResetAsync();
         _model.BrandId = BrandId;
         _supplierList = await ModuleActionsService.GetSupplierOption(_iduser, BrandId);
+
+        await Task.Delay(50);
         _model.SupplierId = _supplierList.FirstOrDefault()?.Value;
 
         StateHasChanged();
+        form?.ResetValidation();
         await Task.CompletedTask;
     }
 

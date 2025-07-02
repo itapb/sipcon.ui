@@ -111,7 +111,7 @@ namespace Sipcon.WebApp.Client.Utils
         }
 
 
-        public async Task<List<SelectOption>> GetModelOption(int IdUser)
+        public async Task<List<SelectOption>> GetModelOption(int IdUser, int IdBrand = 0)
         {
             List<SelectOption> _itemsSelect = new([]);
             
@@ -121,6 +121,10 @@ namespace Sipcon.WebApp.Client.Utils
             {
                 List<Model> _List = moduleResponse.Data ?? new List<Model>();
 
+                if (IdBrand != 0)
+                {
+                    _List = _List.Where(x => x.BrandId == IdBrand).ToList();
+                }
 
                 foreach (var item in _List.ToList())
                 {
@@ -168,12 +172,12 @@ namespace Sipcon.WebApp.Client.Utils
 
         }
 
-        public async Task<List<SelectOption>> GetDealerOption(int IdUser)
+        public async Task<List<SelectOption>> GetDealerOption(int IdUser, int IdSupplier)
         {
             List<SelectOption> _itemsSelect = new([]);
 
 
-            var moduleResponse = await DealerService.GetDealers(IdUser);
+            var moduleResponse = await DealerService.GetDealers(IdUser, IdSupplier);
             if (moduleResponse.Processed)
             {
                 List<Dealer> _List = moduleResponse.Data ?? new List<Dealer>();

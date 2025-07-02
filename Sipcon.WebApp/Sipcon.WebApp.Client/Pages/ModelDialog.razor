@@ -284,11 +284,13 @@
 
     private async Task OnBrandValueChanged(int BrandId)
     {
-        form?.ResetAsync();
         _model.BrandId = BrandId;
         _model.PolicyTypeId = null;
         _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(_iduser, BrandId);
-        
+        await Task.Delay(50);
+
+        StateHasChanged();
+        form?.ResetValidation();
         await Task.CompletedTask;
     }
 
