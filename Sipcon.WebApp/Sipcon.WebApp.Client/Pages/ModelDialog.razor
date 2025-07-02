@@ -88,11 +88,19 @@
                             </MudCardHeader>
                             <MudCardContent Style="padding-top: 0px;">
                                 <MudHidden @bind-value="_model.Id" />
-                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Name" Label="Nombre" Variant="Variant.Text"
+
+                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Name" 
+                                              Label="Nombre" 
+                                              MaxLength="20"
+                                              Variant="Variant.Text"
                                               Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
                                               For="@(() => _model.Name)"
                                               Immediate="true" />
-                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Description" Label="Descripci&oacute;n" Variant="Variant.Text"
+
+                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Description" 
+                                              Label="Descripci&oacute;n" 
+                                              MaxLength="80"
+                                              Variant="Variant.Text"
                                               Margin="Margin.Dense" Disabled="@(!_model.IsActive)" 
                                               For="@(() => _model.Description)"
                                               Immediate="true" />
@@ -117,13 +125,15 @@
                             </MudCardHeader>
                             <MudCardContent Style="padding-top: 0px;">
                                 <MudStack Row="true">
-                                    <MudSelect @bind-Value="_model.BrandId" Label="Marca" AdornmentColor="Color.Default" 
-                                    Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                               For="@(() => _model.BrandId)"
-                                               Immediate="true" >
+                                    <MudSelect T="int?" Value="@_model.BrandId" Label="Marca" AdornmentColor="Color.Default"
+                                               Margin="Margin.Dense" 
+                                               ValueChanged="@((int? brandId) => OnBrandValueChanged(brandId ?? 0))"
+                                               Validation="@(new Func<int?, IEnumerable<string>>(OnValidBrand))"
+                                               Immediate="true"
+                                               Disabled="@(!_model.IsActive)">
                                         @foreach (var item in _brandList)
                                         {
-                                            <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
+                                            <MudSelectItem Value="@item.Value">@item.Text </MudSelectItem>
                                         }
                                     </MudSelect>
 
@@ -207,12 +217,20 @@
     private bool _nestedModalVisible;
     bool _successModal = false;
 
+    private int _selectBrandId;
+
     private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
 
     private IEnumerable<SelectOption> _brandList { get; set; } = new List<SelectOption>();
     private IEnumerable<SelectOption> _policyTypeList { get; set; } = new List<SelectOption>();
     
     ModelValidator _modelValidator = new ModelValidator();
+
+    private IEnumerable<string> OnValidBrand(int? IdBrand)
+    {
+        if (string.IsNullOrEmpty(IdBrand.ToString()))
+            yield return "Campo requerido";
+    }
 
 
 
@@ -224,9 +242,9 @@
             _model = new Model();
 
             _brandList = await ModuleActionsService.GetBrandOption(_iduser);
-            _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(_iduser);
+            // _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(_iduser);
 
-            await Task.Delay(100);
+            await Task.Delay(50);
 
         }
         else
@@ -247,7 +265,7 @@
             _model = serviceResponse.Data ?? new Model();
 
             _brandList = await ModuleActionsService.GetBrandOption(_iduser);
-            _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(_iduser);
+            _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(_iduser, _model.BrandId ?? 0);
 
             await Task.Delay(100);
             StateHasChanged();
@@ -255,13 +273,23 @@
         else
         {
             _model = new Model();
-            _errorModalMessage = MessageEnum.GetError.GetStringValue();
+            _errorModalMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
             Console.WriteLine(serviceResponse.Message);
             OpenNested();
         }
 
         await Task.CompletedTask;
 
+    }
+
+    private async Task OnBrandValueChanged(int BrandId)
+    {
+        form?.ResetAsync();
+        _model.BrandId = BrandId;
+        _model.PolicyTypeId = null;
+        _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(_iduser, BrandId);
+        
+        await Task.CompletedTask;
     }
 
     private async Task OnValidSubmit()
@@ -293,7 +321,7 @@
             else
             {
                 _successModal = false;
-                _errorModalMessage = MessageEnum.SaveNotOK.GetStringValue(); ;
+                _errorModalMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue(); ;
                 Console.WriteLine(serviceResponse.Message);
 
             }
@@ -341,19 +369,19 @@
 
             RuleFor(x => x.Name)
                 .NotEmpty().WithMessage("Campo requerido")
-                .Length(3, 80).WithMessage("Campo requerido entre 3-80 carácteres");
+                .Length(5, 20).WithMessage("Campo requerido entre 5-20 carácteres");
 
             RuleFor(x => x.Description)
-            .NotEmpty().WithMessage("Campo requerido")
-            .Length(5, 150).WithMessage("Campo requerido entre 5-150 carácteres");
+                .NotEmpty().WithMessage("Campo requerido")
+                .Length(5, 80).WithMessage("Campo requerido entre 5-80 carácteres");
 
             RuleFor(x => x.BrandId)
                 .NotNull()
-                 .GreaterThan(0).WithMessage("seleccione una Marca.");
+                .GreaterThan(0).WithMessage("seleccione una Marca.");
 
             RuleFor(x => x.PolicyTypeId)
-           .NotNull()
-            .GreaterThan(0).WithMessage("seleccione un Tipo de Póliza.");
+                .NotNull().WithMessage("Campo requerido")
+                .GreaterThan(0).WithMessage("seleccione un Tipo de Póliza.");
 
         }
 

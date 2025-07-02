@@ -131,7 +131,7 @@ namespace Sipcon.WebApp.Client.Utils
 
         }
 
-        public async Task<List<SelectOption>> GetSupplierOption(int IdUser)
+        public async Task<List<SelectOption>> GetSupplierOption(int IdUser, int IdBrand = 0)
         {
             List<SelectOption> _itemsSelect = new([]);
 
@@ -141,6 +141,10 @@ namespace Sipcon.WebApp.Client.Utils
             {
                 List<Supplier> _List = moduleResponse.Data ?? new List<Supplier>();
 
+                if (IdBrand != 0)
+                {
+                    _List = _List.Where(x => x.BrandId == IdBrand).ToList();
+                }
 
                 foreach (var item in _List.ToList())
                 {
@@ -148,6 +152,19 @@ namespace Sipcon.WebApp.Client.Utils
                 }
             }
             return _itemsSelect;
+
+        }
+
+        public async Task<List<Supplier>> GetSupplierList(int IdUser)
+        {
+            List<Supplier> _List = new([]);
+
+            var moduleResponse = await SupplierService.GetSuppliers(IdUser);
+            if (moduleResponse.Processed)
+            {
+                _List = moduleResponse.Data ?? new List<Supplier>();
+            }
+            return _List;
 
         }
 
@@ -184,7 +201,6 @@ namespace Sipcon.WebApp.Client.Utils
             {
                 List<Brand> _List = moduleResponse.Data ?? new List<Brand>();
 
-
                 foreach (var item in _List.ToList())
                 {
                     _itemsSelect.Add(new SelectOption(item.Id, item.Name));
@@ -194,7 +210,7 @@ namespace Sipcon.WebApp.Client.Utils
 
         }
 
-        public async Task<List<SelectOption>> GetPolicyTypeOption(int IdUser)
+        public async Task<List<SelectOption>> GetPolicyTypeOption(int IdUser, int IdBrand = 0)
         {
             List<SelectOption> _itemsSelect = new([]);
 
@@ -204,11 +220,18 @@ namespace Sipcon.WebApp.Client.Utils
             {
                 List<PolicyType> _List = moduleResponse.Data ?? new List<PolicyType>();
 
-
+                if (IdBrand != 0)
+                {
+                    _List = _List.Where(x => x.BrandId == IdBrand).ToList();
+                }
+                
                 foreach (var item in _List.ToList())
                 {
                     _itemsSelect.Add(new SelectOption(item.Id, item.Description));
                 }
+
+                
+                
             }
             return _itemsSelect;
 

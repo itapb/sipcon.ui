@@ -53,7 +53,7 @@
     </ToolBarContent>
     <Columns>
         <SelectColumn T="PolicyType" />
-        <TemplateColumn T="PolicyType" Title="Marca">
+        <TemplateColumn T="PolicyType" Title="MARCA">
             <CellTemplate>
                     
                 <div class="d-flex justify-center" style="height: 45px;">
@@ -65,7 +65,7 @@
                    
             </CellTemplate>
         </TemplateColumn>
-        <PropertyColumn Property="x => x.Description" Title="Descripti&oacute;n" Sortable="false" Filterable="false" />
+        <PropertyColumn Property="x => x.Description" Title="DESCRIPCION" Sortable="false" Filterable="false" />
         <TemplateColumn T="PolicyType" Title="KM">
             <CellTemplate>
                 <div class="d-flex justify-end">
@@ -75,8 +75,8 @@
                 </div>
             </CellTemplate>
         </TemplateColumn>
-        <PropertyColumn Property="x => x.Months" Title="Mes Frecuencia" Sortable="false" Filterable="false" />
-        <TemplateColumn T="PolicyType" Title="Expiraci&oacute;n KM">
+        <PropertyColumn Property="x => x.Months" Title="FRECUENCIA (MES)" Sortable="false" Filterable="false" />
+        <TemplateColumn T="PolicyType" Title="EXPIRACION (KM)">
             <CellTemplate>
                 <div class="d-flex justify-end">
                     <MudText Typo="Typo.caption" Align="Align.End">
@@ -85,10 +85,10 @@
                 </div>
             </CellTemplate>
         </TemplateColumn>
-        <PropertyColumn Property="x => x.TopMonths" Title="Expiraci&oacute;n Mes" Sortable="false" Filterable="false" />
+        <PropertyColumn Property="x => x.TopMonths" Title="EXPIRACION (MES)" Sortable="false" Filterable="false" />
 
 
-        <TemplateColumn T="PolicyType" Title="Activo">
+        <TemplateColumn T="PolicyType" Title="ACTIVO">
                  
             <CellTemplate>
                 <div class="d-flex justify-center">
@@ -347,7 +347,7 @@
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = MessageEnum.ImportNotOK.GetStringValue();
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ImportNotOK.GetStringValue();
                     OpenNested();
 
                 }
@@ -404,7 +404,7 @@
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = MessageEnum.ImportNotOK.GetStringValue();
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ImportNotOK.GetStringValue();
                     OpenNested();
 
                 }
@@ -430,7 +430,7 @@
         else
         {
             _success = false;
-            _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue();
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
             Console.WriteLine(serviceResponse.Message);
             OpenNested();
 
@@ -484,7 +484,7 @@
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = MessageEnum.ActivateNotOK.GetStringValue();
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ActivateNotOK.GetStringValue();
                     Console.WriteLine(serviceResponse.Message);
                     OpenNested();
 
@@ -543,7 +543,7 @@
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = MessageEnum.DeactivateNotOK.GetStringValue();
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.DeactivateNotOK.GetStringValue();
                     Console.WriteLine(serviceResponse.Message);
                     OpenNested();
 
