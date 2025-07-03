@@ -49,7 +49,7 @@ namespace Sipcon.WebApp.Client.Helper
         }
         internal static string? ToActionIcon(this string? actionDisplay)
         {
-            return actionDisplay switch
+            return actionDisplay!.ToUpper() switch
             {
                 "HOME" => Icons.Material.Filled.Home,
                 "ACTIVAR" => Icons.Material.Filled.VerifiedUser,
