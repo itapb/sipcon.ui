@@ -28,13 +28,14 @@
                     <MudCheckBox @bind-Value="@context.Item.IsSelected" />
                 </CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.InnerCode" Title="Codigo Parte" Sortable="false" Filterable="false" />
-            <PropertyColumn Property="x => x.MasterCode" title="Codigo Fabrica" />
-            <PropertyColumn Property="x => x.Description" title="Descripcion" />
-            <PropertyColumn Property="x => x.Price" title="Precio" />
+            <PropertyColumn Property="x => x.InnerCode" Title="CODIGO PARTE" Sortable="false" Filterable="false" />
+            <PropertyColumn Property="x => x.MasterCode" title="CODGIO FABRICA" />
+            <PropertyColumn Property="x => x.Description" title="DESCRIPCION" />
+            <PropertyColumn Property="x => x.Stock" title="EXISTENCIA" />
+            <PropertyColumn Property="x => x.Price" title="PRECIO" />
             <TemplateColumn>
                 <HeaderTemplate>
-                    <MudText>Activo</MudText>
+                    <MudText>ACTIVO</MudText>
                 </HeaderTemplate>
                 <CellTemplate>
                     <MudIcon Icon="@(context.Item.IsActive ?? false ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.IsActive ?? false ? Color.Success : Color.Error)" Size="Size.Medium" />
@@ -127,7 +128,15 @@ else
     {
         Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-REPUESTOS&userId={Useful.userId}");
     }
-
+    Func<Part, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    {
+        nameof(Part.InnerCode) => o => o.InnerCode ?? "",
+        nameof(Part.MasterCode) => o => o.MasterCode ?? "",
+        nameof(Part.Description) => o => o.Description ?? "",
+        nameof(Part.Price) => o => o.Price ?? 0m,
+        nameof(Part.Stock) => o => o.Stock ?? 0m,       
+        _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto
+    };
     private async Task<GridData<Part>> ServerReload(GridState<Part> state)
     {
         IsAllCheckBoxSelected = false;
@@ -149,21 +158,7 @@ else
         }                
         if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Part> sortDefinition)
         {
-            switch (sortDefinition.SortBy)
-            {
-                case nameof(Part.InnerCode):
-                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.MasterCode);
-                    break;
-                case nameof(Part.MasterCode):
-                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.InnerCode);
-                    break;
-                case nameof(Part.Description):
-                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.Description);
-                    break;
-                case nameof(Part.Price):
-                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, o => o.Price);
-                    break;
-            }
+            data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
         }
         _loading = false;
         return new GridData<Part> { TotalItems = totalItems, Items = data };
