@@ -24,14 +24,15 @@
                     <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
                         <MudGrid Spacing="2">
                             <MudItem xs="12"><MudText Typo="Typo.h6" GutterBottom="true">@GetTitle</MudText></MudItem>
-                            <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Description" Label="Descripcion" Variant="Variant.Text" Required="true" RequiredError="Descripcion es requerido"></MudTextField></MudItem>
-                            <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.InnerCode" Label="Codigo Parte" Variant="Variant.Text" Required="true" RequiredError="Codigo Parte es requerido"></MudTextField></MudItem>
-                            <MudItem xs="6"><MudTextField @bind-Value="SelectedPart.MasterCode" Label="Codigo Fabrica" Variant="Variant.Text" Required="true" RequiredError="Codigo Fabrica es requerido"></MudTextField></MudItem>
+                            <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Description" Label="Descripcion" Variant="Variant.Text" Required="true" RequiredError="Campo requerido."></MudTextField></MudItem>
+                            <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.AlterDescription" Label="Descripcion Alterna" Variant="Variant.Text" Required="true" RequiredError="Campo requerido." MaxLength="40"></MudTextField></MudItem>
+                            <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.InnerCode" Label="Codigo Parte" Variant="Variant.Text" Required="true" RequiredError="Campo requerido."></MudTextField></MudItem>
+                            <MudItem xs="6"><MudTextField @bind-Value="SelectedPart.MasterCode" Label="Codigo Fabrica" Variant="Variant.Text" Required="true" RequiredError="Campo requerido."></MudTextField></MudItem>
                             <MudItem xs="6"><MudTextField @bind-Value="SelectedPart.AlterCode" Label="Codigo Alterno" Variant="Variant.Text"></MudTextField></MudItem>
                             <MudItem xs="6"><MudTextField @bind-Value="SelectedPart.ReplacementCode" Label="Codigo Remplazo" Variant="Variant.Text"></MudTextField></MudItem>
                             <MudItem xs="6"><MudTextField @bind-Value="SelectedPart.BarCode" Label="Codigo Barra" Variant="Variant.Text"></MudTextField></MudItem>
                             <MudItem xs="12">
-                                <MudSelect T="PartType" Label="Tipo" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertPartTypeFunc" Value="PartTypeSelected" ValueChanged="OnPartTypeValueChanged" Required="true" RequiredError="Tipo requerido">
+                                <MudSelect T="PartType" Label="Tipo" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertPartTypeFunc" Value="PartTypeSelected" ValueChanged="OnPartTypeValueChanged" Required="true" RequiredError="Campo requerido.">
                                     @foreach (var parttype in PartTypes!)
                                     {
                                         <MudSelectItem Value="@parttype" />
@@ -39,7 +40,7 @@
                                 </MudSelect>
                             </MudItem>
                             <MudItem xs="6">
-                                <MudSelect T="Family" Label="Familia" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertFamilyFunc" Value="FamilySelected" ValueChanged="OnFamilyValueChanged" Required="true" RequiredError="Familia requerida">
+                                <MudSelect T="Family" Label="Familia" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertFamilyFunc" Value="FamilySelected" ValueChanged="OnFamilyValueChanged" Required="true" RequiredError="Campo requerido.">
                                     @foreach (var family in FilteredFamilies ?? Enumerable.Empty<Family>())
                                     {
                                         <MudSelectItem Value="@family" />
@@ -47,7 +48,7 @@
                                 </MudSelect>
                             </MudItem>
                             <MudItem xs="6">
-                                <MudSelect T="SubFamily" Label="Sub Familia" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertSubFamilyFunc" Value="SubFamilySelected" ValueChanged="OnSubFamilyValueChanged" Required="true" RequiredError="Sub Familia requerida">
+                                <MudSelect T="SubFamily" Label="Sub Familia" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertSubFamilyFunc" Value="SubFamilySelected" ValueChanged="OnSubFamilyValueChanged" Required="true" RequiredError="Campo requerido.">
                                     @foreach (var subfamily in FilteredSubFamilies ?? Enumerable.Empty<SubFamily>())
                                     {
                                         <MudSelectItem Value="@subfamily" />
@@ -55,7 +56,7 @@
                                 </MudSelect>
                             </MudItem>
                             <MudItem xs="12">
-                                <MudSelect T="Contact" Label="Planta" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertSupplierFunc" Value="SupplierSelected" ValueChanged="OnSupplierValueChanged" Required="true" RequiredError="Planta requerida">
+                                <MudSelect T="Contact" Label="Planta" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertSupplierFunc" Value="SupplierSelected" ValueChanged="OnSupplierValueChanged" Required="true" RequiredError="Campo requerido.">
                                     @foreach (var supplier in Suppliers!)
                                     {
                                         <MudSelectItem Value="@supplier" />
@@ -63,7 +64,7 @@
                                 </MudSelect>
                             </MudItem>
                             <MudItem xs="12">
-                                <MudSelect T="Brand" Label="Marca" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertBrandFunc" Value="BrandSelected" ValueChanged="OnBrandValueChanged" Required="true" RequiredError="Marca requerida">
+                                <MudSelect T="Brand" Label="Marca" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertBrandFunc" Value="BrandSelected" ValueChanged="OnBrandValueChanged" Required="true" RequiredError="Campo requerido.">
                                     @foreach (var brand in Brands!)
                                     {
                                         <MudSelectItem Value="@brand" />
@@ -71,7 +72,7 @@
                                 </MudSelect>
                             </MudItem>
                             <MudItem xs="12">
-                                <MudSelect T="RelatedModel" Label="Modelos" MultiSelection="true" SelectAll="true" FullWidth="true" SelectedValues="SelectedRelatedModels" SelectedValuesChanged="OnSelectedRelatedModels" Required="true" RequiredError="Algun Modelo requerido" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetModelMultiSelectionText))">
+                                <MudSelect T="RelatedModel" Label="Modelos" MultiSelection="true" SelectAll="true" FullWidth="true" SelectedValues="SelectedRelatedModels" SelectedValuesChanged="OnSelectedRelatedModels" Required="true" RequiredError="Campo requerido." MultiSelectionTextFunc="@(new Func<List<string>, string>(GetModelMultiSelectionText))">
                                     @foreach (var relatedmodel in FilteredRelatedModels ?? Enumerable.Empty<RelatedModel>())
                                     {
                                         <MudSelectItem T="RelatedModel" Value="@relatedmodel">@relatedmodel</MudSelectItem>
@@ -79,7 +80,7 @@
                                 </MudSelect>
                             </MudItem>
                             <MudItem xs="6">
-                                <MudSelect T="Um" Label="Unidad Medida" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertUmFunc" Value="UmSelected" ValueChanged="OnUmValueChanged" Required="true" RequiredError="Unidad Medida requerido">
+                                <MudSelect T="Um" Label="Unidad Medida" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertUmFunc" Value="UmSelected" ValueChanged="OnUmValueChanged" Required="true" RequiredError="Campo requerido.">
                                     @foreach (var um in Ums ?? Enumerable.Empty<Um>())
                                     {
                                         <MudSelectItem Value="@um"></MudSelectItem>
@@ -87,7 +88,7 @@
                                 </MudSelect>
                             </MudItem>
                             <MudItem xs="6">
-                                <MudSelect T="string" @bind-Value="SelectedPart.Size" Label="Tamaño" Immediate="true" FitContent="true" FullWidth="true" Required="true" RequiredError="Tamano requerida">
+                                <MudSelect T="string" @bind-Value="SelectedPart.Size" Label="Tamaño" Immediate="true" FitContent="true" FullWidth="true" Required="true" RequiredError="Campo requerido.">
                                     @foreach (var msize in Sizes)
                                     {
                                         <MudSelectItem T="string" Value="@msize">@msize</MudSelectItem>
@@ -95,15 +96,15 @@
                                 </MudSelect>
                             </MudItem>
                             <MudItem xs="12">
-                                <MudSelect T="string" @bind-Value="SelectedPart.Rating" Label="Clasificacion" Immediate="true" FitContent="true" FullWidth="true" Required="true" RequiredError="Clasificacion requerida">
+                                <MudSelect T="string" @bind-Value="SelectedPart.Rating" Label="Clasificacion" Immediate="true" FitContent="true" FullWidth="true" Required="true" RequiredError="Campo requerido.">
                                     @foreach (var rating in Ratings)
                                     {
                                         <MudSelectItem T="string" Value="@rating">@rating</MudSelectItem>
                                     }
                                 </MudSelect>
                             </MudItem>
-                            <MudItem xs="6"> <MudTextField @bind-Value="SelectedPart.Packing" Label="Empaque" Variant="Variant.Text" Required="true" RequiredError="Empaque requerido"></MudTextField></MudItem>
-                            <MudItem xs="6"> <MudTextField @bind-Value="SelectedPart.MinSale" Label="Mini Venta" Variant="Variant.Text" Required="true" RequiredError="Mini Venta requerido"></MudTextField></MudItem>
+                            <MudItem xs="6"> <MudTextField @bind-Value="SelectedPart.Packing" Label="Empaque" Variant="Variant.Text" Required="true" RequiredError="Campo requerido."></MudTextField></MudItem>
+                            <MudItem xs="6"> <MudTextField @bind-Value="SelectedPart.MinSale" Label="Mini Venta" Variant="Variant.Text" Required="true" RequiredError="Campo requerido."></MudTextField></MudItem>
                         </MudGrid>
                     </MudPaper>
                 </MudItem>
@@ -112,17 +113,17 @@
                         <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
                             <MudGrid Spacing="2">
                                 <MudItem xs="12"><MudText Typo="Typo.h6" GutterBottom="true">Precios</MudText></MudItem>                                
-                                <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Price" Label="Precio" Variant="Variant.Text" Required="true" RequiredError="Precio requerido"></MudTextField></MudItem>
-                                <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Discount" Label="Dcto" Variant="Variant.Text" Required="true" RequiredError="Dcto requerido"></MudTextField></MudItem>
+                                <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Price" Label="Precio" Variant="Variant.Text" Required="true" RequiredError="Campo requerido."></MudTextField></MudItem>
+                                <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Discount" Label="Dcto" Variant="Variant.Text" Required="true" RequiredError="Campo requerido."></MudTextField></MudItem>
                                 <MudItem xs="12">
-                                    <MudSelect T="Tax" Label="Impuesto" Immediate="true" FitContent="true" ToStringFunc="@ConvertTaxFunc" Value="TaxSelected" ValueChanged="OnTaxValueChanged" Required="true" RequiredError="Impuesto requerido" FullWidth="true">
+                                    <MudSelect T="Tax" Label="Impuesto" Immediate="true" FitContent="true" ToStringFunc="@ConvertTaxFunc" Value="TaxSelected" ValueChanged="OnTaxValueChanged" Required="true" RequiredError="Campo requerido." FullWidth="true">
                                         @foreach (var tax in Taxes!)
                                         {
                                             <MudSelectItem Value="@tax" />
                                         }
                                     </MudSelect>
                                 </MudItem>
-                                <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Cost" Label="Costo" Variant="Variant.Text" Required="true" RequiredError="Costo requerido"></MudTextField></MudItem>
+                                <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Cost" Label="Costo" Variant="Variant.Text" Required="true" RequiredError="Campo requerido."></MudTextField></MudItem>
                             </MudGrid>
                         </MudPaper>
                         <MudPaper Elevation="2" Class="pa-2 mud-text-align-center flex-grow-1" Style="flex: 1 1 auto; min-height: 0;">
@@ -272,7 +273,7 @@ else
                     if (FamilySelected != null)
                     {
                         FilterSubFamilies(FamilySelected!.Id);
-                        SubFamilySelected = FilteredSubFamilies?.FirstOrDefault(f => f.FamilyId == FamilySelected.Id);
+                        SubFamilySelected = FilteredSubFamilies?.FirstOrDefault(f => f.Id == SelectedPart?.SubFamilyId);
                     }
                 }
 
