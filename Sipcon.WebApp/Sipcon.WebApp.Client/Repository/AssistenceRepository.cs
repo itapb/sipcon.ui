@@ -194,7 +194,8 @@
                     TechnicalSolution = Assistence.TechnicalSolution,
                     Km = Assistence.Km ?? 0,
                     DealerId = Assistence.DealerId ?? 0,
-                    VehicleId = Assistence.VehicleId ?? 0
+                    VehicleId = Assistence.VehicleId ?? 0,
+                    CustomerId = Assistence.CustomerId ?? 0,
 
                 };
 

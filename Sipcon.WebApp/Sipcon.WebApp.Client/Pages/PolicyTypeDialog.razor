@@ -88,35 +88,42 @@
                             </MudCardHeader>
                             <MudCardContent Style="padding-top: 0px;">
 
-                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Description" Label="Descripci&oacute;n"
+                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Description" 
+                                              Label="Descripci&oacute;n"
+                                              MaxLength="80"
                                               Variant="Variant.Text"
                                               Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
                                               For="@(() => _model.Description)"
                                               Immediate="true" />
 
+
                                 <MudStack Row="true">
 
-                                    <MudSelect @bind-Value="_model.SupplierId" Label="Planta" AdornmentColor="Color.Default"
-                                               Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                               For="@(() => _model.SupplierId)"
-                                               Immediate="true">
-                                        @foreach (var item in _supplierList)
-                                        {
-                                            <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
-                                        }
-                                    </MudSelect>
-
-                                    <MudSelect @bind-Value="_model.BrandId" Label="Marca" AdornmentColor="Color.Default"
-                                               Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                               For="@(() => _model.BrandId)"
-                                               Immediate="true">
+                                    <MudSelect T="int?" Value="_model.BrandId" Label="Marca" 
+                                               AdornmentColor="Color.Default"
+                                               Margin="Margin.Dense"
+                                               ValueChanged="@((int? brandId) => OnBrandValueChanged(brandId ?? 0))"
+                                               Validation="@(new Func<int?, IEnumerable<string>>(OnValidBrand))"
+                                               Immediate="true"
+                                               Disabled="@(!_model.IsActive)">
                                         @foreach (var item in _brandList)
                                         {
                                             <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
                                         }
                                     </MudSelect>
 
-                                    
+                                    <MudSelect @bind-Value="_model.SupplierId" Label="Planta"
+                                               AdornmentColor="Color.Default"
+                                               Margin="Margin.Dense"
+                                               Variant="Variant.Filled"
+                                               For="@(() => _model.SupplierId)"
+                                               Immediate="true"
+                                               ReadOnly="true">
+                                        @foreach (var item in _supplierList)
+                                        {
+                                            <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
+                                        }
+                                    </MudSelect>
 
                                 </MudStack>
 
@@ -143,26 +150,35 @@
 
                                 <MudStack Row="false">
 
-                                    <MudNumericField Typo="Typo.caption" @bind-Value="_model.KM" Label="KM Frecuencia" Variant="Variant.Text"
-                                    Max="10000"
-                                    HideSpinButtons="true"
-                                    Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                    For="@(() => _model.KM)"
-                                    Immediate="true" />
+                                    <MudNumericField Typo="Typo.caption" @bind-Value="_model.KM" 
+                                                     Label="KM Frecuencia" 
+                                                     Variant="Variant.Text"
+                                                     Margin="Margin.Dense"
+                                                     Max="500000"
+                                                     HideSpinButtons="true"
+                                                     For="@(() => _model.KM)"
+                                                     Immediate="true" 
+                                                     Disabled="@(!_model.IsActive)" />
 
-                                    <MudNumericField Typo="Typo.caption" @bind-Value="_model.GapKM" Label="KM Tolerancia" Variant="Variant.Text"
-                                    Max="500"
-                                    HideSpinButtons="true"
-                                    Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                    For="@(() => _model.GapKM)"
-                                    Immediate="true" />
+                                    <MudNumericField Typo="Typo.caption" @bind-Value="_model.GapKM" 
+                                                     Label="KM Tolerancia" 
+                                                     Variant="Variant.Text"
+                                                     Margin="Margin.Dense"
+                                                     Max="500"
+                                                     HideSpinButtons="true"
+                                                     For="@(() => _model.GapKM)"
+                                                     Immediate="true" 
+                                                     Disabled="@(!_model.IsActive)" />
 
-                                    <MudNumericField Typo="Typo.caption" @bind-Value="_model.TopKM" Label="KM Cobertura" Variant="Variant.Text"
-                                    Max="200000"
-                                    HideSpinButtons="true"
-                                    Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                    For="@(() => _model.TopKM)"
-                                    Immediate="true" />
+                                    <MudNumericField Typo="Typo.caption" @bind-Value="_model.TopKM" 
+                                                     Label="KM Cobertura" 
+                                                     Variant="Variant.Text"
+                                                     Margin="Margin.Dense"
+                                                     Max="500000"
+                                                     HideSpinButtons="true"
+                                                     For="@(() => _model.TopKM)"
+                                                     Immediate="true" 
+                                                     Disabled="@(!_model.IsActive)" />
 
                                 </MudStack>
 
@@ -188,7 +204,7 @@
                                 <MudStack Row="false">
 
                                     <MudNumericField Typo="Typo.caption" @bind-Value="_model.Months" Label="Meses Frecuencia" Variant="Variant.Text"
-                                    Max="12"
+                                    Max="120"
                                     HideSpinButtons="true" 
                                     Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
                                     For="@(() => _model.Months)"
@@ -282,12 +298,16 @@
 
     private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
 
-    private IEnumerable<SelectOption> _brandList { get; set; } = new List<SelectOption>();
-
     private IEnumerable<SelectOption> _supplierList { get; set; } = new List<SelectOption>();
+    private IEnumerable<SelectOption> _brandList { get; set; } = new List<SelectOption>();
 
     PolicyTypeValidator _modelValidator = new PolicyTypeValidator();
 
+    private IEnumerable<string> OnValidBrand(int? IdBrand)
+    {
+        if (string.IsNullOrEmpty(IdBrand.ToString()))
+            yield return "Campo requerido";
+    }
 
 
     protected override async Task OnInitializedAsync()
@@ -296,10 +316,11 @@
         if (ActionsModal == ActionsEnum.Create)
         {
             _model = new PolicyType();
-            _brandList = await ModuleActionsService.GetBrandOption(_iduser);
-            _supplierList = await ModuleActionsService.GetSupplierOption(_iduser);
 
-            await Task.Delay(100);
+            // _supplierList = await ModuleActionsService.GetSupplierOption(_iduser);
+            _brandList = await ModuleActionsService.GetBrandOption(_iduser);
+
+            await Task.Delay(50);
         }
         else
         {
@@ -309,7 +330,7 @@
 
         StateHasChanged();
         await Task.CompletedTask;
-    
+
     }
 
 
@@ -321,21 +342,35 @@
             _model = serviceResponse.Data ?? new PolicyType();
 
             _brandList = await ModuleActionsService.GetBrandOption(_iduser);
-            _supplierList = await ModuleActionsService.GetSupplierOption(_iduser);
+            _supplierList = await ModuleActionsService.GetSupplierOption(_iduser, _model.BrandId ?? 0);
 
-            await Task.Delay(100);
+            await Task.Delay(50);
             StateHasChanged();
         }
         else
         {
             _model = new PolicyType();
-            _errorModalMessage = MessageEnum.GetError.GetStringValue();
+            _errorModalMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
             Console.WriteLine(serviceResponse.Message);
             OpenNested();
         }
 
         await Task.CompletedTask;
 
+    }
+
+
+    private async Task OnBrandValueChanged(int BrandId)
+    {
+        _model.BrandId = BrandId;
+        _supplierList = await ModuleActionsService.GetSupplierOption(_iduser, BrandId);
+
+        await Task.Delay(50);
+        _model.SupplierId = _supplierList.FirstOrDefault()?.Value;
+
+        StateHasChanged();
+        form?.ResetValidation();
+        await Task.CompletedTask;
     }
 
     private async Task OnValidSubmit()
@@ -367,7 +402,7 @@
             else
             {
                 _successModal = false;
-                _errorModalMessage = MessageEnum.SaveNotOK.GetStringValue();
+                _errorModalMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue();
                 Console.WriteLine(serviceResponse.Message);
 
             }
@@ -415,23 +450,20 @@
 
             RuleFor(x => x.Description)
                 .NotEmpty().WithMessage("Campo requerido")
-                .Length(5, 150).WithMessage("Campo requerido entre 5-150 carácteres");
+                .Length(5, 80).WithMessage("Campo requerido entre 5-80 carácteres");
+
+            RuleFor(x => x.SupplierId)
+                .NotNull().WithMessage("Campo requerido")
+                .GreaterThan(0).WithMessage("Campo requerido");
 
             RuleFor(x => x.BrandId)
                 .NotNull().WithMessage("Campo requerido")
-                .GreaterThan(0).WithMessage("seleccione una Marca.");
+                .GreaterThan(0).WithMessage("Campo requerido");
 
             RuleFor(x => x.KM)
                 .NotNull().WithMessage("Campo requerido")
                 .NotEmpty().WithMessage("Campo requerido")
-                .InclusiveBetween(1, 10000).WithMessage("Campo requerido entre {1 - 10.000} km");
-            // .Custom((value, context) =>
-                //   {
-                //       if (value >= 1 && value <= 10000)
-                //       {
-                //           context.AddFailure($"Campo requerido entre {(DateTime.Now.Year - 20).ToString() + "-" + (DateTime.Now.Year + 5)}");
-                //       }
-                //   });
+                .InclusiveBetween(1, 500000).WithMessage("Campo requerido entre {1 - 500.000} km");
 
             RuleFor(x => x.GapKM)
                 .NotNull().WithMessage("Campo requerido")
@@ -441,12 +473,15 @@
             RuleFor(x => x.TopKM)
                 .NotNull().WithMessage("Campo requerido")
                 .NotEmpty().WithMessage("Campo requerido")
-                .InclusiveBetween(1, 200000).WithMessage("Campo requerido entre {1 - 200.000} km");
+                .InclusiveBetween(1, 500000).WithMessage("Campo requerido entre {1 - 500.000} km")
+                .Must((model, TopKM) =>
+                        model.KM.HasValue && TopKM.HasValue && TopKM.Value > model.KM.Value
+                    ).WithMessage("Cobertura debe ser MAYOR a la Frecuencia ");
 
             RuleFor(x => x.Months)
                 .NotNull().WithMessage("Campo requerido")
                 .NotEmpty().WithMessage("Campo requerido")
-                .InclusiveBetween(1, 12).WithMessage("Campo requerido entre {1 - 12} Meses");
+                .InclusiveBetween(1, 120).WithMessage("Campo requerido entre {1 - 120} Meses");
 
             RuleFor(x => x.GapMonths)
                 .NotNull().WithMessage("Campo requerido")
@@ -456,7 +491,10 @@
             RuleFor(x => x.TopMonths)
                 .NotNull().WithMessage("Campo requerido")
                 .NotEmpty().WithMessage("Campo requerido")
-                .InclusiveBetween(1, 120).WithMessage("Campo requerido entre {1 - 120} Meses ");
+                .InclusiveBetween(1, 120).WithMessage("Campo requerido entre {1 - 120} Meses ")
+                .Must((model, TopMonths) =>
+                    TopMonths.HasValue && model.Months.HasValue && TopMonths.Value > model.Months.Value
+                ).WithMessage("Cobertura debe ser MAYOR a la Frecuencia.");
 
 
         }
