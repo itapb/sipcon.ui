@@ -73,17 +73,46 @@
                                 </div>
 
 
-                                <MudSelect Typo="Typo.caption" @bind-Value="@_model.ColorId" Label="Color" AdornmentColor="Color.Default" 
-
-                                Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                For="@(() => _model.ColorId)"
-                                Immediate="true">
-
-                                    @foreach (var model in _VehicleColorList)
+                                <MudSelect Typo="Typo.caption" @bind-Value="@_model.ColorId" 
+                                           Label="Color" 
+                                           AdornmentColor="Color.Default" 
+                                           Margin="Margin.Dense"
+                                           For="@(() => _model.ColorId)"
+                                           Immediate="true"
+                                           Disabled="@(!_model.IsActive)">
+                                    @foreach (var model in _ColorList)
                                     {
                                         <MudSelectItem Value="@model.Value">@model.Text</MudSelectItem>
                                     }
                                 </MudSelect>
+                                <MudDivider />
+                                @if (ActionsModal != ActionsEnum.Create)
+                                {
+                                    <div class="d-flex justify-start">
+
+                                        <MudStack Row="true">
+                                            <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
+                                            <MudText Typo="Typo.subtitle2">Concesionario</MudText>
+
+                                        </MudStack>
+                                    </div>
+                                    <MudStack Row="true">
+
+                                        <MudSelect Typo="Typo.caption" @bind-Value="@_model.DealerId"
+                                                   Label="Concesionario"
+                                                   AdornmentColor="Color.Default"
+                                                   Variant="Variant.Filled"
+                                                   Margin="Margin.Dense"
+                                                   Disabled="true">
+
+                                            @foreach (var model in _DealerList)
+                                            {
+                                                <MudSelectItem Value="@model.Value">@model.Text</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                    </MudStack>
+                                }
+                               
 
                             </MudCardContent>
                         </MudCard>
@@ -160,120 +189,113 @@
                             </MudCardHeader>
                             <MudCardContent Style="padding-top: 0px;">
                                 <MudHidden @bind-value="_model.Id" />
+
                                 <MudStack Row="true">
-                                    <MudNumericField Typo="Typo.caption" @bind-Value="_model.Year" Label="Año" Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                    MaxLength="4"
-                                    HideSpinButtons="true" 
-                                    For="@(() => _model.Year)"
-                                    Immediate="true"></MudNumericField>
-                                    <MudTextField Typo="Typo.caption" @bind-Value="_model.Plate" Label="Placa" Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                    MaxLength="12"              
-                                    For="@(() => _model.Plate)"
-                                    Immediate="true" />
+                                    <MudNumericField Typo="Typo.caption" @bind-Value="_model.Year"
+                                                     Label="Año" 
+                                                     Margin="Margin.Dense" 
+                                                     Disabled="@(!_model.IsActive)"
+                                                     MaxLength="4"
+                                                     HideSpinButtons="true" 
+                                                     For="@(() => _model.Year)"
+                                                     Immediate="true" />
+
+                                    <MudTextField Typo="Typo.caption" @bind-Value="_model.Plate" 
+                                                  Label="Placa" 
+                                                  Margin="Margin.Dense" 
+                                                  Disabled="@(!_model.IsActive)"
+                                                  MaxLength="12"              
+                                                  For="@(() => _model.Plate)"
+                                                  Immediate="true" />
                                 </MudStack>
+
                                 <MudStack Row="true">
-                                    <MudTextField Typo="Typo.caption" @bind-Value="_model.Vin" Label="VIN" Margin="Margin.Dense" Disabled="@(!_model.IsActive)" 
-                                    MaxLength="20" 
-                                    For="@(() => _model.Vin)"
-                                    Immediate="true"/>
-                                    <MudTextField Typo="Typo.caption" @bind-Value="_model.EngineSerial" Label="Serial Motor" 
-                                    MaxLength="14"
-                                    Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                    For="@(() => _model.EngineSerial)"
-                                    Immediate="true" />
+                                    <MudTextField Typo="Typo.caption" @bind-Value="_model.Vin" 
+                                                  Label="VIN" 
+                                                  Margin="Margin.Dense" 
+                                                  MaxLength="20" 
+                                                  For="@(() => _model.Vin)"
+                                                  Immediate="true"
+                                                  Disabled="@(!_model.IsActive)" />
+
+                                    <MudTextField Typo="Typo.caption" @bind-Value="_model.EngineSerial" 
+                                                  Label="Serial Motor" 
+                                                  MaxLength="20"
+                                                  Margin="Margin.Dense" 
+                                                  For="@(() => _model.EngineSerial)"
+                                                  Immediate="true" 
+                                                  Disabled="@(!_model.IsActive)" />
                                 </MudStack>
+
                                 <MudStack Row="true">
 
-                                    <MudSelect Typo="Typo.caption" @bind-Value="@_model.ModelId" Label="Modelo" AdornmentColor="Color.Default" 
-                                    Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                    For="@(() => _model.ModelId)"
-                                    Immediate="true">
-                                        @foreach (var model in _VehicleModelList)
+                                    <MudSelect T="int?" Value="@_model.BrandId" 
+                                               Label="Marca"
+                                               Typo="Typo.caption"
+                                               AdornmentColor="Color.Default"
+                                               Margin="Margin.Dense"
+                                               ValueChanged="@((int? brandId) => OnBrandValueChanged(brandId ?? 0))"
+                                               Validation="@(new Func<int?, IEnumerable<string>>(OnValidBrand))"
+                                               Immediate="true"
+                                               Disabled="@(!_model.IsActive)">
+                                        @foreach (var item in _brandList)
                                         {
-                                            <MudSelectItem Value="@model.Value">@model.Text</MudSelectItem>
+                                            <MudSelectItem Value="@item.Value" >@item.Text</MudSelectItem>
                                         }
                                     </MudSelect>
 
-                                    <MudHidden @bind-value="_model.BrandId" />
-                                    <MudTextField Typo="Typo.caption" @bind-Value="_model.BrandName" Label="Marca" Variant="Variant.Filled" Margin="Margin.Dense" Disabled="true" />
-                                </MudStack>
-
-
-
-                            </MudCardContent>
-
-                        </MudCard>
-                    </MudItem>
-
-                    @* Datos Opciones *@
-                    <MudItem xs="12" sm="6">
-                        <MudCard>
-                            <MudCardHeader>
-                                <CardHeaderContent>
-                                    <MudStack Row="true">
-                                        <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Default" Style="font-size: 1.5rem;"></MudIcon>
-                                        <MudText Typo="Typo.subtitle2">Opciones</MudText>
-                                    </MudStack>
-
-                                </CardHeaderContent>
-                                <CardHeaderActions>
-
-                                </CardHeaderActions>
-                            </MudCardHeader>
-                            <MudCardContent Style="padding-top: 3px;">
-                                <MudStack Row="true">
-
-                                    <MudSelect Typo="Typo.caption" @bind-Value="@_model.SupplierId" Label="Planta" AdornmentColor="Color.Default" 
-
-                                    Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                    For="@(() => _model.SupplierId)"
-                                    Immediate="true">
-
-                                        @foreach (var model in _VehicleSupplierList)
-                                        {
-                                            <MudSelectItem Value="@model.Value">@model.Text</MudSelectItem>
-                                        }
-                                    </MudSelect>
-
-
-                                    <MudSelect Typo="Typo.caption" @bind-Value="@_model.DealerId" Label="Concecionario" AdornmentColor="Color.Default" 
+                                    <MudSelect @bind-Value="@_model.SupplierId" 
+                                               Label="Planta"
+                                               Typo="Typo.caption"
                                                Variant="Variant.Filled"
-                                               Margin="Margin.Dense" Disabled="true"
-                                               For="@(() => _model.DealerId)"
-                                               Immediate="true">
-
-                                        @foreach (var model in _VehicleDealerList)
+                                               AdornmentColor="Color.Default"
+                                               Margin="Margin.Dense"
+                                               For="@(() => _model.SupplierId)"
+                                               Immediate="true"
+                                               Disabled="true">
+                                        @foreach (var item in _supplierList)
                                         {
-                                            <MudSelectItem Value="@model.Value">@model.Text</MudSelectItem>
+                                            <MudSelectItem Value="@item.Value" >@item.Text</MudSelectItem>
+                                        }
+                                    </MudSelect>
+
+
+                                    <MudSelect @bind-Value="@_model.ModelId" 
+                                               Label="Modelo" 
+                                               Typo="Typo.caption"
+                                               AdornmentColor="Color.Default"
+                                               Margin="Margin.Dense"
+                                               For="@(() => _model.ModelId)"
+                                               Immediate="true"
+                                               Disabled="@(!_model.IsActive)">
+                                        @foreach (var model in _ModelList)
+                                        {
+                                            <MudSelectItem Value="@model.Value" >@model.Text</MudSelectItem>
                                         }
                                     </MudSelect>
                                 </MudStack>
 
+                                <MudDivider />
 
-                            </MudCardContent>
-                        </MudCard>
+                                @if (ActionsModal != ActionsEnum.Create)
+                                {
+                                    <div class="d-flex justify-start">
+                                        <MudStack Row="true">
+                                            <MudIcon Icon="@Icons.Material.Filled.SupervisedUserCircle" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
+                                            <MudText Typo="Typo.subtitle2">Cliente</MudText>
+
+                                        </MudStack>
+                                    </div>
+                                    <MudHidden @bind-value="_model.CustomerId" />
+                                    <MudTextField Typo="Typo.caption" @bind-Value="_model.CustomerName" 
+                                                    Label="Cliente" 
+                                                    Variant="Variant.Filled" 
+                                                    Margin="Margin.Dense" 
+                                                    Disabled="true" />
+
+                                }
 
 
-                    </MudItem>
-
-                    @* Datos Customer *@
-                    <MudItem xs="12" sm="6">
-                        <MudCard>
-                            <MudCardHeader>
-                                <CardHeaderContent>
-                                    <MudStack Row="true">
-                                        <MudIcon Icon="@Icons.Material.Filled.SupervisedUserCircle" Color="Color.Default" Style="font-size: 1.5rem;"></MudIcon>
-                                        <MudText Typo="Typo.subtitle2">Cliente</MudText>
-                                    </MudStack>
-
-                                </CardHeaderContent>
-                                <CardHeaderActions>
-
-                                </CardHeaderActions>
-                            </MudCardHeader>
-                            <MudCardContent Style="padding-top: 0px;">
-                                <MudHidden @bind-value="_model.CustomerId" />
-                                <MudTextField Typo="Typo.caption" @bind-Value="_model.CustomerName" Label="Cliente" Variant="Variant.Filled" Margin="Margin.Dense" Disabled="true"  />
 
                             </MudCardContent>
 
@@ -293,7 +315,6 @@
                 </TitleContent>
                 <DialogContent>
                     <MudStack Row="true">
-                        @* <MudIcon Icon="@(_successModal ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(_successModal ? Color.Success : Color.Error)" Size="Size.Medium" /> *@
                         <MudText Class="nested"><p>@_errorModalMessage!</p> </MudText>
                     </MudStack>
                 </DialogContent>
@@ -344,18 +365,20 @@
     private string _errorModalMessage = string.Empty;
     private bool _nestedModalVisible;
     bool _successModal = false;
-
-
-
     private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
 
-    private IEnumerable<SelectOption> _VehicleColorList { get; set; } = new List<SelectOption>();
-    private IEnumerable<SelectOption> _VehicleModelList { get; set; } = new List<SelectOption>();
-    private IEnumerable<SelectOption> _VehicleSupplierList { get; set; } = new List<SelectOption>();
-    private IEnumerable<SelectOption> _VehicleDealerList { get; set; } = new List<SelectOption>();
+    private IEnumerable<SelectOption> _ColorList { get; set; } = new List<SelectOption>();
+    private IEnumerable<SelectOption> _ModelList { get; set; } = new List<SelectOption>();
+    private IEnumerable<SelectOption> _supplierList { get; set; } = new List<SelectOption>();
+    private IEnumerable<SelectOption> _brandList { get; set; } = new List<SelectOption>();
+    private IEnumerable<SelectOption> _DealerList { get; set; } = new List<SelectOption>();
 
     ModelValidator _modelValidator = new ModelValidator();
-
+    private IEnumerable<string> OnValidBrand(int? IdBrand)
+    {
+        if (string.IsNullOrEmpty(IdBrand.ToString()))
+            yield return "Campo requerido";
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -363,10 +386,12 @@
         {
             _model = new Vehicle();
 
-            _VehicleColorList = await ModuleActionsService.GetColorOption(_iduser);
-            _VehicleModelList = await ModuleActionsService.GetModelOption(_iduser);
-            _VehicleSupplierList = await ModuleActionsService.GetSupplierOption(_iduser);
-            _VehicleDealerList = await ModuleActionsService.GetDealerOption(_iduser);
+            _ColorList = await ModuleActionsService.GetColorOption(_iduser);
+            
+            _brandList = await ModuleActionsService.GetBrandOption(_iduser);
+            // _SupplierList = await ModuleActionsService.GetSupplierOption(_iduser);
+            // _ModelList = await ModuleActionsService.GetModelOption(_iduser);
+            // _DealerList = await ModuleActionsService.GetDealerOption(_iduser);
 
             await Task.Delay(100);
            
@@ -386,13 +411,12 @@
         {
             _model = serviceResponse.Data ?? new Vehicle();
 
-            _VehicleColorList = await ModuleActionsService.GetColorOption(_iduser);
+            _ColorList = await ModuleActionsService.GetColorOption(_iduser);
+            _brandList = await ModuleActionsService.GetBrandOption(_iduser);
+            _supplierList = await ModuleActionsService.GetSupplierOption(_iduser, _model.BrandId ?? 0);
+            _ModelList = await ModuleActionsService.GetModelOption(_iduser, _model.BrandId ?? 0);
 
-            _VehicleModelList = await ModuleActionsService.GetModelOption(_iduser);
-
-            _VehicleSupplierList = await ModuleActionsService.GetSupplierOption(_iduser);
-
-            _VehicleDealerList = await ModuleActionsService.GetDealerOption(_iduser);
+            _DealerList = await ModuleActionsService.GetDealerOption(_iduser, _model.SupplierId ?? 0);
 
 
             await Task.Delay(100);
@@ -402,7 +426,7 @@
         {
             _model = new Vehicle();
           
-            _errorModalMessage = MessageEnum.GetError.GetStringValue();
+            _errorModalMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
             Console.WriteLine(serviceResponse.Message);
             OpenNestedModal();
         }
@@ -412,6 +436,22 @@
 
     }
 
+    private async Task OnBrandValueChanged(int BrandId)
+    {
+        
+        _model.BrandId = BrandId;
+        _model.ModelId = null;
+        _supplierList = await ModuleActionsService.GetSupplierOption(_iduser, BrandId);
+        _ModelList = await ModuleActionsService.GetModelOption(_iduser, BrandId);
+        
+        await Task.Delay(50);
+        
+        _model.SupplierId = _supplierList.FirstOrDefault()?.Value ?? null;
+
+        StateHasChanged();
+        form?.ResetValidation();
+        await Task.CompletedTask;
+    }
 
     // private async Task OnSwitchValueChanged(bool newValue)
     // {
@@ -447,14 +487,11 @@
                 }
                 _errorModalMessage = MessageEnum.SaveOK.GetStringValue();
                 _successModal = true;
-
-
-
             }
             else
             {
                 _successModal = false;
-                _errorModalMessage = MessageEnum.SaveNotOK.GetStringValue();
+                _errorModalMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue();
                 Console.WriteLine(serviceResponse.Message);            
             }
 
@@ -477,6 +514,7 @@
         }
     } 
 
+
     private void OpenNestedModal() => _nestedModalVisible = true;
 
 
@@ -489,8 +527,6 @@
         await Task.CompletedTask;
 
     }
-
-
 
 
     /// <summary>
@@ -530,20 +566,19 @@
             RuleFor(x => x.EngineSerial)
                 .NotNull().WithMessage("Campo requerido")
                 .NotEmpty().WithMessage("Campo requerido")
-                .Length(1, 14).WithMessage("Campo requerido entre 1-14 carácteres");
+                .Length(1, 20).WithMessage("Campo requerido entre 1-20 carácteres");
+
+            RuleFor(x => x.BrandId)
+                .NotNull().WithMessage("Campo requerido")
+                .GreaterThan(0).WithMessage("Campo requerido");
+
+            RuleFor(x => x.SupplierId)
+                .NotNull().WithMessage("Campo requerido")
+                .GreaterThan(0).WithMessage("Campo requerido");
 
             RuleFor(x => x.ModelId)
                 .NotNull().WithMessage("Campo requerido")
-                .GreaterThan(0).WithMessage("Seleccione un Modelo.");
-
-
-            RuleFor(x => x.SupplierId)
-                 .NotNull().WithMessage("Campo requerido")
-                 .GreaterThan(0).WithMessage("Seleccione una Planta.");
-
-            // RuleFor(x => x.DealerId)
-            //     .NotNull().WithMessage("Campo requerido")
-            //     .GreaterThan(0).WithMessage("Seleccione un Concesionario.");
+                .GreaterThan(0).WithMessage("Campo requerido");
 
         }
 

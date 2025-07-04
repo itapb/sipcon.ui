@@ -52,7 +52,7 @@
     </ToolBarContent>
     <Columns>
         <SelectColumn T="Model" />
-        <TemplateColumn T="Model" Title="Marca">
+        <TemplateColumn T="Model" Title="MARCA">
             <CellTemplate>
                     
                 <div class="d-flex justify-center" style="height: 45px;">
@@ -64,9 +64,9 @@
                    
             </CellTemplate>
         </TemplateColumn>
-        <PropertyColumn Property="x => x.Name" Title="Nombre" Sortable="false" Filterable="false" />
-        <PropertyColumn Property="x => x.PolicyTypeName" Title="Poliza" Sortable="false" Filterable="false" />
-        <TemplateColumn T="Model" Title="Activo">
+        <PropertyColumn Property="x => x.Name" Title="NOMBRE" Sortable="false" Filterable="false" />
+        <PropertyColumn Property="x => x.PolicyTypeName" Title="POLIZA" Sortable="false" Filterable="false" />
+        <TemplateColumn T="Model" Title="ACTIVO">
                  
             <CellTemplate>
                 <div class="d-flex justify-center">
@@ -324,7 +324,7 @@
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = MessageEnum.ImportNotOK.GetStringValue();
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ImportNotOK.GetStringValue();
                     OpenNested();
 
                 }
@@ -381,7 +381,7 @@
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = MessageEnum.ImportNotOK.GetStringValue();
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ImportNotOK.GetStringValue();
                     OpenNested();
 
                 }
@@ -407,7 +407,7 @@
         else
         {
             _success = false;
-            _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue(); 
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
             Console.WriteLine(serviceResponse.Message);
             OpenNested();
 
@@ -460,7 +460,7 @@
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = MessageEnum.ActivateNotOK.GetStringValue();
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ActivateNotOK.GetStringValue();
                     Console.WriteLine(serviceResponse.Message);
                     OpenNested();
 
@@ -518,7 +518,7 @@
                 else
                 {
                     _success = false;
-                    _nestedErrorMessage = MessageEnum.DeactivateNotOK.GetStringValue(); 
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.DeactivateNotOK.GetStringValue();
                     Console.WriteLine(serviceResponse.Message);
                     OpenNested();
 

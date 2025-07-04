@@ -56,6 +56,13 @@ namespace Sipcon.WebApp.Client.Models
         public string ModelName { get; set; } = string.Empty;  
         public string? Year { get; set; } = null;
 
+        /// <summary>
+        /// Customer information
+        /// </summary>
+        [Required]
+        public int? CustomerId { get; set; } = null;  
+        
+
     }
 
     public class AssistenceUp
@@ -70,6 +77,7 @@ namespace Sipcon.WebApp.Client.Models
         public int Km { get; set; } = 0; 
         public int DealerId { get; set; } = 0;
         public int VehicleId { get; set; } = 0;
+        public int CustomerId { get; set; } = 0;
 
     }
 

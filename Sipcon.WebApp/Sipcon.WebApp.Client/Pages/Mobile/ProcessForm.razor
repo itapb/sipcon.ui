@@ -12,7 +12,6 @@
                 </MudStack>
              </MudItem>
             @if (movementDetails != null) {
-                
             <MudItem xs="12">
                 <MudTextField T="string" ReadOnly="true" Label="Ubicacion" @bind-Value="movementDetails.LocationName"></MudTextField>
             </MudItem>
@@ -30,8 +29,7 @@
             </MudItem>
             <MudItem xs="12">
                  <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.LastChild"><MudTextField @ref="bardCodeField" T="string" OnKeyUp="CodeFieldOnKeyUp" @bind-Value="InputCode" HelperText="@mHelpText" Variant="Variant.Filled"></MudTextField> </MudFocusTrap>
-            </MudItem>
-                
+            </MudItem>                
             }
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.Center">
@@ -54,8 +52,8 @@
     [Parameter] public string? MovementType { get; set; } = string.Empty;
     MovementDetails? movementDetails;
     int UserId = 5077;
-    string mHelpText = "";
 
+    string mHelpText = "";
     bool ModeValue = true;
     string ModeText = "Picking";
     string ModeParameter = "P"; 
@@ -109,6 +107,7 @@
 
                 break;
             case 3: // VALIDAR REPUESTO DEL MOVIMIENTO EN CURSO                
+
                 IsValidPart = ValidPart(MovementType, InputCode);
                 if (IsValidPart)
                 {
@@ -148,7 +147,6 @@
                 }
                 break;
             case 5: //VALIDAR CANTIDAD REAL DEL MOVIMIENTO
-
                 IsValidReal =  ValidReal(MovementType, movementDetails!.TypeId!, int.Parse(InputCode));
                 if (IsValidReal) { mStepId = 6; InputRealQty = int.Parse(InputCode); mHelpText = "Listo, Puede Procesar!"; } else mHelpText = "Invalido cantidad, escanee nuevamente.";
                 break;           
@@ -170,8 +168,8 @@
         ((movementType == "T" || typeId == "P") && movementType == "P" && realQty >= 0) || 
         (typeId == "D" && realQty > 0));
         return isValid;
-    }
- 
+    } 
+
     private record movementMobile(int? Id, int? MovementId, int? PartId, int? LocationId, int? RealQty, string? SerialCode);
 
     private async Task<bool> GetValidLocation(string InputlocationName)
@@ -182,7 +180,6 @@
         if (isValidLocation)
         {
             var content = await response.Content.ReadFromJsonAsync<WebApiResponse<Location>>();
-            movementDetails.LocationName = content!.data!.Name!;
             locationName = content!.data!.Name! ;
             locationId = content.data.Id;
             InputSerial = string.Empty; // Reset serial input                           ;
@@ -206,7 +203,6 @@
     {
         mStepId = 1;
         await NextStep();
-
     }
     private async Task GetMovementDetailsByUser()
     {
@@ -219,7 +215,7 @@
             {
                 processName = MovementType switch { "R" => "Recepcion", "T" => "Traslado", "P" => "Recoleccion", "D" => "Despacho", _ => "Recepcion" };
                 movementDetails = movementdetails.FirstOrDefault();
-                TypeName = movementDetails?.TypeName;                
+                TypeName = movementDetails?.TypeName; 
             }
         } 
 
@@ -238,7 +234,6 @@
         processName = "Proceso";       
         TypeName = "En Espera..";
         movementDetails = null;
-
         locationName = null;
         locationId = null;
         partDescription = null;
@@ -256,8 +251,8 @@
     private async Task CodeFieldOnKeyUp(KeyboardEventArgs args)
     {
         if (args.Key == "Enter" && InputCode.Length > 0)
-        {     
-            await NextStep();          
+        { 
+            await NextStep();
         }       
     }
     private async Task OnClickCheck(MouseEventArgs args)

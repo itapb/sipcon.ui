@@ -83,7 +83,7 @@
 
                                                     <MudDatePicker @bind-Date="_model.ServiceDate"
                                                                    Style="font-size: 14px;line-height: 0.8rem;"
-                                                                   Placeholder="Fecha Asistencia"
+                                                                   Placeholder="Fecha"
                                                                    Variant="Variant.Text"
                                                                    PickerVariant="PickerVariant.Inline"
                                                                    Margin="Margin.None"
@@ -114,75 +114,6 @@
 
                                             </CardHeaderContent>
                                         </MudCardHeader>
-                                    </MudCard>
-                                </MudItem>
-
-                                @* Datos Servicio *@
-                                <MudItem xs="12" sm="12">
-                                    <MudCard Elevation="0">
-                                        <MudCardHeader Style="padding-bottom: 0px;">
-                                            <CardHeaderContent>
-                                                <MudStack Row="true">
-                                                    <MudIcon Icon="@Icons.Material.Outlined.CarRepair" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
-                                                    <MudText Typo="Typo.subtitle2">Datos Asistencia T&eacute;cnica </MudText>
-
-                                                </MudStack>
-                                            </CardHeaderContent>
-
-                                        </MudCardHeader>
-
-                                        <MudCardContent Style="padding-top: 0px;">
-
-                                            <MudStack Row="true">
-                                                <MudNumericField Typo="Typo.caption" @bind-Value="_model.OrderNumber"
-                                                                 Label="Nro.Orden"
-                                                                 Variant="Variant.Text"
-                                                                 Margin="Margin.Dense"
-                                                                 HideSpinButtons="true"
-                                                                 Culture="@CultureInfo.GetCultureInfo("de-DE")"
-                                                                 ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                                                 For="@(() => _model.OrderNumber)" />
-                                            </MudStack>
-                                            <MudSpacer />
-                                            <MudSpacer />
-
-                                            <MudStack Row="true">
-
-                                                
-
-                                                <MudTextField Typo="Typo.caption" @bind-Value="_model.CustomerReport"
-                                                              Label="Reporte Cliente"
-                                                              Lines="3"
-                                                              MaxLength="500"
-                                                              Variant="Variant.Text"
-                                                              Margin="Margin.None"
-                                                              ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                                              Disabled="@(!_model.IsActive || _isReadOnly)" 
-                                                              For="@(() => _model.CustomerReport)" />
-
-                                                <MudTextField Typo="Typo.caption" @bind-Value="_model.DealerReport"
-                                                              Label="Reporte Concesionario"
-                                                              Lines="3"
-                                                              MaxLength="500"
-                                                              Variant="Variant.Text"
-                                                              Margin="Margin.None"
-                                                              ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                                              Disabled="@(!_model.IsActive || _isReadOnly)" 
-                                                              For="@(() => _model.DealerReport)" />
-
-                                                <MudTextField Typo="Typo.caption" @bind-Value="_model.TechnicalSolution"
-                                                              Label="Solucion Tecnica"
-                                                              Lines="3"
-                                                              MaxLength="500"
-                                                              Variant="Variant.Text"
-                                                              Margin="Margin.None"
-                                                              ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                                              Disabled="@(!_model.IsActive || _isReadOnly)"
-                                                              For="@(() => _model.TechnicalSolution)" />
-
-                                            </MudStack>
-
-                                        </MudCardContent>
                                     </MudCard>
                                 </MudItem>
 
@@ -298,7 +229,7 @@
 
                                         </MudCardHeader>
                                         <MudCardContent Style="padding-top: 0px;">
-                                            <MudHidden @bind-Value="_modelPolicy.CustomerId" />
+                                            <MudHidden @bind-Value="_model.CustomerId" />
 
 
                                             <MudTextField Typo="Typo.caption" T="string" Text="@_modelPolicy.Vat"
@@ -426,6 +357,71 @@
 
                                 </MudItem>
 
+                                @* Datos Servicio *@
+                                <MudItem xs="12" sm="12">
+                                    <MudCard Elevation="0">
+                                        <MudCardHeader Style="padding-bottom: 0px;">
+                                            <CardHeaderContent>
+                                                <MudStack Row="true">
+                                                    <MudIcon Icon="@Icons.Material.Outlined.CarRepair" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
+                                                    <MudText Typo="Typo.subtitle2">Asistencia T&eacute;cnica </MudText>
+
+                                                </MudStack>
+                                            </CardHeaderContent>
+
+                                        </MudCardHeader>
+
+                                        <MudCardContent Style="padding-top: 0px;">
+
+                                            <MudStack Row="true">
+                                                <MudNumericField Typo="Typo.caption" @bind-Value="_model.OrderNumber"
+                                                                 Label="Nro.Orden"
+                                                                 Variant="Variant.Text"
+                                                                 Margin="Margin.Dense"
+                                                                 HideSpinButtons="true"
+                                                                 Culture="@CultureInfo.GetCultureInfo("de-DE")"
+                                                                 ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                                 For="@(() => _model.OrderNumber)" />
+                                                <MudSpacer />
+                                                <MudSpacer />
+
+                                            </MudStack>
+                                            
+
+                                            <MudTextField Typo="Typo.caption" @bind-Value="_model.CustomerReport"
+                                                            Label="Reporte Cliente"
+                                                            Lines="3"
+                                                            MaxLength="500"
+                                                            Variant="Variant.Text"
+                                                            Margin="Margin.None"
+                                                            ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                            Disabled="@(!_model.IsActive || _isReadOnly)"
+                                                            For="@(() => _model.CustomerReport)" />
+
+                                            <MudTextField Typo="Typo.caption" @bind-Value="_model.DealerReport"
+                                                            Label="Reporte Concesionario"
+                                                            Lines="3"
+                                                            MaxLength="500"
+                                                            Variant="Variant.Text"
+                                                            Margin="Margin.None"
+                                                            ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                            Disabled="@(!_model.IsActive || _isReadOnly)"
+                                                            For="@(() => _model.DealerReport)" />
+
+                                            <MudTextField Typo="Typo.caption" @bind-Value="_model.TechnicalSolution"
+                                                            Label="Solucion Tecnica"
+                                                            Lines="3"
+                                                            MaxLength="500"
+                                                            Variant="Variant.Text"
+                                                            Margin="Margin.None"
+                                                            ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                            Disabled="@(!_model.IsActive || _isReadOnly)"
+                                                            For="@(() => _model.TechnicalSolution)" />
+
+                                        </MudCardContent>
+                                    </MudCard>
+                                </MudItem>
+
                             </MudGrid>
                         </MudItem>
 
@@ -444,8 +440,8 @@
             <MudDialog @bind-Visible="_nestedModalVisible">
                 <TitleContent>
                     <MudStack Row="true">
-                        <MudIcon Icon="@Icons.Material.Filled.Policy" Color="@(_successModal ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
-                        <MudText Typo="Typo.subtitle2">Tipo Poliza</MudText>
+                        <MudIcon Icon="@Icons.Material.Outlined.CarRepair" Color="@(_successModal? Color.Default: Color.Error)" Style="font-size: 2rem;"></MudIcon>
+                        <MudText Typo="Typo.subtitle2">ASISTENCIA TECNICA</MudText>
                     </MudStack>
                 </TitleContent>
                 <DialogContent>
@@ -579,13 +575,11 @@
             _errorSearchVehicle = MessageEnum.SearchVehicleNotOK.GetStringValue();
         }
 
-        _model.NumberPolicy = _modelPolicy.Number;
+        
 
         _model.DealerId = _idDealer;
-        @* 
-        _model.DealerId  =  _modelPolicy.;
-        *@
-
+        _model.NumberPolicy = _modelPolicy.Number;
+        _model.CustomerId  =  _modelPolicy.CustomerId;
         _model.VehicleId = _modelPolicy.VehicleId;
         _model.Plate = _modelPolicy.Plate;
         _model.Vin = _modelPolicy.Vin;
@@ -656,11 +650,12 @@
             else
             {
                 _successModal = false;
-                _errorModalMessage = MessageEnum.SaveNotOK.GetStringValue();
+                _errorModalMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue();
                 Console.WriteLine(serviceResponse.Message);
+                OpenNested();
 
             }
-            OpenNested();
+           
         }
 
         StateHasChanged();

@@ -123,66 +123,7 @@
 
                         <MudItem xs="12" sm="8">
                             <MudGrid Spacing="1" Justify="Justify.Center">
-
-                                @* Datos Servicio *@
-                                <MudItem xs="12" sm="12">
-                                    <MudCard Elevation="0">
-                                        <MudCardHeader Style="padding-bottom: 0px;">
-                                            <CardHeaderContent>
-                                                <MudStack Row="true">
-                                                    <MudIcon Icon="@Icons.Material.Outlined.CarRepair" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
-                                                    <MudText Typo="Typo.subtitle2">Datos Servicio </MudText>
-
-                                                </MudStack>
-                                            </CardHeaderContent>
-
-                                        </MudCardHeader>
-
-                                        <MudCardContent Style="padding-top: 0px;">
-                                            <MudStack Row="true">
-
-                                                <MudDatePicker @bind-Date="_model.InvoiceDate"
-                                                               Label="Fecha Factura"
-                                                               Style="font-size: 12px"
-                                                               ShowToolbar="false"
-                                                               DateFormat="dd/MM/yyyy"
-                                                               Mask="@maskDate"
-                                                               Variant="Variant.Text"
-                                                               PickerVariant="PickerVariant.Inline" Modal="false"
-                                                               Margin="Margin.Dense"
-                                                               ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                                               For="@(() => _model.InvoiceDate)" />
-
-                                                <MudTextField Typo="Typo.caption" @bind-Value="_model.InvoiceNumber"
-                                                              Label="Nro. Factura"
-                                                              MaxLength="20"
-                                                              Variant="Variant.Text"
-                                                              Margin="Margin.Dense"
-                                                              ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                                              For="@(() => _model.InvoiceNumber)" />
-
-                                                <MudNumericField Typo="Typo.caption" @bind-Value="_model.OrderNumber"
-                                                                 Label="Nro.Orden"
-                                                                 Variant="Variant.Text"
-                                                                 Margin="Margin.Dense"
-                                                                 HideSpinButtons="true"
-                                                                 Culture="@CultureInfo.GetCultureInfo("de-DE")"
-                                                                 ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                                                 For="@(() => _model.OrderNumber)" />
-                                            </MudStack>
-                                            <MudTextField Typo="Typo.caption" @bind-Value="_model.DealerReport"
-                                                          Label="Reporte Concesionario"
-                                                          Lines="3"
-                                                          MaxLength="500"
-                                                          Variant="Variant.Text"
-                                                          Margin="Margin.None"
-                                                          ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                                          Disabled="@(!_model.IsActive || _isReadOnly)" />
-
-                                        </MudCardContent>
-                                    </MudCard>
-                                </MudItem>
-
+                                
                                 @* ///Vehicle *@
                                 <MudItem xs="12" sm="6">
                                     <MudCard Elevation="2">
@@ -340,6 +281,75 @@
 
                                     </MudCard>
                                 </MudItem>
+
+                                @* Datos Servicio *@
+                                <MudItem xs="12" sm="12">
+                                    <MudCard Elevation="0">
+                                        <MudCardHeader Style="padding-bottom: 0px;">
+                                            <CardHeaderContent>
+                                                <MudStack Row="true">
+                                                    <MudIcon Icon="@Icons.Material.Outlined.CarRepair" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
+                                                    <MudText Typo="Typo.subtitle2">Datos Servicio </MudText>
+
+                                                </MudStack>
+                                            </CardHeaderContent>
+
+                                        </MudCardHeader>
+
+                                        <MudCardContent Style="padding-top: 0px;">
+
+                                            <MudStack Row="true">
+                                                <MudNumericField Typo="Typo.caption" @bind-Value="_model.OrderNumber"
+                                                                 Label="Nro.Orden"
+                                                                 Variant="Variant.Text"
+                                                                 Margin="Margin.Dense"
+                                                                 HideSpinButtons="true"
+                                                                 Culture="@CultureInfo.GetCultureInfo("de-DE")"
+                                                                 ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                                 For="@(() => _model.OrderNumber)" />
+                                                <MudSpacer />
+                                                <MudSpacer />
+
+                                            </MudStack>
+                                            
+
+                                            <MudStack Row="true">
+
+                                                <MudDatePicker @bind-Date="_model.InvoiceDate"
+                                                               Label="Fecha Factura"
+                                                               Style="font-size: 12px"
+                                                               ShowToolbar="false"
+                                                               DateFormat="dd/MM/yyyy"
+                                                               Mask="@maskDate"
+                                                               Variant="Variant.Text"
+                                                               PickerVariant="PickerVariant.Inline" Modal="false"
+                                                               Margin="Margin.Dense"
+                                                               ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                               For="@(() => _model.InvoiceDate)" />
+
+                                                <MudTextField Typo="Typo.caption" @bind-Value="_model.InvoiceNumber"
+                                                              Label="Nro. Factura"
+                                                              MaxLength="20"
+                                                              Variant="Variant.Text"
+                                                              Margin="Margin.Dense"
+                                                              ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                              For="@(() => _model.InvoiceNumber)" />
+
+                                               
+                                            </MudStack>
+                                            <MudTextField Typo="Typo.caption" @bind-Value="_model.DealerReport"
+                                                          Label="Reporte Concesionario"
+                                                          Lines="3"
+                                                          MaxLength="500"
+                                                          Variant="Variant.Text"
+                                                          Margin="Margin.None"
+                                                          ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                          Disabled="@(!_model.IsActive || _isReadOnly)" />
+
+                                        </MudCardContent>
+                                    </MudCard>
+                                </MudItem>
+
                                 
                             </MudGrid>
 
@@ -440,7 +450,7 @@
                                                 </MudStack>
                                             </div>
 
-                                            <div id="scroll_section_policydetail" class="ma-0" style="height:207px;overflow: auto;">
+                                            <div id="scroll_section_policydetail" class="ma-0" style="height:285px;overflow: auto;">
                                                 <MudContainer Class="dialog-background-surface py-1 pt-0 pa-1">
                                                     <MudTimeline TimelinePosition="TimelinePosition.Start">
 
