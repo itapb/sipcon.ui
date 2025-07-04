@@ -11,24 +11,26 @@
                     <MudPaper Class="pa-2"><MudSwitch @bind-Value="ModeValue" Color="Color.Success" Label="@ModeText" @bind-Value:after="AfterAsyncMode" /></MudPaper>
                 </MudStack>
              </MudItem>
+            @if (movementDetails != null) {
             <MudItem xs="12">
-                <MudTextField T="string" ReadOnly="true" Label="Ubicacion" @bind-Value="locationName"></MudTextField>
+                <MudTextField T="string" ReadOnly="true" Label="Ubicacion" @bind-Value="movementDetails.LocationName"></MudTextField>
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" ReadOnly="true" Label="Repuestos" @bind-Value="partDescription"></MudTextField>
+                <MudTextField T="string" ReadOnly="true" Label="Repuestos" @bind-Value="movementDetails.PartDescription"></MudTextField>
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" ReadOnly="true" Label="Serial" @bind-Value="serialNumber"></MudTextField>
+                <MudTextField T="string" ReadOnly="true" Label="Serial" @bind-Value="movementDetails.SerialCode"></MudTextField>
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="int?" ReadOnly="true" Label="Cantidad Teorica" @bind-Value="RequiredQty"></MudTextField>
+                <MudTextField T="int?" ReadOnly="true" Label="Cantidad Teorica" @bind-Value="movementDetails.RequiredQty"></MudTextField>
             </MudItem>
             <MudItem xs="12">
                 <MudTextField T="int?" ReadOnly="true" Label="Cantidad Real" @bind-Value="InputRealQty"></MudTextField>
             </MudItem>
             <MudItem xs="12">
-                <MudTextField @ref="bardCodeField" T="string" OnKeyUp="CodeFieldOnKeyUp" @bind-Value="InputCode" HelperText="@mHelpText" Variant="Variant.Filled"></MudTextField>
-            </MudItem>
+                 <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.LastChild"><MudTextField @ref="bardCodeField" T="string" OnKeyUp="CodeFieldOnKeyUp" @bind-Value="InputCode" HelperText="@mHelpText" Variant="Variant.Filled"></MudTextField> </MudFocusTrap>
+            </MudItem>                
+            }
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.Center">
                     <MudStack Row="true" Spacing="4">
@@ -46,12 +48,12 @@
 
 @code {
     [Inject] private HttpClient Http { get; set; } = default!;
-    [Inject] private IDialogService DialogService { get; set; } = default!;
-    int UserId = 5077;
-    string MovementType = "R";
+    [Inject] private IDialogService DialogService { get; set; } = default!;   
+    [Parameter] public string? MovementType { get; set; } = string.Empty;
     MovementDetails? movementDetails;
-    string mHelpText = "";
+    int UserId = 5077;
 
+    string mHelpText = "";
     bool ModeValue = true;
     string ModeText = "Picking";
     string ModeParameter = "P"; 
@@ -105,21 +107,30 @@
 
                 break;
             case 3: // VALIDAR REPUESTO DEL MOVIMIENTO EN CURSO                
-                IsValidPart = ValidPart(InputCode);           
+
+                IsValidPart = ValidPart(MovementType, InputCode);
                 if (IsValidPart)
                 {
-                    partDescription = movementDetails!.PartDescription;
-                    RequiredQty = movementDetails!.RequiredQty;
-                    if (movementDetails!.Serializable ?? false)
-                    { 
-
-                        mStepId = 4; mHelpText = "Escanee el Serial"; 
-                    }
+                    if ((MovementType == "T" || MovementType == "P") && InputCode == "0")
+                    {
+                        await PostMovemmentDetailMobile();
+                    } 
                     else
                     {
-                        mStepId = 5; mHelpText = "Escanee la cantidad";
+                        partDescription = movementDetails!.PartDescription;
+                        RequiredQty = movementDetails!.RequiredQty;
+                        if (movementDetails!.Serializable ?? false)
+                        {
+
+                            mStepId = 4; mHelpText = "Escanee el Serial";
+                        }
+                        else
+                        {
+                            mStepId = 5; mHelpText = "Escanee la cantidad";
+                        }
+                        IsValidSerial = true;
                     }
-                    IsValidSerial = true;
+
                 }
                 else
                 {
@@ -136,17 +147,29 @@
                 }
                 break;
             case 5: //VALIDAR CANTIDAD REAL DEL MOVIMIENTO
-
-                IsValidReal = ValidReal(int.Parse(InputCode));
+                IsValidReal =  ValidReal(MovementType, movementDetails!.TypeId!, int.Parse(InputCode));
                 if (IsValidReal) { mStepId = 6; InputRealQty = int.Parse(InputCode); mHelpText = "Listo, Puede Procesar!"; } else mHelpText = "Invalido cantidad, escanee nuevamente.";
                 break;           
         }
         InputCode = string.Empty; // Reset input code
-        await bardCodeField!.FocusAsync();
+        if (bardCodeField is not null) {await bardCodeField.SetText(string.Empty); await bardCodeField.FocusAsync(); }
     }
     private bool ValidSerial(string inputSerial) => (movementDetails!.SerialCode!.Equals(inputSerial));
-    private bool ValidPart(string inputCode) => (movementDetails!.PartBarcode == inputCode || movementDetails!.PartInnerCode == inputCode);
-    private bool ValidReal(int realQty) => (realQty <= movementDetails!.RequiredQty);
+
+    private bool ValidPart(string? movementType, string inputCode)    
+    {
+        bool isvalidPart = (((movementType == "T" || movementType == "P") && inputCode == "0") ||
+        (movementDetails!.PartBarcode == inputCode || movementDetails!.PartInnerCode == inputCode));
+        return isvalidPart;
+    }   
+    private bool ValidReal(string? movementType, string typeId ,int realQty)
+    {
+        bool isValid = ((movementType == "R" && typeId == "P" && realQty == movementDetails!.RequiredQty) ||
+        ((movementType == "T" || typeId == "P") && movementType == "P" && realQty >= 0) || 
+        (typeId == "D" && realQty > 0));
+        return isValid;
+    } 
+
     private record movementMobile(int? Id, int? MovementId, int? PartId, int? LocationId, int? RealQty, string? SerialCode);
 
     private async Task<bool> GetValidLocation(string InputlocationName)
@@ -173,6 +196,7 @@
         {
             await DialogService.ShowDialog("Movimiento Procesado!", "Procesado", "OK", Color.Success, Icons.Material.Filled.Check);
             await StepOne(); // Reset to step one after processing
+            StateHasChanged();
         }
     }
     private async Task StepOne()
@@ -189,9 +213,9 @@
             var content = await response.Content.ReadFromJsonAsync<WebApiResponse<List<MovementDetails>>>();
             if (content is { data: var movementdetails } && movementdetails != null && movementdetails.Count > 0)
             {
-                processName = MovementType switch { "R" => "Recepcion", "T" => "Traslado", "D" => "Despacho", _ => "Recepcion" };
+                processName = MovementType switch { "R" => "Recepcion", "T" => "Traslado", "P" => "Recoleccion", "D" => "Despacho", _ => "Recepcion" };
                 movementDetails = movementdetails.FirstOrDefault();
-                TypeName = movementDetails?.TypeName;
+                TypeName = movementDetails?.TypeName; 
             }
         } 
 
@@ -209,6 +233,7 @@
         mHelpText = "Aqui escanee ubicacion...";
         processName = "Proceso";       
         TypeName = "En Espera..";
+        movementDetails = null;
         locationName = null;
         locationId = null;
         partDescription = null;
@@ -226,8 +251,8 @@
     private async Task CodeFieldOnKeyUp(KeyboardEventArgs args)
     {
         if (args.Key == "Enter" && InputCode.Length > 0)
-        {     
-            await NextStep();            
+        { 
+            await NextStep();
         }       
     }
     private async Task OnClickCheck(MouseEventArgs args)
