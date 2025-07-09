@@ -1,0 +1,177 @@
+﻿@using Sipcon.WebApp.Client.Models
+@using Sipcon.WebApp.Client.Services
+
+
+@inject IVehicleService VehicleService
+@inject IDialogService DialogService
+
+<MudGrid Spacing="0">
+    <MudItem xs="12">
+        <MudPaper Elevation="2" Class="jpv1-dialog-background-title pa-3" Square="true">
+        <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+            <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                <MudStack Row="true">
+                    <MudText Typo="Typo.h6" Color="Color.Info">@(Title ?? "Vehiculos Disponibles")</MudText>
+                </MudStack>
+                <MudStack>
+                    <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="CloseClick" />
+                </MudStack>
+            </MudStack>
+        </MudPaper></MudPaper>
+    </MudItem>
+
+    <MudItem xs="12">
+        <MudDataGrid @ref="VehicleGrid" T="Vehicle" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" FixedHeader Height="calc(100vh - 400px)" @bind-CurrentPage="_CurrentPage">
+        <ToolBarContent>
+            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="_searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshCatalog"></MudIconButton>
+        </ToolBarContent>
+        <Columns>
+                <TemplateColumn T="Vehicle" Title="VIN">
+                    <CellTemplate>
+                        <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Vin.ToUpper()</MudText>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn T="Vehicle" Title="PLACA">
+                    <CellTemplate>
+
+                        <MudStack Row="false">
+                            <MudText Typo="Typo.caption" Align="Align.Start"><b>@context.Item.Plate.ToUpper()</b></MudText>
+                        </MudStack>
+
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn T="Vehicle" Title="ESTATUS">
+                    <CellTemplate>
+                        <div class="d-flex justify-center">
+                            @if (context.Item.EstatusName != null)
+                            {
+                                string style = "";
+
+                                if (context.Item.EstatusName.ToUpper() == "CREADO")
+                                    style += "";
+                                else if (context.Item.EstatusName.ToUpper() == "DISPONIBLE")
+                                {
+                                    style += "color:#fff";
+                                    style += ";background-color:#0099F3";
+                                }
+                                else if (context.Item.EstatusName.ToUpper() == "ASIGNADO")
+                                {
+                                    style += "color:#fff";
+                                    style += ";background-color:#0099F3";
+                                }
+                                else if (context.Item.EstatusName.ToUpper() == "NO DISPONIBLE")
+                                {
+                                    style += "color:#fff";
+                                    style += ";background-color:#757575";
+                                }
+                                else
+                                {
+                                    style += "color:#fff";
+                                    style += ";background-color:#FF7043";
+                                }
+                                style += ";font-size: 11px";
+                                style += ";font-style:italic";
+
+                                <MudChip T="string" Style="@style" Label="true" Disabled="true">
+                                    @(context.Item.EstatusName.ToUpper())
+                                </MudChip>
+                            }
+
+                        </div>
+                    </CellTemplate>
+                </TemplateColumn>
+            <TemplateColumn>
+                <CellTemplate>
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Filled.NextPlan" OnClick="() => ClickSelect(context.Item)" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="Vehicle" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        </PagerContent>
+    </MudDataGrid>
+    </MudItem>
+</MudGrid>
+
+
+@code {
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;   
+    [Parameter] public int? Vin { get; set; }
+    [Parameter] public string? Plate { get; set; }
+    [Parameter] public string? Title { get; set; }
+    
+    private MudDataGrid<Vehicle>? VehicleGrid;
+
+
+    bool _loading = true;
+    string _searchString = "";
+    private int _CurrentPage = 0;
+
+    private int _rowCount = 0;
+    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
+    private int _rowsTotal = 0;
+
+    private async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            _loading = true;
+            _searchString = text;
+            await VehicleGrid!.ReloadServerData();
+        }
+    }
+
+    Func<Vehicle, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    {
+        nameof(Vehicle.Vin) => o => o.Vin ?? "",
+        nameof(Vehicle.Plate) => o => o.Plate ?? "",
+        _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto
+    };
+
+
+    private async Task<GridData<Vehicle>> ServerReload(GridState<Vehicle> state)
+    {
+        _loading = true;
+        _rowCount = state.Page * state.PageSize;
+        IEnumerable<Vehicle> _Vehicles = new List<Vehicle>();
+        var serviceResponse = await VehicleService.GetVehiclesAvailables(_iduser, _rowCount, _searchString);
+        if (serviceResponse.Processed)
+        {
+            _Vehicles = serviceResponse.Data;
+            _rowsTotal = serviceResponse.Total;
+           
+        }
+        else
+        {
+            _Vehicles = new List<Vehicle>();
+            _rowsTotal = 0;
+        }
+
+        _loading = false;
+
+        return new GridData<Vehicle> { TotalItems = _rowsTotal, Items = _Vehicles };
+
+    }
+
+
+    private async Task ClickRefreshCatalog(MouseEventArgs ev)
+    {
+        await VehicleGrid!.ReloadServerData();
+    }
+
+
+    private async Task ClickSelect(Vehicle item)  
+    {  
+        MudDialog?.Close(DialogResult.Ok(item));
+        await Task.CompletedTask;  
+    }  
+   
+
+    private void CloseClick(MouseEventArgs args)
+    {
+        MudDialog?.Close();
+    }
+}
