@@ -68,6 +68,9 @@ namespace Sipcon.WebApp.Client.Models
         public decimal SubTotal { get; set; } = 0;
 
         public int? Stock { get; set; } = 0;
+        public bool? Serializable { get; set; } = false;
+
+        public string? PartBarcode { get; set; } = string.Empty;
 
     }
 }

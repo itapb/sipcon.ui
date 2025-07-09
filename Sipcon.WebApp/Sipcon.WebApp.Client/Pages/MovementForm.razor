@@ -26,14 +26,14 @@
                                     <MudCheckBox @bind-Value="context.Item.IsSelected" />
                                 </CellTemplate>
                             </TemplateColumn>
-                            <PropertyColumn Property="x => x.PartInnerCode" Title="Cod Respuesto" />
-                            <PropertyColumn Property="x => x.PartDescription" Title="Descripcion" />
-                            <PropertyColumn Property="x => x.LocationName" Title="Ubicacion" />
-                            <PropertyColumn Property="x => x.RequiredQty" Title="Teorica" />
-                            <PropertyColumn Property="x => x.RealQty" Title="Real" />
-                            <PropertyColumn Property="x => x.TypeName" Title="Tipo" />
+                            <PropertyColumn Property="x => x.PartInnerCode" Title="COD REPUESTO" />
+                            <PropertyColumn Property="x => x.PartDescription" Title="DESCRIPCION" />
+                            <PropertyColumn Property="x => x.LocationName" Title="UBICACION" />
+                            <PropertyColumn Property="x => x.RequiredQty" Title="TEORICA" />
+                            <PropertyColumn Property="x => x.RealQty" Title="REAL" />
+                            <PropertyColumn Property="x => x.TypeName" Title="TIPO" />
 
-                            <TemplateColumn Title="Status">
+                            <TemplateColumn Title="STATUS">
                                 <CellTemplate>
                                     <span>@((context.Item.Processed ?? false) ? "Procesado":"No Procesado")</span>
                                  </CellTemplate>
@@ -62,7 +62,7 @@
                         else
                         {
                             <MudItem xs="12">
-                                <MudTextField ReadOnly="true" @bind-Value="MasterMovement.ContactName" Label="@(MasterMovement!.TypeId == "R" && IsCreatedMovement ? "Contacto :" : "")" AdornmentText="@(MasterMovement!.TypeId == "R" && IsCreatedMovement ? "" : "Contacto :")" Adornment=" Adornment.Start" AdornmentIcon="@(MasterMovement!.TypeId == "R" ? Icons.Material.Filled.Search : "")" Variant="Variant.Text" OnAdornmentClick="ContactClick" Class="align-right-input"></MudTextField>
+                                <MudTextField ReadOnly="true" @bind-Value="MasterMovement.ContactName" Label="@(MasterMovement!.TypeId == "R" && IsCreatedMovement ? "Contacto :" : "")" AdornmentText="@(MasterMovement!.TypeId == "R" && IsCreatedMovement ? "" : "Contacto :")" Adornment=" Adornment.Start" AdornmentIcon="@(MasterMovement!.TypeId == "R" ? Icons.Material.Filled.Search : "")" Variant="Variant.Text" OnAdornmentClick="ContactClick" Class="align-right-input" RequiredError="Campo requerido" Required="@(IsCreatedReception)"></MudTextField>
                             </MudItem>
                             <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterMovement.Id" Adornment="Adornment.Start" AdornmentText="Nro Doc :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
                             <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterMovement.Created" Adornment="Adornment.Start" AdornmentText="Fecha :" Variant="Variant.Text" Class="align-right-input" /></MudItem>

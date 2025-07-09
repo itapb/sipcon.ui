@@ -53,5 +53,8 @@ namespace Sipcon.WebApp.Client.Models
         public Int32? AgentId { get; set; } = 0;
         public string? AgentName { get; set; } = string.Empty;
 
+        [Required]
+        public bool? Blocked { get; set; } = false;
+
     }
 }

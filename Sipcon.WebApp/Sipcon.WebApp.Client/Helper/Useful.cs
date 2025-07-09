@@ -49,26 +49,26 @@ namespace Sipcon.WebApp.Client.Helper
         }
         internal static string? ToActionIcon(this string? actionDisplay)
         {
-            return actionDisplay switch
+            return actionDisplay!.ToUpper() switch
             {
-                "Home" => Icons.Material.Filled.Home,
-                "Activar" => Icons.Material.Filled.VerifiedUser,
-                "Desactivar" => Icons.Material.Filled.Dangerous,
-                "Importar" => Icons.Material.Filled.Upload,
-                "Exportar" => Icons.Material.Filled.Download, 
-                "Asignar" => Icons.Material.Filled.Label,
-                "Desasignar" => Icons.Material.Outlined.LabelOff,
-                "Disponible" => Icons.Material.Filled.DirectionsCarFilled,
-                "No Disponible" => Icons.Material.Filled.CarCrash,
-                "Generar" => Icons.Material.Outlined.Task,
-                "Rechazar" => Icons.Material.Filled.ThumbDown,
-                "Inventario" => Icons.Material.Filled.Inventory,
-                "Procesos" => Icons.Material.Filled.Hardware,
-                "Recepcion" => Icons.Material.Filled.AddBusiness,
-                "Traslado" => Icons.Material.Filled.MoveDown,
-                "Imprimir" => Icons.Material.Filled.Print,
-                "Despacho" => Icons.Material.Filled.LocalShipping,
-                "Inactivar" => Icons.Material.Filled.Dangerous,
+                "HOME" => Icons.Material.Filled.Home,
+                "ACTIVAR" => Icons.Material.Filled.VerifiedUser,
+                "DESACTIVAR" => Icons.Material.Filled.Dangerous,
+                "IMPORTAR" => Icons.Material.Filled.Upload,
+                "EXPORTAR" => Icons.Material.Filled.Download,
+                "ASIGNAR" => Icons.Material.Filled.Label,
+                "DESASIGNAR" => Icons.Material.Outlined.LabelOff,
+                "DISPONIBLE" => Icons.Material.Filled.DirectionsCarFilled,
+                "NO DISPONIBLE" => Icons.Material.Filled.CarCrash,
+                "GENERAR" => Icons.Material.Outlined.Task,
+                "RECHAZAR" => Icons.Material.Filled.ThumbDown,
+                "INVENTARIO" => Icons.Material.Filled.Inventory,
+                "PROCESOS" => Icons.Material.Filled.Hardware,
+                "RECEPCION" => Icons.Material.Filled.AddBusiness,
+                "TRASLADO" => Icons.Material.Filled.MoveDown,
+                "IMPRIMIR" => Icons.Material.Filled.Print,
+                "DESPACHO" => Icons.Material.Filled.LocalShipping,
+                "INACTIVAR" => Icons.Material.Filled.Dangerous,
                 _ => Icons.Material.Filled.HelpOutline
             };
         }
