@@ -1,0 +1,93 @@
+﻿@page "/mobile-customers"
+@using Sipcon.WebApp.Client.Layout
+@layout MobileLayout
+<div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
+    <MudPaper Elevation="2" Class="pa-3">
+        <MudGrid Spacing="2">
+            <MudItem xs="12">              
+                <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">                   
+                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6">Clientes</MudPaper>
+                    <MudPaper Class="pa-2"><MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Href="process-list" Size="Size.Small" /></MudPaper>
+                </MudStack>
+             </MudItem>
+             <MudItem xs="12">
+                 <MudText>
+                    <MudDataGrid @ref="ContactsCatalogMudDataGrid" T="Contact" ServerData="ServerReload" Dense="false" Striped="true" Hover="true" Filterable="false" FixedHeader SelectedItemChanged="ClickSelectContact"  @bind-CurrentPage="ContactCurrentPage">
+                        <ToolBarContent>
+                            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                            <MudSpacer />
+                            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshContactsCatalog"></MudIconButton>
+                        </ToolBarContent>
+                        <Columns>
+                            <PropertyColumn Property="x => x.Vat" Title="CODIGO" />
+                            <PropertyColumn Property="x => x.FirstName" Title="RAZON SOCIAL" />                           
+                        </Columns>
+                        <PagerContent>
+                            <MudDataGridPager T="Contact" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+                        </PagerContent>
+                    </MudDataGrid>
+                 </MudText>
+             </MudItem>
+        </MudGrid>
+     </MudPaper>
+ </div>
+@code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    bool _loading = true;
+    string searchString = "";
+    private int ContactCurrentPage = 0;
+    private MudDataGrid<Contact>? ContactsCatalogMudDataGrid;
+    [Parameter] public string? ContactType { get; set; } = "P";
+
+    Func<Contact, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    {
+        nameof(Contact.Vat) => o => o.Vat ?? "",
+        nameof(Contact.FirstName) => o => o.FirstName ?? "",
+        _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto
+    };
+
+    private async Task<GridData<Contact>> ServerReload(GridState<Contact> state)
+    {        
+        _loading = true;
+        var totalItems = 0;
+        var mOffset = state.Page * state.PageSize;
+        IEnumerable<Contact> data;
+        HttpResponseMessage response = await Http.GetAsync($"api/Contact/GetByContactType?rowFrom={mOffset}&filter={searchString}&userId={Useful.userId}&contactType={ContactType}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Contact>>>();
+            totalItems = content2!.total ?? 0;
+            data = content2!.data ?? new List<Contact>();
+        }
+        else
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
+        if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Contact> sortDefinition)
+        {
+            data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
+        }
+        _loading = false;
+        return new GridData<Contact> { TotalItems = totalItems, Items = data };
+    }
+
+
+    private async Task ClickRefreshContactsCatalog(MouseEventArgs ev)
+    {
+        await ContactsCatalogMudDataGrid!.ReloadServerData();
+    }
+    private async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            _loading = true;
+            searchString = text;
+            await ContactsCatalogMudDataGrid!.ReloadServerData();
+        }
+    }
+    private async Task ClickSelectContact(Contact item)
+    {
+        await Task.CompletedTask;
+    }
+}

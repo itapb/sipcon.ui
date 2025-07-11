@@ -1,0 +1,108 @@
+﻿@page "/mobile-guidedetail"
+@using Sipcon.WebApp.Client.Layout
+@layout MobileLayout
+
+<div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
+    <MudPaper Elevation="2" Class="pa-3">
+        <MudGrid Spacing="2">
+            <MudItem xs="12">
+                <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex justify-center align-center" >14764</MudPaper>         
+                    <MudPaper Class="pa-2"><MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Add" Size="Size.Small" /></MudPaper>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12">
+                <MudText>
+                    <MudDataGrid @ref="GuidesMudDataGrid" T="GuideItem" ServerData="ServerReload" Dense="false" Striped="true" Hover="true" Filterable="false" FixedHeader SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage">
+                        <Columns>
+                            <PropertyColumn Property="x => x.NumberGuide" Title="GUIA" />
+                            <PropertyColumn Property="x => x.Weight" Title="PESO" />
+                        </Columns>
+                        <PagerContent>
+                            <MudStack Row="false" Spacing="2" >
+                                <MudPaper Class="pa-3">
+                                    <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Style="height:40px;" />
+                                </MudPaper>
+                            </MudStack>
+                            <MudPaper Elevation="2" Class="pa-3" >
+                                <MudStack Justify="Justify.Center" Row="true" Spacing="4">
+                                    <MudButton  Variant="Variant.Filled" Color="Color.Info" EndIcon="@Icons.Material.Filled.Adjust" Href="process-list">DESPACHAR</MudButton>
+                                    <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshGuides" />
+                                    <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Href="process-list" Size="Size.Medium" />
+                                </MudStack>
+                            </MudPaper>
+                        </PagerContent>
+                    </MudDataGrid>
+                </MudText>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</div>
+@code {
+    bool _loading = true;
+    string searchString = "";
+    private int GuideCurrentPage = 0;
+    record GuideItem(string NumberGuide, double Weight);
+
+    private MudDataGrid<GuideItem>? GuidesMudDataGrid;
+    private static readonly List<GuideItem> TestGuides = new()
+    {
+        new GuideItem("14764-1",35.2),
+        new GuideItem("14764-2",45),
+        new GuideItem("14764-3",80.5),
+    };
+
+    Func<GuideItem, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    {
+        nameof(GuideItem.NumberGuide) => o => o.NumberGuide ?? "",
+        nameof(GuideItem.Weight) => o => o.Weight,
+        _ => null!
+    };
+
+    private async Task<GridData<GuideItem>> ServerReload(GridState<GuideItem> state)
+    {
+        _loading = true;
+        var totalItems = 0;
+        var mOffset = state.Page * state.PageSize;
+        IEnumerable<GuideItem> data = TestGuides;
+        await Task.CompletedTask;
+        // Filter by search string
+        if (!string.IsNullOrWhiteSpace(searchString))
+        {
+            data = data.Where(g => g.NumberGuide.Contains(searchString, StringComparison.OrdinalIgnoreCase));
+        }
+
+        totalItems = data.Count();
+
+        // Sorting
+        if (state.SortDefinitions.FirstOrDefault() is SortDefinition<GuideItem> sortDefinition)
+        {
+            data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
+        }
+
+        // Paging
+        data = data.Skip(mOffset).Take(state.PageSize);
+
+        _loading = false;
+        return new GridData<GuideItem> { TotalItems = totalItems, Items = data };
+
+    }
+
+    private async Task ClickRefreshGuides(MouseEventArgs ev)
+    {
+        await GuidesMudDataGrid!.ReloadServerData();
+    }
+    private async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            _loading = true;
+            searchString = text;
+            await GuidesMudDataGrid!.ReloadServerData();
+        }
+    }
+    private async Task ClickSelectGuide(GuideItem item)
+    {
+        await Task.CompletedTask;
+    }
+}
