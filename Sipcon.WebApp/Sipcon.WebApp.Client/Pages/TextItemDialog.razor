@@ -57,7 +57,7 @@
                             <CardHeaderContent>
                                 <MudStack Row="true">
                                     <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Default" Style="font-size: 1.5rem;"></MudIcon>
-                                    <MudText Typo="Typo.subtitle2">Opciones</MudText>
+                                        <MudText Typo="Typo.subtitle2">@(string.IsNullOrEmpty(Title) ? "Opciones" : Title)</MudText>
                                 </MudStack>
 
                             </CardHeaderContent>
@@ -69,8 +69,11 @@
                             <MudStack Row="true">
 
                                     <MudTextField Typo="Typo.caption" @bind-Value="_returnValue" Label="Observaciòn" Margin="Margin.Dense" Disabled="false"
-                                                  MaxLength="150"
-                                                  Validation="@_SelectValidator.Validation" Immediate="true" />
+                                                  Counter="500"
+                                                  MaxLength="500"
+                                                  HelperText="Minimo 10 car&aacute;cteres"
+                                                  Validation="@_SelectValidator.Validation" 
+                                                  Immediate="true" />
                             </MudStack>
 
 
@@ -125,7 +128,13 @@
     SelectValidator<string> _SelectValidator = new SelectValidator<string>(x => x
         .NotNull().WithMessage("Campo requerido")
         .NotEmpty().WithMessage("Campo requerido")
-        .Length(10, 150).WithMessage("Campo requerido entre 10-150 carácteres"));
+        .Length(10, 500).WithMessage("Campo requerido entre 10-500 carácteres"));
+
+    private IEnumerable<string> MaxCharacters(string ch)
+    {
+        if (!string.IsNullOrEmpty(ch) && ch?.Length < 10)
+            yield return "Entre 10-500 carácteres";
+    }
 
 
     private async Task OnValidSubmit()

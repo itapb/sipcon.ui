@@ -494,8 +494,8 @@
             <MudDialog @bind-Visible="_nestedModalVisible">
                 <TitleContent>
                     <MudStack Row="true">
-                        <MudIcon Icon="@Icons.Material.Filled.Policy" Color="@(_successModal ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
-                        <MudText Typo="Typo.subtitle2">Tipo Poliza</MudText>
+                        <MudIcon Icon="@Icons.Material.Filled.Speed" Color="@(_successModal ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
+                        <MudText Typo="Typo.subtitle2">Mantenimiento</MudText>
                     </MudStack>
                 </TitleContent>
                 <DialogContent>
@@ -773,9 +773,11 @@
     private async Task CloseNestedModal()
     {
         _nestedModalVisible = false;
-
         await Task.Delay(50);
-        MudDialog.Close(DialogResult.Ok(true));
+
+        if (_successModal)
+            MudDialog.Close(DialogResult.Ok(true));
+        
         await Task.CompletedTask;
 
     }
