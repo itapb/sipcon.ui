@@ -6,17 +6,16 @@
     <MudPaper Elevation="2" Class="pa-3">
         <MudGrid Spacing="2">
             <MudItem xs="12">
-                <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
-                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex justify-center align-center">REPUESTO</MudPaper>
-                    <MudPaper Class="pa-2"><MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Close" Size="Size.Small" /></MudPaper>
+                <MudStack Row="false" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex justify-center align-center">REPUESTO</MudPaper>              
                 </MudStack>
             </MudItem>
             <MudItem xs="12">
                 <MudText>
-                    <MudDataGrid @ref="PartsMudDataGrid" T="mPart" ServerData="ServerReload" Dense="false" Striped="true" Hover="true" Filterable="false" FixedHeader SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage">
+                    <MudDataGrid @ref="PartsMudDataGrid" T="mPart" ServerData="ServerReload" Striped="true" Hover="true" Loading="_loading" Filterable="false" FixedHeader SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage" Class="hide-datagrid-headers">
                         <Columns>
-                            <PropertyColumn Property="x => x.PartDescription" Title="REPUESTO" />
-                            <PropertyColumn Property="x => x.Quantity" Title="Cantidad" />                            
+                            <PropertyColumn Property="x => x.PartDescription" Title="" CellClass="d-flex justify-center align-center" />
+                            <PropertyColumn Property="x => x.Quantity" Title="" CellClass="d-flex justify-center align-center" />
                         </Columns>
                         <PagerContent>
                             <MudStack Row="false" Spacing="2">
@@ -28,9 +27,22 @@
                     </MudDataGrid>
                 </MudText>
             </MudItem>
+            <MudItem xs="12">
+                <MudStack Row="true" Justify="Justify.Center">
+                    <MudStack Row="true" Spacing="5">              
+                        <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshGuides" />
+                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" Href="process-list" />
+                    </MudStack>
+                </MudStack>
+            </MudItem>
         </MudGrid>
     </MudPaper>
 </div>
+<style>
+    .hide-datagrid-headers .mud-table-head {
+        display: none !important;
+    }
+</style>
 @code {
     bool _loading = true;
     string searchString = "";
@@ -38,7 +50,7 @@
     record mPart(string PartDescription, int Quantity);
 
     private MudDataGrid<mPart>? PartsMudDataGrid;
-    private static readonly List<mPart> TestParts = new()
+    private List<mPart> TestParts = new()
     {
         new mPart("Repuesto 1",25),
         new mPart("Reouesto 2",30),
@@ -74,7 +86,7 @@
         }
 
         // Paging
-        data = data.Skip(mOffset).Take(state.PageSize);
+        //data = data.Skip(mOffset).Take(state.PageSize);
 
         _loading = false;
         return new GridData<mPart> { TotalItems = totalItems, Items = data };

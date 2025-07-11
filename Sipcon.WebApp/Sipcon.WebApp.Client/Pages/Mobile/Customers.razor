@@ -5,32 +5,35 @@
     <MudPaper Elevation="2" Class="pa-3">
         <MudGrid Spacing="2">
             <MudItem xs="12">              
-                <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">                   
-                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6">Clientes</MudPaper>
-                    <MudPaper Class="pa-2"><MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Href="process-list" Size="Size.Small" /></MudPaper>
+                <MudStack Row="false" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">                   
+                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6">Clientes</MudPaper>                    
                 </MudStack>
              </MudItem>
              <MudItem xs="12">
                  <MudText>
-                    <MudDataGrid @ref="ContactsCatalogMudDataGrid" T="Contact" ServerData="ServerReload" Dense="false" Striped="true" Hover="true" Filterable="false" FixedHeader SelectedItemChanged="ClickSelectContact"  @bind-CurrentPage="ContactCurrentPage">
-                        <ToolBarContent>
-                            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-                            <MudSpacer />
-                            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshContactsCatalog"></MudIconButton>
-                        </ToolBarContent>
+                    <MudDataGrid @ref="ContactsCatalogMudDataGrid" T="Contact" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" Loading="_loading" FixedHeader SelectedItemChanged="ClickSelectContact" @bind-CurrentPage="ContactCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers">
                         <Columns>
-                            <PropertyColumn Property="x => x.Vat" Title="CODIGO" />
-                            <PropertyColumn Property="x => x.FirstName" Title="RAZON SOCIAL" />                           
+                            <PropertyColumn Property="x => x.FirstName" Title="" CellClass="d-flex justify-center align-center" />
                         </Columns>
-                        <PagerContent>
-                            <MudDataGridPager T="Contact" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
-                        </PagerContent>
                     </MudDataGrid>
                  </MudText>
              </MudItem>
+            <MudItem xs="12">
+                <MudStack Row="true" Justify="Justify.Center">
+                    <MudStack Row="true" Spacing="5">                       
+                        <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshContactsCatalog" />
+                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" Href="process-list" />
+                    </MudStack>
+                </MudStack>
+            </MudItem>
         </MudGrid>
      </MudPaper>
  </div>
+<style>
+    .hide-datagrid-headers .mud-table-head {
+        display: none !important;
+    }
+</style>
 @code {
     [Inject] private HttpClient Http { get; set; } = default!;
     bool _loading = true;

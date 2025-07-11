@@ -6,14 +6,13 @@
     <MudPaper Elevation="2" Class="pa-3">
         <MudGrid Spacing="2">
             <MudItem xs="12">
-                <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
-                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex justify-center align-center">14764-2</MudPaper>
-                    <MudPaper Class="pa-2"><MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Search" Size="Size.Small" /></MudPaper>
+                <MudStack Row="false" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex justify-center align-center">14764-2</MudPaper>                    
                 </MudStack>
             </MudItem>
             <MudItem xs="12">
                 <MudText>
-                    <MudDataGrid @ref="GuidesMudDataGrid" T="mPackage" ServerData="ServerReload" Dense="false" Striped="true" Hover="true" Filterable="false" FixedHeader SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage">
+                    <MudDataGrid @ref="GuidesMudDataGrid" T="mPackage" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" Loading="_loading" FixedHeader SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage">
                         <Columns>
                             <PropertyColumn Property="x => x.PartDescription" Title="REPUESTO" />
                             <PropertyColumn Property="x => x.Quantity" Title="Cantidad" />
@@ -29,17 +28,20 @@
                                     <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Style="height:40px;" />
                                 </MudPaper>
                             </MudStack>
-                            <MudPaper Elevation="2" Class="pa-3">
-                                <MudStack Justify="Justify.Center" Row="true" Spacing="4">
-                                    <MudButton Variant="Variant.Filled" Color="Color.Info" EndIcon="@Icons.Material.Filled.Check" Href="process-list">CERRAR</MudButton>
-                                    <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshGuides" />
-                                    <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Href="process-list" Size="Size.Medium" />
-                                </MudStack>
-                            </MudPaper>
                         </PagerContent>
                     </MudDataGrid>
                 </MudText>
             </MudItem>
+            <MudItem xs="12">
+                <MudStack Row="true" Justify="Justify.Center">
+                    <MudStack Row="true" Spacing="5">                        
+                        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" />
+                        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Search" Size="Size.Medium" />
+                        <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshPackage" />
+                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" Href="process-list" />
+                    </MudStack>
+                </MudStack>
+            </MudItem>        
         </MudGrid>
     </MudPaper>
 </div>
@@ -50,7 +52,7 @@
     record mPackage(string PartDescription, int Quantity);
 
     private MudDataGrid<mPackage>? GuidesMudDataGrid;
-    private static readonly List<mPackage> TestGuides = new()
+    private List<mPackage> TestGuides = new()
     {
         new mPackage("Repuesto 1",25),
         new mPackage("Reouesto 2",30),
@@ -70,7 +72,7 @@
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<mPackage> data = TestGuides;
-        await Task.CompletedTask;
+       
         // Filter by search string
         if (!string.IsNullOrWhiteSpace(searchString))
         {
@@ -86,14 +88,15 @@
         }
 
         // Paging
-        data = data.Skip(mOffset).Take(state.PageSize);
+        //data = data.Skip(mOffset).Take(state.PageSize);
 
         _loading = false;
+        await Task.CompletedTask;
         return new GridData<mPackage> { TotalItems = totalItems, Items = data };
 
     }
 
-    private async Task ClickRefreshGuides(MouseEventArgs ev)
+    private async Task ClickRefreshPackage(MouseEventArgs ev)
     {
         await GuidesMudDataGrid!.ReloadServerData();
     }

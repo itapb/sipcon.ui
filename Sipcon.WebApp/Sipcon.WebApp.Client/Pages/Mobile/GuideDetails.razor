@@ -7,13 +7,12 @@
         <MudGrid Spacing="2">
             <MudItem xs="12">
                 <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
-                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex justify-center align-center" >14764</MudPaper>         
-                    <MudPaper Class="pa-2"><MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Add" Size="Size.Small" /></MudPaper>
+                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex justify-center align-center" >14764</MudPaper> 
                 </MudStack>
             </MudItem>
             <MudItem xs="12">
                 <MudText>
-                    <MudDataGrid @ref="GuidesMudDataGrid" T="GuideItem" ServerData="ServerReload" Dense="false" Striped="true" Hover="true" Filterable="false" FixedHeader SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage">
+                    <MudDataGrid @ref="GuidesMudDataGrid" T="GuideItem" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" Loading="_loading" FixedHeader SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage">
                         <Columns>
                             <PropertyColumn Property="x => x.NumberGuide" Title="GUIA" />
                             <PropertyColumn Property="x => x.Weight" Title="PESO" />
@@ -24,16 +23,19 @@
                                     <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Style="height:40px;" />
                                 </MudPaper>
                             </MudStack>
-                            <MudPaper Elevation="2" Class="pa-3" >
-                                <MudStack Justify="Justify.Center" Row="true" Spacing="4">
-                                    <MudButton  Variant="Variant.Filled" Color="Color.Info" EndIcon="@Icons.Material.Filled.Adjust" Href="process-list">DESPACHAR</MudButton>
-                                    <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshGuides" />
-                                    <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Href="process-list" Size="Size.Medium" />
-                                </MudStack>
-                            </MudPaper>
                         </PagerContent>
                     </MudDataGrid>
                 </MudText>
+            </MudItem>
+            <MudItem xs="12">
+                <MudStack Row="true" Justify="Justify.Center">
+                    <MudStack Row="true" Spacing="5">
+                        <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Add" Size="Size.Medium" />
+                        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" Href="process-list" />
+                        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshGuides" />
+                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Href="process-list" Size="Size.Medium" />
+                    </MudStack>
+                </MudStack>
             </MudItem>
         </MudGrid>
     </MudPaper>
@@ -45,7 +47,7 @@
     record GuideItem(string NumberGuide, double Weight);
 
     private MudDataGrid<GuideItem>? GuidesMudDataGrid;
-    private static readonly List<GuideItem> TestGuides = new()
+    private List<GuideItem> TestGuides = new()
     {
         new GuideItem("14764-1",35.2),
         new GuideItem("14764-2",45),

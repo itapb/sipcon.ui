@@ -5,33 +5,43 @@
     <MudPaper Elevation="2" Class="pa-3">
         <MudGrid Spacing="2">
             <MudItem xs="12">
-                <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
-                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6">Guias</MudPaper>
-                    <MudPaper Class="pa-2"><MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Add" Size="Size.Small" /></MudPaper>                   
+                <MudStack Row="false" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6">Guias</MudPaper>                      
                 </MudStack>
             </MudItem>
             <MudItem xs="12">
                 <MudText>
-                    <MudDataGrid @ref="GuidesMudDataGrid" T="Guide" ServerData="ServerReload" Dense="false" Striped="true" Hover="true" Filterable="false" FixedHeader SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage">
-                        <ToolBarContent>
-                            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-                            <MudSpacer />
-                            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshGuides"></MudIconButton>
-                            <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Secondary" Href="process-list"></MudIconButton>
-                        </ToolBarContent>
+                    <MudDataGrid @ref="GuidesMudDataGrid" T="Guide" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" Loading="_loading" SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers">
                         <Columns>
-                            <PropertyColumn Property="x => x.NumberGuide" Title="GUIA" />
-                  
+                            <PropertyColumn Property="x => x.NumberGuide" Title="" CellClass="d-flex justify-center align-center" />
                         </Columns>
                         <PagerContent>
-                            <MudDataGridPager T="Guide" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+                            <MudStack Row="false" Spacing="2">
+                                <MudPaper Class="pa-3">
+                                    <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Style="height:40px;" />
+                                </MudPaper>
+                            </MudStack>   
                         </PagerContent>
                     </MudDataGrid>
                 </MudText>
-            </MudItem>            
+            </MudItem>
+            <MudItem xs="12">
+                <MudStack Row="true" Justify="Justify.Center">
+                    <MudStack Row="true" Spacing="5">
+                        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Size="Size.Medium" />
+                        <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshGuides" />                        
+                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" Href="process-list" />
+                    </MudStack>
+                </MudStack>
+            </MudItem>
         </MudGrid>
     </MudPaper>
 </div>
+<style>
+    .hide-datagrid-headers .mud-table-head {
+        display: none !important;
+    }
+</style>
 @code {
     bool _loading = true;
     string searchString = "";
@@ -39,7 +49,7 @@
     record Guide(string NumberGuide);
 
     private MudDataGrid<Guide>? GuidesMudDataGrid;
-    private static readonly List<Guide> TestGuides = new()
+    private List<Guide> TestGuides = new()
     {
         new Guide("14764"),
         new Guide("14762"),
@@ -74,7 +84,7 @@
         }
 
         // Paging
-        data = data.Skip(mOffset).Take(state.PageSize);
+        //data = data.Skip(mOffset).Take(state.PageSize);
         
         _loading = false;
         return new GridData<Guide> { TotalItems = totalItems, Items = data };
