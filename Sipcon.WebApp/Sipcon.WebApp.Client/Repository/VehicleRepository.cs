@@ -14,14 +14,79 @@
         private readonly HttpClient _http = http;
 
         
-        public async Task<ApiResponse<List<Vehicle>>> GetVehicles(int IdUser, int RowFrom = 0, string Filter = "")
+        public async Task<ApiResponse<List<Vehicle>>> GetVehicles(int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null)
         {
             ApiResponse<List<Vehicle>>? result;
 
             try
             {
-            
-                result = await _http.GetFromJsonAsync<ApiResponse<List<Vehicle>>>($"api/Vehicle/GetAll?filter={Filter}&rowFrom={RowFrom}&userId={IdUser}");
+
+                if (IdDealer.HasValue && IdDealer.Value > 0)
+                {
+                    result = await _http.GetFromJsonAsync<ApiResponse<List<Vehicle>>>($"api/Vehicle/GetAll?userId={IdUser}&dealerId={IdDealer}&rowFrom={RowFrom}&filter={Filter}");
+                }
+                else
+                {
+                    result = await _http.GetFromJsonAsync<ApiResponse<List<Vehicle>>>($"api/Vehicle/GetAll?userId={IdUser}&rowFrom={RowFrom}&filter={Filter}");
+                }
+
+                
+
+                result = (result is null) ? new ApiResponse<List<Vehicle>>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos."
+                } : result;
+
+            }
+            catch (HttpRequestException httpEx)
+            {
+                result = new ApiResponse<List<Vehicle>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
+                };
+
+            }
+            catch (NotSupportedException notSupportedEx)
+            {
+                result = new ApiResponse<List<Vehicle>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
+                };
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<Vehicle>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+
+        }
+
+        public async Task<ApiResponse<List<Vehicle>>> GetVehiclesAvailables(int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null)
+        {
+            ApiResponse<List<Vehicle>>? result;
+
+            try
+            {
+
+                if (IdDealer.HasValue && IdDealer.Value > 0)
+                {
+                    result = await _http.GetFromJsonAsync<ApiResponse<List<Vehicle>>>($"api/Vehicle/GetAllAvailables?userId={IdUser}&dealerId={IdDealer}&rowFrom={RowFrom}&filter={Filter}");
+                }
+                else
+                {
+                    result = await _http.GetFromJsonAsync<ApiResponse<List<Vehicle>>>($"api/Vehicle/GetAllAvailables?userId={IdUser}&rowFrom={RowFrom}&filter={Filter}");
+                }
+
+
 
                 result = (result is null) ? new ApiResponse<List<Vehicle>>()
                 {
@@ -105,18 +170,85 @@
             return result;
         }
 
-        public async Task<ApiResponse<Vehicle>> GetVehicleBy(string Search, int IdUser, int IdDealer, SearchByEnum SearchBy)
+        public async Task<ApiResponse<Vehicle>> GetVehicleBy(string Search, int IdUser,  SearchByEnum SearchBy, int? IdDealer)
         {
             ApiResponse<Vehicle>? result;
             try
             {
-                result = await _http.GetFromJsonAsync<ApiResponse<Vehicle>>($"api/Vehicle/GetOneBy?userId={IdUser}&filter={Search}&filterBy={(int)SearchBy}");
+                if (IdDealer.HasValue && IdDealer.Value > 0)
+                {
+                    result = await _http.GetFromJsonAsync<ApiResponse<Vehicle>>($"api/Vehicle/GetOneBy?userId={IdUser}&dealerId={IdDealer}&filter={Search}&filterBy={(int)SearchBy}");
+                }
+                else
+                {
+                    result = await _http.GetFromJsonAsync<ApiResponse<Vehicle>>($"api/Vehicle/GetOneBy?userId={IdUser}&filter={Search}&filterBy={(int)SearchBy}");
+                }
+                
 
                 result = (result is null) ? new ApiResponse<Vehicle>()
                 {
                     Processed = false,
                     Message = "La respuesta del servidor no contiene datos."
                 } : result;
+
+            }
+            catch (HttpRequestException httpEx)
+            {
+                result = new ApiResponse<Vehicle>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
+                };
+
+            }
+            catch (NotSupportedException notSupportedEx)
+            {
+                result = new ApiResponse<Vehicle>()
+                {
+                    Processed = false,
+                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
+                };
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<Vehicle>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+        }
+
+        public async Task<ApiResponse<Vehicle>> GetVehicleAvailable(string Search, int IdUser, int? IdDealer = null)
+        {
+            ApiResponse<Vehicle>? result;
+            try
+            {
+                ApiResponse<List<Vehicle>>? Listresult;
+                if (IdDealer.HasValue && IdDealer.Value > 0)
+                {
+                    Listresult = await _http.GetFromJsonAsync<ApiResponse<List<Vehicle>>>($"api/Vehicle/GetOneAvailable?userId={IdUser}&dealerId={IdDealer}&VinOrPlate={Search}");
+                }
+                else
+                {
+                    Listresult = await _http.GetFromJsonAsync<ApiResponse<List<Vehicle>>>($"api/Vehicle/GetOneAvailable?userId={IdUser}&VinOrPlate={Search}");
+                }
+
+
+                result = Listresult is not null ? new ApiResponse<Vehicle>()
+                {
+                    Processed = Listresult.Processed,
+                    Message = Listresult.Message,
+                    Data = Listresult.Data.FirstOrDefault() ?? new Vehicle()
+                } : new ApiResponse<Vehicle>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos."
+                };
+
 
             }
             catch (HttpRequestException httpEx)
@@ -395,7 +527,6 @@
             return result;
         }
 
-       
         public async Task<ApiResponse<bool>> ImportVehicles(int IdUser, MultipartFormDataContent FormData )
         {
             ApiResponse<bool> result;
@@ -445,6 +576,7 @@
 
             return result;
         }
+
     }
 
 }

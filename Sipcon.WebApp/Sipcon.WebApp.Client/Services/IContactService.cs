@@ -4,8 +4,10 @@
     public interface IContactService
     {
 
-        public Task<ApiResponse<Contact>> GetContactByVAT(string VAT, int IdUser);
-      
+        public Task<ApiResponse<Contact>> GetContactByVAT(string VAT, string ContactType);
+        public Task<ApiResponse<Contact>> GetContact(int Id);
+
+
 
     }
 }
