@@ -292,11 +292,6 @@
 
                 var response = await _http.PostAsJsonAsync($"api/Vehicle/PostVehicles?userId={IdUser}", vehicles);
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new Exception($"Error al crear el Vehiculo: {response.StatusCode} - {response.ReasonPhrase}");
-                }
-
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
                 result = (result is null) ? new ApiResponse<List<ActionResult>>()
                 {
@@ -342,41 +337,7 @@
             {
                 vehicles.Add(Vehicle);
 
-                //var options = new JsonSerializerOptions
-                //{
-                //    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                //    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
-                //    IgnoreReadOnlyProperties = true,
-                //    WriteIndented = true
-                //};
-
-
-
-                //var json = JsonSerializer.Serialize(vehicles, options);
-
-
-                //var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                //var request = new HttpRequestMessage(HttpMethod.Post, $"http://10.23.212.20/sipconapi/api/Vehicle/Post_Vehicles?userId={IdUser}")
-                //{
-                //    Content = content
-                //};
-                ////request.Headers.Add("Authorization", "Bearer <tu_token>");
-                //request.Headers.Add("accept", "*/*");
-
-                //_http.DefaultRequestHeaders
-                //  .Accept
-                //  .Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-
-                //var response = await _http.SendAsync(request);
-
                 var response = await _http.PostAsJsonAsync($"api/Vehicle/PostVehicles?userId={IdUser}", vehicles);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new Exception($"Error al Modificar un Vehiculo: {response.StatusCode} - {response.ReasonPhrase}");
-                }
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
                 result = (result is null) ? new ApiResponse<List<ActionResult>>()
@@ -433,11 +394,6 @@
                 
                 var response = await _http.PostAsJsonAsync($"api/Vehicle/PostActions?userId={IdUser}", PostActions, options);
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new Exception($"Error accion Vehiculo: {response.StatusCode} - {response.ReasonPhrase}");
-                }
-
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
                 result = (result is null) ? new ApiResponse<List<ActionResult>>()
                 {
@@ -485,16 +441,25 @@
                 var response = await _http.GetAsync($"api/Vehicle/Export?filter={Filter}&userId={IdUser}");
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error Export Vehiculos: {response.StatusCode} - {response.ReasonPhrase}");
+                    result = new ApiResponse<List<byte>>()
+                    {
+                        Processed = false,
+                        Message = "Error Exportación",
+                        Data = []
+                    };
+                }
+                else
+                {
+                    var fileContent = await response.Content.ReadAsByteArrayAsync();
+                    result = new ApiResponse<List<byte>>()
+                    {
+                        Processed = true,
+                        Message = "Exportación exitosa.",
+                        Data = fileContent.ToList()
+                    };
                 }
 
-                var fileContent = await response.Content.ReadAsByteArrayAsync();
-                result = new ApiResponse<List<byte>>() 
-                {
-                    Processed = true,
-                    Message = "Exportación exitosa.",
-                    Data = fileContent.ToList()
-                };
+                
             }
             catch (HttpRequestException httpEx)
             {
@@ -536,15 +501,25 @@
                 var response = await _http.PostAsync($"api/Vehicle/Import?userId={IdUser}", FormData);
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error Importar Vehiculos: {response.StatusCode} - {response.ReasonPhrase}");
+                    result = new ApiResponse<bool>()
+                    {
+                        Processed = false,
+                        Message = "Error Importar",
+                        Data = false
+                    };
+
+                }
+                else
+                {
+                    result = new ApiResponse<bool>()
+                    {
+                        Processed = true,
+                        Message = "Importacion exitosa.",
+                        Data = true
+                    };
                 }
 
-                result = new ApiResponse<bool>()
-                {
-                    Processed = true,
-                    Message = "Importacion exitosa.",
-                    Data = true
-                };
+                   
             }
             catch (HttpRequestException httpEx)
             {
