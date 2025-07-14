@@ -8,9 +8,9 @@ namespace Sipcon.WebApp.Client.Models
         public String? Name { get; set; }
 
         [Required]
-        public Int32? TypePartId { get; set; }
+        public Int32? PartTypeId { get; set; }
 
         [Required]
-        public String? TypePartName { get; set; }
+        public String? PartTypeName { get; set; }
     }
 }

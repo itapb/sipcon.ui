@@ -165,7 +165,7 @@
     private bool ValidReal(string? movementType, string typeId ,int realQty)
     {
         bool isValid = ((movementType == "R" && typeId == "P" && realQty == movementDetails!.RequiredQty) ||
-        ((movementType == "T" || typeId == "P") && movementType == "P" && realQty >= 0) || 
+        ((movementType == "T" || movementType == "P") && typeId == "P" && realQty >= 0 && realQty <= movementDetails!.RequiredQty && realQty <= movementDetails!.Stock) ||        
         (typeId == "D" && realQty > 0));
         return isValid;
     } 
