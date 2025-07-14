@@ -6,21 +6,26 @@
     <MudPaper Elevation="2" Class="pa-3">
         <MudGrid Spacing="2">
             <MudItem xs="12">
-                <MudStack Row="false" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
-                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex justify-center align-center">14764-2</MudPaper>                    
+                <MudStack Row="false" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">    
+                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex flex-column justify-center align-center" style="line-height:1.1;">
+                        <span>CLIENTE : DEMO</span>
+                        <span>BULTO: 14765-2</span>
+                    </MudPaper>
                 </MudStack>
             </MudItem>
             <MudItem xs="12">
                 <MudText>
-                    <MudDataGrid @ref="GuidesMudDataGrid" T="mPackage" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" Loading="_loading" FixedHeader SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage">
+                    <MudDataGrid @ref="GuidesMudDataGrid" T="mPackage" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" Loading="_loading" FixedHeader SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers">
                         <Columns>
-                            <PropertyColumn Property="x => x.PartDescription" Title="REPUESTO" />
-                            <PropertyColumn Property="x => x.Quantity" Title="Cantidad" />
-                            <TemplateColumn>
+                            <TemplateColumn CellClass="d-flex justify-center align-center">
                                 <CellTemplate>
-                                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Close" OnClick="() => ClickRemovePart(context.Item)" />
+                                    <MudStack Row>
+                                        <MudText Class="mr-2">@context.Item.PartDescription</MudText>
+                                        <MudText Class="mr-2">@context.Item.Quantity</MudText>
+                                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Close" OnClick="() => ClickRemovePart(context.Item)" />
+                                    </MudStack>
                                 </CellTemplate>
-                            </TemplateColumn>
+                            </TemplateColumn>                           
                         </Columns>
                         <PagerContent>
                             <MudStack Row="false" Spacing="2">
@@ -45,6 +50,11 @@
         </MudGrid>
     </MudPaper>
 </div>
+<style>
+    .hide-datagrid-headers .mud-table-head {
+        display: none !important;
+    }
+</style>
 @code {
         bool _loading = true;
         string searchString = "";

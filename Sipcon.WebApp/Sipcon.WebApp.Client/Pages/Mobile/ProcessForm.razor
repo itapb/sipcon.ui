@@ -2,8 +2,7 @@
 @using Sipcon.WebApp.Client.Layout
 @layout MobileLayout
 <div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
-    <MudPaper Elevation="2" Class="pa-3">
-      
+    <MudPaper Elevation="2" Class="pa-3">      
         <MudGrid Spacing="2">
             <MudItem xs="12">              
                 <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">                   
@@ -119,7 +118,7 @@
                     {
                         partDescription = movementDetails!.PartDescription;
                         RequiredQty = movementDetails!.RequiredQty;
-                        if (movementDetails!.Serializable ?? false)
+                        if ((movementDetails!.Serializable ?? false) && MovementType == "P")
                         {
 
                             mStepId = 4; mHelpText = "Escanee el Serial";
@@ -139,11 +138,11 @@
 
                 break;
             case 4: //VALIDAR SERIAL.
-                if (movementDetails!.Serializable ?? false)
-                {  
-                    serialNumber = movementDetails!.SerialCode;                   
-                    IsValidSerial = ValidSerial(InputCode);
-                    if (IsValidSerial) { mStepId = 5; mHelpText = "Escanee la cantidad"; } else mHelpText = "Invalido Serial, escanee nuevamente.";
+                if (InputCode.Length > 0)            
+                {                     
+                    InputSerial = InputCode; // Store the scanned serial
+                    mStepId = 5; 
+                    mHelpText = "Escanee la cantidad";
                 }
                 break;
             case 5: //VALIDAR CANTIDAD REAL DEL MOVIMIENTO
@@ -154,7 +153,7 @@
         InputCode = string.Empty; // Reset input code
         if (bardCodeField is not null) {await bardCodeField.SetText(string.Empty); await bardCodeField.FocusAsync(); }
     }
-    private bool ValidSerial(string inputSerial) => (movementDetails!.SerialCode!.Equals(inputSerial));
+    //private bool ValidSerial(string inputSerial) => (movementDetails!.SerialCode!.Equals(inputSerial));
 
     private bool ValidPart(string? movementType, string inputCode)    
     {

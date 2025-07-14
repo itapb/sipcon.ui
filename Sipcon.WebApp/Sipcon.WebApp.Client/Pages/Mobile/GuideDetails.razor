@@ -7,15 +7,24 @@
         <MudGrid Spacing="2">
             <MudItem xs="12">
                 <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
-                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex justify-center align-center" >14764</MudPaper> 
+                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex flex-column justify-center align-center" style="line-height:1.1;">
+                        <span>CLIENTE : DEMO</span>
+                        <span>GUIA : 14764</span>
+                    </MudPaper>
                 </MudStack>
             </MudItem>
             <MudItem xs="12">
                 <MudText>
-                    <MudDataGrid @ref="GuidesMudDataGrid" T="GuideItem" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" Loading="_loading" FixedHeader SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage">
+                    <MudDataGrid @ref="GuidesMudDataGrid" T="GuideItem" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" Loading="_loading" FixedHeader SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers">
                         <Columns>
-                            <PropertyColumn Property="x => x.NumberGuide" Title="GUIA" />
-                            <PropertyColumn Property="x => x.Weight" Title="PESO" />
+                            <TemplateColumn CellClass="d-flex justify-center align-center">
+                                <CellTemplate>
+                                    <MudStack Row>
+                                        <MudText Class="mr-2">@context.Item.NumberGuide</MudText>
+                                        <MudText Class="mr-2">@context.Item.Weight.ToString("F2") Kg</MudText>
+                                    </MudStack>
+                                </CellTemplate>
+                            </TemplateColumn>
                         </Columns>
                         <PagerContent>
                             <MudStack Row="false" Spacing="2" >
@@ -40,6 +49,11 @@
         </MudGrid>
     </MudPaper>
 </div>
+<style>
+    .hide-datagrid-headers .mud-table-head {
+        display: none !important;
+    }
+</style>
 @code {
     bool _loading = true;
     string searchString = "";
@@ -62,17 +76,17 @@
     };
 
     private async Task<GridData<GuideItem>> ServerReload(GridState<GuideItem> state)
-    {
+    {        
         _loading = true;
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<GuideItem> data = TestGuides;
-        await Task.CompletedTask;
+      
         // Filter by search string
-        if (!string.IsNullOrWhiteSpace(searchString))
-        {
-            data = data.Where(g => g.NumberGuide.Contains(searchString, StringComparison.OrdinalIgnoreCase));
-        }
+        // if (!string.IsNullOrWhiteSpace(searchString))
+        // {
+        //     data = data.Where(g => g.NumberGuide.Contains(searchString, StringComparison.OrdinalIgnoreCase));
+        // }
 
         totalItems = data.Count();
 
@@ -83,9 +97,10 @@
         }
 
         // Paging
-        data = data.Skip(mOffset).Take(state.PageSize);
+        //data = data.Skip(mOffset).Take(state.PageSize);
 
         _loading = false;
+        await Task.CompletedTask;
         return new GridData<GuideItem> { TotalItems = totalItems, Items = data };
 
     }
