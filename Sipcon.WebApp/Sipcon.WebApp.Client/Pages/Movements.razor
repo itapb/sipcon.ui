@@ -63,7 +63,7 @@ else
     DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
     private string searchString = string.Empty;
     string MovementTitle = "";
-    private Dictionary<string, string> strDictionaryContactName = new Dictionary<string, string> {{ "r", "PROVEEDOR" }, { "t", "PLANTA" }, { "d", "CLIENTE" } };
+    private Dictionary<string, string> strDictionaryContactName = new Dictionary<string, string> {{ "r", "PROVEEDOR" }, { "t", "PLANTA" }, { "p", "CLIENTE" } };
     private string strContactName = "";
 
     private async Task OnSearch(string text)
@@ -103,8 +103,8 @@ else
 
     private async Task LoadDataAsync()
     {      
-        MovementTitle = TypeId switch { "r" => "Recepcion", "t" => "Traslado", "d" => "Despacho", _ => "Recepcion" };
-        string hrefMovement = TypeId switch { "r" => "reception", "t" => "move", "d" => "dispatch", _ => "reception" };
+        MovementTitle = TypeId switch { "r" => "Recepcion", "t" => "Traslado", "p" => "Despacho", _ => "Recepcion" };
+        string hrefMovement = TypeId switch { "r" => "reception", "t" => "move", "p" => "dispatch", _ => "reception" };
         strContactName = strDictionaryContactName[TypeId!];
 
         $"Home,Inventario,Procesos,{MovementTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
@@ -175,7 +175,7 @@ else
         {
             if (actionName == "ASSIGN")
             {
-                string ModuleName = TypeId switch { "r" => "INVENTARIO-MOVIL-RECEPCION", "t" => "INVENTARIO-MOVIL-TRASLADO", "d" => "INVENTARIO-MOVIL-DESPACHO", _ => "INVENTARIO-MOVIL-RECEPCION" };
+                string ModuleName = TypeId switch { "r" => "INVENTARIO-MOVIL-RECEPCION", "t" => "INVENTARIO-MOVIL-TRASLADO", "p" => "INVENTARIO-MOVIL-DESPACHO", _ => "INVENTARIO-MOVIL-RECEPCION" };
                 var dialogReference = await DialogService.ShowAsync<AssignUserToMovement>("", new DialogParameters { ["SelectedActions"] = mActions, ["moduleName"] = ModuleName }, options);
                 if (await Useful.AsyncDialogResultIsOk(dialogReference)) await MovementMudDataGrid!.ReloadServerData();
             }
