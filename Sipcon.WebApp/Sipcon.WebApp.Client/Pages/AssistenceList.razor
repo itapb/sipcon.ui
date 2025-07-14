@@ -153,8 +153,8 @@ ServerData="LoadGridData">
 <MudDialog @bind-Visible="_nestedVisible">
     <TitleContent>
         <MudStack Row="true">
-            <MudIcon Icon="@Icons.Material.Filled.CarCrash" Color="@(_success ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
-            <MudText Typo="Typo.h6">Asistencia</MudText>
+            <MudIcon Icon="@Icons.Material.Outlined.CarRepair" Color="@(_success? Color.Default: Color.Error)" Style="font-size: 2rem;"></MudIcon>
+            <MudText Typo="Typo.h6">ASISTENCIA TECNICA</MudText>
         </MudStack>
     </TitleContent>
     <DialogContent>
@@ -315,6 +315,9 @@ ServerData="LoadGridData">
             case "APPROVE":
                 await ApproveItemsAsync(module.IdAction, module.ActionName);
                 break;
+            case "DECLINE":
+                await DeclineItemsAsync(module.IdAction, module.ActionName);
+                break;
             default:
                 Console.WriteLine($"{MessageEnum.ActionsError.GetStringValue()}: {module.ActionName}");
                 break;
@@ -344,6 +347,7 @@ ServerData="LoadGridData">
 
         }
     }
+
 
     private async Task GenerateItemsAsync(int moduleId, string moduleActionName)
     {
@@ -466,6 +470,7 @@ ServerData="LoadGridData">
         await Task.CompletedTask;
     }
 
+
     private async Task ApproveItemsAsync(int moduleId, string moduleActionName)
     {
         Console.WriteLine("Aprobar Asistencia...");
@@ -478,46 +483,134 @@ ServerData="LoadGridData">
                 FullWidth = true,
                 BackdropClick = false
             };
-            bool? result = await DialogService.ShowMessageBox(
+            bool? confir = await DialogService.ShowMessageBox(
                 "Aprobar Asistencia Tècnica",
                 $"Seguro de Aprobar? ",
                 yesText: "Si", noText: "No", "", option);
 
-            if (result == true)
+            if (confir == true)
             {
-                List<PostAction> ActionList = ([]);
 
-                foreach (var policy in selectedAssistence)
+                DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+                var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Aprobar Asistencia Tècnica..." } };
+                var dialog = await DialogService.ShowAsync<TextItemDialog>("Asistencia Tècnica", parameters, options);
+
+                StateHasChanged();
+
+                var result = await dialog.Result;
+                if (!result!.Canceled)
                 {
-                    var VehicleAction = new PostAction
+                    var _Observacion = (string)(result.Data ?? string.Empty);
+                    List<PostAction> ActionList = ([]);
+
+                    foreach (var policy in selectedAssistence)
                     {
-                        RecordId = policy.Id,
-                        ModuleId = moduleId,
-                        ActionName = moduleActionName
-                    };
-                    ActionList.Add(VehicleAction);
-                }
+                        var VehicleAction = new PostAction
+                        {
+                            RecordId = policy.Id,
+                            ModuleId = moduleId,
+                            ActionName = moduleActionName,
+                            ActionComment = _Observacion
+                        };
+                        ActionList.Add(VehicleAction);
+                    }
 
-                var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, _iduser);
-                if (serviceResponse.Processed)
+                    var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, _iduser);
+                    if (serviceResponse.Processed)
+                    {
+
+                        _success = true;
+                        _nestedErrorMessage = MessageEnum.ApproveOK.GetStringValue();
+
+                        OpenNested();
+                        await _mudDataGrid!.ReloadServerData();
+                        StateHasChanged();
+
+                    }
+                    else
+                    {
+                        _success = false;
+                        _nestedErrorMessage = MessageEnum.ApproveNotOK.GetStringValue();
+                        Console.WriteLine(serviceResponse.Message);
+                        OpenNested();
+
+                    }
+                }
+                
+            }
+
+        }
+
+        selectedAssistence = new([]);
+        await Task.CompletedTask;
+    }
+
+
+    private async Task DeclineItemsAsync(int moduleId, string moduleActionName)
+    {
+        Console.WriteLine("Rechazar Asistencia...");
+        if (selectedAssistence.Any())
+        {
+            var option = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false
+            };
+            bool? confirm = await DialogService.ShowMessageBox(
+                "Rechazar Asistencia Tècnica",
+                $"Seguro de Rechazar? ",
+                yesText: "Si", noText: "No", "", option);
+
+            if (confirm == true)
+            {
+                DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+                var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Rechazar Asistencia Tècnica..." } };
+                var dialog = await DialogService.ShowAsync<TextItemDialog>("Asistencia Tècnica", parameters, options);
+
+                StateHasChanged();
+
+                var result = await dialog.Result;
+                if (!result!.Canceled)
                 {
+                    var _Observacion = (string)(result.Data ?? string.Empty);
+                    List<PostAction> ActionList = ([]);
 
-                    _success = true;
-                    _nestedErrorMessage = MessageEnum.ApproveOK.GetStringValue();
+                    foreach (var policy in selectedAssistence)
+                    {
+                        var Action = new PostAction
+                        {
+                            RecordId = policy.Id,
+                            ModuleId = moduleId,
+                            ActionName = moduleActionName,
+                            ActionComment = _Observacion
+                        };
+                        ActionList.Add(Action);
+                    }
 
-                    OpenNested();
-                    await _mudDataGrid!.ReloadServerData();
-                    StateHasChanged();
+                    var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, _iduser);
+                    if (serviceResponse.Processed)
+                    {
 
+                        _success = true;
+                        _nestedErrorMessage = MessageEnum.ApproveOK.GetStringValue();
+
+                        OpenNested();
+                        await _mudDataGrid!.ReloadServerData();
+                        StateHasChanged();
+
+                    }
+                    else
+                    {
+                        _success = false;
+                        _nestedErrorMessage = MessageEnum.ApproveNotOK.GetStringValue();
+                        Console.WriteLine(serviceResponse.Message);
+                        OpenNested();
+
+                    }
                 }
-                else
-                {
-                    _success = false;
-                    _nestedErrorMessage = MessageEnum.ApproveNotOK.GetStringValue();
-                    Console.WriteLine(serviceResponse.Message);
-                    OpenNested();
-
-                }
+               
             }
 
         }
