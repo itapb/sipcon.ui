@@ -14,14 +14,19 @@
             <MudItem xs="12">
                 <MudTextField T="String" ReadOnly="true" Label="NRO GUIA" @bind-Value="Nguide" Class="d-flex align-center justify-center"></MudTextField>
             </MudItem>
-            <MudItem xs="12">
-                <MudTextField T="String" Label="PROVEEDOR" @bind-Value="mProvide" Class="d-flex align-center justify-center"></MudTextField>
+            <MudItem xs="12">               
+                <MudSelect T="Provider" Label="PROVEEDOR" ToStringFunc="@ConvertProviderFunc" ValueChanged="OnProviderValueChanged"  Value="ProviderSelected" Class="d-flex align-center justify-center">
+                    @foreach (var provider in Providers!)
+                    {
+                        <MudSelectItem Value="provider" />
+                    }
+                </MudSelect>
             </MudItem>
 
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.Center">
                     <MudStack Row="true" Spacing="5">
-                        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" />
+                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" />
                         <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" />
                     </MudStack>
                 </MudStack>
@@ -33,4 +38,19 @@
 @code {
     string Nguide = "14764";
     string mProvide = "MRV";
+    record Provider(int Id, string Name);
+    private List<Provider> Providers = new()
+    {
+        new Provider(1, "MRV"),
+        new Provider(2, "ZOOM"),
+        new Provider(3, "LIBERTY")
+    };
+    private Func<Provider?, string> ConvertProviderFunc = provider => provider?.Name!;
+    private Provider? ProviderSelected;
+
+    private Task OnProviderValueChanged(Provider selectedProvider)
+    {
+        ProviderSelected = selectedProvider;
+        return Task.CompletedTask;
+    }
 }
