@@ -6,7 +6,7 @@
         <MudGrid Spacing="2">
             <MudItem xs="12">              
                 <MudStack Row="false" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">                   
-                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6">Clientes</MudPaper>                    
+                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex justify-center align-center">@strTitle</MudPaper>
                 </MudStack>
              </MudItem>
              <MudItem xs="12">
@@ -35,6 +35,7 @@
     }
 </style>
 @code {
+    string strTitle { get; set; } = "CLIENTES";
     [Inject] private HttpClient Http { get; set; } = default!;
     bool _loading = true;
     string searchString = "";
@@ -70,7 +71,7 @@
         if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Contact> sortDefinition)
         {
             data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
-        }
+        }    
         _loading = false;
         return new GridData<Contact> { TotalItems = totalItems, Items = data };
     }
