@@ -1,5 +1,6 @@
-﻿@page "/mobile-customers"
+﻿@* @page "/mobile-customers" *@
 @using Sipcon.WebApp.Client.Layout
+@using Sipcon.WebApp.Client.Pages.Mobile.Models
 @layout MobileLayout
 <div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
     <MudPaper Elevation="2" Class="pa-3">
@@ -11,9 +12,9 @@
              </MudItem>
              <MudItem xs="12">
                  <MudText>
-                    <MudDataGrid @ref="ContactsCatalogMudDataGrid" T="Contact" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" Loading="_loading" FixedHeader SelectedItemChanged="ClickSelectContact" @bind-CurrentPage="ContactCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers">
+                    <MudDataGrid @ref="ContactsCatalogMudDataGrid" T="Customer" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" Loading="_loading" FixedHeader SelectedItemChanged="ClickSelectContact" @bind-CurrentPage="ContactCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers">
                         <Columns>
-                            <PropertyColumn Property="x => x.FirstName" Title="" CellClass="d-flex justify-center align-center" />
+                            <PropertyColumn Property="x => x.Name" Title="" CellClass="d-flex justify-center align-center" />
                         </Columns>
                     </MudDataGrid>
                  </MudText>
@@ -35,45 +36,62 @@
     }
 </style>
 @code {
-    string strTitle { get; set; } = "CLIENTES";
     [Inject] private HttpClient Http { get; set; } = default!;
+    [Parameter] public Models.Dispatch? currentDispatch { get; set; } 
+    [Parameter] public Models.DispatchStep Value { get; set; }
+    [Parameter] public EventCallback<Models.DispatchStep> ValueChanged { get; set; }
+    private Models.DispatchStep currentStep
+    {
+        get => Value;
+        set
+        {
+            if (Value != value)
+            {
+                Value = value;
+                ValueChanged.InvokeAsync(Value);
+            }
+        }
+    }
+
+    string strTitle { get; set; } = "CLIENTES";   
     bool _loading = true;
     string searchString = "";
     private int ContactCurrentPage = 0;
-    private MudDataGrid<Contact>? ContactsCatalogMudDataGrid;
+    private MudDataGrid<Customer>? ContactsCatalogMudDataGrid;
     [Parameter] public string? ContactType { get; set; } = "P";
+    
 
-    Func<Contact, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    Func<Customer, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
     {
-        nameof(Contact.Vat) => o => o.Vat ?? "",
-        nameof(Contact.FirstName) => o => o.FirstName ?? "",
+        nameof(Customer.Id) => o => o.Id ?? 0,
+        nameof(Customer.Name) => o => o.Name ?? "",
         _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto
     };
 
-    private async Task<GridData<Contact>> ServerReload(GridState<Contact> state)
+    private async Task<GridData<Customer>> ServerReload(GridState<Customer> state)
     {        
         _loading = true;
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
-        IEnumerable<Contact> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Contact/GetByContactType?rowFrom={mOffset}&filter={searchString}&userId={Useful.userId}&contactType={ContactType}");
+        IEnumerable<Customer> data;
+        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetCustomerToDeliver?supplierId=4069");
         if (response.IsSuccessStatusCode)
         {
-            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Contact>>>();
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Customer>>>();
             totalItems = content2!.total ?? 0;
-            data = content2!.data ?? new List<Contact>();
+            data = content2!.data ?? new List<Customer>();
         }
         else
         {
             var errorMessage = await response.Content.ReadAsStringAsync();
             throw new Exception(errorMessage);
         }
-        if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Contact> sortDefinition)
+        if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Customer> sortDefinition)
         {
             data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
         }    
         _loading = false;
-        return new GridData<Contact> { TotalItems = totalItems, Items = data };
+        return new GridData<Customer> { TotalItems = totalItems, Items = data };
     }
 
 
@@ -90,8 +108,11 @@
             await ContactsCatalogMudDataGrid!.ReloadServerData();
         }
     }
-    private async Task ClickSelectContact(Contact item)
+    private async Task ClickSelectContact(Customer item)
     {
+        currentDispatch!.CustomerId = item.Id;
+        currentDispatch.CustomerName = item.Name ?? "";
+        currentStep = Models.DispatchStep.Guides;
         await Task.CompletedTask;
     }
 }

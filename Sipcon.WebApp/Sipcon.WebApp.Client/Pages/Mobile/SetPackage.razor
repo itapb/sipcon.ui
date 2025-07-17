@@ -1,4 +1,4 @@
-﻿@page "/mobile-setpackage"
+﻿@* @page "/mobile-setpackage" *@
 @using Sipcon.WebApp.Client.Layout
 @layout MobileLayout
 <div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
@@ -24,8 +24,8 @@
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.Center">
                     <MudStack Row="true" Spacing="5"> 
-                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium"  />
-                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close"  Size="Size.Medium" />
+                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="ClickSetPackageCheck" />
+                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="ClickSetPackageClose" />
                     </MudStack>
                 </MudStack>
             </MudItem>
@@ -34,6 +34,35 @@
     </MudPaper>
 </div>
 @code {
+    [Parameter] public Models.Dispatch? currentDispatch { get; set; }
+    [Parameter] public Models.DispatchStep Value { get; set; }
+    [Parameter] public EventCallback<Models.DispatchStep> ValueChanged { get; set; }
+    private Models.DispatchStep CurrentStep
+    {
+        get => Value;
+        set
+        {
+            if (Value != value)
+            {
+                Value = value;
+                ValueChanged.InvokeAsync(Value);
+            }
+        }
+    }
+    private async Task ClickSetPackageCheck(MouseEventArgs args)
+    {
+        CurrentStep = Models.DispatchStep.Package;
+        await Task.CompletedTask;
+    }
+    private async Task ClickSetPackageClose(MouseEventArgs args)
+    {
+       if (Dispatch.PreviousStep ==  Models.DispatchStep.Package) 
+            CurrentStep = Models.DispatchStep.Package;
+       else
+           CurrentStep = Models.DispatchStep.Pending;
+
+        await Task.CompletedTask;
+    }
     string strRepuesto = "Repuesto 1";
     int QTYPending = 100;
     int QTYPackage = 70;

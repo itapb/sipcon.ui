@@ -1,4 +1,4 @@
-﻿@page "/mobile-parts"
+﻿@* @page "/mobile-parts" *@
 @using Sipcon.WebApp.Client.Layout
 @layout MobileLayout
 
@@ -40,7 +40,7 @@
                 <MudStack Row="true" Justify="Justify.Center">
                     <MudStack Row="true" Spacing="5">              
                         <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshGuides" />
-                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" Href="process-list" />
+                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="ClickClosehGuides" />
                     </MudStack>
                 </MudStack>
             </MudItem>
@@ -53,6 +53,23 @@
     }
 </style>
 @code {
+    [Parameter] public Models.Dispatch? currentDispatch { get; set; }
+    [Parameter] public Models.DispatchStep Value { get; set; }
+    [Parameter] public EventCallback<Models.DispatchStep> ValueChanged { get; set; }
+    private Models.DispatchStep CurrentStep
+    {
+        get => Value;
+        set
+        {
+            if (Value != value)
+            {
+                Value = value;
+                ValueChanged.InvokeAsync(Value);
+            }
+        }
+    }
+
+
     bool _loading = true;
     string searchString = "";
     private int GuideCurrentPage = 0;
@@ -79,7 +96,7 @@
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<mPart> data = TestParts;
-        
+
         // Filter by search string
         // if (!string.IsNullOrWhiteSpace(searchString))
         // {
@@ -117,10 +134,17 @@
     }
     private async Task ClickSelectGuide(mPart item)
     {
+        Dispatch.PreviousStep = Models.DispatchStep.Pending;
+        CurrentStep = Models.DispatchStep.SetPackage;
         await Task.CompletedTask;
     }
     private async Task ClickRemovePart(mPart item)
     {
+        await Task.CompletedTask;
+    }
+    private async Task ClickClosehGuides(MouseEventArgs args)
+    {
+        CurrentStep = Models.DispatchStep.Package;
         await Task.CompletedTask;
     }
 }

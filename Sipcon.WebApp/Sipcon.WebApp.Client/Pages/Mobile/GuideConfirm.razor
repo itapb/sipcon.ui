@@ -26,8 +26,8 @@
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.Center">
                     <MudStack Row="true" Spacing="5">
-                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" />
-                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" />
+                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="ClickGuideComfirmCheck" />
+                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="ClickGuideComfirmClose" />
                     </MudStack>
                 </MudStack>
             </MudItem>
@@ -36,6 +36,7 @@
     </MudPaper>
 </div>
 @code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
     string Nguide = "14764";
     string mProvide = "MRV";
     record Provider(int Id, string Name);
@@ -52,5 +53,15 @@
     {
         ProviderSelected = selectedProvider;
         return Task.CompletedTask;
+    }
+    private async Task ClickGuideComfirmCheck(MouseEventArgs args)
+    {
+        MudDialog?.Close(DialogResult.Ok(true));
+        await Task.CompletedTask;
+    }
+    private async Task ClickGuideComfirmClose(MouseEventArgs args)
+    {
+        MudDialog?.Cancel();
+        await Task.CompletedTask;
     }
 }

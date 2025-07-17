@@ -1,4 +1,4 @@
-﻿@page "/mobile-package"
+﻿@* @page "/mobile-package" *@
 @using Sipcon.WebApp.Client.Layout
 @layout MobileLayout
 
@@ -8,19 +8,19 @@
             <MudItem xs="12">
                 <MudStack Row="false" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">    
                     <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex flex-column justify-center align-center" style="line-height:1.1;">
-                        <span>CLIENTE : DEMO</span>
-                        <span>BULTO: 14765-2</span>
+                        <span>CLIENTE : @currentDispatch?.CustomerName</span>
+                        <span>BULTO: @currentDispatch?.PackageId</span>
                     </MudPaper>
                 </MudStack>
             </MudItem>
             <MudItem xs="12">
                 <MudText>
-                    <MudDataGrid @ref="GuidesMudDataGrid" T="mPackage" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" Loading="_loading" FixedHeader SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers">
+                    <MudDataGrid @ref="PackageDetailMudDataGrid" T="Models.PackageDetail" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" Loading="_loading" FixedHeader SelectedItemChanged="ClickSelectPackage" @bind-CurrentPage="PackageCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers">
                         <Columns>
                             <TemplateColumn CellClass="d-flex justify-center align-center">
                                 <CellTemplate>
                                     <MudStack Row>
-                                        <MudText Class="mr-2">@context.Item.PartDescription</MudText>
+                                        <MudText Class="mr-2">@context.Item.PartName</MudText>
                                         <MudText Class="mr-2">@context.Item.Quantity</MudText>
                                         <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Close" OnClick="() => ClickRemovePart(context.Item)" />
                                     </MudStack>
@@ -40,10 +40,10 @@
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.Center">
                     <MudStack Row="true" Spacing="5">                        
-                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" />
-                        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Search" Size="Size.Medium" />
+                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="ClickCheckPackage" />
+                        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Search" Size="Size.Medium" OnClick="ClickSearchPackage" />
                         <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshPackage" />
-                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" Href="process-list" />
+                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="ClickClosePackage" />
                     </MudStack>
                 </MudStack>
             </MudItem>        
@@ -56,59 +56,70 @@
     }
 </style>
 @code {
-        bool _loading = true;
-        string searchString = "";
-    private int GuideCurrentPage = 0;
-    record mPackage(string PartDescription, int Quantity);
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
 
-    private MudDataGrid<mPackage>? GuidesMudDataGrid;
-    private List<mPackage> TestGuides = new()
+    [Parameter] public Models.Dispatch? currentDispatch { get; set; }
+    [Parameter] public Models.DispatchStep Value { get; set; }
+    [Parameter] public EventCallback<Models.DispatchStep> ValueChanged { get; set; }
+    private Models.DispatchStep CurrentStep
     {
-        new mPackage("Repuesto 1",25),
-        new mPackage("Reouesto 2",30),
-        new mPackage("Reouesto 3",45),
-    };
+        get => Value;
+        set
+        {
+            if (Value != value)
+            {
+                Value = value;
+                ValueChanged.InvokeAsync(Value);
+            }
+        }
+    }
 
-    Func<mPackage, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    bool _loading = true;
+    string searchString = "";
+    private int PackageCurrentPage = 0;
+
+
+    private MudDataGrid<Models.PackageDetail>? PackageDetailMudDataGrid;
+
+
+    Func<Models.PackageDetail, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
     {
-        nameof(mPackage.PartDescription) => o => o.PartDescription ?? "",
-        nameof(mPackage.Quantity) => o => o.Quantity ,
+        nameof(Models.PackageDetail.PartName) => o => o.PartName ?? "",
+        nameof(Models.PackageDetail.Quantity) => o => o.Quantity ?? 0,
         _ => null!
     };
 
-    private async Task<GridData<mPackage>> ServerReload(GridState<mPackage> state)
+    private async Task<GridData<Models.PackageDetail>> ServerReload(GridState<Models.PackageDetail> state)
     {
         _loading = true;
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
-        IEnumerable<mPackage> data = TestGuides;
-       
-        // Filter by search string
-        if (!string.IsNullOrWhiteSpace(searchString))
+        IEnumerable<Models.PackageDetail> data;
+        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetPackageDetails?packageId={currentDispatch?.PackageId}");
+        if (response.IsSuccessStatusCode)
         {
-            data = data.Where(g => g.PartDescription.Contains(searchString, StringComparison.OrdinalIgnoreCase));
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.PackageDetail>>>();
+            totalItems = content2!.total ?? 0;
+            data = content2!.data ?? new List<Models.PackageDetail>();
         }
-
-        totalItems = data.Count();
-
-        // Sorting
-        if (state.SortDefinitions.FirstOrDefault() is SortDefinition<mPackage> sortDefinition)
+        else
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
+        if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Models.PackageDetail> sortDefinition)
         {
             data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
         }
-
-        // Paging
-        //data = data.Skip(mOffset).Take(state.PageSize);
-
         _loading = false;
-        await Task.CompletedTask;
-        return new GridData<mPackage> { TotalItems = totalItems, Items = data };
+        return new GridData<Models.PackageDetail> { TotalItems = totalItems, Items = data };
 
     }
 
     private async Task ClickRefreshPackage(MouseEventArgs ev)
     {
-        await GuidesMudDataGrid!.ReloadServerData();
+        await PackageDetailMudDataGrid!.ReloadServerData();
     }
     private async Task OnSearch(string text)
     {
@@ -116,15 +127,47 @@
         {
             _loading = true;
             searchString = text;
-            await GuidesMudDataGrid!.ReloadServerData();
+            CurrentStep = Models.DispatchStep.SetPackage;
+            await Task.CompletedTask;
+            //await PackageMudDataGrid!.ReloadServerData();
         }
     }
-    private async Task ClickSelectGuide(mPackage item)
+    private async Task ClickSelectPackage(Models.PackageDetail item)
+    {
+        currentDispatch!.PackageId = item.PackageId;
+        CurrentStep = Models.DispatchStep.SetPackage;
+        Dispatch.PreviousStep = Models.DispatchStep.Package;
+        await Task.CompletedTask;
+    }
+    private async Task ClickRemovePart(Models.PackageDetail item)
     {
         await Task.CompletedTask;
     }
-    private async Task ClickRemovePart(mPackage item)
+    private async Task ClickClosePackage(MouseEventArgs args)
     {
+        CurrentStep = Models.DispatchStep.GuideDetails;
         await Task.CompletedTask;
+    }
+    private async Task ClickSearchPackage(MouseEventArgs args)
+    {
+        CurrentStep = Models.DispatchStep.Pending;
+        await Task.CompletedTask;
+    }
+    private async Task ClickCheckPackage(MouseEventArgs args)
+    {
+        DialogOptions options2 = new DialogOptions { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
+        var dialogReference = await DialogService.ShowAsync<PackageWeightConfirm>("", new DialogParameters { }, options2);
+        var result = await dialogReference.Result;
+
+        if (!result!.Canceled)
+        {
+            CurrentStep = Models.DispatchStep.GuideDetails; // && dialogResult.Data is not null
+        }
+        // {
+        // dynamic contactData = dialogResult.Data;
+        // SelectedContact!.AgentId = contactData.ContactId;
+        // SelectedContact!.AgentName = contactData.ContactName;
+        // }
+        await Task.CompletedTask; ;
     }
 }

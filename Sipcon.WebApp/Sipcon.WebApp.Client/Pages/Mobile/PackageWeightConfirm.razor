@@ -19,8 +19,8 @@
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.Center">
                     <MudStack Row="true" Spacing="5">
-                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" />
-                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" />
+                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="ClickPackageWeightCheck" />
+                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="ClickPackageWeightClose" />
                     </MudStack>
                 </MudStack>
             </MudItem>
@@ -28,6 +28,17 @@
 
     </MudPaper>
 </div>
-@code {
+@code {  
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
     int? mWeight;
+    private async Task ClickPackageWeightCheck(MouseEventArgs args)
+    {
+        MudDialog?.Close(DialogResult.Ok(true));
+        await Task.CompletedTask;
+    }
+    private async Task ClickPackageWeightClose(MouseEventArgs args)
+    {
+        MudDialog?.Cancel();
+        await Task.CompletedTask;
+    }
 }
