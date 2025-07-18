@@ -7,16 +7,25 @@
         <MudGrid Spacing="2">
             <MudItem xs="12">
                 <MudStack Row="false" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
-                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex justify-center align-center">REPUESTO</MudPaper>              
+                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex flex-column justify-center align-center" style="line-height:1.1;">
+                        <span>CLIENTE : DEMO</span>
+                        <span>PENDIENTE</span>
+                    </MudPaper>
                 </MudStack>
             </MudItem>
             <MudItem xs="12">
                 <MudText>
-                    <MudDataGrid @ref="PartsMudDataGrid" T="mPart" ServerData="ServerReload" Striped="true" Hover="true" Loading="_loading" Filterable="false" FixedHeader SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage" Class="hide-datagrid-headers">
-                        <Columns>
-                            <PropertyColumn Property="x => x.PartDescription" Title="" CellClass="d-flex justify-center align-center" />
-                            <PropertyColumn Property="x => x.Quantity" Title="" CellClass="d-flex justify-center align-center" />
-                        </Columns>
+                    <MudDataGrid @ref="PartsMudDataGrid" T="mPart" ServerData="ServerReload" Striped="true" Hover="true" Loading="_loading" Filterable="false" FixedHeader SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers">
+                          <Columns>
+                            <TemplateColumn CellClass="d-flex justify-center align-center">
+                                <CellTemplate>
+                                    <MudStack Row>
+                                        <MudText Class="mr-2">@context.Item.PartDescription</MudText>
+                                        <MudText Class="mr-2">@context.Item.Quantity</MudText>
+                                    </MudStack>
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>                      
                         <PagerContent>
                             <MudStack Row="false" Spacing="2">
                                 <MudPaper Class="pa-3">
@@ -30,7 +39,7 @@
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.Center">
                     <MudStack Row="true" Spacing="5">              
-                        <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshGuides" />
+                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshGuides" />
                         <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" Href="process-list" />
                     </MudStack>
                 </MudStack>
@@ -70,12 +79,12 @@
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<mPart> data = TestParts;
-        await Task.CompletedTask;
+        
         // Filter by search string
-        if (!string.IsNullOrWhiteSpace(searchString))
-        {
-            data = data.Where(g => g.PartDescription.Contains(searchString, StringComparison.OrdinalIgnoreCase));
-        }
+        // if (!string.IsNullOrWhiteSpace(searchString))
+        // {
+        //     data = data.Where(g => g.PartDescription.Contains(searchString, StringComparison.OrdinalIgnoreCase));
+        // }
 
         totalItems = data.Count();
 
@@ -87,7 +96,7 @@
 
         // Paging
         //data = data.Skip(mOffset).Take(state.PageSize);
-
+        await Task.CompletedTask;
         _loading = false;
         return new GridData<mPart> { TotalItems = totalItems, Items = data };
 
