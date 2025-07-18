@@ -105,11 +105,8 @@
     
     private MudDataGrid<Vehicle>? VehicleGrid;
 
-
-    bool _loading = true;
     string _searchString = "";
     private int _CurrentPage = 0;
-
     private int _rowCount = 0;
     private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
     private int _rowsTotal = 0;
@@ -118,7 +115,6 @@
     {
         if (text.Length == 0 || text.Length >= 3)
         {
-            _loading = true;
             _searchString = text;
             await VehicleGrid!.ReloadServerData();
         }
@@ -134,7 +130,6 @@
 
     private async Task<GridData<Vehicle>> ServerReload(GridState<Vehicle> state)
     {
-        _loading = true;
         _rowCount = state.Page * state.PageSize;
         IEnumerable<Vehicle> _Vehicles = new List<Vehicle>();
         var serviceResponse = await VehicleService.GetVehiclesAvailables(_iduser, _rowCount, _searchString);
@@ -149,8 +144,6 @@
             _Vehicles = new List<Vehicle>();
             _rowsTotal = 0;
         }
-
-        _loading = false;
 
         return new GridData<Vehicle> { TotalItems = _rowsTotal, Items = _Vehicles };
 

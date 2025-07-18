@@ -292,6 +292,11 @@
 
                 var response = await _http.PostAsJsonAsync($"api/Vehicle/PostVehicles?userId={IdUser}", vehicles);
 
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Error Post Vehicle: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                }
+
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
                 result = (result is null) ? new ApiResponse<List<ActionResult>>()
                 {
@@ -338,6 +343,11 @@
                 vehicles.Add(Vehicle);
 
                 var response = await _http.PostAsJsonAsync($"api/Vehicle/PostVehicles?userId={IdUser}", vehicles);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Error Post Vehicle: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                }
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
                 result = (result is null) ? new ApiResponse<List<ActionResult>>()
@@ -393,6 +403,11 @@
 
                 
                 var response = await _http.PostAsJsonAsync($"api/Vehicle/PostActions?userId={IdUser}", PostActions, options);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Error Post Vehicle: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                }
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
                 result = (result is null) ? new ApiResponse<List<ActionResult>>()

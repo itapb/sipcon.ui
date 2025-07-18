@@ -70,7 +70,7 @@
                 var response = await _http.GetAsync($"api/Attachment/GetOne?userId={IdUser}&attachmentId={IdAttachment}");
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error Export Attachment: {response.StatusCode} - {response.ReasonPhrase}");
+                    throw new Exception($"Error Export Attachment: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
                 }
 
                 var fileContent = await response.Content.ReadAsByteArrayAsync();
@@ -121,7 +121,7 @@
                 var response = await _http.PostAsync($"api/Attachment/PostAttachment?userId={IdUser}&recordId={IdRecord}&moduleName={ModuleName}", FormData);
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error Crear Attachment: {response.StatusCode} - {response.ReasonPhrase}");
+                    throw new Exception($"Error Crear Attachment: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
                 }
 
                 result = new ApiResponse<bool>()
@@ -171,7 +171,7 @@
                 var response = await _http.PostAsync($"api/Attachment/Delete_Attachment?userId={IdUser}&attachmentId={IdAttachment}", null);
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error Eliminar Attachment: {response.StatusCode} - {response.ReasonPhrase}");
+                    throw new Exception($"Error Eliminar Attachment: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
                 }
 
                 result = new ApiResponse<bool>()

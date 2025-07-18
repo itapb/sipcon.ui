@@ -77,6 +77,11 @@
 
                 var response = await _http.PostAsJsonAsync($"api/LaborTime/PostLaborTime?userId={IdUser}", laborTimes);
 
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Error Post LaborTime: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                }
+
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
                 result = (result is null) ? new ApiResponse<List<ActionResult>>()
                 {
@@ -123,6 +128,10 @@
                 laborTimes.Add(LaborTime);
 
                 var response = await _http.PostAsJsonAsync($"api/LaborTime/PostLaborTimes?userId={IdUser}", laborTimes);
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Error Post LaborTime: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                }
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
                 result = (result is null) ? new ApiResponse<List<ActionResult>>()
@@ -178,6 +187,10 @@
 
 
                 var response = await _http.PostAsJsonAsync($"api/LaborTime/Delete_LaborTime?userId={IdUser}", PostActions, options);
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Error Post LaborTime: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                }
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
                 result = (result is null) ? new ApiResponse<List<ActionResult>>()

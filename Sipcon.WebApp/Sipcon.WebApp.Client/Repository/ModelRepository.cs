@@ -113,7 +113,7 @@
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error al crear el modelo: {response.StatusCode} - {response.ReasonPhrase}");
+                    throw new Exception($"Error al crear el modelo: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
                 }
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
@@ -175,7 +175,7 @@
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error al crear el modelo: {response.StatusCode} - {response.ReasonPhrase}");
+                    throw new Exception($"Error al crear el modelo: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
                 }
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
@@ -236,7 +236,7 @@
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error Accion modelo: {response.StatusCode} - {response.ReasonPhrase}");
+                    throw new Exception($"Error Accion modelo: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
                 }
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
@@ -286,7 +286,7 @@
                 var response = await _http.GetAsync($"api/Model/Export?_filter={Filter}&userId={IdUser}");
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error Exportar Modelos: {response.StatusCode} - {response.ReasonPhrase}");
+                    throw new Exception($"Error Exportar Modelos: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
                 }
 
                 var fileContent = await response.Content.ReadAsByteArrayAsync();
@@ -338,7 +338,7 @@
                 var response = await _http.PostAsync($"api/Model/Import?userId={IdUser}", FormData);
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error Importar Modelo: {response.StatusCode} - {response.ReasonPhrase}");
+                    throw new Exception($"Error Importar Modelo: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
                 }
 
                 result = new ApiResponse<bool>()

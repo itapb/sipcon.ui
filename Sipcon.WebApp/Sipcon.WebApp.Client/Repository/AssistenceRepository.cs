@@ -137,7 +137,7 @@
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error al crear el Assistence: {response.StatusCode} - {response.ReasonPhrase}");
+                    throw new Exception($"Error al crear el Assistence: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
                 }
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
@@ -204,7 +204,7 @@
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error al crear el Assistence: {response.StatusCode} - {response.ReasonPhrase}");
+                    throw new Exception($"Error al crear el Assistence: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
                 }
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
@@ -255,7 +255,7 @@
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error accion Tipo Poliza: {response.StatusCode} - {response.ReasonPhrase}");
+                    throw new Exception($"Error accion Tipo Poliza: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
                 }
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
@@ -309,7 +309,7 @@
                     
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error Export Poliza: {response.StatusCode} - {response.ReasonPhrase}");
+                    throw new Exception($"Error Export Poliza: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
                 }
 
                 var fileContent = await response.Content.ReadAsByteArrayAsync();

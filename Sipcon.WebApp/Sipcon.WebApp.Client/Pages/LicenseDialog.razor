@@ -5,7 +5,7 @@
 @using Sipcon.WebApp.Client.Enum
 @using FluentValidation
 
-@inject IModelService ModelService
+@inject ILicenseService LicenseService
 @inject IDialogService DialogService
 @inject UtilModuleActions ModuleActionsService
 
@@ -26,7 +26,7 @@
                                     <div class="d-flex justify-left">
 
                                         <MudSwitch @bind-Value="_model.IsActive" Label="Activo" LabelPlacement="Placement.End" Color="Color.Success" Disabled="@(ActionsModal == ActionsEnum.Create ? true : false)" />
-                                        <MudHidden @bind-value="IdModel" />
+                                        <MudHidden @bind-value="IdLicense" />
 
                                     </div>
                                 </MudItem>
@@ -63,12 +63,11 @@
                             <MudCardContent Style="padding-top: 0px;">
                                 <div class="d-flex justify-center" >
 
-                                    <MudTooltip Text="Imagen Modelo">
-                                        <MudImage Src="images/changan_rojo_1.png" Alt="Modelo" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg " FallbackSrc="Images/changan_emblema.png" Width="125" Height="152" />
+                                    <MudTooltip Text="Imagen Licencia">
+                                        <MudImage Src="@(_model.SupplierId == 4069 ? "Images/changan_marca.jpeg" : "Images/foton_marca.jpeg")" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg "
+                                                  FallbackSrc="@(_model.SupplierId == 4069 ? "Images/changan_emblema.png": "Images/foton_emblema.jpeg")" Width="125" Height="152"></MudImage>
                                     </MudTooltip>
                                 </div>
-
-
                             </MudCardContent>
                         </MudCard>
                     </MudItem>
@@ -77,8 +76,8 @@
                             <MudCardHeader>
                                 <CardHeaderContent>
                                     <MudStack Row="true">
-                                        <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
-                                        <MudText Typo="Typo.h6">Modelo</MudText>
+                                        <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
+                                        <MudText Typo="Typo.subtitle2">Licencia</MudText>
                                     </MudStack>
 
                                 </CardHeaderContent>
@@ -88,73 +87,55 @@
                             </MudCardHeader>
                             <MudCardContent Style="padding-top: 0px;">
                                 <MudHidden @bind-value="_model.Id" />
-
-                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Name" 
-                                              Label="Nombre" 
-                                              MaxLength="20"
-                                              Variant="Variant.Text"
-                                              Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                              For="@(() => _model.Name)"
-                                              Immediate="true" />
+                                <MudHidden @bind-value="_model.SupplierId" />
 
                                 <MudTextField Typo="Typo.caption" @bind-Value="_model.Description" 
                                               Label="Descripci&oacute;n" 
-                                              MaxLength="80"
+                                              MaxLength="100"
                                               Variant="Variant.Text"
                                               Margin="Margin.Dense" Disabled="@(!_model.IsActive)" 
                                               For="@(() => _model.Description)"
                                               Immediate="true" />
+                                
 
-                            </MudCardContent>
-
-                        </MudCard>
-                    </MudItem>
-                    <MudItem xs="12" sm="12">
-                        <MudCard>
-                            <MudCardHeader>
-                                <CardHeaderContent>
-                                    <MudStack Row="true">
-                                        <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Default" Style="font-size: 1.5rem;"></MudIcon>
-                                        <MudText Typo="Typo.subtitle2">Opciones</MudText>
-                                    </MudStack>
-
-                                </CardHeaderContent>
-                                <CardHeaderActions>
-
-                                </CardHeaderActions>
-                            </MudCardHeader>
-                            <MudCardContent Style="padding-top: 0px;">
                                 <MudStack Row="true">
-                                    <MudSelect T="int?" Value="@_model.BrandId" Label="Marca" AdornmentColor="Color.Default"
-                                               Margin="Margin.Dense" 
-                                               ValueChanged="@((int? brandId) => OnBrandValueChanged(brandId ?? 0))"
-                                               Validation="@(new Func<int?, IEnumerable<string>>(OnValidBrand))"
-                                               Immediate="true"
-                                               Disabled="@(!_model.IsActive)">
-                                        @foreach (var item in _brandList)
-                                        {
-                                            <MudSelectItem Value="@item.Value">@item.Text </MudSelectItem>
-                                        }
-                                    </MudSelect>
-
-
-                                    <MudSelect @bind-Value="_model.PolicyTypeId" Label="Tipo Poliza" AdornmentColor="Color.Default" 
-                                    Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                               For="@(() => _model.PolicyTypeId)"
+                                    <MudSelect @bind-Value="_model.TypeId" 
+                                               Typo="Typo.caption"
+                                               Label="Tipo Licencia" 
+                                               AdornmentColor="Color.Default"
+                                               Margin="Margin.None"
+                                               For="@(() => _model.TypeId)"
+                                               Disabled="@(!_model.IsActive)"
                                                Immediate="true">
-                                        @foreach (var item in _policyTypeList)
+                                        @foreach (var item in _lisenceTypeList)
                                         {
                                             <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
                                         }
                                     </MudSelect>
 
+                                    <MudDatePicker @bind-Date="_model.ExpirationDate"
+                                                   style="font-size: 14px;margin-top: 14px;"
+                                                   Placeholder="Expiraciòn"
+                                                   Variant="Variant.Text"
+                                                   PickerVariant="PickerVariant.Inline"
+                                                   Margin="Margin.None"
+                                                   Modal="false"
+                                                   ShowToolbar="false"
+                                                   DateFormat="dd/MM/yyyy"
+                                                   Mask="@maskDate"
+                                                   ReadOnly="@(!_model.IsActive )"
+                                                   For="@(() => _model.ExpirationDate)" />
+
 
                                 </MudStack>
+
+
 
                             </MudCardContent>
 
                         </MudCard>
                     </MudItem>
+                    
                 </MudGrid>
             </MudContainer>
 
@@ -162,7 +143,7 @@
                 <TitleContent>
                     <MudStack Row="true">
                         <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="@(_successModal ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
-                        <MudText Typo="Typo.h6">Modelo</MudText>
+                        <MudText Typo="Typo.h6">Licencia</MudText>
                     </MudStack>
                 </TitleContent>
                 <DialogContent>
@@ -206,12 +187,14 @@
     private IMudDialogInstance MudDialog { get; set; } = default!;
 
     [Parameter]
-    public int IdModel { get; set; } 
+    public int IdLicense { get; set; } 
+    [Parameter]
+    public int IdSupplier { get; set; }
     [Parameter]
     public ActionsEnum ActionsModal { get; set; }
 
     private MudForm? form;
-    private Model _model { get; set; } = new Model();
+    private License _model { get; set; } = new License();
 
     private string _errorModalMessage = string.Empty;
     private bool _nestedModalVisible;
@@ -219,16 +202,10 @@
 
     private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
 
-    private IEnumerable<SelectOption> _brandList { get; set; } = new List<SelectOption>();
-    private IEnumerable<SelectOption> _policyTypeList { get; set; } = new List<SelectOption>();
+    private IEnumerable<SelectOption> _lisenceTypeList { get; set; } = new List<SelectOption>();
     
-    ModelValidator _modelValidator = new ModelValidator();
-
-    private IEnumerable<string> OnValidBrand(int? IdBrand)
-    {
-        if (string.IsNullOrEmpty(IdBrand.ToString()))
-            yield return "Campo requerido";
-    }
+    LicenseValidator _modelValidator = new LicenseValidator();
+    IMask maskDate = new DateMask("dd/MM/yyyy");
 
 
 
@@ -237,17 +214,17 @@
 
         if (ActionsModal == ActionsEnum.Create)
         {
-            _model = new Model();
+            _model = new License();
+            _model.SupplierId = IdSupplier;
 
-            _brandList = await ModuleActionsService.GetBrandOption(_iduser);
-            // _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(_iduser);
+            _lisenceTypeList = await ModuleActionsService.GetLicenseTypeOption(_iduser);
 
             await Task.Delay(50);
 
         }
         else
         {
-            await GetModel();
+            await GetLicense();
 
         }
 
@@ -255,22 +232,21 @@
     }
 
 
-    private async Task GetModel()
+    private async Task GetLicense()
     {
-        var serviceResponse = await ModelService.GetModel(IdModel, _iduser);
+        var serviceResponse = await LicenseService.GetLicense(IdLicense, _iduser);
         if (serviceResponse.Processed)
         {
-            _model = serviceResponse.Data ?? new Model();
+            _model = serviceResponse.Data ?? new License();
 
-            _brandList = await ModuleActionsService.GetBrandOption(_iduser);
-            _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(_iduser, _model.BrandId ?? 0);
+            _lisenceTypeList = await ModuleActionsService.GetLicenseTypeOption(_iduser);
 
-            await Task.Delay(100);
+            await Task.Delay(50);
             StateHasChanged();
         }
         else
         {
-            _model = new Model();
+            _model = new License();
             _errorModalMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
             Console.WriteLine(serviceResponse.Message);
             OpenNested();
@@ -280,13 +256,10 @@
 
     }
 
-    private async Task OnBrandValueChanged(int BrandId)
+    private async Task OnLicenseTypeValueChanged(int IdType)
     {
-        _model.BrandId = BrandId;
-        _model.PolicyTypeId = null;
-        _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(_iduser, BrandId);
-        await Task.Delay(50);
-
+        _model.TypeId = IdType;
+        
         StateHasChanged();
         form?.ResetValidation();
         await Task.CompletedTask;
@@ -300,7 +273,7 @@
         {
             _errorModalMessage = "";
 
-            var serviceResponse = await ModelService.UpdateModel(_model, _iduser);
+            var serviceResponse = await LicenseService.UpdateLicense(_model, _iduser);
             if (serviceResponse.Processed)
             {
                 if (ActionsModal == ActionsEnum.Create)
@@ -310,8 +283,8 @@
                     var _result = _results.FirstOrDefault();
                     if (_result is not null)
                     {
-                        IdModel = _result.LastId;
-                        await GetModel();
+                        IdLicense = _result.LastId;
+                        await GetLicense();
                     }
                 }
                 _errorModalMessage = MessageEnum.SaveOK.GetStringValue();
@@ -350,9 +323,11 @@
     private async Task CloseNestedModal()
     {
         _nestedModalVisible = false;
-
+       
         await Task.Delay(50);
-        MudDialog.Close(DialogResult.Ok(true));
+        if (_successModal)
+            MudDialog.Close(DialogResult.Ok(true));
+
         await Task.CompletedTask;
 
     }
@@ -361,34 +336,36 @@
     /// <summary>
     /// Validacion del formulario 
     /// </summary>
-    /// <typeparam name="Model"></typeparam>
-    public class ModelValidator : AbstractValidator<Model>
+    /// <typeparam name="License"></typeparam>
+    public class LicenseValidator : AbstractValidator<License>
     {
-        public ModelValidator()
+        public LicenseValidator()
         {
-
-            RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("Campo requerido")
-                .Length(5, 20).WithMessage("Campo requerido entre 5-20 carácteres");
 
             RuleFor(x => x.Description)
                 .NotEmpty().WithMessage("Campo requerido")
-                .Length(5, 80).WithMessage("Campo requerido entre 5-80 carácteres");
+                .Length(5, 150).WithMessage("Campo requerido entre 5-150 carácteres");
 
-            RuleFor(x => x.BrandId)
-                .NotNull()
-                .GreaterThan(0).WithMessage("seleccione una Marca.");
-
-            RuleFor(x => x.PolicyTypeId)
+            RuleFor(x => x.TypeId)
                 .NotNull().WithMessage("Campo requerido")
-                .GreaterThan(0).WithMessage("seleccione un Tipo de Póliza.");
+                .GreaterThan(0).WithMessage("seleccione un Tipo Licencia.");
+
+            RuleFor(x => x.ExpirationDate)
+                  .NotEmpty().WithMessage("Campo requerido")
+                  .Custom((value, context) =>
+                  {
+                      if (value < DateTime.Now)
+                      {
+                          context.AddFailure($"Campo requerido mayor a la fecha actual {(DateTime.Now.ToString("dd-MMM-yyyy"))}");
+                      }
+                  });
 
         }
 
 
         public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
         {
-            var result = await ValidateAsync(ValidationContext<Model>.CreateWithOptions((Model)model, x => x.IncludeProperties(propertyName)));
+            var result = await ValidateAsync(ValidationContext<License>.CreateWithOptions((License)model, x => x.IncludeProperties(propertyName)));
             if (result.IsValid)
                 return Array.Empty<string>();
             return result.Errors.Select(e => e.ErrorMessage);
