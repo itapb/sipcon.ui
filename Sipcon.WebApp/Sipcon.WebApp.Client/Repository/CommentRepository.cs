@@ -81,7 +81,7 @@
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error al crear el Comment: {response.StatusCode} - {response.ReasonPhrase}");
+                    throw new Exception($"Error al crear el Comment: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
                 }
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();

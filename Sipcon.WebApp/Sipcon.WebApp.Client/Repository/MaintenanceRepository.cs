@@ -140,7 +140,7 @@
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error al crear el Maintenance: {response.StatusCode} - {response.ReasonPhrase}");
+                    throw new Exception($"Error al crear el Maintenance: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
                 }
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
@@ -208,7 +208,7 @@
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error al crear el Maintenance: {response.StatusCode} - {response.ReasonPhrase}");
+                    throw new Exception($"Error al crear el Maintenance: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
                 }
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
@@ -259,7 +259,7 @@
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error accion Tipo Poliza: {response.StatusCode} - {response.ReasonPhrase}");
+                    throw new Exception($"Error accion Maintenance: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
                 }
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
@@ -313,7 +313,7 @@
                     
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error Export Poliza: {response.StatusCode} - {response.ReasonPhrase}");
+                    throw new Exception($"Error Export Maintenance: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
                 }
 
                 var fileContent = await response.Content.ReadAsByteArrayAsync();
@@ -367,7 +367,7 @@
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Error Export Poliza: {response.StatusCode} - {response.ReasonPhrase}");
+                    throw new Exception($"Error Export pdf Maintenance: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
                 }
 
                 var fileContent = await response.Content.ReadAsByteArrayAsync();

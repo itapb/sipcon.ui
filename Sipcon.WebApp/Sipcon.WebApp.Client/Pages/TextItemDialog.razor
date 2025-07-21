@@ -68,12 +68,15 @@
                         <MudCardContent Style="padding-top: 3px;">
                             <MudStack Row="true">
 
-                                    <MudTextField Typo="Typo.caption" @bind-Value="_returnValue" Label="Observaciòn" Margin="Margin.Dense" Disabled="false"
+                                    <MudTextField Typo="Typo.caption" @bind-Value="_returnValue" 
+                                                  Label="@(string.IsNullOrEmpty(Label) ? "Observaciòn" : Label)"
+                                                  Margin="Margin.Dense" 
                                                   Counter="500"
                                                   MaxLength="500"
                                                   HelperText="Minimo 10 car&aacute;cteres"
                                                   Validation="@_SelectValidator.Validation" 
-                                                  Immediate="true" />
+                                                  Immediate="true" 
+                                                  Disabled="false" />
                             </MudStack>
 
 
@@ -118,6 +121,8 @@
 
     [Parameter]
     public string Title { get; set; } = string.Empty;
+    [Parameter]
+    public string? Label { get; set; } = string.Empty;
 
 
     private MudForm? form;

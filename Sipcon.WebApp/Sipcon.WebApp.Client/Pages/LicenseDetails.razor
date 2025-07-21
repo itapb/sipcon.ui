@@ -1,0 +1,849 @@
+﻿@page "/licensedetails"
+@page "/licensedetails/{strLicenseId}"
+
+
+@using Sipcon.WebApp.Client.Models
+@using Sipcon.WebApp.Client.Services
+@using Sipcon.WebApp.Client.Utils
+@using Sipcon.WebApp.Client.Enum
+@using System.Text.Json
+
+
+@inject ILicenseService LicenseService
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Detalle Licencia</PageTitle>
+
+<MudStack Row="true">
+    <CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
+    <MudSpacer />
+    <MudSpacer />
+    <MudIconButton Icon="@Icons.Material.Outlined.KeyboardReturn" Color="Color.Info" Href="license" />
+</MudStack>
+
+<MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
+
+	<MudGrid Spacing="1" Justify="Justify.Center">
+
+		@* Datos Licencia *@
+		<MudItem xs="12" sm="12">
+			<MudCard>
+				<MudCardHeader>
+					<CardHeaderContent>
+                        <MudHidden @bind-Value="_model.Id" />
+						<MudStack Row="false">
+                            <MudStack Row="true">
+							    <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
+							    <MudText Typo="Typo.h6">Licencia </MudText>
+                                <MudText Typo="Typo.h6" Color="Color.Info">@(_model.Id != 0 ? " #" + _model.Id : "")</MudText>
+                            </MudStack>
+                            <MudText Typo="Typo.caption">@_model.Description.ToUpper()</MudText>
+                        </MudStack>
+					</CardHeaderContent>
+					<CardHeaderActions>
+                        <MudStack Row="false">
+
+                            @if (_model.Id != 0)
+                            {
+                                if (_model.ExpirationDate is not null)
+                                {
+                                    string style = "";
+
+                                    if (_model.EstatusName.ToUpper() == "CREADO")
+                                        style += "";
+                                    else if (_model.EstatusName.ToUpper() == "ACTIVADO")
+                                    {
+                                        style += "color:#fff";
+                                        style += ";background-color:#0099F3";
+                                    }
+                                    else if (_model.EstatusName.ToUpper() == "APROBADO")
+                                    {
+                                        style += "color:#fff";
+                                        style += ";background-color:#0099F3";
+                                    }
+                                    else if (_model.EstatusName.ToUpper() == "PROCESADO")
+                                    {
+                                        style += "color:#fff";
+                                        style += ";background-color:#757575";
+                                    }
+                                    else
+                                    {
+                                        style += "color:#fff";
+                                        style += ";background-color:#FF7043";
+                                    }
+                                    style += ";font-size: 9px";
+                                    style += ";font-style:italic";
+
+                                    <MudChip T="string" Style="@style" Label="true" Disabled="true">@_model.EstatusName.ToUpper()</MudChip>
+                                }
+                                else
+                                {
+
+                                    <MudChip T="string" Style="font-size: 9px;min-width: 112px;" Label="true" Color="Color.Default">
+                                        @(_model.EstatusName.ToUpper())
+                                    </MudChip>
+
+                                }
+                            }
+                            <MudText Typo="Typo.caption"><b>@(_model.ExpirationDate is null ? "" : "Expiracion: ") </b> @(_model.ExpirationDate is null ? "" : _model.ExpirationDate.Value.ToString("dd-MMM-yyyy"))</MudText>
+
+                        </MudStack>
+						
+
+					</CardHeaderActions>
+				</MudCardHeader>
+			</MudCard>
+		</MudItem>
+
+        <MudItem xs="12" sm="12">
+            <MudDataGrid @ref="_mudDataGrid"
+                         MultiSelection="true"
+                         SelectedItems="@selectedLicenseDetail"
+                         SortMode="SortMode.Multiple"
+                         Filterable="true"
+                         FixedHeader Height="calc(80vh - 235px)"
+                         Hideable="true"
+                         Loading="_loading"
+                         Bordered="false"
+                         Dense="true"
+                         ServerData="LoadGridData">
+
+                <ToolBarContent>
+
+                    <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddLicenseDetail()"></MudIconButton>
+                    <MudTextField @bind-Value="_searchString" Placeholder="buscar" Adornment="Adornment.Start" Immediate="true"
+                                  Typo="Typo.caption"
+                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                  OnAdornmentClick="() => ClickSearch()"
+                                  IconSize="Size.Medium" Class="mt-0"
+                                  OnKeyUp="HandleKeyDownSearch">
+                    </MudTextField>
+                    <MudSpacer />
+                    <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+                        @foreach (var module in _itemsModules)
+                        {
+                            <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
+                                         Label="@module.Text"
+                                         OnClick="() => HandleMenuClick(module)" />
+                        }
+                    </MudMenu>
+                </ToolBarContent>
+                <Columns>
+                    <SelectColumn T="LicenseDetail" />
+                    <TemplateColumn T="LicenseDetail" Title="VIN">
+                        <CellTemplate>
+                            <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.VIN.ToUpper()</MudText>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn T="LicenseDetail" Title="CLIENTE">
+                        <CellTemplate>
+                            <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.CustomerName.ToUpper() + " " + context.Item.CustomerLastName.ToUpper()) </MudText>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn T="LicenseDetail" Title="AÑO">
+                        <CellTemplate>
+                            <div class="d-flex justify-end">
+                                <MudText Typo="Typo.caption" Align="Align.End">
+                                    @(context.Item.Year.ToString("N0"))
+                                </MudText>
+                            </div>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn T="LicenseDetail" Title="MODELO">
+                        <CellTemplate>
+                            <MudText Typo="Typo.caption" Align="Align.Start">
+                                @(context.Item.Model.ToUpper())
+                            </MudText>
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <TemplateColumn T="LicenseDetail" Title="ESTATUS">
+                        <CellTemplate>
+                            <div class="d-flex justify-center">
+                                @if (context.Item.EstatusDetail != null)
+                                {
+                                    string style = "";
+
+                                    if (context.Item.EstatusDetail.ToUpper() == "NO DISPONIBLE")
+                                        style += "";
+                                    else if (context.Item.EstatusDetail.ToUpper() == "DISPONIBLE")
+                                    {
+                                        style += "color:#fff";
+                                        style += ";background-color:#0099F3";
+                                    }
+                                    else if (context.Item.EstatusDetail.ToUpper() == "APROBADO")
+                                    {
+                                        style += "color:#fff";
+                                        style += ";background-color:#0099F3";
+                                    }
+                                    else if (context.Item.EstatusDetail.ToUpper() == "PROCESADO")
+                                    {
+                                        style += "color:#fff";
+                                        style += ";background-color:#757575";
+                                    }
+                                    else
+                                    {
+                                        style += "color:#fff";
+                                        style += ";background-color:#FF7043";
+                                    }
+                                    style += ";font-size: 11px";
+                                    style += ";font-style:italic";
+
+                                    <MudChip T="string" Style="@style" Label="true" Disabled="true">
+                                        @(context.Item.EstatusDetail.ToUpper())
+                                    </MudChip>
+                                }
+
+                            </div>
+                        </CellTemplate>
+                    </TemplateColumn>
+                     
+                    @if (_itemsModules.Any())
+                    {
+                        var module = _itemsModules.FirstOrDefault(x => x.ActionName == "DELETE");
+                        if (module != null)
+                        {
+                            <TemplateColumn>
+                                <CellTemplate>
+                                    <MudStack Row="true">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickDeleteLicenseDetail(context.Item.Id, module.IdAction, module.ActionName)" />
+                                    </MudStack> 
+                                </CellTemplate>
+                            </TemplateColumn>
+                        }
+                    }
+                       
+                </Columns>
+
+                <PagerContent>
+                    <MudDataGridPager T="LicenseDetail" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+                </PagerContent>
+            </MudDataGrid>
+
+        </MudItem>
+
+    </MudGrid>
+
+</MudContainer>
+
+
+
+<MudDialog @bind-Visible="_nestedVisible">
+    <TitleContent>
+        <MudStack Row="true">
+            <MudIcon Icon="@Icons.Material.Outlined.CarRepair" Color="@(_success? Color.Default: Color.Error)" Style="font-size: 2rem;"></MudIcon>
+            <MudText Typo="Typo.h6">LICENCIA</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+
+        <MudStack Row="true">
+            <MudText Class="nested"><p>@_nestedErrorMessage!</p> </MudText>
+        </MudStack>
+
+    </DialogContent>
+    <DialogActions>
+
+        <MudButton Color="Color.Info" OnClick="CloseNested" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
+
+    </DialogActions>
+</MudDialog>
+
+
+
+@code {
+
+    [Parameter]
+    public string strLicenseId { get; set; } = string.Empty;    
+
+    private License _model { get; set; } = new License();
+    private IEnumerable<LicenseDetail> _LicenseDetails = new List<LicenseDetail>();
+    private string _nestedErrorMessage = string.Empty;
+    private bool _nestedVisible;
+    bool _success = false;
+
+    private int _rowCount = 0;
+    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
+    // private int _supplierId = 4069; 
+    private int _rowsTotal = 0; 
+
+    private string _searchString = string.Empty;
+    private bool _loading = true;
+    private string _moduleName = "SERVICIOS-DETALLESLICENCIA";
+
+    private MudDataGrid<LicenseDetail>? _mudDataGrid;
+    private HashSet<LicenseDetail> selectedLicenseDetail = new([]);
+    private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
+
+   
+    private List<BreadcrumbItem> _itemsNavigate =
+                [
+        new("Home", href: "", icon: Icons.Material.Filled.Home),
+        new("Detalle Licencia",  href: "licensedetails", disabled: false, icon: Icons.Material.Filled.CarCrash),
+    ];
+
+
+    private async Task GetLicense()
+    {
+
+        var serviceResponse = await LicenseService.GetLicense(Convert.ToInt32(strLicenseId), _iduser);
+        if (serviceResponse.Processed)
+        {
+            _model = serviceResponse.Data ?? new License();
+        }
+        else
+        {
+            _model = new License();
+            _success = false;
+            Console.WriteLine(serviceResponse.Message);
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
+            OpenNested();
+        }
+
+        await Task.Delay(50);
+        StateHasChanged();
+
+    }
+
+
+    private async Task<GridData<LicenseDetail>> LoadGridData(GridState<LicenseDetail> state)
+    {
+
+        _rowCount = state.Page * state.PageSize;
+
+        await GetLicense();
+        await GetLicenseDetails();
+
+        return new GridData<LicenseDetail> { TotalItems = _rowsTotal, Items = _LicenseDetails };
+    }
+
+    private async Task GetLicenseDetails()
+    {
+        _loading = true;
+        var serviceResponse = await LicenseService.GetLicenseDetails(_iduser, Convert.ToInt32(strLicenseId), _rowCount, _searchString);
+        if (serviceResponse.Processed)
+        {
+            _LicenseDetails = serviceResponse.Data;
+            _rowsTotal = serviceResponse.Total;
+        }
+        else
+        {
+            Console.WriteLine($"Error: {serviceResponse.Message}");
+            _LicenseDetails = new List<LicenseDetail>();
+            _rowsTotal = 0;
+            _itemsModules = new List<ModuleAction>([]);
+        }
+
+        _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
+
+        await Task.Delay(50);
+        StateHasChanged();
+
+        _loading = false;
+    }
+
+
+    private async Task HandleKeyDownSearch(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            if (_searchString.Length >= 3 || _searchString == string.Empty)
+            {
+                Console.WriteLine($"Buscando: {_searchString}");
+                await _mudDataGrid!.ReloadServerData();
+            }
+
+        }
+    }
+
+    private async Task ClickSearch()
+    {
+
+        if (_searchString.Length >= 3 )
+        {
+            Console.WriteLine($"Buscando: {_searchString}");
+            await _mudDataGrid!.ReloadServerData();
+        }
+
+    }
+
+
+    private async Task HandleOnClickRefresh()
+    {
+        _searchString = string.Empty;
+        await _mudDataGrid!.ReloadServerData();
+    }
+
+
+    private async Task ClickAddLicenseDetail()
+    {
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+        var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Detalle Licencia..." }, { x => x.Label, "VIN" } };
+        var dialog = await DialogService.ShowAsync<TextItemDialog>("Detalle Licencia", parameters, options);
+
+        StateHasChanged();
+
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            var _VIN = (string)(result.Data ?? string.Empty);
+            
+            var _Detail = new LicenseDetail
+            {
+                Id = 0, 
+                IsActive = true,
+                LicenseId = Convert.ToInt32(strLicenseId),
+                VIN = _VIN
+            };  
+            
+            var serviceResponse = await LicenseService.CreateLicenseDetail(_Detail, _iduser);
+            if (serviceResponse.Processed)
+            {
+                _success = true;
+                _nestedErrorMessage = MessageEnum.SaveOK.GetStringValue();
+
+                OpenNested();
+                await _mudDataGrid!.ReloadServerData();
+                StateHasChanged();
+
+            }
+            else
+            {
+                _success = false;
+                _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue();
+                Console.WriteLine(serviceResponse.Message);
+                OpenNested();
+            }
+        }
+        
+        await Task.CompletedTask;
+    }
+
+    private async Task ClickDeleteLicenseDetail(int detailId, int moduleId, string moduleActionName)
+    {
+       
+        var option = new DialogOptions
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            BackdropClick = false
+        };
+        bool? result = await DialogService.ShowMessageBox(
+            "Detalle Licencia",
+            $"Seguro de Eliminar Detalle Licencia? ",
+            yesText: "Si", noText: "No", "", option);
+
+        if (result == true)
+        {
+            List<PostAction> ActionList = ([]);
+            
+            var _Action = new PostAction
+            {
+                RecordId = detailId,
+                ModuleId = moduleId,
+                ActionName = moduleActionName
+            };
+
+            ActionList.Add(_Action);
+            
+            var serviceResponse = await LicenseService.DeleteLicenseDetail(ActionList, _iduser);
+            if (serviceResponse.Processed)
+            {
+                _success = true;
+                _nestedErrorMessage = MessageEnum.AvailableOK.GetStringValue();
+
+                OpenNested();
+                await _mudDataGrid!.ReloadServerData();
+                StateHasChanged();
+
+            }
+            else
+            {
+                _success = false;
+                _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.AvailableNotOK.GetStringValue();
+                Console.WriteLine(serviceResponse.Message);
+                OpenNested();
+
+            }
+            
+
+        }
+
+
+
+        selectedLicenseDetail = new([]);
+        await Task.CompletedTask;
+    }
+
+
+
+    private void OpenNested() => _nestedVisible = true;
+
+    private void CloseNested() => _nestedVisible = false;
+
+
+    private async Task HandleMenuClick(ModuleAction module)
+    {
+        switch (module.ActionName)
+        {
+            case "IMPORT":
+                await ImportItemsAsync();
+                break;
+            case "EXPORT":
+                await ExportItemsAsync();
+                break;
+            case "DEACTIVATE":
+                await DesactivateItemsAsync(module.IdAction, module.ActionName);
+                break;
+            case "AVAILABLE":
+                await AvailableItemsAsync(module.IdAction, module.ActionName);
+                break;
+            case "UNAVAILABLE":
+                await UnavailableItemsAsync(module.IdAction, module.ActionName);
+                break;
+            case "DELETE":
+                await DeleteAvailableItemsAsync(module.IdAction, module.ActionName);
+                break;
+            default:
+                Console.WriteLine($"{MessageEnum.ActionsError.GetStringValue()}: {module.ActionName}");
+                break;
+        }
+    }
+
+
+
+    private async Task ImportItemsAsync()
+    {
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+        var parameters = new DialogParameters<ImporItemDialog> { { x => x.Title, "Importar Detalle Licencias..." } };
+        var dialog = await DialogService.ShowAsync<ImporItemDialog>("Importar Detalle Licencias", parameters, options);
+
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+
+            IBrowserFile file = (IBrowserFile)(result.Data ?? string.Empty);
+            const long maxAllowedSize = 10 * 1024 * 1024; // 10MB
+            if (file.Size == 0)
+            {
+                _success = false;
+                _nestedErrorMessage = MessageEnum.ImportError.GetStringValue();
+                OpenNested();
+            }
+            else if (file.Size > maxAllowedSize)
+            {
+                _success = false;
+                _nestedErrorMessage = MessageEnum.ImportErrorMaxByte.GetStringValue();
+                OpenNested();
+            }
+            else
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
+
+                var content = new StreamContent(stream);
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+                // Create a multipart form data content
+                var formData = new MultipartFormDataContent();
+                formData.Add(content, "file", file.Name);
+
+
+                var serviceResponse = await LicenseService.ImportLicenseDetails(_iduser, Convert.ToInt32(strLicenseId), formData);
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = MessageEnum.ImportOK.GetStringValue();
+
+                    OpenNested();
+                    await _mudDataGrid!.ReloadServerData();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ImportNotOK.GetStringValue();
+                    OpenNested();
+
+                }
+            }
+
+
+        }
+
+        await Task.CompletedTask;
+    }
+
+
+    private async Task ExportItemsAsync()
+    {
+
+        var serviceResponse = await LicenseService.ExportLicenseDetails(_iduser, Convert.ToInt32(strLicenseId), _searchString);
+        if (serviceResponse.Processed)
+        {
+            _success = true;
+            _nestedErrorMessage = "";
+
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+            var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "DetalleLicencias.xlsx");
+
+        }
+        else
+        {
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
+            Console.WriteLine(serviceResponse.Message);
+            OpenNested();
+
+        }
+
+    }
+
+
+    private async Task DesactivateItemsAsync(int moduleId, string moduleActionName)
+    {
+        if (selectedLicenseDetail.Any())
+        {
+            var option = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false
+            };
+            bool? result = await DialogService.ShowMessageBox(
+                "Detalle Licencia",
+                $"Seguro de Inactivar Detalle Licencia seleccionados?",
+                yesText: "Si", noText: "No", "", option);
+
+            if (result == true)
+            {
+                List<PostAction> ActionList = ([]);
+
+                foreach (var item in selectedLicenseDetail)
+                {
+                    var _action = new PostAction
+                    {
+                        RecordId = item.Id,
+                        ModuleId = moduleId,
+                        ActionName = moduleActionName
+                    };
+                    ActionList.Add(_action);
+                }
+
+                var serviceResponse = await LicenseService.ActionsLicenseDetail(ActionList, _iduser);
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = MessageEnum.DeactivateOK.GetStringValue();
+
+                    OpenNested();
+                    await _mudDataGrid!.ReloadServerData();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.DeactivateNotOK.GetStringValue();
+                    Console.WriteLine(serviceResponse.Message);
+                    OpenNested();
+
+                }
+            }
+
+        }
+
+        selectedLicenseDetail = new([]);
+        await Task.CompletedTask;
+    }
+
+
+    private async Task AvailableItemsAsync(int moduleId, string moduleActionName)
+    {
+
+        if (selectedLicenseDetail.Any())
+        {
+            var option = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false
+            };
+            bool? result = await DialogService.ShowMessageBox(
+                "Detalle Licencia Disponibles",
+                $"Seguro de Habilitar Detalle Licencia seleccionados? ",
+                yesText: "Si", noText: "No", "", option);
+
+            if (result == true)
+            {
+                List<PostAction> ActionList = ([]);
+
+                foreach (var detail in selectedLicenseDetail)
+                {
+                    var _Action = new PostAction
+                    {
+                        RecordId = detail.Id,
+                        ModuleId = moduleId,
+                        ActionName = moduleActionName
+                    };
+                    ActionList.Add(_Action);
+                }
+
+                var serviceResponse = await LicenseService.ActionsLicenseDetail(ActionList, _iduser);
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = MessageEnum.AvailableOK.GetStringValue();
+
+                    OpenNested();
+                    await _mudDataGrid!.ReloadServerData();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.AvailableNotOK.GetStringValue();
+                    Console.WriteLine(serviceResponse.Message);
+                    OpenNested();
+
+                }
+            }
+
+        }
+
+        selectedLicenseDetail = new([]);
+        await Task.CompletedTask;
+    }
+
+
+    private async Task UnavailableItemsAsync(int moduleId, string moduleActionName)
+    {
+
+        if (selectedLicenseDetail.Any())
+        {
+
+            DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+            var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Detalle Licencia No Disponibles..." } };
+            var dialog = await DialogService.ShowAsync<TextItemDialog>("Detalle Licencia", parameters, options);
+
+            StateHasChanged();
+
+            var result = await dialog.Result;
+            if (!result!.Canceled)
+            {
+                var _Observacion = (string)(result.Data ?? string.Empty);
+                List<PostAction> ActionList = ([]);
+
+                foreach (var detail in selectedLicenseDetail)
+                {
+                    var _Action = new PostAction
+                    {
+                        RecordId = detail.Id,
+                        ModuleId = moduleId,
+                        ActionName = moduleActionName,
+                        ActionComment = _Observacion
+                    };
+                    ActionList.Add(_Action);
+                }
+
+                var serviceResponse = await LicenseService.ActionsLicenseDetail(ActionList, _iduser);
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = MessageEnum.UnavailableOK.GetStringValue();
+
+                    OpenNested();
+                    await _mudDataGrid!.ReloadServerData();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.UnavailableNotOK.GetStringValue();
+                    Console.WriteLine(serviceResponse.Message);
+                    OpenNested();
+                }
+            }
+        }
+
+        selectedLicenseDetail = new([]);
+        await Task.CompletedTask;
+    }
+
+
+    private async Task DeleteAvailableItemsAsync(int moduleId, string moduleActionName)
+    {
+
+        if (selectedLicenseDetail.Any())
+        {
+            var option = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false
+            };
+            bool? result = await DialogService.ShowMessageBox(
+                "Detalle Licencia",
+                $"Seguro de Eliminar Detalle Licencia? ",
+                yesText: "Si", noText: "No", "", option);
+
+            if (result == true)
+            {
+                List<PostAction> ActionList = ([]);
+
+                foreach (var detail in selectedLicenseDetail)
+                {
+                    var _Action = new PostAction
+                    {
+                        RecordId = detail.Id,
+                        ModuleId = moduleId,
+                        ActionName = moduleActionName
+                    };
+                    ActionList.Add(_Action);
+                }
+
+                var serviceResponse = await LicenseService.ActionsLicenseDetail(ActionList, _iduser);
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = MessageEnum.AvailableOK.GetStringValue();
+
+                    OpenNested();
+                    await _mudDataGrid!.ReloadServerData();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.AvailableNotOK.GetStringValue();
+                    Console.WriteLine(serviceResponse.Message);
+                    OpenNested();
+
+                }
+            }
+      
+        }
+
+        
+
+        selectedLicenseDetail = new([]);
+        await Task.CompletedTask;
+    }
+
+
+
+
+}

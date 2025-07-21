@@ -1,0 +1,452 @@
+﻿@page "/labortime"
+
+
+@using Sipcon.WebApp.Client.Models
+@using Sipcon.WebApp.Client.Services
+@using Sipcon.WebApp.Client.Utils
+@using Sipcon.WebApp.Client.Enum
+@using System.Text.Json
+
+
+@inject ILaborTimeService LaborTimeService
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+@inject IJSRuntime JSRuntime
+
+
+<PageTitle>Mano de Obra</PageTitle>
+<CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
+
+<MudDataGrid @ref="_mudDataGrid"
+             MultiSelection="true" 
+             SelectedItems="@_selectedlaborTime"
+             SortMode="SortMode.Multiple"
+             Filterable="true"
+             FixedHeader Height="calc(92vh - 235px)"
+             Hideable="true"
+             Loading="_loading"
+             Bordered="false"
+             Dense="true"
+             ServerData="LoadGridData">
+
+    <ToolBarContent>
+        @* <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddLaborTime()"></MudIconButton> *@
+        <MudTextField @bind-Value="_searchString" Placeholder="Buscar" Adornment="Adornment.Start" Immediate="true"
+                      Typo="Typo.caption"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      OnAdornmentClick="() => ClickSearch()"
+                      IconSize="Size.Medium" 
+                      Class="mt-0" 
+                      OnKeyDown="HandleKeyDownSearch"></MudTextField>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+            @foreach (var module in _itemsModules)
+            {
+                <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
+                Label="@module.Text"
+                OnClick="() => HandleMenuClick(module)" />
+
+            }
+        </MudMenu>
+    </ToolBarContent>
+    <Columns>
+        <SelectColumn T="LaborTime" />
+        <TemplateColumn T="LaborTime" Title="ID">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@("#" + context.Item.Id.ToString())</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn T="LaborTime" Title="MODELO">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Start"><b>@context.Item.ModelName.ToUpper()</b></MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn T="LaborTime" Title="HORAS">
+            <CellTemplate>
+                <div class="d-flex justify-end">
+                    <MudText Typo="Typo.caption" Align="Align.End">
+                        @(context.Item.Hours.ToString("N0"))
+                    </MudText>
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.Description" Title="DESCRIPCION" Sortable="false" Filterable="false" />
+        <TemplateColumn T="LaborTime" Title="REF.">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Start">
+                    @(context.Item.Reference.ToUpper())
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn T="LaborTime" Title="Activo">
+            <CellTemplate>
+                <div class="d-flex justify-center">
+                    <MudIcon Icon="@(context.Item.IsActive ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.IsActive ? Color.Success : Color.Error)" Size="Size.Medium" />
+                </div>
+
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn >
+           @*  <CellTemplate>
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditLaborTime(context.Item)" />
+            </CellTemplate> *@
+        </TemplateColumn>
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="LaborTime" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+    </PagerContent>
+</MudDataGrid>
+
+<MudDialog @bind-Visible="_nestedVisible">
+    <TitleContent>
+        <MudStack Row="true">
+            <MudIcon Icon="@Icons.Material.Outlined.ManageAccounts" Color="@(_success ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
+            <MudText Typo="Typo.h6">Mano de Obra</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+
+        <MudStack Row="true">
+            <MudText Class="nested"><p>@_nestedErrorMessage!</p> </MudText>
+        </MudStack>
+
+    </DialogContent>
+    <DialogActions>
+
+        <MudButton Color="Color.Info" OnClick="CloseNested" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
+
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+    private IEnumerable<LaborTime> _LaborTimes = new List<LaborTime>();
+    private string _nestedErrorMessage = string.Empty;
+    private bool _nestedVisible;
+    bool _success = false;
+
+    private int _rowCount = 0;
+    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
+    private int _idSupplier = 4069; // Cambia esto por el ID del usuario que estás utilizando
+    private int _idBrand = 1; // Cambia esto por el ID del usuario que estás utilizando
+    private int? _modelIdSelected = null ; // Cambia esto por el ID del usuario que estás utilizando
+
+    private int _rowsTotal = 0; 
+
+    private string _searchString = string.Empty;
+    private bool _loading = true;
+    private string _moduleName = "VEHICULOS-LABORTIME";
+
+    private MudDataGrid<LaborTime>? _mudDataGrid;
+    private HashSet<LaborTime> _selectedlaborTime = new([]);
+    private IEnumerable<Module> _Modules { get; set; } = new List<Module>();
+    private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
+
+    private List<BreadcrumbItem> _itemsNavigate =
+    [
+        new("Home", href: "", icon: Icons.Material.Filled.Home),
+        new("Mano de Obra",  href: "labortime", disabled: false, icon: Icons.Material.Outlined.ManageAccounts),
+    ];
+
+
+
+    private async Task<GridData<LaborTime>> LoadGridData(GridState<LaborTime> state)
+    {
+
+        _rowCount = state.Page * state.PageSize;
+
+        await GetLaborTimes();
+
+        return new GridData<LaborTime> { TotalItems = _rowsTotal, Items = _LaborTimes };
+    }
+
+    private async Task GetLaborTimes()
+    {
+        _loading = true;
+        
+        var serviceResponse = await LaborTimeService.GetLaborTimes(_idSupplier, _rowCount, _searchString, _modelIdSelected);
+        if (serviceResponse.Processed)
+        {
+            _LaborTimes = serviceResponse.Data;
+            _rowsTotal = serviceResponse.Total;
+
+            if (_LaborTimes.Count() > 0)
+            {
+                _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
+            }
+            else { _itemsModules = new List<ModuleAction>([]); }
+        }
+        else
+        {
+            _LaborTimes = new List<LaborTime>();
+            _rowsTotal = 0;
+            _itemsModules = new List<ModuleAction>([]);
+        }
+
+        _loading = false;
+
+    }
+
+    private async Task HandleKeyDownSearch(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            if (_searchString.Length >= 3 || _searchString == string.Empty)
+            {
+                Console.WriteLine($"Buscando: {_searchString}");
+                await _mudDataGrid!.ReloadServerData();
+
+            }
+
+        }
+    }
+
+    private async Task ClickSearch()
+    {
+
+        if (_searchString.Length >= 3)
+        {
+            Console.WriteLine($"Buscando: {_searchString}");
+            await _mudDataGrid!.ReloadServerData();
+        }
+
+    }
+
+    private async Task HandleOnClickRefresh()
+    {
+
+        Console.WriteLine($"Buscando: {_searchString}");
+        _searchString = string.Empty;
+        await _mudDataGrid!.ReloadServerData();
+    }
+
+
+    // private async Task ClickEditLaborTime(LaborTime item)
+    // {
+
+    //     DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = false, NoHeader = true };
+    //     var parameters = new DialogParameters<LaborTimeDialog> { { x => x.IdLaborTime, item.Id }, { x => x.ActionsModal, ActionsEnum.Edit } };
+    //     var dialog = await DialogService.ShowAsync<LaborTimeDialog>("simple dialog", parameters, options);
+    //     var result = await dialog.Result;
+    //     if (!result!.Canceled)
+    //     {
+    //         await _mudDataGrid!.ReloadServerData();
+    //         StateHasChanged();
+    //     }
+
+    //     await Task.CompletedTask;
+    // }
+
+
+
+    private void OpenNested() => _nestedVisible = true;
+
+    private void CloseNested() => _nestedVisible = false;
+
+
+
+    private async Task HandleMenuClick(ModuleAction module)
+    {
+        switch (module.ActionName)
+        {
+            case "IMPORT":
+                await ImportItemsAsync();
+                break;
+            case "EXPORT":
+                await ExportItemsAsync();
+                break;
+            case "DEACTIVATE":
+                await DesactivateItemsAsync(module.IdAction, module.ActionName);
+                break;
+            default:
+                Console.WriteLine($"{MessageEnum.ActionsError.GetStringValue()}: {module.ActionName}");
+                break;
+        }
+    }
+
+
+    private async Task ImportItemsAsync()
+    {
+        var _modelsList = await ModuleActionsService.GetModelOption(_iduser, _idBrand);
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+        var parameters = new DialogParameters<SelectItemDialog> { { x => x.SelectList, _modelsList }, { x => x.Title, "Modelos" } };
+        var dialog = await DialogService.ShowAsync<SelectItemDialog>("Importar Mano de Obra", parameters, options);
+
+        StateHasChanged();
+
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            var _selectedModel = (int)(result.Data ?? 0);
+
+            options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+            var fileparameters = new DialogParameters<ImporItemDialog> { { x => x.Title, "Importar Mano de Obra..." } };
+            var filedialog = await DialogService.ShowAsync<ImporItemDialog>("Importar Mano de Obra", fileparameters, options);
+
+            result = await filedialog.Result;
+            if (!result!.Canceled)
+            {
+
+                IBrowserFile file = (IBrowserFile)(result.Data ?? string.Empty);
+                const long maxAllowedSize = 10 * 1024 * 1024; // 10MB
+                if (file.Size == 0)
+                {
+                    _success = false;
+                    _nestedErrorMessage = MessageEnum.ImportError.GetStringValue();
+                    OpenNested();
+                }
+                else if (file.Size > maxAllowedSize)
+                {
+                    _success = false;
+                    _nestedErrorMessage = MessageEnum.ImportErrorMaxByte.GetStringValue();
+                    OpenNested();
+                }
+                else
+                {
+                    using var stream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
+
+                    var content = new StreamContent(stream);
+                    content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+                    // Create a multipart form data content
+                    var formData = new MultipartFormDataContent();
+                    formData.Add(content, "file", file.Name);
+
+                    // Indicar el ID Modelo
+                    // Verificar si ID Modelo es necesario
+                    var serviceResponse = await LaborTimeService.ImportLaborTimes(_iduser, _selectedModel, formData);
+                    if (serviceResponse.Processed)
+                    {
+                        _success = true;
+                        _nestedErrorMessage = MessageEnum.ImportOK.GetStringValue();
+
+                        OpenNested();
+                        await _mudDataGrid!.ReloadServerData();
+                        StateHasChanged();
+
+                    }
+                    else
+                    {
+                        _success = false;
+                        _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ImportNotOK.GetStringValue();
+                        OpenNested();
+
+                    }
+                }
+
+
+            }
+        }
+        
+        
+    
+        await Task.CompletedTask;
+    }
+
+
+    private async Task ExportItemsAsync()
+    {
+        var _modelsList = await ModuleActionsService.GetModelOption(_iduser, _idBrand);
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+        var parameters = new DialogParameters<SelectItemDialog> { { x => x.SelectList, _modelsList }, { x => x.Title, "Modelos" } };
+        var dialog = await DialogService.ShowAsync<SelectItemDialog>("Exportar Mano de Obra", parameters, options);
+
+        StateHasChanged();
+
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            var _selectedModel = (int)(result.Data ?? 0);
+
+            var serviceResponse = await LaborTimeService.ExportLaborTimes(_selectedModel, _idSupplier);
+            if (serviceResponse.Processed)
+            {
+                _success = true;
+                _nestedErrorMessage = "";
+
+                var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+                var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+                await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "ManoObra.xlsx");
+
+            }
+            else
+            {
+                _success = false;
+                _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
+                Console.WriteLine(serviceResponse.Message);
+                OpenNested();
+
+            }
+
+        }
+
+        await Task.CompletedTask;
+
+    }
+
+
+
+    private async Task DesactivateItemsAsync(int moduleId, string moduleActionName)
+    {
+        if (_selectedlaborTime.Any())
+        {
+            var option = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false
+            };
+            bool? result = await DialogService.ShowMessageBox(
+                "Inactivar Mano de Obra",
+                $"Seguro de Inactivar? ",
+                yesText: "Si", noText: "No", "", option);
+
+            if (result == true)
+            {
+                List<PostAction> ActionList = ([]);
+
+                foreach (var vehicle in _selectedlaborTime)
+                {
+                    var VehicleAction = new PostAction
+                    {
+                        RecordId = vehicle.Id,
+                        ModuleId = moduleId,
+                        ActionName = moduleActionName
+                    };
+                    ActionList.Add(VehicleAction);
+                }
+
+                var serviceResponse = await LaborTimeService.DeleteLaborTimes(ActionList, _iduser);
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = MessageEnum.DeactivateOK.GetStringValue();
+
+                    OpenNested();
+                    await _mudDataGrid!.ReloadServerData();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.DeactivateNotOK.GetStringValue();
+                    Console.WriteLine(serviceResponse.Message);
+                    OpenNested();
+
+                }
+            }
+
+        }
+
+        _selectedlaborTime = new([]);
+        await Task.CompletedTask;
+    }
+
+
+
+}

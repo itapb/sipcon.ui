@@ -14,7 +14,8 @@ namespace Sipcon.WebApp.Client.Utils
         IDealerService DealerService,
         IBrandService BrandService,
         IPolicyTypeService PolicyTypeService,
-        IPayMethodService PayMethodService
+        IPayMethodService PayMethodService,
+        ILicenseService LicenseService
         ) 
     {
 
@@ -204,6 +205,26 @@ namespace Sipcon.WebApp.Client.Utils
             if (moduleResponse.Processed)
             {
                 List<Brand> _List = moduleResponse.Data ?? new List<Brand>();
+
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Id, item.Name));
+                }
+            }
+            return _itemsSelect;
+
+        }
+
+
+        public async Task<List<SelectOption>> GetLicenseTypeOption(int IdUser)
+        {
+            List<SelectOption> _itemsSelect = new([]);
+
+
+            var response = await LicenseService.GetLicenseType(IdUser);
+            if (response.Processed)
+            {
+                List<LicenseType> _List = response.Data ?? new List<LicenseType>();
 
                 foreach (var item in _List.ToList())
                 {
