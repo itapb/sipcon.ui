@@ -57,6 +57,7 @@
 @code {
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public Models.Dispatch? currentDispatch { get; set; } = default!;
     [Parameter] public Models.DispatchStep Value { get; set; }
     [Parameter] public EventCallback<Models.DispatchStep> ValueChanged { get; set; }
@@ -130,6 +131,7 @@
     private async Task ClickSelectPackage(Models.Package item)
     { 
         currentDispatch!.PackageId = item.Number;
+        currentDispatch!.Code = item.Code;
         CurrentStep = Models.DispatchStep.Package;
         await Task.CompletedTask;
     }

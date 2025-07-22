@@ -2,53 +2,59 @@
 @using Sipcon.WebApp.Client.Layout
 @layout MobileLayout
 <div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
-    <MudPaper Elevation="2" Class="pa-3">
-
-        <MudGrid Spacing="2">
-            <MudItem xs="12">  
-                <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex flex-column justify-center align-center" style="line-height:1.1;">
-                    <span>CLIENTE : DEMO</span>
-                    <span>GUIA: 14764</span>
-                </MudPaper>
-            </MudItem>
-            <MudItem xs="12">
-                <MudTextField T="String" ReadOnly="true" Label="NRO GUIA" @bind-Value="Nguide" Class="d-flex align-center justify-center"></MudTextField>
-            </MudItem>
-            <MudItem xs="12">               
-                <MudSelect T="Provider" Label="PROVEEDOR" ToStringFunc="@ConvertProviderFunc" ValueChanged="OnProviderValueChanged"  Value="ProviderSelected" Class="d-flex align-center justify-center">
-                    @foreach (var provider in Providers!)
-                    {
-                        <MudSelectItem Value="provider" />
-                    }
-                </MudSelect>
-            </MudItem>
-
-            <MudItem xs="12">
-                <MudStack Row="true" Justify="Justify.Center">
-                    <MudStack Row="true" Spacing="5">
-                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="ClickGuideComfirmCheck" />
-                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="ClickGuideComfirmClose" />
-                    </MudStack>
-                </MudStack>
-            </MudItem>
-        </MudGrid>
-
-    </MudPaper>
+    @if (Providers == null)
+    {
+        <LoadingForm IsMudDialog="@(MudDialog != null)" />
+    }
+    else
+    {
+        <MudForm @ref="form">
+            <MudPaper Elevation="2" Class="pa-3">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12">
+                        <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex flex-column justify-center align-center" style="line-height:1.1;">
+                            <span>CLIENTE : DEMO</span>
+                            <span>GUIA: 14764</span>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.LastChild"><MudTextField T="String" Label="NRO GUIA" @bind-Value="Nguide" Class="d-flex align-center justify-center"></MudTextField></MudFocusTrap>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudSelect T="Provider" Label="PROVEEDOR" ToStringFunc="@ConvertProviderFunc" ValueChanged="OnProviderValueChanged" Value="ProviderSelected" Class="d-flex align-center justify-center" Required="true" RequiredError="Campo requerido">
+                            @foreach (var provider in Providers!)
+                            {
+                                <MudSelectItem Value="provider" />
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudStack Row="true" Justify="Justify.Center">
+                            <MudStack Row="true" Spacing="5">
+                                <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="ClickGuideComfirmCheck" />
+                                <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="ClickGuideComfirmClose" />
+                            </MudStack>
+                        </MudStack>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper> 
+            </MudForm>
+        }   
 </div>
 @code {
+    [Inject] private HttpClient Http { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
-    string Nguide = "14764";
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Parameter] public Models.Dispatch? currentDispatch { get; set; } = default!;
+    private MudForm? form;
+
+    string? Nguide;
     string mProvide = "MRV";
     record Provider(int Id, string Name);
-    private List<Provider> Providers = new()
-    {
-        new Provider(1, "MRV"),
-        new Provider(2, "ZOOM"),
-        new Provider(3, "LIBERTY")
-    };
+
     private Func<Provider?, string> ConvertProviderFunc = provider => provider?.Name!;
     private Provider? ProviderSelected;
-
+    private List<Provider>? Providers;
     private Task OnProviderValueChanged(Provider selectedProvider)
     {
         ProviderSelected = selectedProvider;
@@ -56,7 +62,20 @@
     }
     private async Task ClickGuideComfirmCheck(MouseEventArgs args)
     {
-        MudDialog?.Close(DialogResult.Ok(true));
+        await form!.Validate();
+        if (form.IsValid)
+        {           
+            var result_Post_Zone = await Http.PostAsync($"api/Inventory/DeliveryGuide?guideId={currentDispatch?.GuideId}&providerId={ProviderSelected?.Id}&guideNumber={Nguide}", null);
+            if (result_Post_Zone.IsSuccessStatusCode)
+            {
+                var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Guia", "OK", Color.Info, Icons.Material.Filled.Commit);
+                if (!result!.Canceled)
+                {
+                    MudDialog?.Close(DialogResult.Ok(true));
+                }
+                
+            }
+        }
         await Task.CompletedTask;
     }
     private async Task ClickGuideComfirmClose(MouseEventArgs args)
@@ -64,4 +83,18 @@
         MudDialog?.Cancel();
         await Task.CompletedTask;
     }
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProviders();
+    }
+    private async Task LoadProviders()
+    {
+        var ProvidersResult = await Http.GetFromJsonAsync<WebApiResponse<List<Provider>>>("api/Inventory/GetProviderToDeliver");
+        if (ProvidersResult != null)
+        {
+            Providers = ProvidersResult.data;
+        }
+        await Task.CompletedTask;
+    }
+
 }

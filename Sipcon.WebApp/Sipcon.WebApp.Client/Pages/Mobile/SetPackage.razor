@@ -1,24 +1,23 @@
 ﻿@* @page "/mobile-setpackage" *@
 @using Sipcon.WebApp.Client.Layout
 @layout MobileLayout
-<div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
+<div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">    
     <MudPaper Elevation="2" Class="pa-3">
-
         <MudGrid Spacing="2">
             <MudItem xs="12">           
                 <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex flex-column justify-center align-center" style="line-height:1.1;">
-                    <span>CLIENTE : DEMO</span>
-                    <span>BULTO: 14765-2</span>
+                    <span>CLIENTE : @currentDispatch!.CustomerName</span>
+                        <span>BULTO: @currentDispatch.Code</span>
                 </MudPaper>
             </MudItem>
-                <MudItem xs="12" >
-                <MudTextField T="string" ReadOnly="true" Label="REPUESTO" @bind-Value="strRepuesto" Class="d-flex align-center justify-center"></MudTextField>
+                <MudItem xs="12">
+                <MudTextField T="string" ReadOnly="true" Label="REPUESTO" Value="currentDispatch!.PartName" Class="d-flex align-center justify-center" ></MudTextField>
                 </MudItem>
                 <MudItem xs="12" >
-                <MudTextField T="int" ReadOnly="true" Label="PENDIENTE" @bind-Value="QTYPending" Class="d-flex align-center justify-center"></MudTextField>
+                <MudTextField T="int?" ReadOnly="true" Label="PENDIENTE" Value="currentDispatch!.Pending" Class="d-flex align-center justify-center"></MudTextField>
                 </MudItem>
                 <MudItem xs="12">
-                <MudTextField T="int" Label="BULTO" @bind-Value="QTYPackage" Class="d-flex align-center justify-center" ></MudTextField>
+                    <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.LastChild"><MudTextField T="int?" @ref="PackageInput" Label="BULTO" HelperText="@mHelpText" @bind-Value="currentDispatch!.Quantity" Class="d-flex align-center justify-center"></MudTextField></MudFocusTrap>
                 </MudItem>               
       
             <MudItem xs="12">
@@ -30,13 +29,16 @@
                 </MudStack>
             </MudItem>
         </MudGrid>
-
     </MudPaper>
 </div>
 @code {
     [Parameter] public Models.Dispatch? currentDispatch { get; set; }
     [Parameter] public Models.DispatchStep Value { get; set; }
     [Parameter] public EventCallback<Models.DispatchStep> ValueChanged { get; set; }
+    private MudTextField<int?>? PackageInput;
+    string mHelpText = "";
+    private MudForm? form;
+
     private Models.DispatchStep CurrentStep
     {
         get => Value;
@@ -51,19 +53,37 @@
     }
     private async Task ClickSetPackageCheck(MouseEventArgs args)
     {
-        CurrentStep = Models.DispatchStep.Package;
+        if (IsQuantityValid())
+            CurrentStep = Models.DispatchStep.Package;
+            else
+            await PackageInput!.FocusAsync();
+
         await Task.CompletedTask;
     }
     private async Task ClickSetPackageClose(MouseEventArgs args)
     {
-       if (Dispatch.PreviousStep ==  Models.DispatchStep.Package) 
+        if (Dispatch.PreviousStep ==  Models.DispatchStep.Package) 
             CurrentStep = Models.DispatchStep.Package;
-       else
-           CurrentStep = Models.DispatchStep.Pending;
+        else
+            CurrentStep = Models.DispatchStep.Pending;
 
         await Task.CompletedTask;
     }
-    string strRepuesto = "Repuesto 1";
-    int QTYPending = 100;
-    int QTYPackage = 70;
+    bool IsQuantityValid()
+    {
+        mHelpText = "";
+        var result = true;
+        if (currentDispatch is {Quantity: null } or {Quantity: 0 })
+        {
+            mHelpText = $"Requiere cantidad valida";
+            result = false;
+        }
+        else if (currentDispatch!.Quantity > currentDispatch.Pending)
+        {
+            mHelpText = $"Debe ser menor o igual a Pendiente";
+            return false;
+        }
+       
+        return result;
+    }
 }

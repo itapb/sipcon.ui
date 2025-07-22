@@ -11,5 +11,6 @@
         public string?  PartInnerCode { get; set; }
         public string?  PartBarCode { get; set; }
         public int? Quantity { get; set; }
+        public int? Pending { get; set; }
     }
 }

@@ -15,13 +15,13 @@
             </MudItem>
             <MudItem xs="12">
                 <MudText>
-                    <MudDataGrid @ref="PartsMudDataGrid" T="mPart" ServerData="ServerReload" Striped="true" Hover="true" Loading="_loading" Filterable="false" FixedHeader SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers">
+                    <MudDataGrid @ref="PartsMudDataGrid" T="Models.PackageDetail" ServerData="ServerReload" Striped="true" Hover="true" Loading="_loading" Filterable="false" FixedHeader SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers">
                           <Columns>
                             <TemplateColumn CellClass="d-flex justify-center align-center">
                                 <CellTemplate>
                                     <MudStack Row>
-                                        <MudText Class="mr-2">@context.Item.PartDescription</MudText>
-                                        <MudText Class="mr-2">@context.Item.Quantity</MudText>
+                                        <MudText Class="mr-2">@context.Item.PartName</MudText>
+                                        <MudText Class="mr-2">@context.Item.Pending</MudText>
                                     </MudStack>
                                 </CellTemplate>
                             </TemplateColumn>
@@ -53,6 +53,8 @@
     }
 </style>
 @code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
     [Parameter] public Models.Dispatch? currentDispatch { get; set; }
     [Parameter] public Models.DispatchStep Value { get; set; }
     [Parameter] public EventCallback<Models.DispatchStep> ValueChanged { get; set; }
@@ -72,41 +74,41 @@
 
     bool _loading = true;
     string searchString = "";
-    private int GuideCurrentPage = 0;
-    record mPart(string PartDescription, int Quantity);
+    private int GuideCurrentPage = 0;   
 
-    private MudDataGrid<mPart>? PartsMudDataGrid;
-    private List<mPart> TestParts = new()
-    {
-        new mPart("Repuesto 1",25),
-        new mPart("Reouesto 2",30),
-        new mPart("Reouesto 3",45),
-    };
+    private MudDataGrid<Models.PackageDetail>? PartsMudDataGrid;
+    private List<Models.PackageDetail>? PendingParts;
 
-    Func<mPart, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    Func<Models.PackageDetail, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
     {
-        nameof(mPart.PartDescription) => o => o.PartDescription ?? "",
-        nameof(mPart.Quantity) => o => o.Quantity,
+        nameof(Models.PackageDetail.PartName) => o => o.PartName ?? "",
+        nameof(Models.PackageDetail.Pending) => o => o.Pending ?? 0,
         _ => null!
     };
 
-    private async Task<GridData<mPart>> ServerReload(GridState<mPart> state)
+    private async Task<GridData<Models.PackageDetail>> ServerReload(GridState<Models.PackageDetail> state)
     {
         _loading = true;
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
-        IEnumerable<mPart> data = TestParts;
-
-        // Filter by search string
-        // if (!string.IsNullOrWhiteSpace(searchString))
-        // {
-        //     data = data.Where(g => g.PartDescription.Contains(searchString, StringComparison.OrdinalIgnoreCase));
-        // }
+        IEnumerable<Models.PackageDetail> data;
+        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetPackageDetailsPending?packageId={currentDispatch?.PackageId}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.PackageDetail>>>();
+            totalItems = content2!.total ?? 0;
+            data = content2!.data ?? new List<Models.PackageDetail>();
+        }
+        else
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
 
         totalItems = data.Count();
 
         // Sorting
-        if (state.SortDefinitions.FirstOrDefault() is SortDefinition<mPart> sortDefinition)
+        if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Models.PackageDetail> sortDefinition)
         {
             data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
         }
@@ -115,7 +117,7 @@
         //data = data.Skip(mOffset).Take(state.PageSize);
         await Task.CompletedTask;
         _loading = false;
-        return new GridData<mPart> { TotalItems = totalItems, Items = data };
+        return new GridData<Models.PackageDetail> { TotalItems = totalItems, Items = data };
 
     }
 
@@ -125,20 +127,45 @@
     }
     private async Task OnSearch(string text)
     {
-        if (text.Length == 0 || text.Length >= 3)
+        if (text.Length >= 3 && (await GetPackageDetailByPart(currentDispatch!.PackageId, text) is Models.PackageDetail MyPackageDetail))
         {
-            _loading = true;
-            searchString = text;
-            await PartsMudDataGrid!.ReloadServerData();
+            currentDispatch.PartId = MyPackageDetail.PartId;
+            currentDispatch.PartName = MyPackageDetail.PartName;
+            currentDispatch.Pending = MyPackageDetail.Pending;
+            currentDispatch.Quantity = null;
+            Dispatch.PreviousStep = Models.DispatchStep.Pending;
+            CurrentStep = Models.DispatchStep.SetPackage;
+            await Task.CompletedTask;
+            //await PackageMudDataGrid!.ReloadServerData();
         }
     }
-    private async Task ClickSelectGuide(mPart item)
+    private async Task<Models.PackageDetail?> GetPackageDetailByPart(int? PackageId, string ScanCode)
     {
+        Models.PackageDetail? PackageDetailResut = null;
+        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetPackageDetailByPart?packageId={PackageId}&scanCode={ScanCode}");
+        if (response.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+            var Resut = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.PackageDetail>>>();
+            PackageDetailResut = Resut!.data?.FirstOrDefault();
+        }
+        else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflictContent = await response.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+            await DialogService.ShowDialog(conflictContent?.message!, "Error Repuesto", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        return await Task.FromResult(PackageDetailResut);
+    }
+    private async Task ClickSelectGuide(Models.PackageDetail item)
+    {        
+        currentDispatch!.Pending = item.Pending;
+        currentDispatch.PartId = item.PartId;
+        currentDispatch.PartName = item.PartName;
+        currentDispatch.Quantity = null;
         Dispatch.PreviousStep = Models.DispatchStep.Pending;
         CurrentStep = Models.DispatchStep.SetPackage;
         await Task.CompletedTask;
     }
-    private async Task ClickRemovePart(mPart item)
+    private async Task ClickRemovePart(Models.PackageDetail item)
     {
         await Task.CompletedTask;
     }
@@ -147,4 +174,5 @@
         CurrentStep = Models.DispatchStep.Package;
         await Task.CompletedTask;
     }
+
 }

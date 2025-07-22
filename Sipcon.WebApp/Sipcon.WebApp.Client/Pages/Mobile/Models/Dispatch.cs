@@ -10,6 +10,10 @@
         public int? PackageId { get; set; }
         public int? PartId { get; set; }
         public String? CustomerName { get; set; } = string.Empty;
+        public int? Pending { get; set; }
+        public int? Quantity { get; set; }
+        public String? PartName { get; set; }
+        public String? Code { get; set; }
 
     }
     public enum DispatchStep
