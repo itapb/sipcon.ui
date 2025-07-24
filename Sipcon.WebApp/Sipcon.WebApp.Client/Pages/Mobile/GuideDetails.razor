@@ -6,11 +6,12 @@
     <MudPaper Elevation="2" Class="pa-3">
         <MudGrid Spacing="2">
             <MudItem xs="12">
-                <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
-                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex flex-column justify-center align-center" style="line-height:1.1;">
-                        <span>CLIENTE : @currentDispatch?.CustomerName</span>
-                        <span>BULTOS GUIA : @currentDispatch?.GuideId</span>
-                    </MudPaper>
+                <MudStack Row="false" Class="pa-2 mud-theme-info mud-typography-h6" Spacing="1" style="line-height:1.1;">
+                    <div>CLIENTE : @currentDispatch?.CustomerName</div>
+                    <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                        <div>GUIA: @currentDispatch?.GuideId</div>
+                        <div>BULTOS</div>
+                    </MudStack>
                 </MudStack>
             </MudItem>
             <MudItem xs="12">
@@ -76,7 +77,7 @@
     bool _loading = true;
     string searchString = "";
     private int GuideCurrentPage = 0;
-   
+
 
     private MudDataGrid<Models.Package>? PackagesMudDataGrid;
 
@@ -132,6 +133,7 @@
     { 
         currentDispatch!.PackageId = item.Number;
         currentDispatch!.Code = item.Code;
+        currentDispatch!.PackageClosed = item.Closed;
         CurrentStep = Models.DispatchStep.Package;
         await Task.CompletedTask;
     }
@@ -144,7 +146,7 @@
     private async Task ClickCheckGuides(MouseEventArgs args)
     {
         DialogOptions options2 = new DialogOptions { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
-        var dialogReference = await DialogService.ShowAsync<GuideConfirm>("", new DialogParameters { }, options2);
+        var dialogReference = await DialogService.ShowAsync<GuideConfirm>("", new DialogParameters { ["currentDispatch"] = currentDispatch }, options2);
         var result = await dialogReference.Result;
 
         if (!result!.Canceled)

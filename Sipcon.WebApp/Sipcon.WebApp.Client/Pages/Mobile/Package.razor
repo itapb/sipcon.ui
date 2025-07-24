@@ -6,11 +6,12 @@
     <MudPaper Elevation="2" Class="pa-3">
         <MudGrid Spacing="2">
             <MudItem xs="12">
-                <MudStack Row="false" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">    
-                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex flex-column justify-center align-center" style="line-height:1.1;">
-                        <span>CLIENTE : @currentDispatch?.CustomerName</span>
-                        <span>BULTO: @currentDispatch?.PackageId</span>
-                    </MudPaper>
+                <MudStack Row="false" Class="pa-2 mud-theme-info mud-typography-h6" Spacing="1" style="line-height:1.1;">
+                   <div>CLIENTE : @currentDispatch?.CustomerName</div>
+                   <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd" >
+                        <div>GUIA: @currentDispatch?.GuideId</div>
+                        <div>BULTO: @currentDispatch?.PackageId</div>
+                    </MudStack>         
                 </MudStack>
             </MudItem>
             <MudItem xs="12">
@@ -40,8 +41,8 @@
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.Center">
                     <MudStack Row="true" Spacing="5">                        
-                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="ClickCheckPackage" />
-                        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Search" Size="Size.Medium" OnClick="ClickSearchPackage" />
+                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="ClickCheckPackage" Disabled="@(currentDispatch?.PackageClosed ?? false)" />
+                        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Search" Size="Size.Medium" OnClick="ClickSearchPackage" Disabled="@(currentDispatch?.PackageClosed ?? false)" />
                         <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshPackage" />
                         <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="ClickClosePackage" />
                     </MudStack>
