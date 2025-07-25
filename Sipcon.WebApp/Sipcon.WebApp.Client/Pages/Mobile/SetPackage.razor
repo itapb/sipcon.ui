@@ -35,6 +35,9 @@
     </MudPaper>
 </div>
 @code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+
     [Parameter] public Models.Dispatch? currentDispatch { get; set; }
     [Parameter] public Models.DispatchStep Value { get; set; }
     [Parameter] public EventCallback<Models.DispatchStep> ValueChanged { get; set; }
@@ -54,11 +57,28 @@
             }
         }
     }
+    private async Task PackageCheck()
+    {
+       var CustomerPackageDetail = new {Id = currentDispatch!.GuideId, PackageId = currentDispatch!.PackageId, PartId = currentDispatch!.PartId, Quantity = currentDispatch!.Quantity };
+        var strJsonCustomerPackageDetail = System.Text.Json.JsonSerializer.Serialize(CustomerPackageDetail);
+        var result_Post_Zone = await Http.PostAsync($"api/Inventory/PostPackageDetail", new StringContent(strJsonCustomerPackageDetail, null, "application/json"));
+        if (result_Post_Zone.IsSuccessStatusCode)
+        {
+            var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Bulto", "OK", Color.Info, Icons.Material.Filled.Commit);
+            if (!result!.Canceled)
+            {
+                CurrentStep = Models.DispatchStep.Package;                
+            }
+
+        }
+    }
     private async Task ClickSetPackageCheck(MouseEventArgs args)
     {
         if (IsQuantityValid())
-            CurrentStep = Models.DispatchStep.Package;
-            else
+        {
+            await PackageCheck();            
+        }
+        else
             await PackageInput!.FocusAsync();
 
         await Task.CompletedTask;

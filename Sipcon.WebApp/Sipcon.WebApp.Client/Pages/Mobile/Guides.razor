@@ -29,7 +29,7 @@
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.Center">
                     <MudStack Row="true" Spacing="5">
-                        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Size="Size.Medium" />
+                        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Size="Size.Medium" OnClick="ClickAddGuide" />
                         <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshGuides" />                        
                         <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="ClickCloseGuides" />
                     </MudStack>
@@ -45,6 +45,7 @@
 </style>
 @code {
     [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
     [Parameter] public Models.Dispatch? currentDispatch { get; set; }
     [Parameter] public Models.DispatchStep Value { get; set; }
     [Parameter] public EventCallback<Models.DispatchStep> ValueChanged { get; set; }
@@ -60,7 +61,7 @@
             }
         }
     }
-   
+
 
     bool _loading = true;
     string searchString = "";
@@ -123,5 +124,18 @@
     {
         CurrentStep  = Models.DispatchStep.Customer;
         await Task.CompletedTask;
+    }
+    private async Task ClickAddGuide(MouseEventArgs args)
+    {        
+        var result_Post_Zone = await Http.PostAsync($"api/Inventory/NewGuide?supplierId={currentDispatch?.SupplierId}&customerId={currentDispatch?.CustomerId}&userId={currentDispatch?.UserId}", null);
+        if (result_Post_Zone.IsSuccessStatusCode)
+        {
+            var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Nueva Guia", "OK", Color.Info, Icons.Material.Filled.Commit);
+            if (!result!.Canceled)
+            {
+                await GuidesMudDataGrid!.ReloadServerData(); 
+            }
+
+        }
     }
 }

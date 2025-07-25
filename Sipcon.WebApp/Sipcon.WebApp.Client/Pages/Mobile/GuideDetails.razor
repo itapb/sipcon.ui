@@ -40,7 +40,7 @@
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.Center">
                     <MudStack Row="true" Spacing="5">
-                        <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Add" Size="Size.Medium" />
+                        <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Add" Size="Size.Medium" OnClick="ClickAddPackage" />
                         <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="ClickCheckGuides" />
                         <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshGuides" />
                         <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" OnClick="ClickCloseGuides" Size="Size.Medium" />
@@ -153,5 +153,18 @@
         {
             CurrentStep = Models.DispatchStep.Guides; // && dialogResult.Data is not null
         }       
+    }
+    private async Task ClickAddPackage(MouseEventArgs args)
+    {
+        var result_NewPackage = await Http.PostAsync($"api/Inventory/NewPackage?guideId={currentDispatch?.GuideId}", null);
+        if (result_NewPackage.IsSuccessStatusCode)
+        {
+            var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Nuevo Bulto", "OK", Color.Info, Icons.Material.Filled.Commit);
+            if (!result!.Canceled)
+            {
+                await PackagesMudDataGrid!.ReloadServerData();
+            }
+
+        }
     }
 }
