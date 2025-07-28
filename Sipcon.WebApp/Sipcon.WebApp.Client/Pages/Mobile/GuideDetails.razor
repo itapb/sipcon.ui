@@ -21,8 +21,8 @@
                             <TemplateColumn CellClass="d-flex justify-center align-center">
                                 <CellTemplate>
                                     <MudStack Row>
-                                        <MudText Class="mr-2">@context.Item.Code</MudText>
-                                        <MudText Class="mr-2">@context.Item.Weight Kg</MudText>
+                                        <MudText Class="mr-2" Color="@((context.Item.Closed ?? false) ? Color.Success : Color.Inherit)">@context.Item.Code</MudText>
+                                        <MudText Class="mr-2" Color="@((context.Item.Closed ?? false) ? Color.Success : Color.Inherit)">@context.Item.Weight Kg</MudText>
                                     </MudStack>
                                 </CellTemplate>
                             </TemplateColumn>
@@ -55,7 +55,7 @@
         display: none !important;
     }
 </style>
-@code {
+@code {   
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
