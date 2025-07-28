@@ -15,6 +15,7 @@
         public String? PartName { get; set; }
         public String? Code { get; set; }
         public bool? PackageClosed { get; set; }
+        public int? Number { get; set; }
 
     }
     public enum DispatchStep

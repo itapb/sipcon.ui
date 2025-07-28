@@ -131,9 +131,10 @@
     }
     private async Task ClickSelectPackage(Models.Package item)
     { 
-        currentDispatch!.PackageId = item.Number;
+        currentDispatch!.PackageId = item.Id;
         currentDispatch!.Code = item.Code;
         currentDispatch!.PackageClosed = item.Closed;
+        currentDispatch!.Number = item.Number;
         CurrentStep = Models.DispatchStep.Package;
         await Task.CompletedTask;
     }
@@ -145,14 +146,26 @@
     }
     private async Task ClickCheckGuides(MouseEventArgs args)
     {
-        DialogOptions options2 = new DialogOptions { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
-        var dialogReference = await DialogService.ShowAsync<GuideConfirm>("", new DialogParameters { ["currentDispatch"] = currentDispatch }, options2);
-        var result = await dialogReference.Result;
-
-        if (!result!.Canceled)
+        if  (await IsValidGuide(currentDispatch))
         {
-            CurrentStep = Models.DispatchStep.Guides; // && dialogResult.Data is not null
-        }       
+            DialogOptions options2 = new DialogOptions { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
+            var dialogReference = await DialogService.ShowAsync<GuideConfirm>("", new DialogParameters { ["currentDispatch"] = currentDispatch }, options2);
+            var result = await dialogReference.Result;
+            if (!result!.Canceled)
+            {
+                CurrentStep = Models.DispatchStep.Guides; // && dialogResult.Data is not null
+            }
+        }
+
+    }
+    private async Task<bool> IsValidGuide(Models.Dispatch? dispatch)
+    {      
+        string msgresult = "";
+        if (PackagesMudDataGrid!.FilteredItems.Count() == 0)  msgresult = "No hay bultos para confirmar";       
+        else if (PackagesMudDataGrid!.FilteredItems.Any(r => r.Closed == false)) msgresult = "Algun bulto esta abierto!";
+        if (msgresult.Length > 0) await DialogService.ShowDialog(msgresult, "Error GUIA", "OK", Color.Error, Icons.Material.Filled.Error);
+
+        return (msgresult.Length ==0);
     }
     private async Task ClickAddPackage(MouseEventArgs args)
     {

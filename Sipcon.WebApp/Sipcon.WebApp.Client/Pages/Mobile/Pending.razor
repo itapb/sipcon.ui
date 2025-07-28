@@ -16,7 +16,7 @@
             </MudItem>
             <MudItem xs="12">
                 <MudText>
-                    <MudDataGrid @ref="PartsMudDataGrid" T="Models.PackageDetail" ServerData="ServerReload" Striped="true" Hover="true" Loading="_loading" Filterable="false" FixedHeader SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers">
+                    <MudDataGrid @ref="PartsMudDataGrid" T="Models.PackageDetail" ServerData="ServerReload" Striped="true" Hover="true" Loading="_loading" Filterable="false" FixedHeader SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers" Height="calc(100vh - 320px)">
                           <Columns>
                             <TemplateColumn CellClass="d-flex justify-center align-center">
                                 <CellTemplate>
@@ -158,9 +158,10 @@
     }
     private async Task ClickSelectGuide(Models.PackageDetail item)
     {        
-        currentDispatch!.Pending = item.Pending;
-        currentDispatch.PartId = item.PartId;
-        currentDispatch.PartName = item.PartName;
+        var MyPackageDetail = await GetPackageDetailByPart(currentDispatch!.PackageId, item.PartInnerCode!);
+        currentDispatch!.Pending = MyPackageDetail!.Pending;
+        currentDispatch.PartId = MyPackageDetail.PartId;
+        currentDispatch.PartName = MyPackageDetail.PartName;
         currentDispatch.Quantity = null;
         Dispatch.PreviousStep = Models.DispatchStep.Pending;
         CurrentStep = Models.DispatchStep.SetPackage;

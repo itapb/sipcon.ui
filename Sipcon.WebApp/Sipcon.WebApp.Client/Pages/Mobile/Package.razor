@@ -10,7 +10,7 @@
                    <div>CLIENTE : @currentDispatch?.CustomerName</div>
                    <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd" >
                         <div>GUIA: @currentDispatch?.GuideId</div>
-                        <div>BULTO: @currentDispatch?.PackageId</div>
+                        <div>BULTO: @currentDispatch?.Number</div>
                     </MudStack>         
                 </MudStack>
             </MudItem>
@@ -126,13 +126,13 @@
     {
         if (text.Length >= 3 && (await GetPackageDetailByPart(currentDispatch!.PackageId, text) is Models.PackageDetail MyPackageDetail))
         {       
-                currentDispatch.PartId = MyPackageDetail.PartId;
-                currentDispatch.PartName = MyPackageDetail.PartName;
-                currentDispatch.Pending = MyPackageDetail.Pending;
-                currentDispatch.Quantity = null;
-                Dispatch.PreviousStep = Models.DispatchStep.Package;
-                CurrentStep = Models.DispatchStep.SetPackage;
-                await Task.CompletedTask;
+            currentDispatch.PartId = MyPackageDetail.PartId;
+            currentDispatch.PartName = MyPackageDetail.PartName;
+            currentDispatch.Pending = MyPackageDetail.Pending;
+            currentDispatch.Quantity = null;
+            Dispatch.PreviousStep = Models.DispatchStep.Package;
+            CurrentStep = Models.DispatchStep.SetPackage;
+            await Task.CompletedTask;
             //await PackageMudDataGrid!.ReloadServerData();
         }
     }
@@ -154,13 +154,15 @@
     }
     private async Task ClickSelectPackage(Models.PackageDetail item)
     {
-        currentDispatch!.PackageId = item.PackageId;
-        currentDispatch.PartName = item.PartName;
-        currentDispatch.PartId = item.PartId;
+        if (await GetPackageDetailByPart(currentDispatch!.PackageId, item.PartInnerCode!) is Models.PackageDetail MyPackageDetail)
+        {
+            currentDispatch!.PackageId = MyPackageDetail.PackageId;
+            currentDispatch.PartName = MyPackageDetail.PartName;
+            currentDispatch.PartId = MyPackageDetail.PartId;
 
-        Dispatch.PreviousStep = Models.DispatchStep.Package;
-        CurrentStep = Models.DispatchStep.SetPackage;
-        
+            Dispatch.PreviousStep = Models.DispatchStep.Package;
+            CurrentStep = Models.DispatchStep.SetPackage;
+        }
         await Task.CompletedTask;
     }
     private async Task ClickRemovePart(Models.PackageDetail item)
