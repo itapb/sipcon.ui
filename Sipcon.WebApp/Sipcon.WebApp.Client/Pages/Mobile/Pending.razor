@@ -1,4 +1,4 @@
-﻿@* @page "/mobile-package" *@
+﻿@* @page "/mobile-parts" *@
 @using Sipcon.WebApp.Client.Layout
 @layout MobileLayout
 
@@ -7,47 +7,44 @@
         <MudGrid Spacing="2">
             <MudItem xs="12">
                 <MudStack Row="false" Class="pa-2 mud-theme-info mud-typography-h6" Spacing="1" style="line-height:1.1;">
-                   <div>CLIENTE : @currentDispatch?.CustomerName</div>
-                   <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd" >
+                    <div>CLIENTE : @currentDispatch?.CustomerName</div>
+                    <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
                         <div>GUIA: @currentDispatch?.GuideId</div>
-                        <div>BULTO: @currentDispatch?.Number</div>
-                    </MudStack>         
+                        <div>PENDIENTES</div>
+                    </MudStack>
                 </MudStack>
             </MudItem>
             <MudItem xs="12">
                 <MudText>
-                    <MudDataGrid @ref="PackageDetailMudDataGrid" T="Models.PackageDetail" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" Loading="_loading" FixedHeader SelectedItemChanged="ClickSelectPackage" @bind-CurrentPage="PackageCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers">
-                        <Columns>
+                    <MudDataGrid @ref="PartsMudDataGrid" T="Models.PackageDetail" ServerData="ServerReload" Striped="true" Hover="true" Loading="_loading" Filterable="false" FixedHeader SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers" Height="calc(100vh - 320px)">
+                          <Columns>
                             <TemplateColumn CellClass="d-flex justify-center align-center">
                                 <CellTemplate>
                                     <MudStack Row>
                                         <MudText Class="mr-2">@context.Item.PartName</MudText>
-                                        <MudText Class="mr-2">@context.Item.Quantity</MudText>
-                                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Close" OnClick="() => ClickRemovePart(context.Item)" />
+                                        <MudText Class="mr-2">@context.Item.Pending</MudText>
                                     </MudStack>
                                 </CellTemplate>
-                            </TemplateColumn>                           
-                        </Columns>
+                            </TemplateColumn>
+                        </Columns>                      
                         <PagerContent>
                             <MudStack Row="false" Spacing="2">
                                 <MudPaper Class="pa-3">
                                     <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Style="height:40px;" />
                                 </MudPaper>
-                            </MudStack>
+                            </MudStack>                           
                         </PagerContent>
                     </MudDataGrid>
                 </MudText>
             </MudItem>
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.Center">
-                    <MudStack Row="true" Spacing="5">                        
-                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="ClickCheckPackage" Disabled="@(currentDispatch?.PackageClosed ?? false)" />
-                        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Search" Size="Size.Medium" OnClick="ClickSearchPackage" Disabled="@(currentDispatch?.PackageClosed ?? false)" />
-                        <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshPackage" />
-                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="ClickClosePackage" />
+                    <MudStack Row="true" Spacing="5">              
+                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshGuides" />
+                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="ClickClosehGuides" />
                     </MudStack>
                 </MudStack>
-            </MudItem>        
+            </MudItem>
         </MudGrid>
     </MudPaper>
 </div>
@@ -59,7 +56,6 @@
 @code {
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
-
     [Parameter] public Models.Dispatch? currentDispatch { get; set; }
     [Parameter] public Models.DispatchStep Value { get; set; }
     [Parameter] public EventCallback<Models.DispatchStep> ValueChanged { get; set; }
@@ -76,18 +72,18 @@
         }
     }
 
+
     bool _loading = true;
     string searchString = "";
-    private int PackageCurrentPage = 0;
+    private int GuideCurrentPage = 0;   
 
-
-    private MudDataGrid<Models.PackageDetail>? PackageDetailMudDataGrid;
-
+    private MudDataGrid<Models.PackageDetail>? PartsMudDataGrid;
+    private List<Models.PackageDetail>? PendingParts;
 
     Func<Models.PackageDetail, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
     {
         nameof(Models.PackageDetail.PartName) => o => o.PartName ?? "",
-        nameof(Models.PackageDetail.Quantity) => o => o.Quantity ?? 0,
+        nameof(Models.PackageDetail.Pending) => o => o.Pending ?? 0,
         _ => null!
     };
 
@@ -97,7 +93,7 @@
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Models.PackageDetail> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetPackageDetails?packageId={currentDispatch?.PackageId}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetPackageDetailsPending?packageId={currentDispatch?.PackageId}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.PackageDetail>>>();
@@ -109,28 +105,36 @@
             var errorMessage = await response.Content.ReadAsStringAsync();
             throw new Exception(errorMessage);
         }
+
+        totalItems = data.Count();
+
+        // Sorting
         if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Models.PackageDetail> sortDefinition)
         {
             data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
         }
+
+        // Paging
+        //data = data.Skip(mOffset).Take(state.PageSize);
+        await Task.CompletedTask;
         _loading = false;
         return new GridData<Models.PackageDetail> { TotalItems = totalItems, Items = data };
 
     }
 
-    private async Task ClickRefreshPackage(MouseEventArgs ev)
+    private async Task ClickRefreshGuides(MouseEventArgs ev)
     {
-        await PackageDetailMudDataGrid!.ReloadServerData();
+        await PartsMudDataGrid!.ReloadServerData();
     }
     private async Task OnSearch(string text)
     {
         if (text.Length >= 3 && (await GetPackageDetailByPart(currentDispatch!.PackageId, text) is Models.PackageDetail MyPackageDetail))
-        {       
+        {
             currentDispatch.PartId = MyPackageDetail.PartId;
             currentDispatch.PartName = MyPackageDetail.PartName;
             currentDispatch.Pending = MyPackageDetail.Pending;
             currentDispatch.Quantity = null;
-            Dispatch.PreviousStep = Models.DispatchStep.Package;
+            Dispatch.PreviousStep = Models.DispatchStep.Pending;
             CurrentStep = Models.DispatchStep.SetPackage;
             await Task.CompletedTask;
             //await PackageMudDataGrid!.ReloadServerData();
@@ -141,59 +145,36 @@
         Models.PackageDetail? PackageDetailResut = null;
         HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetPackageDetailByPart?packageId={PackageId}&scanCode={ScanCode}");
         if (response.StatusCode == System.Net.HttpStatusCode.OK)
-        {           
+        {
             var Resut = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.PackageDetail>>>();
             PackageDetailResut = Resut!.data?.FirstOrDefault();
         }
-        else if (response.StatusCode  == System.Net.HttpStatusCode.Conflict)
+        else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
         {
             var conflictContent = await response.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
             await DialogService.ShowDialog(conflictContent?.message!, "Error Repuesto", "OK", Color.Error, Icons.Material.Filled.Error);
         }
         return await Task.FromResult(PackageDetailResut);
     }
-    private async Task ClickSelectPackage(Models.PackageDetail item)
-    {
-        if (await GetPackageDetailByPart(currentDispatch!.PackageId, item.PartInnerCode!) is Models.PackageDetail MyPackageDetail)
-        {
-            currentDispatch!.PackageId = MyPackageDetail.PackageId;
-            currentDispatch.PartName = MyPackageDetail.PartName;
-            currentDispatch.PartId = MyPackageDetail.PartId;
-
-            Dispatch.PreviousStep = Models.DispatchStep.Package;
-            CurrentStep = Models.DispatchStep.SetPackage;
-        }
+    private async Task ClickSelectGuide(Models.PackageDetail item)
+    {        
+        var MyPackageDetail = await GetPackageDetailByPart(currentDispatch!.PackageId, item.PartInnerCode!);
+        currentDispatch!.Pending = MyPackageDetail!.Pending;
+        currentDispatch.PartId = MyPackageDetail.PartId;
+        currentDispatch.PartName = MyPackageDetail.PartName;
+        currentDispatch.Quantity = null;
+        Dispatch.PreviousStep = Models.DispatchStep.Pending;
+        CurrentStep = Models.DispatchStep.SetPackage;
         await Task.CompletedTask;
     }
     private async Task ClickRemovePart(Models.PackageDetail item)
     {
         await Task.CompletedTask;
     }
-    private async Task ClickClosePackage(MouseEventArgs args)
+    private async Task ClickClosehGuides(MouseEventArgs args)
     {
-        CurrentStep = Models.DispatchStep.GuideDetails;
+        CurrentStep = Models.DispatchStep.Package;
         await Task.CompletedTask;
     }
-    private async Task ClickSearchPackage(MouseEventArgs args)
-    {
-        CurrentStep = Models.DispatchStep.Pending;
-        await Task.CompletedTask;
-    }
-    private async Task ClickCheckPackage(MouseEventArgs args)
-    {
-        DialogOptions options2 = new DialogOptions { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
-        var dialogReference = await DialogService.ShowAsync<PackageWeightConfirm>("", new DialogParameters { ["currentDispatch"] = currentDispatch}, options2);
-        var result = await dialogReference.Result;
 
-        if (!result!.Canceled)
-        {
-            CurrentStep = Models.DispatchStep.GuideDetails; // && dialogResult.Data is not null
-        }
-        // {
-        // dynamic contactData = dialogResult.Data;
-        // SelectedContact!.AgentId = contactData.ContactId;
-        // SelectedContact!.AgentName = contactData.ContactName;
-        // }
-        await Task.CompletedTask; ;
-    }
 }

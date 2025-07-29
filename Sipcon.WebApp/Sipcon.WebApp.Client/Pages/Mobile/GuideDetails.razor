@@ -1,4 +1,4 @@
-﻿@page "/mobile-guidedetail"
+﻿@* @page "/mobile-guidedetail" *@
 @using Sipcon.WebApp.Client.Layout
 @layout MobileLayout
 
@@ -6,22 +6,23 @@
     <MudPaper Elevation="2" Class="pa-3">
         <MudGrid Spacing="2">
             <MudItem xs="12">
-                <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
-                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex flex-column justify-center align-center" style="line-height:1.1;">
-                        <span>CLIENTE : DEMO</span>
-                        <span>BULTOS GUIA : 14764</span>
-                    </MudPaper>
+                <MudStack Row="false" Class="pa-2 mud-theme-info mud-typography-h6" Spacing="1" style="line-height:1.1;">
+                    <div>CLIENTE : @currentDispatch?.CustomerName</div>
+                    <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                        <div>GUIA: @currentDispatch?.GuideId</div>
+                        <div>BULTOS</div>
+                    </MudStack>
                 </MudStack>
             </MudItem>
             <MudItem xs="12">
                 <MudText>
-                    <MudDataGrid @ref="GuidesMudDataGrid" T="GuideItem" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" Loading="_loading" FixedHeader SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers">
+                    <MudDataGrid @ref="PackagesMudDataGrid" T="Models.Package" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" Loading="_loading" FixedHeader SelectedItemChanged="ClickSelectPackage" @bind-CurrentPage="GuideCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers">
                         <Columns>
                             <TemplateColumn CellClass="d-flex justify-center align-center">
                                 <CellTemplate>
                                     <MudStack Row>
-                                        <MudText Class="mr-2">@context.Item.NumberGuide</MudText>
-                                        <MudText Class="mr-2">@context.Item.Weight.ToString("F2") Kg</MudText>
+                                        <MudText Class="mr-2" Color="@((context.Item.Closed ?? false) ? Color.Success : Color.Inherit)">@context.Item.Code</MudText>
+                                        <MudText Class="mr-2" Color="@((context.Item.Closed ?? false) ? Color.Success : Color.Inherit)">@context.Item.Weight Kg</MudText>
                                     </MudStack>
                                 </CellTemplate>
                             </TemplateColumn>
@@ -39,10 +40,10 @@
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.Center">
                     <MudStack Row="true" Spacing="5">
-                        <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Add" Size="Size.Medium" />
-                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" Href="process-list" />
+                        <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Add" Size="Size.Medium" OnClick="ClickAddPackage" />
+                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="ClickCheckGuides" />
                         <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshGuides" />
-                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Href="process-list" Size="Size.Medium" />
+                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" OnClick="ClickCloseGuides" Size="Size.Medium" />
                     </MudStack>
                 </MudStack>
             </MudItem>
@@ -54,60 +55,70 @@
         display: none !important;
     }
 </style>
-@code {
+@code {   
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public Models.Dispatch? currentDispatch { get; set; } = default!;
+    [Parameter] public Models.DispatchStep Value { get; set; }
+    [Parameter] public EventCallback<Models.DispatchStep> ValueChanged { get; set; }
+    private Models.DispatchStep CurrentStep
+    {
+        get => Value;
+        set
+        {
+            if (Value != value)
+            {
+                Value = value;
+                ValueChanged.InvokeAsync(Value);
+            }
+        }
+    }
     bool _loading = true;
     string searchString = "";
     private int GuideCurrentPage = 0;
-    record GuideItem(string NumberGuide, double Weight);
 
-    private MudDataGrid<GuideItem>? GuidesMudDataGrid;
-    private List<GuideItem> TestGuides = new()
-    {
-        new GuideItem("14764-1",35.2),
-        new GuideItem("14764-2",45),
-        new GuideItem("14764-3",80.5),
-    };
 
-    Func<GuideItem, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    private MudDataGrid<Models.Package>? PackagesMudDataGrid;
+
+
+    Func<Models.Package, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
     {
-        nameof(GuideItem.NumberGuide) => o => o.NumberGuide ?? "",
-        nameof(GuideItem.Weight) => o => o.Weight,
+        nameof(Models.Package.Code) => o => o.Code ?? "",
+        nameof(Models.Package.Weight) => o => o.Weight ?? 0,
         _ => null!
     };
 
-    private async Task<GridData<GuideItem>> ServerReload(GridState<GuideItem> state)
+    private async Task<GridData<Models.Package>> ServerReload(GridState<Models.Package> state)
     {        
         _loading = true;
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
-        IEnumerable<GuideItem> data = TestGuides;
-      
-        // Filter by search string
-        // if (!string.IsNullOrWhiteSpace(searchString))
-        // {
-        //     data = data.Where(g => g.NumberGuide.Contains(searchString, StringComparison.OrdinalIgnoreCase));
-        // }
-
-        totalItems = data.Count();
-
-        // Sorting
-        if (state.SortDefinitions.FirstOrDefault() is SortDefinition<GuideItem> sortDefinition)
+        IEnumerable<Models.Package> data;
+        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetPackages?guideId={currentDispatch?.GuideId}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.Package>>>();
+            totalItems = content2!.total ?? 0;
+            data = content2!.data ?? new List<Models.Package>();
+        }
+        else
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
+        if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Models.Package> sortDefinition)
         {
             data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
         }
-
-        // Paging
-        //data = data.Skip(mOffset).Take(state.PageSize);
-
         _loading = false;
-        await Task.CompletedTask;
-        return new GridData<GuideItem> { TotalItems = totalItems, Items = data };
+        return new GridData<Models.Package> { TotalItems = totalItems, Items = data };
 
     }
 
     private async Task ClickRefreshGuides(MouseEventArgs ev)
     {
-        await GuidesMudDataGrid!.ReloadServerData();
+        await PackagesMudDataGrid!.ReloadServerData();
     }
     private async Task OnSearch(string text)
     {
@@ -115,11 +126,58 @@
         {
             _loading = true;
             searchString = text;
-            await GuidesMudDataGrid!.ReloadServerData();
+            await PackagesMudDataGrid!.ReloadServerData();
         }
     }
-    private async Task ClickSelectGuide(GuideItem item)
-    {
+    private async Task ClickSelectPackage(Models.Package item)
+    { 
+        currentDispatch!.PackageId = item.Id;
+        currentDispatch!.Code = item.Code;
+        currentDispatch!.PackageClosed = item.Closed;
+        currentDispatch!.Number = item.Number;
+        CurrentStep = Models.DispatchStep.Package;
         await Task.CompletedTask;
+    }
+    private async Task ClickCloseGuides(MouseEventArgs args)
+    {
+        currentDispatch!.PackageId = 0;
+        CurrentStep = Models.DispatchStep.Guides; 
+        await Task.CompletedTask;
+    }
+    private async Task ClickCheckGuides(MouseEventArgs args)
+    {
+        if  (await IsValidGuide(currentDispatch))
+        {
+            DialogOptions options2 = new DialogOptions { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
+            var dialogReference = await DialogService.ShowAsync<GuideConfirm>("", new DialogParameters { ["currentDispatch"] = currentDispatch }, options2);
+            var result = await dialogReference.Result;
+            if (!result!.Canceled)
+            {
+                CurrentStep = Models.DispatchStep.Guides; // && dialogResult.Data is not null
+            }
+        }
+
+    }
+    private async Task<bool> IsValidGuide(Models.Dispatch? dispatch)
+    {      
+        string msgresult = "";
+        if (PackagesMudDataGrid!.FilteredItems.Count() == 0)  msgresult = "No hay bultos para confirmar";       
+        else if (PackagesMudDataGrid!.FilteredItems.Any(r => r.Closed == false)) msgresult = "Algun bulto esta abierto!";
+        if (msgresult.Length > 0) await DialogService.ShowDialog(msgresult, "Error GUIA", "OK", Color.Error, Icons.Material.Filled.Error);
+
+        return (msgresult.Length ==0);
+    }
+    private async Task ClickAddPackage(MouseEventArgs args)
+    {
+        var result_NewPackage = await Http.PostAsync($"api/Inventory/NewPackage?guideId={currentDispatch?.GuideId}", null);
+        if (result_NewPackage.IsSuccessStatusCode)
+        {
+            var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Nuevo Bulto", "OK", Color.Info, Icons.Material.Filled.Commit);
+            if (!result!.Canceled)
+            {
+                await PackagesMudDataGrid!.ReloadServerData();
+            }
+
+        }
     }
 }

@@ -3,14 +3,14 @@
 @layout MobileLayout
 <div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
     <MudPaper Elevation="2" Class="pa-2">
-
         <MudGrid Spacing="2">    
                 <MudItem xs="12">
-                    <MudStack Row="false" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
-                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex flex-column justify-center align-center" style="line-height:1.1;">
-                        <span>CLIENTE : DEMO</span>
-                        <span>BULTO: 14765-3</span>
-                    </MudPaper>
+                <MudStack Row="false" Class="pa-2 mud-theme-info mud-typography-h6" Spacing="1" style="line-height:1.1;">
+                    <div>CLIENTE : @currentDispatch?.CustomerName</div>
+                    <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                        <div>GUIA: @currentDispatch?.GuideId</div>
+                        <div>BULTO: @currentDispatch?.Number</div>
+                    </MudStack>
                 </MudStack>
                 </MudItem>
             <MudItem xs="12">
@@ -19,15 +19,42 @@
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.Center">
                     <MudStack Row="true" Spacing="5">
-                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" />
-                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" />
+                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="ClickPackageWeightCheck" />
+                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="ClickPackageWeightClose" />
                     </MudStack>
                 </MudStack>
             </MudItem>
         </MudGrid>
-
     </MudPaper>
 </div>
-@code {
+@code { 
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public Models.Dispatch? currentDispatch { get; set; }
     int? mWeight;
+    private async Task ClickPackageWeightCheck(MouseEventArgs args)
+    {
+        //MudDialog?.Close(DialogResult.Ok(true));
+        await SetPackageWeight();
+        await Task.CompletedTask;
+    }
+    private async Task ClickPackageWeightClose(MouseEventArgs args)
+    {
+        MudDialog?.Cancel();
+        await Task.CompletedTask;
+    }
+    private async Task SetPackageWeight()
+    {
+        var result_Post_Zone = await Http.PostAsync($"api/Inventory/ClosePackage?packageId={currentDispatch?.PackageId}&weight={mWeight}", null);
+        if (result_Post_Zone.IsSuccessStatusCode)
+        {
+            var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Peso Bulto", "OK", Color.Info, Icons.Material.Filled.Commit);
+            if (!result!.Canceled)
+            {
+                MudDialog?.Close(DialogResult.Ok(true));
+            }
+
+        }
+    }
 }
