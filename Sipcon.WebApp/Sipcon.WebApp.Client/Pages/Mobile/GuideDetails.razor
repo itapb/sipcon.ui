@@ -55,7 +55,7 @@
         display: none !important;
     }
 </style>
-@code {   
+@code {
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -144,17 +144,24 @@
         CurrentStep = Models.DispatchStep.Guides; 
         await Task.CompletedTask;
     }
+    private async Task CloseGuide()
+    {
+        var result_Post_Zone = await Http.PostAsync($"api/Inventory/CloseGuide?guideId={currentDispatch?.GuideId}", null);
+        if (result_Post_Zone.IsSuccessStatusCode)
+        {
+            var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Guia", "OK", Color.Info, Icons.Material.Filled.Commit);
+            if (!result!.Canceled)
+            {
+                CurrentStep = Models.DispatchStep.Guides;
+            }
+
+        }
+    }
     private async Task ClickCheckGuides(MouseEventArgs args)
     {
         if  (await IsValidGuide(currentDispatch))
         {
-            DialogOptions options2 = new DialogOptions { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
-            var dialogReference = await DialogService.ShowAsync<GuideConfirm>("", new DialogParameters { ["currentDispatch"] = currentDispatch }, options2);
-            var result = await dialogReference.Result;
-            if (!result!.Canceled)
-            {
-                CurrentStep = Models.DispatchStep.Guides; // && dialogResult.Data is not null
-            }
+            await CloseGuide();
         }
 
     }
