@@ -92,7 +92,9 @@
         {
             case 1: //OBTENER SOLICITUD POR USUARIO Y TIPO DE MOVIMIENTO
                 await GetMovementDetailsByUser();
-                mStepId = 2; 
+
+                mStepId = locationId != movementDetails?.LocationId ?  2 : 3;
+                if (mStepId == 3) mHelpText = "Escanee el repuesto o codigo de barras";
                 break;
             case 2: //VALIDAR UBICACIÓN DEL MOVIMIENTO EN CURSO                
                 IsValidLocation = await GetValidLocation(InputCode);
@@ -118,9 +120,8 @@
                     {
                         partDescription = movementDetails!.PartDescription;
                         RequiredQty = movementDetails!.RequiredQty;
-                        if ((movementDetails!.Serializable ?? false) && MovementType == "P" && ModeParameter == "P" )
+                        if ((movementDetails!.Serializable ?? false) && MovementType == "P" && movementDetails?.TypeId!.ToUpper() == "P" )
                         {
-
                             mStepId = 4; mHelpText = "Escanee el Serial";
                         }
                         else
@@ -233,8 +234,8 @@
         processName = "Proceso";       
         TypeName = "En Espera..";
         movementDetails = null;
-        locationName = null;
-        locationId = null;
+        //locationName = null;
+        //locationId = null;
         partDescription = null;
         serialNumber = null;
         RequiredQty = null;

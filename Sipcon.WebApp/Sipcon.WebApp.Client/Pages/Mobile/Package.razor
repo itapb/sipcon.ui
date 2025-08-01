@@ -167,6 +167,16 @@
     }
     private async Task ClickRemovePart(Models.PackageDetail item)
     {
+        var result_Post_Zone = await Http.PostAsync($"api/Inventory/DeletePackageDetail?packageId={item.PackageId}&partId={item.PartId}", null);
+        if (result_Post_Zone.IsSuccessStatusCode)
+        {
+            var result = await DialogService.ShowDialog("Removido!", "Repuesto", "OK", Color.Info, Icons.Material.Filled.Commit);
+            if (!result!.Canceled)
+            {
+                await PackageDetailMudDataGrid!.ReloadServerData(); 
+            }
+
+        }
         await Task.CompletedTask;
     }
     private async Task ClickClosePackage(MouseEventArgs args)
