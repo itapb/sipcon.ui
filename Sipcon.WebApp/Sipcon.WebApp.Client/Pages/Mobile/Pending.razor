@@ -17,13 +17,15 @@
             <MudItem xs="12">
                 <MudText>
                     <MudDataGrid @ref="PartsMudDataGrid" T="Models.PackageDetail" ServerData="ServerReload" Striped="true" Hover="true" Loading="_loading" Filterable="false" FixedHeader SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers" Height="calc(100vh - 320px)">
-                          <Columns>
-                            <TemplateColumn CellClass="justify-start ">
+                        <Columns>
+                            <TemplateColumn>
                                 <CellTemplate>
-                                    <MudStack Row >
-                                        <MudText>@context.Item.PartName</MudText>
-                                        <MudText>@context.Item.Pending</MudText>
+                                    <MudItem xs="12">
+                                    <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd" Spacing="2">
+                                        <div>@context.Item.PartName</div>
+                                        <div>@context.Item.Pending</div>
                                     </MudStack>
+                                    </MudItem>
                                 </CellTemplate>
                             </TemplateColumn>
                         </Columns>                      
