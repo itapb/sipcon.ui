@@ -9,6 +9,7 @@
         public Task<ApiResponse<List<Vehicle>>> GetVehiclesAvailables(int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null);
         public Task<ApiResponse<Vehicle>> GetVehicle(int IdVehicle, int IdUser);
         public Task<ApiResponse<Vehicle>> GetVehicleBy(string Search, int IdUser, SearchByEnum SearchBy, int? IdDealer);
+        public Task<ApiResponse<VehicleService>> GetVehicleFullBy(int IdUser, string Search, SearchByEnum SearchBy);
         public Task<ApiResponse<Vehicle>> GetVehicleAvailable(string Search, int IdUser, int? IdDealer = null);
         public Task<ApiResponse<List<ActionResult>>> CreateVehicle(Vehicle Vehicle, int IdUser);
         public Task<ApiResponse<List<ActionResult>>> UpdateVehicle(Vehicle Vehicle, int IdUser);

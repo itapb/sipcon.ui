@@ -1,0 +1,996 @@
+@using Sipcon.WebApp.Client.Services
+@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+@using Sipcon.WebApp.Client.Utils
+@using Sipcon.WebApp.Client.Enum
+@using FluentValidation
+@using System.Globalization
+
+@inject IFailReportService FailReportService
+@inject IVehicleService VehicleService
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+@inject NavigationManager UriHelper
+@inject IJSRuntime JSRuntime
+
+
+<MudForm Model="@_model" @ref="@form" Validation="@(_modelValidator.ValidateValue)" ValidationDelay="0" >
+    <MudDialog Class="blur dialog-background" ActionsClass="dialog-background-surface">
+        <DialogContent>
+            <MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
+
+                <MudCard>
+
+                    <MudCardContent>
+
+                        <MudGrid Spacing="0" Justify="Justify.Center">
+                            <MudItem xs="12" sm="4">
+                                <div class="d-flex justify-left">
+
+                                </div>
+                            </MudItem>
+                            <MudItem xs="12" sm="2">
+
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <div class="d-flex justify-right" style="justify-content: end;">
+
+                                    <MudButton OnClick="Cancel">Cancelar</MudButton>
+                                    <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Aceptar" OnClick="@(async () => await OnValidSubmit())" Color="Color.Info" Size="Size.Small" />
+
+                                </div>
+
+
+                            </MudItem>
+                        </MudGrid>
+
+                    </MudCardContent>
+
+                </MudCard>
+
+            </MudContainer>
+            <div id="unique_id_scroll_section" class="ma-0" style="height:400px;overflow: auto;">
+
+                <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
+
+                    <MudGrid Spacing="1" Justify="Justify.Center">
+                         <MudItem xs="12" sm="8">
+
+                            @* Buscar Datos Servicio *@
+                            <MudCard Elevation="2" Class="pa-1 mt-1">
+                                <MudCardHeader>
+                                    <CardHeaderContent>
+
+                                        <MudStack Row="true">
+
+                                             <MudDatePicker @bind-Date="_model.ServiceDate"
+                                                           Style="font-size: 14px;line-height: 0.8rem;"
+                                                           Adornment="Adornment.Start"
+                                                           AdornmentColor="Color.Info"
+                                                           Class="align-right"
+                                                           Placeholder="Fecha"
+                                                           Variant="Variant.Text"
+                                                           PickerVariant="PickerVariant.Inline"
+                                                           Margin="Margin.None"
+                                                           Modal="false"
+                                                           ShowToolbar="false"
+                                                           DateFormat="dd/MM/yyyy"
+                                                           Mask="@maskDate"
+                                                           ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                           For="@(() => _model.ServiceDate)" />
+
+                                           
+
+                                            <MudNumericField Typo="Typo.caption" T="int?" @bind-Value="_model.KM"
+                                                             Class="align-right"
+                                                             AdornmentIcon="@Icons.Material.Filled.Speed"
+                                                             Adornment="Adornment.Start"
+                                                             AdornmentColor="Color.Info"
+                                                             Style="line-height: 0.8rem;"
+                                                             Placeholder="Kilometraje"
+                                                             Variant="Variant.Text"
+                                                             Margin="Margin.None"
+                                                             HideSpinButtons="true"
+                                                             Format="N0"
+                                                             Culture="@CultureInfo.GetCultureInfo("es-VE")"
+                                                             ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                             For="@(() => _model.KM)" />
+
+                                            <MudTextField Typo="Typo.caption" @bind-Value="_searchVin"
+                                                          Style="line-height: 0.8rem;"
+                                                          AdornmentIcon="@Icons.Material.Filled.Search"
+                                                          Adornment="Adornment.End"
+                                                          AdornmentColor="Color.Info"
+                                                          OnAdornmentClick="()=>ClickSearchVehicle()"
+                                                          OnKeyUp="HandleKeyUpSearchVehicle"
+                                                          Placeholder="Placa/Vin"
+                                                          MaxLength="20"
+                                                          Variant="Variant.Text"
+                                                          Margin="Margin.None"
+                                                          ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                          Disabled="@(!_model.IsActive || _isReadOnly)" />
+
+                                            @* <MudFab StartIcon="@Icons.Material.Filled.Search" Style="width: 35px; height: 20px;" Color="Color.Info" OnClick="() => ClicSearchVehicle()" /> *@
+                                        </MudStack>
+
+                                        <div class="d-flex justify-center">
+                                            <MudStack Row="true">
+                                                <MudText Class="nested" Color="Color.Error" Style="font-weight:bold;font-style:italic;"><p>@_errorSearchVehicle</p> </MudText>
+                                            </MudStack>
+                                        </div>
+
+                                    </CardHeaderContent>
+                                </MudCardHeader>
+                            </MudCard>
+                            
+                            @* Datos Servicio *@
+                            <MudCard Class="pa-1 mt-1">
+                                <MudCardHeader Style="padding-bottom: 0px;">
+                                    <CardHeaderContent>
+                                        <MudStack Row="true">
+                                            <MudIcon Icon="@Icons.Material.Outlined.CarRepair" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
+                                            <MudText Typo="Typo.subtitle2">Reporte Falla </MudText>
+
+                                        </MudStack>
+                                    </CardHeaderContent>
+                                    <CardHeaderActions>
+                                        <MudSwitch @bind-Value="_model.Paralyzed" Label="Vehiculo Paralizado" LabelPlacement="Placement.End" Color="Color.Success" ReadOnly="@(!_model.IsActive || _isReadOnly)" />
+                                    </CardHeaderActions>
+                                </MudCardHeader>
+                                
+                                <MudCardContent Style="padding-top: 0px;">
+
+
+                                    <MudStack Row="true">
+
+                                        <MudDatePicker @bind-Date="_model.InvoiceDate"
+                                                       Style="font-size: 14px;line-height: 0.8rem;"
+                                                       Adornment="Adornment.Start"
+                                                       AdornmentColor="Color.Info"
+                                                       Class="align-right"
+                                                       Label="Fecha Factura"
+                                                       Variant="Variant.Text"
+                                                       PickerVariant="PickerVariant.Inline"
+                                                       Margin="Margin.None"
+                                                       Modal="false"
+                                                       ShowToolbar="false"
+                                                       DateFormat="dd/MM/yyyy"
+                                                       Mask="@maskDate"
+                                                       ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                       For="@(() => _model.InvoiceDate)" />
+
+                                     
+                                        <MudTextField Typo="Typo.caption" @bind-Value="_model.InvoiceNumber"
+                                                         Label="Nro.Factura"
+                                                         Class="align-right" 
+                                                         Style="line-height: 0.8rem;"
+                                                         Variant="Variant.Text"
+                                                         Margin="Margin.None"
+                                                         ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                         For="@(() => _model.InvoiceNumber)" />
+                                        
+                                        <MudNumericField Typo="Typo.caption" @bind-Value="_model.OrderNumber"
+                                                         Label="Nro.Orden"
+                                                         Class="align-right"
+                                                         Style="line-height: 0.8rem;"
+                                                         Variant="Variant.Text"
+                                                         Margin="Margin.None"
+                                                         HideSpinButtons="true"
+                                                         Format="N0"
+                                                         Culture="@CultureInfo.GetCultureInfo("es-VE")"
+                                                         ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                         For="@(() => _model.OrderNumber)" />
+                                        
+                                    </MudStack>
+
+                                    <MudStack Row="true">
+                                        
+                                        @* <MudSpacer /> *@
+                                        <MudSelect @bind-Value="_model.ReportTypeId"
+                                                   style="font-size: 14px"
+                                                   Label="Tipo Reporte"
+                                                   Typo="Typo.caption"
+                                                   AdornmentColor="Color.Default"
+                                                   Margin="Margin.Dense" 
+                                                   ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                   Disabled="@(!_model.VehicleId.HasValue)"
+                                                   For="@(() => _model.ReportTypeId)"
+                                                   Immediate="true">
+                                            @foreach (var item in _FailReportTypeList)
+                                            {
+                                                <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
+                                            }
+                                        </MudSelect>
+
+                                        <MudButton StartIcon="@Icons.Material.Filled.Add" 
+                                                   Variant="Variant.Outlined"
+                                                   Color="Color.Info" 
+                                                   Size="Size.Small" 
+                                                   Style="max-width: 170px;max-height:35px;margin-top:14px;font-size: 10px;font-weight:bold;font-style:italic;"
+                                                   OnClick="@(async () => await ClickSearchLicence())"
+                                                   Disabled="@(!_model.VehicleId.HasValue || !_model.ReportTypeId.HasValue || _model.ReportTypeId != 4 )">
+                                            Agregar Licencia
+                                        </MudButton>
+
+                                    </MudStack>
+
+                                    @if (_isReportTypeLicense)
+                                    {
+                                        @* Datos Licencia *@
+                                        <MudCard Elevation="2" Class="pa-1 mt-1">
+
+                                            <MudCardHeader>
+                                                <CardHeaderContent>
+                                                    <MudHidden @bind-Value="_model.LicenseId" />
+                                                    <MudStack Row="false">
+                                                        <MudStack Row="true">
+                                                            <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
+                                                            <MudText Typo="Typo.subtitle2">Licencia </MudText>
+                                                            @* <MudText Typo="Typo.subtitle2" Color="Color.Info">@(_model.LicenseId != 0 ? " #" + _model.LicenseId : "")</MudText> *@
+                                                            <MudText Typo="Typo.subtitle2"><MudText Typo="Typo.caption" Color="Color.Info">@(_model.LicenseId != 0 ? " #" + _model.LicenseId : "")</MudText></MudText>
+                                                        </MudStack>
+                                                        <MudText Typo="Typo.caption">@(_model.LicenseDescription?.ToUpper() ?? "")</MudText>
+                                                        <MudText Typo="Typo.caption">@(_model.LicenseType?.ToUpper() ?? "")</MudText>
+                                                    </MudStack>
+                                                </CardHeaderContent>
+                                                <CardHeaderActions>
+                                                    <MudStack Row="false">
+
+                                                        @if (_model.LicenseId != 0)
+                                                        {
+                                                            if (_modelLicenseDetail.EstatusDetail != null)
+                                                            {
+                                                                string style = "";
+
+                                                                if (_modelLicenseDetail.EstatusDetail.ToUpper() == "CREADO")
+                                                                    style += "";
+                                                                else if (_modelLicenseDetail.EstatusDetail.ToUpper() == "DISPONIBLE")
+                                                                {
+                                                                    style += "color:#fff";
+                                                                    style += ";background-color:#0099F3";
+                                                                }
+                                                                else if (_modelLicenseDetail.EstatusDetail.ToUpper() == "APROBADO")
+                                                                {
+                                                                    style += "color:#fff";
+                                                                    style += ";background-color:#0099F3";
+                                                                }
+                                                                else if (_modelLicenseDetail.EstatusDetail.ToUpper() == "PROCESADO")
+                                                                {
+                                                                    style += "color:#fff";
+                                                                    style += ";background-color:#757575";
+                                                                }
+                                                                else
+                                                                {
+                                                                    style += "color:#fff";
+                                                                    style += ";background-color:#FF7043";
+                                                                }
+                                                                style += ";font-size: 9px";
+                                                                style += ";font-style:italic";
+
+                                                                <MudChip T="string" Style="@style" Label="true" Disabled="true">@_modelLicenseDetail.EstatusDetail.ToUpper()</MudChip>
+                                                            }
+
+                                                        }
+                                                        @* <MudText T ypo="Typo.caption"><b>@(_model.LicenseExpirationDate is null ? "" : "Expiracion: ") </b> @(_model.LicensexpirationDate is null ? "" : _model.LicenseExpirationDate.Value.ToString("dd-MMM-yyyy"))</MudText> *@
+
+                                                    </MudStack>
+
+
+                                                </CardHeaderActions>
+                                            </MudCardHeader>
+                                        </MudCard>
+                                    }
+
+
+                                    <MudTextField Typo="Typo.caption" @bind-Value="_model.CustomerReport"
+                                                  Label="Reporte Cliente"
+                                                  Lines="5"
+                                                  MaxLength="500"
+                                                  Variant="Variant.Text"
+                                                  Margin="Margin.None"
+                                                  ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                  Disabled="@(!_model.IsActive || _isReadOnly)"
+                                                  For="@(() => _model.CustomerReport)" />
+
+                                    <MudTextField Typo="Typo.caption" @bind-Value="_model.DealerReport"
+                                                  Label="Reporte Concesionario"
+                                                  Lines="5"
+                                                  MaxLength="500"
+                                                  Variant="Variant.Text"
+                                                  Margin="Margin.None"
+                                                  ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                  Disabled="@(!_model.IsActive || _isReadOnly)"
+                                                  For="@(() => _model.DealerReport)" />
+
+                                    <MudTextField Typo="Typo.caption" @bind-Value="_model.TechnicalSolution"
+                                                  Label="Solución Técnica"
+                                                  Lines="5"
+                                                  MaxLength="500"
+                                                  Variant="Variant.Text"
+                                                  Margin="Margin.None"
+                                                  ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                  Disabled="@(!_model.IsActive || _isReadOnly)"
+                                                  For="@(() => _model.TechnicalSolution)" />
+                                </MudCardContent>
+                            </MudCard>
+
+                         </MudItem>
+
+
+                        <MudItem xs="12" sm="4">
+                         
+                            @* Datos Poliza *@
+                            <MudCard Elevation="2" Class="pa-1 mt-1">
+                                <MudCardHeader>
+                                    <CardHeaderContent>
+
+                                        <MudGrid Spacing="0" Justify="Justify.Center">
+                                            <MudItem xs="12" sm="8">
+
+                                                <div class="d-flex justify-left">
+
+                                                    <MudStack Row="true">
+                                                        <MudIcon Icon="@Icons.Material.Filled.Policy" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
+                                                        <MudText Typo="Typo.subtitle2">Poliza</MudText>
+
+                                                    </MudStack>
+                                                </div>
+                                            </MudItem>
+
+                                            <MudItem xs="12" sm="4">
+
+
+                                            </MudItem>
+                                        </MudGrid>
+
+                                    </CardHeaderContent>
+                                    <CardHeaderActions>
+                                        @if (_modelVehicle.EstatusPolicyId != null && _modelVehicle.EstatusPolicyId != 0)
+                                        {
+                                            string style = "";
+
+                                            if (_modelVehicle.EstatusPolicyName?.ToUpper() == "CREADO")
+                                                style += "";
+                                            else if (_modelVehicle.EstatusPolicyName?.ToUpper() == "ACTIVADO")
+                                            {
+                                                style += "color:#fff";
+                                                style += ";background-color:#0099F3";
+                                            }
+                                            else if (_modelVehicle.EstatusPolicyName?.ToUpper() == "APROBADO")
+                                            {
+                                                style += "color:#fff";
+                                                style += ";background-color:#0099F3";
+                                            }
+                                            else if (_modelVehicle.EstatusPolicyName?.ToUpper() == "PROCESADO")
+                                            {
+                                                style += "color:#fff";
+                                                style += ";background-color:#757575";
+                                            }
+                                            else
+                                            {
+                                                style += "color:#fff";
+                                                style += ";background-color:#FF7043";
+                                            }
+                                            style += ";font-weight:bold;font-size:10px";
+                                            style += ";font-style:italic";
+
+
+                                            <MudChip T="string" Style="@style" Label="true" Disabled="true">@_modelVehicle.EstatusPolicyName</MudChip>
+                                        }
+
+                                    </CardHeaderActions>
+
+                                </MudCardHeader>
+                                <MudCardContent Style="padding-top: 0px;">
+                                    <MudHidden @bind-Value="@_modelVehicle.Id" />
+
+                                    <MudFlexBreak />
+
+                                    <div class="d-flex align-end justify-space-between mud-width-full">
+                                        <div class="d-flex flex-column">
+                                            @if (_modelVehicle.EstatusPolicyId != null)
+                                            {
+                                                <MudText Typo="Typo.caption"><b>Nro. Poliza: </b> <MudText Typo="Typo.caption" Color="Color.Info">@(_modelVehicle.PolicyId != null ? " #" + _model.NumberPolicy : "")</MudText></MudText>
+                                            }
+                                            @if (_modelVehicle.ActivationDate != null)
+                                            {
+                                                <MudText Typo="Typo.caption"><b>Activacion: </b>@_modelVehicle.ActivationDate.Value.ToString("dd-MMM-yyyy")</MudText>
+                                            }
+                                            @if (_modelVehicle.LockDate != null)
+                                            {
+                                                <MudText Typo="Typo.caption"><b>Bloqueada: </b> @_modelVehicle.LockDate.Value.ToString("dd-MMM-yyyy")</MudText>
+                                            }
+                                            @if (_modelVehicle.ExpirationDate != null)
+                                            {
+                                                <MudText Typo="Typo.caption"><b>Expiracion: </b> @_modelVehicle.ExpirationDate.Value.ToString("dd-MMM-yyyy")</MudText>
+                                            }
+                                        </div>
+
+                                    </div>
+
+                                </MudCardContent>
+
+                            </MudCard>
+
+                            @* ///Vehicle *@
+                            <MudCard Elevation="2" Class="pa-1 mt-1">
+
+                                <MudCardHeader Style="padding-bottom: 0px;">
+                                    <CardHeaderContent>
+
+                                        <MudGrid Spacing="0" Justify="Justify.Center">
+                                            <MudItem xs="12" sm="8">
+                                                <div class="d-flex justify-left">
+                                                    <MudStack Row="true">
+                                                        <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
+                                                        <MudText Typo="Typo.subtitle2">Vehiculo</MudText>
+
+                                                    </MudStack>
+                                                </div>
+                                            </MudItem>
+
+                                            <MudItem xs="12" sm="4">
+
+
+                                            </MudItem>
+                                        </MudGrid>
+
+
+                                    </CardHeaderContent>
+                                    <CardHeaderActions>
+                                        @if (_modelVehicle.EstatusId != 0)
+                                        {
+                                            string style = "";
+
+                                            if (_modelVehicle.EstatusName.ToUpper() == "CREADO")
+                                                style += "";
+                                            else if (_modelVehicle.EstatusName.ToUpper() == "DISPONIBLE")
+                                            {
+                                                style += "color:#fff";
+                                                style += ";background-color:#0099F3";
+                                            }
+                                            else if (_modelVehicle.EstatusName.ToUpper() == "ASIGNADO")
+                                            {
+                                                style += "color:#fff";
+                                                style += ";background-color:#0099F3";
+                                            }
+                                            else if (_modelVehicle.EstatusName.ToUpper() == "NO DISPONIBLE")
+                                            {
+                                                style += "color:#fff";
+                                                style += ";background-color:#757575";
+                                            }
+                                            else
+                                            {
+                                                style += "color:#fff";
+                                                style += ";background-color:#FF7043";
+                                            }
+                                            style += ";font-size: 10px";
+                                            style += ";font-style:italic";
+
+                                            <MudChip T="string" Style="@style" Label="true" Disabled="true">
+                                                @(_modelVehicle.EstatusName.ToUpper())
+                                            </MudChip>
+                                        }
+
+
+                                    </CardHeaderActions>
+
+                                </MudCardHeader>
+                                <MudCardContent Style="padding-top: 0px;">
+                                    <MudHidden @bind-Value="@_model.VehicleId" />
+
+                                    <MudTextField Typo="Typo.caption" @bind-Value="@_model.VIN"
+                                                    Label="Vin"
+                                                    Variant="Variant.Text"
+                                                    Margin="Margin.None"
+                                                    ReadOnly="true"
+                                                    For="@(() => _model.VIN)" />
+
+
+                                    <MudStack Row="true">
+
+                                        <MudTextField Typo="Typo.caption" T="string" Text="@_model.Plate"
+                                                        Label="Placa"
+                                                        Variant="Variant.Text"
+                                                        Margin="Margin.None"
+                                                        ReadOnly="true" />
+
+                                        <MudTextField Typo="Typo.caption" T="string" Text="@_model.Year"
+                                                        Label="Año"
+                                                        Variant="Variant.Text"
+                                                        Margin="Margin.None"
+                                                        ReadOnly="true" />
+
+                                        <MudTextField Typo="Typo.caption" T="string" Text="@_modelVehicle.ColorName"
+                                                        Label="Color"
+                                                        Variant="Variant.Text"
+                                                        Margin="Margin.None"
+                                                        ReadOnly="true" />
+
+
+
+                                    </MudStack>
+
+
+                                    <MudTextField Typo="Typo.caption" T="string" Text="@_model.ModelName"
+                                                    Label="Modelo"
+                                                    Variant="Variant.Text"
+                                                    Margin="Margin.None"
+                                                    ReadOnly="true" />
+
+
+                                </MudCardContent>
+
+                            </MudCard>
+
+                            @* ///Customer *@
+                            <MudCard Elevation="2" Class="pa-1 mt-1">
+                                <MudCardHeader Style="padding-bottom: 0px;">
+                                    <CardHeaderContent>
+
+                                        <MudGrid Spacing="0" Justify="Justify.Center">
+                                            <MudItem xs="12" sm="6">
+                                                <div class="d-flex justify-left">
+                                                    <MudStack Row="true">
+                                                        <MudIcon Icon="@Icons.Material.Filled.ManageAccounts" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
+                                                        <MudText Typo="Typo.subtitle2">Cliente</MudText>
+
+                                                    </MudStack>
+                                                </div>
+                                            </MudItem>
+
+                                            <MudItem xs="12" sm="6">
+                                                <div class="d-flex justify-end">
+                                                    <MudStack Row="true">
+
+                                                    </MudStack>
+                                                </div>
+                                            </MudItem>
+                                        </MudGrid>
+
+                                    </CardHeaderContent>
+
+                                </MudCardHeader>
+                                <MudCardContent Style="padding-top: 0px;">
+                                    <MudHidden @bind-Value="_model.CustomerId" />
+
+
+                                    <MudTextField Typo="Typo.caption" T="string" Text="@_modelVehicle.Vat"
+                                                    Label="RIF"
+                                                    Variant="Variant.Text"
+                                                    Margin="Margin.None"
+                                                    ReadOnly="true" />
+
+                                    <MudStack Row="true">
+                                        <MudTextField Typo="Typo.caption" T="string" Text="@(_modelVehicle.CustomerLastName + " " + _modelVehicle.CustomerName)"
+                                                        Label="Apellidos y Nombres"
+                                                        Variant="Variant.Text"
+                                                        Margin="Margin.None"
+                                                        ReadOnly="true" />
+                                    </MudStack>
+
+                                </MudCardContent>
+
+                            </MudCard>
+
+                        </MudItem>
+
+                     
+                    </MudGrid>
+
+                </MudContainer>
+                <MudScrollToTop TopOffset="100"
+                Selector="#unique_id_scroll_section"
+                VisibleCssClass="visible absolute"
+                HiddenCssClass="invisible">
+
+                </MudScrollToTop>
+            </div>
+
+            <MudDialog @bind-Visible="_nestedModalVisible">
+                <TitleContent>
+                    <MudStack Row="true">
+                        <MudIcon Icon="@Icons.Material.Outlined.CarRepair" Color="@(_successModal? Color.Default: Color.Error)" Style="font-size: 2rem;"></MudIcon>
+                        <MudText Typo="Typo.subtitle2">Reporte Falla</MudText>
+                    </MudStack>
+                </TitleContent>
+                <DialogContent>
+                    <MudStack Row="true">
+                        <MudText Class="nested"><p>@_errorModalMessage!</p> </MudText>
+                    </MudStack>
+                </DialogContent>
+                <DialogActions>
+                    <MudButton Color="Color.Info" OnClick="@(_successModal? CloseNestedModal :CloseNestedModalError)" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
+                </DialogActions>
+            </MudDialog>
+
+        </DialogContent>
+
+
+
+    </MudDialog>
+</MudForm>
+
+<style>
+    .blur {
+    backdrop-filter: blur(10px);
+    }
+
+    .dialog-background {
+    background-color: transparent;
+    }
+
+    .dialog-background-title {
+    background: rgb(from var(--mud-palette-info-lighten) r g b / 50%);
+    color: var(--mud-palette-white);
+    }
+
+    .dialog-background-surface {
+    background: rgb(from var(--mud-palette-surface) r g b / 75%);
+    }
+
+    .align-right input {
+        text-align: right;
+    }
+</style>
+
+@code {
+
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public int IdFailReport { get; set; } 
+    [Parameter] public ActionsEnum ActionsModal { get; set; }
+
+    private MudForm? form;
+    private FailReport _model { get; set; } = new FailReport();
+    private VehicleService _modelVehicle { get; set; } = new VehicleService();
+    private LicenseDetail _modelLicenseDetail { get; set; } = new LicenseDetail();
+    private IEnumerable<SelectOption> _FailReportTypeList { get; set; } = new List<SelectOption>();
+
+    private string _errorModalMessage = string.Empty;
+    private string _errorSearchVehicle = string.Empty;
+    private bool _nestedModalVisible = false;
+    private bool _successModal = false;
+
+    bool _isReportTypeLicense = false;
+    bool _isReadOnly = false;
+    string _searchVin = string.Empty;
+
+    private int _idDealer = 5103;
+
+    FailReportValidator _modelValidator = new FailReportValidator();
+
+    IMask maskDate = new DateMask("dd/MM/yyyy");
+
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        if (ActionsModal == ActionsEnum.Create)
+        {
+            _model = new FailReport()
+            {
+                ServiceDate = DateTime.Now,
+            };
+
+            _isReadOnly = false;
+
+            await Task.Delay(50);
+        }
+        else
+        {
+            await GetFailReport();
+
+        }
+
+        _FailReportTypeList = await ModuleActionsService.GetFailReportType(Useful.userId);
+
+        _searchVin = string.Empty;
+
+        StateHasChanged();
+        await Task.CompletedTask;
+
+    }
+
+
+    private async Task GetFailReport()
+    {
+
+        var serviceResponse = await FailReportService.GetFailReport(Useful.userId, _idDealer, IdFailReport);
+        if (serviceResponse.Processed)
+        {
+            _model = serviceResponse.Data ?? new FailReport();
+            _isReadOnly = _model.EstatusName.ToUpper() == "CREADO" || _model.EstatusName.Trim() == string.Empty ? false : true;
+
+            await Task.Delay(50);
+            StateHasChanged();
+        }
+        else
+        {
+            _model = new FailReport();
+            _errorModalMessage = MessageEnum.GetError.GetStringValue();
+            Console.WriteLine(serviceResponse.Message);
+            OpenNested();
+        }
+
+    }
+
+    private async Task GetVehicle()
+    {
+        _modelVehicle = new VehicleService();
+        var serviceResponse = await VehicleService.GetVehicleFullBy(Useful.userId, _searchVin, SearchByEnum.Dual);
+        if (serviceResponse.Processed)
+        {
+            _modelVehicle = serviceResponse.Data ?? new VehicleService();
+
+            _errorSearchVehicle = string.Empty;
+            form!.ResetValidation();
+        }
+        else
+        {
+            _errorSearchVehicle = MessageEnum.SearchVehicleNotOK.GetStringValue();
+        }
+
+        _model.DealerId = _idDealer;
+        _model.NumberPolicy = _modelVehicle.Number;
+        _model.CustomerId = _modelVehicle.CustomerId;
+        _model.VehicleId = _modelVehicle.Id;
+        _model.Plate = _modelVehicle.Plate;
+        _model.VIN = _modelVehicle.Vin;
+        _model.ModelId = 0;
+        _model.ModelName = _modelVehicle.ModelName;
+        _model.Year = _modelVehicle.Year.ToString();
+
+        _isReportTypeLicense = false;
+        _modelLicenseDetail = new LicenseDetail();
+
+        await Task.CompletedTask;
+        await Task.Delay(50);
+        StateHasChanged();
+    }
+
+    private async Task ClickSearchLicence()
+    {
+        _isReportTypeLicense = false;
+        _modelLicenseDetail = new LicenseDetail();
+        form!.ResetValidation();
+        DialogOptions options = new() { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
+
+        var parameters = new DialogParameters<LicenseCatalog> { { x => x.VIN, _model.VIN }, { x => x.Title, "Licencias" } };
+        var dialog = await DialogService.ShowAsync<LicenseCatalog>("Licencias", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled && result.Data != null)
+        {
+            _modelLicenseDetail = (LicenseDetail?)result?.Data ?? new LicenseDetail();
+
+            _model.LicenseId = _modelLicenseDetail.LicenseId;
+            _model.LicenseDescription = _modelLicenseDetail.LicenseName.ToUpper();
+            // _model.LicenseTypeId = _modelLicenseDetail.LicenseTypeId;
+            // _model.LicenseType = _modelLicenseDetail.LicenseType.ToUpper();
+            _isReportTypeLicense = true;
+            StateHasChanged();
+
+            await Task.CompletedTask;
+        }
+
+    }
+
+
+    private async Task ClickSearchVehicle()
+    {
+        _errorSearchVehicle = string.Empty;
+        
+        if (_model.ServiceDate is null || _model.ServiceDate.Value.ToString().Length == 0)
+        {
+            _errorSearchVehicle = "Indique Fecha Servicio...";
+            return;
+
+        }
+        if (_searchVin is null || _searchVin.Length <= 3)
+        {
+            _errorSearchVehicle = "Indique VIN/Placa Vehiculo...";
+            return;
+        }
+        if (_model.KM is null || _model.KM.Value.ToString().Length == 0)
+        {
+            _errorSearchVehicle = "Indique KM Vehiculo...";
+            return;
+        }
+
+       
+        await GetVehicle();
+
+    }
+
+    private async Task HandleKeyUpSearchVehicle(KeyboardEventArgs e)
+    {
+
+        if (e.Key == "Enter")
+        {
+            _errorSearchVehicle = string.Empty;
+
+            if (_model.ServiceDate is null || _model.ServiceDate.Value.ToString().Length == 0)
+            {
+                _errorSearchVehicle = "Indique Fecha Servicio...";
+                return;
+
+            }
+            if (_searchVin is null || _searchVin.Length <= 3)
+            {
+                _errorSearchVehicle = "Indique VIN/Placa Vehiculo...";
+                return;
+            }
+            if (_model.KM is null || _model.KM.Value.ToString().Length == 0)
+            {
+                _errorSearchVehicle = "Indique KM Vehiculo...";
+                return;
+            }
+
+
+            await GetVehicle();
+
+        }
+    }
+
+    private async Task OnValidSubmit()
+    {
+        await form!.Validate();
+
+        if (form.IsValid)
+        {
+            _errorModalMessage = "";
+
+            var serviceResponse = await FailReportService.UpdateFailReport(_model, Useful.userId);
+            if (serviceResponse.Processed)
+            {
+                if (ActionsModal == ActionsEnum.Create)
+                {
+                    ActionsModal = ActionsEnum.Edit;
+                    var _results = serviceResponse.Data ?? new List<ActionResult>();
+                    var _result = _results.FirstOrDefault();
+                    if (_result is not null)
+                    {
+                        IdFailReport = _result.LastId;
+                        UriHelper.NavigateTo("FailReportdetail/" + IdFailReport);
+                        // await GetFailReport();
+                    }
+                }
+                _errorModalMessage = MessageEnum.SaveOK.GetStringValue();
+                _successModal = true;
+                Cancel();
+            }
+            else
+            {
+                _successModal = false;
+                _errorModalMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue();
+                Console.WriteLine(serviceResponse.Message);
+                OpenNested();
+
+            }
+           
+        }
+
+        StateHasChanged();
+        await Task.CompletedTask;
+
+    }
+
+
+
+    private void Cancel()
+    {
+        if (_successModal)
+            MudDialog.Close(DialogResult.Ok(true));
+        else
+        {
+            MudDialog!.Cancel();
+        }
+    }
+
+    private void OpenNested() => _nestedModalVisible = true;
+
+    private async Task CloseNestedModal()
+    {
+        _nestedModalVisible = false;
+
+        await Task.Delay(50);
+        if (_successModal)
+            MudDialog.Close(DialogResult.Ok(true));
+        await Task.CompletedTask;
+
+    }
+
+    private async Task CloseNestedModalError()
+    {
+        _nestedModalVisible = false;
+
+        await Task.Delay(50);
+        await Task.CompletedTask;
+
+    }
+
+
+
+    /// <summary>
+    /// Validacion del formulario 
+    /// </summary>
+    /// <typeparam name="FailReport"></typeparam>
+    public class FailReportValidator : AbstractValidator<FailReport>
+    {
+        public FailReportValidator()
+        {
+
+             RuleFor(x => x.OrderNumber)
+                .NotEmpty().WithMessage("Campo requerido")
+                .NotNull().WithMessage("Campo requerido.")
+                .GreaterThan(0).WithMessage("Campo requerido.");
+            
+
+            RuleFor(x => x.InvoiceNumber)
+               .NotEmpty().WithMessage("Campo requerido")
+               .NotNull().WithMessage("Campo requerido.");
+
+            RuleFor(x => x.KM)
+                .NotEmpty().WithMessage("Campo requerido")
+                .GreaterThan(0).WithMessage("Campo requerido.");
+
+            RuleFor(x => x.ReportTypeId)
+              .NotEmpty().WithMessage("Campo requerido")
+              .GreaterThan(0).WithMessage("Campo requerido.");
+
+            RuleFor(x => x.ServiceDate)
+               .NotEmpty().WithMessage("Campo requerido")
+               .Custom((value, context) =>
+               {
+                   if (value > DateTime.Now)
+                   {
+                       context.AddFailure($"Campo requerido menor a la fecha actual {(DateTime.Now.ToString("dd-MMM-yyyy"))}");
+                   }
+               });
+            
+            RuleFor(x => x.InvoiceDate)
+                   .NotEmpty().WithMessage("Campo requerido")
+                   .Custom((value, context) =>
+                   {
+                       if (value > DateTime.Now)
+                       {
+                           context.AddFailure($"Campo requerido menor a la fecha actual {(DateTime.Now.ToString("dd-MMM-yyyy"))}");
+                       }
+                   });
+
+
+            RuleFor(x => x.VIN)
+                .NotNull().WithMessage("Campo requerido")
+                .NotEmpty().WithMessage("Campo requerido")
+                .Length(1, 20).WithMessage("Campo requerido entre 1-20 carácteres");
+           
+
+            RuleFor(x => x.CustomerReport)
+               .NotNull().WithMessage("Campo requerido")
+               .NotEmpty().WithMessage("Campo requerido")
+               .Length(10, 500).WithMessage("Campo requerido entre 10-500 carácteres");
+
+            RuleFor(x => x.DealerReport)
+               .NotNull().WithMessage("Campo requerido")
+               .NotEmpty().WithMessage("Campo requerido")
+               .Length(10, 500).WithMessage("Campo requerido entre 10-500 carácteres");
+
+            RuleFor(x => x.TechnicalSolution)
+               .NotNull().WithMessage("Campo requerido")
+               .NotEmpty().WithMessage("Campo requerido")
+               .Length(10, 500).WithMessage("Campo requerido entre 10-500 carácteres");
+
+        }
+
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<FailReport>.CreateWithOptions((FailReport)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+
+    }
+}

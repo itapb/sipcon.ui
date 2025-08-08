@@ -1,0 +1,617 @@
+﻿
+@using Sipcon.WebApp.Client.Models
+@using Sipcon.WebApp.Client.Services
+@using Sipcon.WebApp.Client.Utils
+@using Sipcon.WebApp.Client.Enum
+@using System.Text.Json
+
+
+@inject IFailReportService FailReportService
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+@inject IJSRuntime JSRuntime
+
+
+
+<MudDataGrid @ref="_mudDataGrid"
+             MultiSelection="true" 
+             SelectedItems="@_selectedFailReportDetail"
+             SortMode="SortMode.Multiple"
+             Filterable="true"
+             FixedHeader Height="calc(88vh - 235px)"
+             Hideable="true"
+             Loading="_loading"
+             Bordered="false"
+             Dense="true"
+             ServerData="LoadGridData">
+
+    <ToolBarContent>
+        
+        <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddDetailFailReport()" Disabled="@mDisabledAddDetail"></MudIconButton>
+        <MudTextField @bind-Value="_searchString" Placeholder="Buscar" Adornment="Adornment.Start" Immediate="true"
+                      Typo="Typo.caption"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      OnAdornmentClick="() => ClickSearch()"
+                      IconSize="Size.Medium" 
+                      Class="mt-0" 
+                      OnKeyDown="HandleKeyDownSearch"></MudTextField>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu" Disabled="@mDisabledActionsDetail">
+            @if (_itemsModules.Count > 0)
+            {
+                foreach (var module in _itemsModules)
+                {
+                    if (module.ActionName.ToUpper() != "DEACTIVATE")
+                    {
+                        <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
+                                     Label="@module.Text"
+                                     OnClick="() => HandleMenuClick(module)" />
+                    }
+                }
+            }
+            
+        </MudMenu>
+    </ToolBarContent>
+    <Columns>
+        <SelectColumn T="FailReportDetail" />
+        <TemplateColumn T="FailReportDetail" Title="@(mDetailType.ToString() == "LaborTime" ? "MANO DE OBRA" : "REPUESTO")">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Start">
+                    @(context.Item.ItemName?.ToUpper())
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn T="FailReportDetail" Title="TIPO">
+            <CellTemplate>
+
+                @if (context.Item.ItemId != 0)
+                {
+                    string style = "";
+                    if (context.Item.IsExternal)
+                    {
+                        style += "color:#fff";
+                        style += ";background-color:#FF7043";
+                    }
+                    else
+                    {
+                        style += "color:#fff";
+                        style += ";background-color:#757575";
+                    }
+                        style += ";font-size: 11px";
+                        style += ";font-style:italic";
+                    <MudChip T="string" Style="@style" Label="true" Disabled="true">
+                        @(context.Item.IsExternal ? "EXTERNO" : "INTERNO")
+                    </MudChip>
+                }
+                
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn T="FailReportDetail" Title="@(mDetailType.ToString() == "LaborTime" ? "HORAS" : "CANTIDAD")">
+            <CellTemplate>
+                <div class="d-flex justify-end">
+                    <MudText Typo="Typo.caption" Align="Align.End">
+                        @(context.Item.Quantity?.ToString("N0"))
+                    </MudText>
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn T="FailReportDetail" Title="PRECIO UNI.">
+            <CellTemplate>
+                <div class="d-flex justify-end">
+                    <MudText Typo="Typo.caption" Align="Align.End">
+                        @(context.Item.UnitPrice?.ToString("N2"))
+                    </MudText>
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn T="FailReportDetail" Title="ESTATUS">
+            <CellTemplate>
+                <div class="d-flex justify-center">
+                    @if (context.Item.EstatusName != null)
+                    {
+                        string style = "";
+
+                        if (context.Item.EstatusName.ToUpper() == "APROBADO")
+                        {
+                            style += "color:#fff";
+                            style += ";background-color:#0099F3";
+                        }
+                        else if (context.Item.EstatusName.ToUpper() == "PARA APROBAR")
+                        {
+                            style += "color:#fff";
+                            style += ";background-color:#757575";
+                        }
+                        else
+                        {
+                            style += "color:#fff";
+                            style += ";background-color:#FF7043";
+                        }
+                        style += ";font-size: 11px";
+                        style += ";font-style:italic";
+
+                        <MudChip T="string" Style="@style" Label="true" Disabled="true">
+                            @(context.Item.EstatusName.ToUpper())
+                        </MudChip>
+                    }
+
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn >
+            <CellTemplate>
+                @if (context.Item.EstatusName.ToUpper() == "PARA APROBAR")
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditFailReportDetail(context.Item)" />
+                    if (_itemsModules.Where(z => z.ActionName == "DEACTIVATE").ToList().Any())
+                    {
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickDeleteItemAsync(context.Item.Id)" Disabled="@mDisabledAddDetail" />
+                    }
+                }
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="FailReportDetail" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+    </PagerContent>
+</MudDataGrid>
+
+<MudDialog @bind-Visible="_nestedVisible">
+    <TitleContent>
+        <MudStack Row="true">
+            <MudIcon Icon="@Icons.Material.Outlined.CarCrash" Color="@(_success ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
+            <MudText Typo="Typo.h6">Detalle Reporte Falla</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+
+        <MudStack Row="true">
+            <MudText Class="nested"><p>@_nestedErrorMessage!</p> </MudText>
+        </MudStack>
+
+    </DialogContent>
+    <DialogActions>
+
+        <MudButton Color="Color.Info" OnClick="CloseNested" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
+
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+
+    [Parameter] public int? mFailReportId { get; set; } = null;
+    [Parameter] public ServiceDetailTypeEnum mDetailType { get; set; } = ServiceDetailTypeEnum.LaborTime;
+    [Parameter] public int mModelId { get; set; } 
+    [Parameter] public bool mDisabledAddDetail { get; set; } = false;
+    [Parameter] public bool mDisabledActionsDetail { get; set; } = false;
+
+    private IEnumerable<FailReportDetail> _FailReportDetails = new List<FailReportDetail>();
+    private string _nestedErrorMessage = string.Empty;
+    private bool _nestedVisible;
+    bool _success = false;
+
+    private int _rowCount = 0;
+
+    private int? _modelIdSelected = null ; // Cambia esto por el ID del usuario que estás utilizando
+    private int _rowsTotal = 0; 
+
+    private string _searchString = string.Empty;
+    private bool _loading = true;
+    private string _moduleName = "SERVICIOS-DETALLES-REPORTE FALLA";
+
+    private MudDataGrid<FailReportDetail>? _mudDataGrid;
+    private HashSet<FailReportDetail> _selectedFailReportDetail = new([]);
+    private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
+
+
+
+    private async Task<GridData<FailReportDetail>> LoadGridData(GridState<FailReportDetail> state)
+    {
+
+        _rowCount = state.Page * state.PageSize;
+
+        await GetFailReportDetails();
+
+        return new GridData<FailReportDetail> { TotalItems = _rowsTotal, Items = _FailReportDetails };
+    }
+
+    private async Task GetFailReportDetails()
+    {
+        _loading = true;
+        _rowsTotal = 0;
+        _itemsModules = new List<ModuleAction>([]);
+        _FailReportDetails = new List<FailReportDetail>();
+
+        var serviceResponse = await FailReportService.GetFailReportDetails(mFailReportId ?? 0, _searchString, mDetailType);
+        if (serviceResponse.Processed)
+        {
+            _FailReportDetails = serviceResponse.Data;
+            _rowsTotal = serviceResponse.Total;
+        }
+        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
+
+        await Task.CompletedTask;
+        await Task.Delay(50);
+        StateHasChanged();
+        _loading = false;
+
+    }
+
+    private async Task HandleKeyDownSearch(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            if (_searchString.Length >= 3 || _searchString == string.Empty)
+            {
+                Console.WriteLine($"Buscando: {_searchString}");
+                await _mudDataGrid!.ReloadServerData();
+
+            }
+
+        }
+    }
+
+    private async Task HandleOnClickRefresh()
+    {
+
+        Console.WriteLine($"Buscando: {_searchString}");
+        _searchString = string.Empty;
+        await _mudDataGrid!.ReloadServerData();
+    }
+
+
+    private async Task ClickSearch()
+    {
+
+        if (_searchString.Length >= 3)
+        {
+            Console.WriteLine($"Buscando: {_searchString}");
+            await _mudDataGrid!.ReloadServerData();
+        }
+
+    }
+   
+
+    private async Task ClickEditFailReportDetail(FailReportDetail item)
+    {
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+
+        var parameters = new DialogParameters<FailReportDetailDialog> {
+            { x => x.IdFailReport, mFailReportId ?? 0 },
+            { x => x.IdDetailFailReport, item.Id },
+            { x => x.DetailType, mDetailType },
+            { x => x.ActionsModal, ActionsEnum.Edit },
+            { x => x.ModelId, mModelId }
+        };
+        var dialog = await DialogService.ShowAsync<FailReportDetailDialog>("Detalle Reporte Falla", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            await _mudDataGrid!.ReloadServerData();
+            StateHasChanged();
+        }
+
+        await Task.CompletedTask;
+    }
+
+
+    private async Task ClickAddDetailFailReport()
+    {
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+
+        var parameters = new DialogParameters<FailReportDetailDialog> { 
+            { x => x.IdFailReport, mFailReportId ?? 0 },
+            { x => x.IdDetailFailReport, 0 },
+            { x => x.DetailType, mDetailType },
+            { x => x.ActionsModal, ActionsEnum.Create },
+            { x => x.ModelId, mModelId }
+        };
+        var dialog = await DialogService.ShowAsync<FailReportDetailDialog>("Detalle Reporte Falla", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            await _mudDataGrid!.ReloadServerData();
+            StateHasChanged();
+        }
+
+        await Task.CompletedTask;
+    }
+
+    private void OpenNested() => _nestedVisible = true;
+
+    private void CloseNested() => _nestedVisible = false;
+
+
+
+    private async Task HandleMenuClick(ModuleAction module)
+    {
+        switch (module.ActionName)
+        {
+            case "APPROVE":
+                await ApproveItemsAsync(module.IdAction, module.ActionName);
+                break;
+            case "DECLINE":
+                await DeclineItemsAsync(module.IdAction, module.ActionName);
+                break;
+            case "DEACTIVATE":
+                await DeactivateItemsAsync(module.IdAction, module.ActionName);
+                break;
+                
+            default:
+                Console.WriteLine($"{MessageEnum.ActionsError.GetStringValue()}: {module.ActionName}");
+                break;
+        }
+    }
+
+
+
+    private async Task ApproveItemsAsync(int moduleId, string moduleActionName)
+    {
+        Console.WriteLine("Aprobar Detalle Reporte Falla...");
+        if (_selectedFailReportDetail.Any())
+        {
+            var option = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false
+            };
+            bool? confir = await DialogService.ShowMessageBox(
+                "Aprobar Detalle Reporte Falla ",
+                $"Seguro de Aprobar? ",
+                yesText: "Si", noText: "No", "", option);
+
+            if (confir == true)
+            {
+
+               
+                var _Observacion =  string.Empty;
+                List<PostAction> ActionList = ([]);
+
+                foreach (var detail in _selectedFailReportDetail)
+                {
+                    var VehicleAction = new PostAction
+                    {
+                        RecordId = detail.Id,
+                        ModuleId = moduleId,
+                        ActionName = moduleActionName,
+                        ActionComment = _Observacion
+                    };
+                    ActionList.Add(VehicleAction);
+                }
+
+                var serviceResponse = await FailReportService.ActionsFailReportDetail(ActionList, Useful.userId);
+                if (serviceResponse.Processed)
+                {
+
+                    _success = true;
+                    _nestedErrorMessage = MessageEnum.ApproveOK.GetStringValue();
+
+                    OpenNested();
+                    await _mudDataGrid!.ReloadServerData();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ApproveNotOK.GetStringValue();
+                    Console.WriteLine(serviceResponse.Message);
+                    OpenNested();
+
+                }
+                
+            }
+
+        }
+
+        _selectedFailReportDetail = new([]);
+        await Task.CompletedTask;
+    }
+
+    private async Task DeclineItemsAsync(int moduleId, string moduleActionName)
+    {
+        Console.WriteLine("Rechazar Detalle Reporte Falla...");
+        if (_selectedFailReportDetail.Any())
+        {
+            var option = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false
+            };
+            bool? confirm = await DialogService.ShowMessageBox(
+                "Rechazar Detalle Reporte Falla ",
+                $"Seguro de Rechazar? ",
+                yesText: "Si", noText: "No", "", option);
+
+            if (confirm == true)
+            {
+                DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+                var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Rechazar Detalle Reporte Falla ..." } };
+                var dialog = await DialogService.ShowAsync<TextItemDialog>("Detalle Reporte Falla ", parameters, options);
+
+                StateHasChanged();
+
+                var result = await dialog.Result;
+                if (!result!.Canceled)
+                {
+                    var _Observacion = (string)(result.Data ?? string.Empty);
+                    List<PostAction> ActionList = ([]);
+
+                    foreach (var detail in _selectedFailReportDetail)
+                    {
+                        var Action = new PostAction
+                        {
+                            RecordId = detail.Id,
+                            ModuleId = moduleId,
+                            ActionName = moduleActionName,
+                            ActionComment = _Observacion
+                        };
+                        ActionList.Add(Action);
+                    }
+
+                    var serviceResponse = await FailReportService.ActionsFailReportDetail(ActionList, Useful.userId);
+                    if (serviceResponse.Processed)
+                    {
+
+                        _success = true;
+                        _nestedErrorMessage = MessageEnum.DeclineOK.GetStringValue();
+
+                        OpenNested();
+                        await _mudDataGrid!.ReloadServerData();
+                        StateHasChanged();
+
+                    }
+                    else
+                    {
+                        _success = false;
+                        _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.DeclineNotOK.GetStringValue();
+                        Console.WriteLine(serviceResponse.Message);
+                        OpenNested();
+
+                    }
+                }
+
+            }
+
+        }
+
+        _selectedFailReportDetail = new([]);
+        await Task.CompletedTask;
+    }
+
+    private async Task DeactivateItemsAsync(int moduleId, string moduleActionName)
+    {
+        Console.WriteLine("Eliminar Detalle Reporte Falla...");
+        
+        if (_selectedFailReportDetail.Any())
+        {
+            var option = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false
+            };
+            bool? confirm = await DialogService.ShowMessageBox(
+                "Eliminar Detalle Reporte Falla ",
+                $"Seguro de Eliminar? ",
+                yesText: "Si", noText: "No", "", option);
+
+            if (confirm == true)
+            {
+                DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+                var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Eliminar Detalle Reporte Falla ..." } };
+                var dialog = await DialogService.ShowAsync<TextItemDialog>("Eliminar Detalle Reporte Falla ", parameters, options);
+
+                StateHasChanged();
+
+                var result = await dialog.Result;
+                if (!result!.Canceled)
+                {
+                    var _Observacion = (string)(result.Data ?? string.Empty);
+                    List<PostAction> ActionList = ([]);
+
+                    foreach (var detail in _selectedFailReportDetail)
+                    {
+                        var Action = new PostAction
+                        {
+                            RecordId = detail.Id,
+                            ModuleId = moduleId,
+                            ActionName = moduleActionName,
+                            ActionComment = _Observacion
+                        };
+                        ActionList.Add(Action);
+                    }
+
+                    var serviceResponse = await FailReportService.ActionsFailReportDetail(ActionList, Useful.userId);
+                    if (serviceResponse.Processed)
+                    {
+
+                        _success = true;
+                        _nestedErrorMessage = MessageEnum.DeleteOK.GetStringValue();
+
+                        OpenNested();
+                        await _mudDataGrid!.ReloadServerData();
+                        StateHasChanged();
+
+                    }
+                    else
+                    {
+                        _success = false;
+                        _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.DeleteNotOK.GetStringValue();
+                        Console.WriteLine(serviceResponse.Message);
+                        OpenNested();
+
+                    }
+                }
+
+            }
+
+        }
+
+        _selectedFailReportDetail = new([]);
+        await Task.CompletedTask;
+    }
+
+
+    private async Task ClickDeleteItemAsync(int detailId)
+    {
+        Console.WriteLine("Eliminar Detalle Reporte Falla...");
+       
+        var option = new DialogOptions
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            BackdropClick = false
+        };
+        bool? confirm = await DialogService.ShowMessageBox(
+            "Eliminar Detalle Reporte Falla ",
+            $"Seguro de Eliminar? ",
+            yesText: "Si", noText: "No", "", option);
+
+        if (confirm == true)
+        {
+            List<PostAction> ActionList = ([]);
+            var _module = _itemsModules.Where(z => z.ActionName == "DEACTIVATE").FirstOrDefault();
+            var Action = new PostAction
+            {
+                RecordId = detailId,
+                ModuleId = _module?.IdAction ?? 0,
+                ActionName = _module?.ActionName ?? string.Empty,
+                ActionComment = ""
+            };
+            ActionList.Add(Action);
+
+
+            var serviceResponse = await FailReportService.DeleteFailReportDetail(ActionList, Useful.userId);
+            if (serviceResponse.Processed)
+            {
+                _success = true;
+                _nestedErrorMessage = MessageEnum.DeleteOK.GetStringValue();
+            }
+            else
+            {
+                _success = false;
+                _nestedErrorMessage = MessageEnum.DeleteNotOK.GetStringValue();
+                Console.WriteLine(serviceResponse.Message);
+            }
+
+            OpenNested();
+            await _mudDataGrid!.ReloadServerData();
+            StateHasChanged();
+
+        }
+       
+
+        await Task.CompletedTask;
+    }
+
+}

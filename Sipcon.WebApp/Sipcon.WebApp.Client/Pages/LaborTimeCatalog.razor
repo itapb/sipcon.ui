@@ -1,0 +1,146 @@
+﻿@using Sipcon.WebApp.Client.Models
+@using Sipcon.WebApp.Client.Enum
+@using Sipcon.WebApp.Client.Services
+
+@inject ILaborTimeService LaborTimeService
+@inject IDialogService DialogService
+
+<MudGrid Spacing="0">
+    <MudItem xs="12">
+        <MudPaper Elevation="2" Class="jpv1-dialog-background-title pa-3" Square="true">
+        <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+            <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                <MudStack Row="true">
+                    <MudText Typo="Typo.h6" Color="Color.Info">@(Title ?? "Mano Obra")</MudText>
+                </MudStack>
+                <MudStack>
+                    <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="CloseClick" />
+                </MudStack>
+            </MudStack>
+        </MudPaper></MudPaper>
+    </MudItem>
+
+    <MudItem xs="12">
+        <MudDataGrid @ref="LaborTimeGrid" 
+            T="LaborTime" 
+            ServerData="ServerReload" 
+            Striped="true" 
+            Hover="true" 
+            Filterable="false" 
+            FixedHeader Height="calc(100vh - 400px)" 
+            @bind-CurrentPage="_CurrentPage">
+        <ToolBarContent>
+            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="_searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshCatalog"></MudIconButton>
+        </ToolBarContent>
+        <Columns>
+                <TemplateColumn T="LaborTime" Title="MODELO">
+                    <CellTemplate>
+                        <MudText Typo="Typo.caption" Align="Align.Start"><b>@context.Item.ModelName.ToUpper()</b></MudText>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn T="LaborTime" Title="REF.">
+                    <CellTemplate>
+                        <MudText Typo="Typo.caption" Align="Align.Start">
+                            @(context.Item.Reference.ToUpper())
+                        </MudText>
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.Description" Title="DESCRIPCION" Sortable="false" Filterable="false" />
+                <TemplateColumn T="LaborTime" Title="HORAS">
+                    <CellTemplate>
+                        <div class="d-flex justify-end">
+                            <MudText Typo="Typo.caption" Align="Align.End">
+                                @(context.Item.Hours.ToString("N0"))
+                            </MudText>
+                        </div>
+                    </CellTemplate>
+                </TemplateColumn>
+               
+            <TemplateColumn>
+                <CellTemplate>
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Filled.NextPlan" OnClick="() => ClickSelect(context.Item)" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="LaborTime" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        </PagerContent>
+    </MudDataGrid>
+    </MudItem>
+</MudGrid>
+
+
+@code {
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;   
+    [Parameter] public int ModelId { get; set; }
+    [Parameter] public string? Title { get; set; }
+    
+    private MudDataGrid<LaborTime>? LaborTimeGrid;
+
+    string _searchString = "";
+    private int _CurrentPage = 0;
+    private int _rowCount = 0;
+    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
+    private int _rowsTotal = 0;
+
+    private async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            _searchString = text;
+            await LaborTimeGrid!.ReloadServerData();
+        }
+    }
+
+    Func<LaborTime, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    {
+        nameof(LaborTime.Reference) => o => o.Reference ?? "",
+        nameof(LaborTime.Description) => o => o.Description ?? "",
+        _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto
+    };
+
+
+    private async Task<GridData<LaborTime>> ServerReload(GridState<LaborTime> state)
+    {
+        _rowCount = state.Page * state.PageSize;
+        IEnumerable<LaborTime> _LaborTimes = new List<LaborTime>();
+        var serviceResponse = await LaborTimeService.GetLaborTimes(Useful.supplierId, _rowCount, _searchString, ModelId);
+
+        if (serviceResponse.Processed)
+        {
+            _LaborTimes = serviceResponse.Data;
+            _rowsTotal = serviceResponse.Total;
+           
+        }
+        else
+        {
+            _LaborTimes = new List<LaborTime>();
+            _rowsTotal = 0;
+        }
+
+        return new GridData<LaborTime> { TotalItems = _rowsTotal, Items = _LaborTimes };
+
+    }
+
+
+    private async Task ClickRefreshCatalog(MouseEventArgs ev)
+    {
+        await LaborTimeGrid!.ReloadServerData();
+    }
+
+
+    private async Task ClickSelect(LaborTime item)  
+    {  
+        MudDialog?.Close(DialogResult.Ok(item));
+        await Task.CompletedTask;  
+    }  
+   
+
+    private void CloseClick(MouseEventArgs args)
+    {
+        MudDialog?.Close();
+    }
+}

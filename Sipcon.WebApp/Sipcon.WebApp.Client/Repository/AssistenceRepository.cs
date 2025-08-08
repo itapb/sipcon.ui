@@ -1,7 +1,8 @@
 ﻿namespace Sipcon.WebApp.Client.Repository
 {
-    using Sipcon.WebApp.Client.Services;
     using Sipcon.WebApp.Client.Models;
+    using Sipcon.WebApp.Client.Enum;
+    using Sipcon.WebApp.Client.Services;
     using System.Net.Http.Json;
 
 
@@ -17,7 +18,7 @@
 
             try
             {
-                result = await _http.GetFromJsonAsync<ApiResponse<List<Assistence>>>($"api/Service/GetAll?filter={Filter}&rowFrom={RowFrom}&userId={IdUser}&serviceTypeId=2&dealerId={IdDealer}");
+                result = await _http.GetFromJsonAsync<ApiResponse<List<Assistence>>>($"api/Service/GetAll?filter={Filter}&rowFrom={RowFrom}&userId={IdUser}&serviceTypeId={(int)ServiceTypeEnum.Assistence}&dealerId={IdDealer}");
 
 
                 result = result is null ? new ApiResponse<List<Assistence>>()
