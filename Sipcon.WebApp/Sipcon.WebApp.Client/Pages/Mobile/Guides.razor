@@ -1,19 +1,20 @@
-﻿@page "/mobile-guides"
+﻿@* @page "/mobile-guides" *@
 @using Sipcon.WebApp.Client.Layout
 @layout MobileLayout
 <div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
     <MudPaper Elevation="2" Class="pa-3">
         <MudGrid Spacing="2">
             <MudItem xs="12">
-                <MudStack Row="false" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
-                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex justify-center align-center">CLIENTE: DEMO</MudPaper>
+                <MudStack Row="false" Class="pa-2 mud-theme-info mud-typography-h6" Spacing="1" style="line-height:1.1;">
+                    <div>CLIENTE : @currentDispatch?.CustomerName</div>
+                    <div>GUIAS</div>
                 </MudStack>
             </MudItem>
             <MudItem xs="12">
                 <MudText>
-                    <MudDataGrid @ref="GuidesMudDataGrid" T="Guide" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" Loading="_loading" SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers">
+                    <MudDataGrid @ref="GuidesMudDataGrid" T="Models.Guide" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" Loading="_loading" SelectedItemChanged="ClickSelectGuide" @bind-CurrentPage="GuideCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers">
                         <Columns>
-                            <PropertyColumn Property="x => x.NumberGuide" Title="" CellClass="d-flex justify-center align-center" />
+                            <PropertyColumn Property="x => x.Id" Title="" CellClass="d-flex justify-center align-center" />
                         </Columns>
                         <PagerContent>
                             <MudStack Row="false" Spacing="2">
@@ -28,9 +29,9 @@
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.Center">
                     <MudStack Row="true" Spacing="5">
-                        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Size="Size.Medium" />
+                        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Size="Size.Medium" OnClick="ClickAddGuide" />
                         <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshGuides" />                        
-                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" Href="process-list" />
+                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="ClickCloseGuides" />
                     </MudStack>
                 </MudStack>
             </MudItem>
@@ -43,52 +44,61 @@
     }
 </style>
 @code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Parameter] public Models.Dispatch? currentDispatch { get; set; }
+    [Parameter] public Models.DispatchStep Value { get; set; }
+    [Parameter] public EventCallback<Models.DispatchStep> ValueChanged { get; set; }
+    private Models.DispatchStep CurrentStep
+    {
+        get => Value;
+        set
+        {
+            if (Value != value)
+            {
+                Value = value;
+                ValueChanged.InvokeAsync(Value);
+            }
+        }
+    }
+
+
     bool _loading = true;
     string searchString = "";
-    private int GuideCurrentPage = 0;
-    record Guide(string NumberGuide);
+    private int GuideCurrentPage = 0;    
+    private MudDataGrid<Models.Guide>? GuidesMudDataGrid;
 
-    private MudDataGrid<Guide>? GuidesMudDataGrid;
-    private List<Guide> TestGuides = new()
-    {
-        new Guide("14764"),
-        new Guide("14762"),
-        new Guide("14763")
-    };
 
-    Func<Guide, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    Func<Models.Guide, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
     {
-        nameof(Guide.NumberGuide) => o => o.NumberGuide ?? "",
+        nameof(Models.Guide.Id) => o => o.Id ?? 0,
         _ => null!
     };
 
-    private async Task<GridData<Guide>> ServerReload(GridState<Guide> state)
+    private async Task<GridData<Models.Guide>> ServerReload(GridState<Models.Guide> state)
     {
         _loading = true;
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
-        IEnumerable<Guide> data = TestGuides;
-        await Task.CompletedTask;
-        // Filter by search string
-        if (!string.IsNullOrWhiteSpace(searchString))
+        IEnumerable < Models.Guide> data;
+        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetGuides?supplierId={currentDispatch!.SupplierId}&customerId={currentDispatch.CustomerId}&userId={currentDispatch.UserId}");
+        if (response.IsSuccessStatusCode)
         {
-            data = data.Where(g => g.NumberGuide.Contains(searchString, StringComparison.OrdinalIgnoreCase));
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.Guide>>>();
+            totalItems = content2!.total ?? 0;
+            data = content2!.data ?? new List<Models.Guide>();
         }
-
-        totalItems = data.Count();
-
-        // Sorting
-        if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Guide> sortDefinition)
+        else
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
+        if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Models.Guide> sortDefinition)
         {
             data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
         }
-
-        // Paging
-        //data = data.Skip(mOffset).Take(state.PageSize);
-        
         _loading = false;
-        return new GridData<Guide> { TotalItems = totalItems, Items = data };
-        
+        return new GridData<Models.Guide> { TotalItems = totalItems, Items = data };
     }
 
     private async Task ClickRefreshGuides(MouseEventArgs ev)
@@ -104,8 +114,28 @@
             await GuidesMudDataGrid!.ReloadServerData();
         }
     }
-    private async Task ClickSelectGuide(Guide item)
+    private async Task ClickSelectGuide(Models.Guide item)
     {
+        currentDispatch!.GuideId = item.Id ?? 0;
+        CurrentStep = Models.DispatchStep.GuideDetails;
         await Task.CompletedTask;
+    }
+    private async Task ClickCloseGuides(MouseEventArgs args)
+    {
+        CurrentStep  = Models.DispatchStep.Customer;
+        await Task.CompletedTask;
+    }
+    private async Task ClickAddGuide(MouseEventArgs args)
+    {        
+        var result_Post_Zone = await Http.PostAsync($"api/Inventory/NewGuide?supplierId={currentDispatch?.SupplierId}&customerId={currentDispatch?.CustomerId}&userId={currentDispatch?.UserId}", null);
+        if (result_Post_Zone.IsSuccessStatusCode)
+        {
+            var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Nueva Guia", "OK", Color.Info, Icons.Material.Filled.Commit);
+            if (!result!.Canceled)
+            {
+                await GuidesMudDataGrid!.ReloadServerData(); 
+            }
+
+        }
     }
 }
