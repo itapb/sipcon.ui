@@ -50,7 +50,7 @@
     [Inject] private IDialogService DialogService { get; set; } = default!;   
     [Parameter] public string? MovementType { get; set; } = string.Empty;
     MovementDetails? movementDetails;
-    int UserId = 5077;
+    int UserId = 1;//5077;
 
     string mHelpText = "";
     bool ModeValue = true;
@@ -97,7 +97,7 @@
                 if (mStepId == 3) mHelpText = "Escanee el repuesto o codigo de barras";
                 break;
             case 2: //VALIDAR UBICACIÓN DEL MOVIMIENTO EN CURSO                
-                IsValidLocation = await GetValidLocation(InputCode);
+                IsValidLocation = await GetValidLocation(InputCode.ToUpper());
                 if (IsValidLocation)
                 {
                     mStepId = 3;
@@ -109,7 +109,7 @@
                 break;
             case 3: // VALIDAR REPUESTO DEL MOVIMIENTO EN CURSO                
 
-                IsValidPart = ValidPart(MovementType, InputCode);
+                IsValidPart = ValidPart(MovementType, InputCode.ToUpper());
                 if (IsValidPart)
                 {
                     if ((MovementType == "T" || MovementType == "P") && InputCode == "0")
@@ -159,7 +159,7 @@
     private bool ValidPart(string? movementType, string inputCode)    
     {
         bool isvalidPart = (((movementType == "T" || movementType == "P") && inputCode == "0") ||
-        (movementDetails!.PartBarcode == inputCode || movementDetails!.PartInnerCode == inputCode));
+        (movementDetails!.PartBarcode!.ToUpper() == inputCode || movementDetails!.PartInnerCode!.ToUpper() == inputCode));
         return isvalidPart;
     }   
     private bool ValidReal(string? movementType, string typeId ,int realQty)
