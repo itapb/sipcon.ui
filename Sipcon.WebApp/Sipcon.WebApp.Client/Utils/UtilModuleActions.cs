@@ -242,26 +242,6 @@ namespace Sipcon.WebApp.Client.Utils
 
         }
 
-
-        public async Task<List<SelectOption>> GetLicenseTypeOption(int IdUser)
-        {
-            List<SelectOption> _itemsSelect = new([]);
-
-
-            var response = await LicenseService.GetLicenseType(IdUser);
-            if (response.Processed)
-            {
-                List<LicenseType> _List = response.Data ?? new List<LicenseType>();
-
-                foreach (var item in _List.ToList())
-                {
-                    _itemsSelect.Add(new SelectOption(item.Id, item.Name));
-                }
-            }
-            return _itemsSelect;
-
-        }
-
         public async Task<List<SelectOption>> GetPolicyTypeOption(int IdUser, int IdBrand = 0)
         {
             List<SelectOption> _itemsSelect = new([]);
