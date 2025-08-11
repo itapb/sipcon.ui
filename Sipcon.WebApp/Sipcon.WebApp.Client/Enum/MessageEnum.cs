@@ -36,6 +36,11 @@
         [StringValue("Problemas al cargar registro!...")]
         GetError,
 
+        [StringValue("Registro eliminado satisfactoriamente...")]
+        DeleteOK,
+        [StringValue("Problemas al eliminar registro!...")]
+        DeleteNotOK,
+
         // ActionsMethod
         [StringValue("Acción no reconocida!...")]
         ActionsError,
@@ -117,6 +122,17 @@
         [StringValue("Problemas al Generar registros!...")]
         GenerateNotOK,
 
+        // ToValidate
+        [StringValue("Registro pre-Validado Satisfactoriamente...")]
+        ToValidateOK,
+        [StringValue("Problemas al pre-Validar registros!...")]
+        ToValidateNotOK,
+
+        // Validate
+        [StringValue("Registro Validado Satisfactoriamente...")]
+        ValidateOK,
+        [StringValue("Problemas al Validar registros!...")]
+        ValidateNotOK,
 
         // ToApprove
         [StringValue("Registro pre-Aprobado Satisfactoriamente...")]

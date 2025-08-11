@@ -222,6 +222,51 @@
             return result;
         }
 
+        public async Task<ApiResponse<VehicleService>> GetVehicleFullBy(int IdUser, string Search,SearchByEnum SearchBy)
+        {
+            ApiResponse<VehicleService>? result;
+            try
+            {
+                result = await _http.GetFromJsonAsync<ApiResponse<VehicleService>>($"api/Vehicle/GetVehicleFullBy?userId={IdUser}&filter={Search}&filterBy={(int)SearchBy}");
+
+                result = (result is null) ? new ApiResponse<VehicleService>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos."
+                } : result;
+
+            }
+            catch (HttpRequestException httpEx)
+            {
+                result = new ApiResponse<VehicleService>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
+                };
+
+            }
+            catch (NotSupportedException notSupportedEx)
+            {
+                result = new ApiResponse<VehicleService>()
+                {
+                    Processed = false,
+                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
+                };
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<VehicleService>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+        }
+
+
         public async Task<ApiResponse<Vehicle>> GetVehicleAvailable(string Search, int IdUser, int? IdDealer = null)
         {
             ApiResponse<Vehicle>? result;

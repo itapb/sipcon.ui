@@ -1,0 +1,483 @@
+@using Sipcon.WebApp.Client.Services
+@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+@using Sipcon.WebApp.Client.Utils
+@using Sipcon.WebApp.Client.Enum
+@using FluentValidation
+@using System.Globalization
+
+@inject IFailReportService FailReportService
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+
+
+<MudForm Model="@_model" @ref="@form" Validation="@(_modelValidator.ValidateValue)" ValidationDelay="0" >
+    <MudDialog Class="blur dialog-background" ActionsClass="dialog-background-surface">
+        
+        <DialogContent>
+            <MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
+
+                <MudCard>
+
+                    <MudCardContent>
+
+                        <MudGrid Spacing="0" Justify="Justify.Center">
+                            <MudItem xs="12" sm="4">
+                                <div class="d-flex justify-left">
+                                    <MudSwitch @bind-Value="_model.IsActive" Label="Activo" LabelPlacement="Placement.End" Color="Color.Success" Disabled="@(ActionsModal == ActionsEnum.Create ? true : false)" />
+                                </div>
+                            </MudItem>
+                            <MudItem xs="12" sm="2">
+
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <div class="d-flex justify-right" style="justify-content: end;">
+
+                                    <MudButton OnClick="Cancel">Cancelar</MudButton>
+                                    <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Aceptar" OnClick="@(async () => await OnValidSubmit())" Color="Color.Info" Size="Size.Small" />
+
+                                </div>
+
+
+                            </MudItem>
+                        </MudGrid>
+
+                    </MudCardContent>
+
+                </MudCard>
+
+            </MudContainer>
+            
+
+                <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
+
+                    <MudCard Elevation="0">
+                        <MudCardHeader Style="padding-bottom: 0px;">
+                            <CardHeaderContent>
+                                <MudStack Row="true">
+                                    <MudIcon Icon="@Icons.Material.Outlined.CarRepair" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
+                                <MudText Typo="Typo.subtitle2">@(DetailType.ToString() == "LaborTime" ? "MANO DE OBRA" : "REPUESTO")</MudText>
+
+                                </MudStack>
+                            </CardHeaderContent>
+
+                        </MudCardHeader>
+
+                        <MudCardContent Style="padding-top: 0px;">
+
+                            
+                            <MudHidden @bind-value="_model.ServiceId" />
+                            <MudHidden @bind-value="_model.ItemId" />
+                            <MudHidden @bind-value="_model.Type" />
+                            <MudStack Row="true">
+                                <MudSpacer />
+                                <MudSwitch @bind-Value="_model.IsTax" Label="Impuesto" LabelPlacement="Placement.End" Color="Color.Success" ReadOnly="@(!_model.IsActive || _isReadOnly)" />
+                            <MudSwitch @bind-Value="_model.IsExternal" @bind-Value:after="AfterValueChange" Label="Externo" LabelPlacement="Placement.End" Color="Color.Success" ReadOnly="@(!_model.IsActive || _isReadOnly)" />
+                            </MudStack>
+                            
+                            <MudStack Row="true">
+                                <MudTextField Typo="Typo.caption" @bind-Value="_model.ItemName"
+                                              Label="Descripci&oacute;n"
+                                              MaxLength="150"
+                                              Variant="Variant.Text"
+                                              Margin="Margin.None"
+                                              ReadOnly="true"
+                                              For="@(() => _model.ItemName)" />
+
+                            <MudFab StartIcon="@Icons.Material.Filled.Search" Style="width: 35px; height: 20px;" Color="Color.Info" OnClick="@(() => DetailType.ToString() == "LaborTime" ? ClickSearchLaborTime() : ClickSearchParts())" />
+                            </MudStack>
+
+                            <MudStack Row="true">
+                                <MudSpacer />
+
+
+                                <MudNumericField Typo="Typo.caption" T="double?" @bind-Value="_model.Quantity" @bind-Value:after="AfterValueChangePrice"
+                                                 Label="@(DetailType.ToString() == "LaborTime" ? "Horas" : "Cantidad")"
+                                                 HelperText="@(_mQuantity.ToString())"
+                                                 Class="align-right"
+                                                 MaxLength="6"
+                                                 Variant="Variant.Text"
+                                                 Margin="Margin.Dense"
+                                                 HideSpinButtons="true"
+                                                 Format="N2"
+                                                 Culture="@CultureInfo.GetCultureInfo("es-VE")"
+                                                 ReadOnly="@(!_model.IsActive || _isReadOnly ||  DetailType.ToString() == "LaborTime")"
+                                                 For="@(() => _model.Quantity)"
+                                                 Immediate="false" />
+
+                            <MudNumericField Typo="Typo.caption" T="double?" @bind-Value="_model.UnitPrice" @bind-Value:after="AfterValueChangePrice"
+                                             Label="Precio Unitario"
+                                             HelperText="@(_mUnitPrice.ToString())"
+                                             Class="align-right"
+                                             MaxLength="15"
+                                             Variant="Variant.Text"
+                                             Margin="Margin.Dense"
+                                             HideSpinButtons="true"
+                                             Format="N2"
+                                             Culture="@CultureInfo.GetCultureInfo("es-VE")"
+                                             ReadOnly="@(!_model.IsActive || _isReadOnly )"
+                                             For="@(() => _model.UnitPrice)"
+                                             Immediate="false" />
+                                
+                            </MudStack>
+
+                            <MudStack Row="true">
+                                <MudSpacer />
+                                <MudSpacer />
+                                <MudNumericField Typo="Typo.caption" T="double" @bind-Value="_model.Price"
+                                             Label="Precio"
+                                             Class="align-right"
+                                             MaxLength="20"
+                                             Variant="Variant.Filled"
+                                             Margin="Margin.Dense"
+                                             HideSpinButtons="true"
+                                             Format="N2"
+                                             Culture="@CultureInfo.GetCultureInfo("es-VE")"
+                                             ReadOnly="true"
+                                             Immediate="true" />
+                                
+
+                            </MudStack>
+                                            
+                        </MudCardContent>
+                    </MudCard>
+
+                </MudContainer>
+               
+
+            <MudDialog @bind-Visible="_nestedModalVisible">
+                <TitleContent>
+                    <MudStack Row="true">
+                        <MudIcon Icon="@Icons.Material.Outlined.CarRepair" Color="@(_successModal? Color.Default: Color.Error)" Style="font-size: 2rem;"></MudIcon>
+                        <MudText Typo="Typo.subtitle2">DETALLE REPORTE FALLA</MudText>
+                    </MudStack>
+                </TitleContent>
+                <DialogContent>
+                    <MudStack Row="true">
+                        <MudText Class="nested"><p>@_errorModalMessage!</p> </MudText>
+                    </MudStack>
+                </DialogContent>
+                <DialogActions>
+                    <MudButton Color="Color.Info" OnClick="@(_successModal? CloseNestedModal :CloseNestedModalError)" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
+                </DialogActions>
+            </MudDialog>
+
+        </DialogContent>
+    
+    </MudDialog>
+</MudForm>
+
+<style>
+    .blur {
+    backdrop-filter: blur(10px);
+    }
+
+    .dialog-background {
+    background-color: transparent;
+    }
+
+    .dialog-background-title {
+    background: rgb(from var(--mud-palette-info-lighten) r g b / 50%);
+    color: var(--mud-palette-white);
+    }
+
+    .dialog-background-surface {
+    background: rgb(from var(--mud-palette-surface) r g b / 75%);
+    }
+
+    .align-right input {
+        text-align: right;
+    }
+</style>
+
+@code {
+
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public int IdFailReport { get; set; } 
+    [Parameter] public int IdDetailFailReport { get; set; }
+    [Parameter] public ActionsEnum ActionsModal { get; set; }
+    [Parameter] public ServiceDetailTypeEnum DetailType { get; set; }
+    [Parameter] public int ModelId { get; set; }
+
+    private MudForm? form;
+    private FailReportDetail _model { get; set; } = new FailReportDetail();
+
+    private string _errorModalMessage = string.Empty;
+    private string _errorSearch = string.Empty;
+    private bool _nestedModalVisible = false;
+    private bool _successModal = false;
+
+    private double _mQuantity = 0;
+    private double _mUnitPrice = 0;
+
+    bool _isReadOnly = false;
+    string _searchDetail = string.Empty;
+
+    private int _idDealer = 5103; // Cambia esto por el ID del usuario que estás utilizando
+
+    FailReportDetailValidator _modelValidator = new FailReportDetailValidator();
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        if (ActionsModal == ActionsEnum.Create)
+        {
+            _model = new FailReportDetail();
+            _model.ServiceId = IdFailReport;
+            _model.Type = DetailType.ToString() == "LaborTime" ? "L" : "P";
+            _isReadOnly = true;
+
+            await Task.Delay(50);
+        }
+        else
+        {
+            await GetFailReportDetail();
+
+        }
+
+        _searchDetail = string.Empty;
+
+        StateHasChanged();
+        await Task.CompletedTask;
+
+    }
+
+
+    private async Task GetFailReportDetail()
+    {
+        _model = new FailReportDetail();
+        var serviceResponse = await FailReportService.GetFailReportDetails(IdFailReport, "", DetailType);
+        if (serviceResponse.Processed)
+        {
+            _model = serviceResponse.Data.Where(t => t.Id == IdDetailFailReport).FirstOrDefault() ?? new FailReportDetail();
+            _mQuantity = _model.Quantity ?? 0;
+            _mUnitPrice = _model.UnitPrice ?? 0;
+
+            _model.Price = (_model.Quantity ?? 0) * (_model.UnitPrice ?? 0);
+
+            _isReadOnly = _model.EstatusName.ToUpper() == "PARA APROBAR" ? false : true;
+
+            await Task.Delay(50);
+            StateHasChanged();
+        }
+        else
+        {
+
+            _errorModalMessage = MessageEnum.GetError.GetStringValue();
+            Console.WriteLine(serviceResponse.Message);
+            OpenNested();
+        }
+
+    }
+
+
+    private async Task ClickSearchLaborTime()
+    {
+        // _isReadOnly = true;
+        form!.ResetValidation();
+        DialogOptions options = new() { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
+
+        var parameters = new DialogParameters<LaborTimeCatalog> { { x => x.ModelId, ModelId }, { x => x.Title, "Mano Obra" } };
+        var dialog = await DialogService.ShowAsync<LaborTimeCatalog>("Mano Obra", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled && result.Data != null)
+        {
+            LaborTime _detail = (LaborTime?)result?.Data ?? new LaborTime();
+
+            _model.IsTax = true;
+            _model.ServiceId = IdFailReport;
+            _model.ItemName = _detail.Description.ToUpper();
+            _model.ItemId = _detail.Id;
+            _model.Reference = _detail.Reference;
+            _model.Quantity = _detail.Hours;
+            _model.UnitPrice = _detail.Price;
+            _mQuantity = _detail.Hours;
+            _mUnitPrice = _detail.Price;
+            _model.Price = (_model.Quantity ?? 0) * (_model.UnitPrice ?? 0);
+            _isReadOnly = false;
+
+            StateHasChanged();
+
+            await Task.CompletedTask;
+        }
+
+    }
+
+
+    private async Task ClickSearchParts()
+    {
+        // _isReadOnly = true;
+        form!.ResetValidation();
+        DialogOptions options = new() { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
+
+        var parameters = new DialogParameters<PartsCatalogFailReport> { { x => x.ModelId, ModelId }, { x => x.Title, "Repuestos" } };
+        var dialog = await DialogService.ShowAsync<PartsCatalogFailReport>("Repuestos", parameters, options);
+        var result = await dialog.Result;
+        
+        if (!result!.Canceled && result.Data != null)
+        {
+            Part _detail = (Part?)result?.Data ?? new Part();
+
+            _model.IsTax = _detail.TaxId > 0 ? true : false;
+            _model.ServiceId = IdFailReport;
+            _model.ItemName = _detail?.Description?.ToUpper() ?? string.Empty;
+            _model.ItemId = _detail?.Id ?? 0;
+            _model.Reference = _detail?.InnerCode ?? string.Empty;
+            _model.Quantity = 1;
+            _model.UnitPrice = (double)(_detail?.Price ?? 0);
+            _mQuantity = 1;
+            _mUnitPrice = (double)(_detail?.Price ?? 0);
+            _model.Price = (_model.Quantity ?? 0) * (_model.UnitPrice ?? 0);
+            _isReadOnly = false;
+
+            StateHasChanged();
+
+            await Task.CompletedTask;
+        }
+
+    }
+
+    private void AfterValueChange()
+    {
+        if (!_model.IsExternal)
+        {
+            _model.Quantity = _mQuantity;
+            _model.UnitPrice = _mUnitPrice;
+        }else
+        {
+            if (DetailType.ToString() == "LaborTime")
+            {
+                _model.Quantity =  1 ;
+            }
+            
+        }
+    }
+
+    private void AfterValueChangePrice()
+    {
+        _model.Price = (_model.Quantity ?? 0) * (_model.UnitPrice ?? 0);
+    }
+
+
+    private async Task OnValidSubmit()
+    {
+        await form!.Validate();
+
+        if (form.IsValid)
+        {
+            _errorModalMessage = "";
+
+            var serviceResponse = await FailReportService.UpdateFailReportDetail(_model, Useful.userId);
+            if (serviceResponse.Processed)
+            {
+                if (ActionsModal == ActionsEnum.Create)
+                {
+                    ActionsModal = ActionsEnum.Edit;
+                    var _results = serviceResponse.Data ?? new List<ActionResult>();
+                    var _result = _results.FirstOrDefault();
+                    if (_result is not null)
+                    {
+                        IdDetailFailReport = _result.LastId;
+                    }
+                }
+                _errorModalMessage = MessageEnum.SaveOK.GetStringValue();
+                _successModal = true;
+                Cancel();
+            }
+            else
+            {
+                _successModal = false;
+                _errorModalMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue();
+                Console.WriteLine(serviceResponse.Message);
+                OpenNested();
+
+            }
+
+        }
+
+        StateHasChanged();
+        await Task.CompletedTask;
+
+    }
+
+
+
+    private void Cancel()
+    {
+        if (_successModal)
+            MudDialog.Close(DialogResult.Ok(true));
+        else
+        {
+            MudDialog!.Cancel();
+        }
+    }
+
+    private void OpenNested() => _nestedModalVisible = true;
+
+    private async Task CloseNestedModal()
+    {
+        _nestedModalVisible = false;
+
+        await Task.Delay(50);
+        if (_successModal)
+            MudDialog.Close(DialogResult.Ok(true));
+        await Task.CompletedTask;
+
+    }
+
+    private async Task CloseNestedModalError()
+    {
+        _nestedModalVisible = false;
+
+        await Task.Delay(50);
+        await Task.CompletedTask;
+
+    }
+
+
+
+    /// <summary>
+    /// Validacion del formulario 
+    /// </summary>
+    /// <typeparam name="FailReportDetail"></typeparam>
+    public class FailReportDetailValidator : AbstractValidator<FailReportDetail>
+    {
+        public FailReportDetailValidator()
+        {
+
+            RuleFor(x => x.ItemName)
+               .NotEmpty().WithMessage("Campo requerido")
+               .NotNull().WithMessage("Campo requerido.");
+
+            RuleFor(x => x.ItemId)
+                .NotEmpty().WithMessage("Campo requerido")
+                .GreaterThan(0).WithMessage("Campo requerido.");
+
+            RuleFor(x => x.Type)
+                .NotEmpty().WithMessage("Campo requerido")
+                .NotNull().WithMessage("Campo requerido.");
+
+
+            RuleFor(x => x.Quantity)
+                .NotNull().WithMessage("Campo requerido")
+                .GreaterThan(0).WithMessage("Campo requerido.");
+
+            RuleFor(x => x.UnitPrice)
+               .NotNull().WithMessage("Campo requerido");
+
+        }
+
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<FailReportDetail>.CreateWithOptions((FailReportDetail)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+
+    }
+}

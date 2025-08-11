@@ -15,7 +15,8 @@ namespace Sipcon.WebApp.Client.Utils
         IBrandService BrandService,
         IPolicyTypeService PolicyTypeService,
         IPayMethodService PayMethodService,
-        ILicenseService LicenseService
+        ILicenseService LicenseService,
+        IFailReportService FailReportService
         ) 
     {
 
@@ -77,9 +78,15 @@ namespace Sipcon.WebApp.Client.Utils
                         case "DECLINE":
                             _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Outlined.ThumbDown, module.Id, module.ActionName, Color.Info));
                             break;
-                            
-
-
+                        case "TOVALIDATE":
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Outlined.ThumbUp, module.Id, module.ActionName, Color.Info));
+                            break;
+                        case "VALIDATE":
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.ThumbUp, module.Id, module.ActionName, Color.Info));
+                            break;
+                        case "NOTVALIDATE":
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.ThumbDown, module.Id, module.ActionName, Color.Info));
+                            break;
                         default:
                             Console.WriteLine($"Acción no reconocida: {module.ActionName}");
                             break;
@@ -272,6 +279,26 @@ namespace Sipcon.WebApp.Client.Utils
             if (moduleResponse.Processed)
             {
                 List<PayMethod> _List = moduleResponse.Data ?? new List<PayMethod>();
+
+
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Id, item.Name));
+                }
+            }
+            return _itemsSelect;
+
+        }
+
+        public async Task<List<SelectOption>> GetFailReportType(int IdUser)
+        {
+            List<SelectOption> _itemsSelect = new([]);
+
+
+            var moduleResponse = await FailReportService.GetFailReportTypes(IdUser);
+            if (moduleResponse.Processed)
+            {
+                List<FailReportType> _List = moduleResponse.Data ?? new List<FailReportType>();
 
 
                 foreach (var item in _List.ToList())

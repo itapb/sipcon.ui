@@ -15,6 +15,7 @@
 
 
         public Task<ApiResponse<List<LicenseDetail>>> GetLicenseDetails(int IdUser, int IdLicense, int RowFrom = 0, string Filter = "");
+        public Task<ApiResponse<List<LicenseDetail>>> GetLicenseDetailsBy(int IdUser, string Filter);
         public Task<ApiResponse<List<ActionResult>>> CreateLicenseDetail(LicenseDetail Detail, int IdUser);
         public Task<ApiResponse<List<ActionResult>>> UpdateLicenseDetail(LicenseDetail Detail, int IdUser);
         public Task<ApiResponse<List<ActionResult>>> ActionsLicenseDetail(List<PostAction> PostActions, int IdUser);

@@ -1,263 +1,222 @@
 ﻿namespace Sipcon.WebApp.Client.Repository
 {
-
+    using Sipcon.WebApp.Client.Enum;
     using Sipcon.WebApp.Client.Models;
     using Sipcon.WebApp.Client.Services;
+    using System.Collections.Generic;
     using System.Net.Http.Json;
     using System.Text.Json;
     using System.Text.Json.Serialization;
 
 
-    public class LicenseRepository(HttpClient http) : ILicenseService
+
+    public class FailReportRepository(HttpClient http) : IFailReportService
     {
         private readonly HttpClient _http = http;
-        
-        public async Task<ApiResponse<List<License>>> GetLicenses(int IdUser, int Idsupplier, int RowFrom = 0, string Filter = "" )
+
+
+        public async Task<ApiResponse<List<FailReport>>> GetFailReports(int IdUser, int IdDealer, int RowFrom = 0, string Filter = "")
         {
-            ApiResponse<List<License>>? result;
+            ApiResponse<List<FailReport>>? result;
 
             try
             {
-                var url = $"api/License/GetAll?rowFrom={RowFrom}&userId={IdUser}&supplierId={Idsupplier}";
-                url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
+                result = await _http.GetFromJsonAsync<ApiResponse<List<FailReport>>>($"api/Service/GetAll?filter={Filter}&rowFrom={RowFrom}&userId={IdUser}&serviceTypeId={(int)ServiceTypeEnum.FailReport}&dealerId={IdDealer}");
 
-                result = await _http.GetFromJsonAsync<ApiResponse<List<License>>>(url);
 
-                result = (result is null) ? new ApiResponse<List<License>>()
+                result = result is null ? new ApiResponse<List<FailReport>>()
                 {
                     Processed = false,
-                    Message = "La respuesta del servidor no contiene datos."
+                    Message = "La respuesta del servidor no contiene datos.",
+                    
+
                 } : result;
 
             }
             catch (HttpRequestException httpEx)
             {
-                result = new ApiResponse<List<License>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<License>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
-            catch (Exception ex)
-            {
-                result = new ApiResponse<List<License>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
-                };
-            }
-
-            return result;
-
-        }
-
-        public async Task<ApiResponse<License>> GetLicense(int IdLicense, int IdUser)
-        {
-            ApiResponse<License>? result;
-            try
-            {
-                var url = $"api/License/GetOne?licenseid={IdLicense}&userId={IdUser}";
-
-                var resultlist = await _http.GetFromJsonAsync<ApiResponse<List<License>>>(url);
-                result = (resultlist is null) ? new ApiResponse<License>()
-                {
-                    Processed = false,
-                    Message = "La respuesta del servidor no contiene datos."
-
-                } : new ApiResponse<License>()
-                {
-                    Processed = resultlist.Processed,
-                    Total = resultlist.Total,
-                    Message = resultlist.Message,
-                    Data = resultlist.Data.FirstOrDefault() ?? new License()
-
-                };
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<License>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<License>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
-            catch (Exception ex)
-            {
-                result = new ApiResponse<License>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
-                };
-            }
-            return result;
-        }
-
-        public async Task<ApiResponse<List<LicenseType>>> GetLicenseType(int IdUser)
-        {
-            ApiResponse<List<LicenseType>>? result;
-
-            try
-            {
-                var url = $"api/License/GetLicenseType";
-
-                result = await _http.GetFromJsonAsync<ApiResponse<List<LicenseType>>>(url);
-
-                result = (result is null) ? new ApiResponse<List<LicenseType>>()
-                {
-                    Processed = false,
-                    Message = "La respuesta del servidor no contiene datos."
-                } : result;
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<LicenseType>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<LicenseType>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
-            catch (Exception ex)
-            {
-                result = new ApiResponse<List<LicenseType>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
-                };
-            }
-
-            return result;
-
-        }
-
-        public async Task<ApiResponse<List<ActionResult>>> CreateLicense(License License, int IdUser)
-        {
-            ApiResponse<List<ActionResult>>? result;
-            List<LicenseUp> _licenseList = ([]);
-            try
-            {
-                var _license = new LicenseUp()
-                {
-
-                    Id = License.Id,
-                    IsActive = License.IsActive,
-                    SupplierId = License.SupplierId,
-                    Description = License.Description,
-                    TypeId = License.TypeId ?? 0,
-                    ExpirationDate = License.ExpirationDate ?? DateTime.Now
-                };
-
-                _licenseList.Add(_license);
-
-                var url = $"api/License/PostLicense?userId={IdUser}";
-                var response = await _http.PostAsJsonAsync(url, _licenseList);
-
-                result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
-                result = (result is null) ? new ApiResponse<List<ActionResult>>()
-                {
-                    Processed = false,
-                    Message = "El servidor devolvió una respuesta vacía."
-                } : result;
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<ActionResult>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<ActionResult>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
-            catch (Exception ex)
-            {
-                result = new ApiResponse<List<ActionResult>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
-                };
-
-            }
-            return result;
-        }
-
-        public async Task<ApiResponse<List<ActionResult>>> UpdateLicense(License License, int IdUser)
-        {
-            ApiResponse<List<ActionResult>>? result;
-            List<LicenseUp> _licenseList  = ([]);
-            try
-            {
-
-                var _license = new LicenseUp()
-                {
-
-                    Id = License.Id,
-                    IsActive = License.IsActive,
-                    SupplierId = License.SupplierId,
-                    Description = License.Description,
-                    TypeId = License.TypeId ?? 0,
-                    ExpirationDate = License.ExpirationDate ?? DateTime.Now
-                };
-
-                _licenseList.Add(_license);
-                
-                var url = $"api/License/PostLicense?userId={IdUser}";
-
-                var response = await _http.PostAsJsonAsync(url, _licenseList);
-                result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
-                result = (result is null) ? new ApiResponse<List<ActionResult>>()
-                {
-                    Processed = false,
-                    Message = "El servidor devolvió una respuesta vacía."
-                } : result;
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<List<FailReport>>()
                 {
                     Processed = false,
                     Message = string.Concat("Error al realizar la solicitud HTTP: " , httpEx.Message)
                 };
+                
+            }
+            catch (NotSupportedException notSupportedEx)
+            {
+                result = new ApiResponse<List<FailReport>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("El formato de la respuesta no es compatible: " , notSupportedEx.Message)
+                };
+                
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<FailReport>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+
+        }
+
+        public async Task<ApiResponse<List<FailReportType>>> GetFailReportTypes(int IdUser)
+        {
+            ApiResponse<List<FailReportType>>? result;
+
+            try
+            {
+                result = await _http.GetFromJsonAsync<ApiResponse<List<FailReportType>>>($"api/Service/GetReportType");
+
+
+                result = result is null ? new ApiResponse<List<FailReportType>>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos.",
+
+
+                } : result;
+
+            }
+            catch (HttpRequestException httpEx)
+            {
+                result = new ApiResponse<List<FailReportType>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
+                };
+
+            }
+            catch (NotSupportedException notSupportedEx)
+            {
+                result = new ApiResponse<List<FailReportType>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
+                };
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<FailReportType>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+
+        }
+
+        public async Task<ApiResponse<FailReport>> GetFailReport(int IdUser, int IdDealer, int IdFailReport) 
+        {
+            ApiResponse<FailReport>? result;
+            try
+            {
+                var resultlist = await _http.GetFromJsonAsync<ApiResponse<List<FailReport>>>($"api/Service/GetOne?userId={IdUser}&serviceTypeId={(int)ServiceTypeEnum.FailReport}&dealerId={IdDealer}&serviceId={IdFailReport}");
+
+                result = (resultlist is null) ? new ApiResponse<FailReport>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos."
+
+                } : new ApiResponse<FailReport>()
+                {
+                    Processed = resultlist.Processed,
+                    Total = resultlist.Total,
+                    Message = resultlist.Message,
+                    Data = resultlist.Data.FirstOrDefault() ?? new FailReport()
+
+                };
+
+            }
+            catch (HttpRequestException httpEx)
+            {
+                result = new ApiResponse<FailReport>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
+                };
+
+            }
+            catch (NotSupportedException notSupportedEx)
+            {
+                result = new ApiResponse<FailReport>()
+                {
+                    Processed = false,
+                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
+                };
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<FailReport>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+            return result;
+        }
+
+        public async Task<ApiResponse<List<ActionResult>>> CreateFailReport(FailReport FailReport, int IdUser)
+        {
+            ApiResponse<List<ActionResult>>? result;
+            try
+            {
+
+                var _assistence = new FailReportUp()
+                {
+                    Id = FailReport.Id,
+                    IsActive = FailReport.IsActive,
+                    ReportTypeId = FailReport.ReportTypeId ?? 0,
+                    OrderNumber = FailReport.OrderNumber ?? 0,
+                    ServiceDate = FailReport.ServiceDate ?? DateTime.Now,
+                    CustomerReport = FailReport.CustomerReport,
+                    DealerReport = FailReport.DealerReport,
+                    TechnicalSolution = FailReport.TechnicalSolution,
+                    Paralyzed = FailReport.Paralyzed,
+                    LicenseId = FailReport.LicenseId ?? 0,
+                    DealerId = FailReport.DealerId ?? 0,
+                    VehicleId = FailReport.VehicleId ?? 0,
+                    Km = FailReport.KM ?? 0,
+                    CustomerId = FailReport.CustomerId ?? 0,
+                    InvoiceNumber = FailReport.InvoiceNumber,
+                    InvoiceDate = FailReport.InvoiceDate ?? DateTime.Now,
+
+                };
+
+
+                var response = await _http.PostAsJsonAsync($"api/Service/PostFailReport?userId={IdUser}", _assistence);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                    {
+                        throw new Exception($"Error al crear el FailReport: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                    }
+                    
+                }
+
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
+                result = (result is null) ? new ApiResponse<List<ActionResult>>()
+                {
+                    Processed = false,
+                    Message = "El servidor devolvió una respuesta vacía."
+                } : result;
+            }
+            catch (HttpRequestException httpEx)
+            {
+                result = new ApiResponse<List<ActionResult>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
+                };
             }
             catch (NotSupportedException notSupportedEx)
             {
@@ -266,7 +225,7 @@
                     Processed = false,
                     Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
                 };
-                
+
             }
             catch (Exception ex)
             {
@@ -275,29 +234,106 @@
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
                 };
-                
+
             }
             return result;
-
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> ActionsLicense(List<PostAction> PostActions, int IdUser)
+        public async Task<ApiResponse<List<ActionResult>>> UpdateFailReport(FailReport FailReport, int IdUser)
+        {
+            ApiResponse<List<ActionResult>>? result;
+
+            try
+            {
+                var _assistence = new FailReportUp()
+                {
+
+                    Id = FailReport.Id,
+                    IsActive = FailReport.IsActive,
+                    ReportTypeId = FailReport.ReportTypeId ?? 0,
+                    OrderNumber = FailReport.OrderNumber ?? 0,
+                    ServiceDate = FailReport.ServiceDate ?? DateTime.Now,
+                    CustomerReport = FailReport.CustomerReport,
+                    DealerReport = FailReport.DealerReport,
+                    TechnicalSolution = FailReport.TechnicalSolution,
+                    Paralyzed = FailReport.Paralyzed,
+                    LicenseId = FailReport.LicenseId ?? 0,
+                    DealerId = FailReport.DealerId ?? 0,
+                    VehicleId = FailReport.VehicleId ?? 0,
+                    Km = FailReport.KM ?? 0,
+                    CustomerId = FailReport.CustomerId ?? 0,
+                    InvoiceNumber = FailReport.InvoiceNumber,
+                    InvoiceDate = FailReport.InvoiceDate ?? DateTime.Now,
+
+                };
+
+
+                var response = await _http.PostAsJsonAsync($"api/Service/PostFailReport?userId={IdUser}", _assistence);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                    {
+                        throw new Exception($"Error al crear el FailReport: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                    }
+
+                }
+
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
+                result = (result is null) ? new ApiResponse<List<ActionResult>>()
+                {
+                    Processed = false,
+                    Message = "El servidor devolvió una respuesta vacía."
+                } : result;
+            }
+            catch (HttpRequestException httpEx)
+            {
+                result = new ApiResponse<List<ActionResult>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
+                };
+            }
+            catch (NotSupportedException notSupportedEx)
+            {
+                result = new ApiResponse<List<ActionResult>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
+                };
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<ActionResult>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+
+            }
+            return result;
+        }
+
+        public async Task<ApiResponse<List<ActionResult>>> ActionsFailReport(List<PostAction> PostActions, int IdUser)
         {
             ApiResponse<List<ActionResult>>? result;
             List<PostAction> PostActionList = ([]);
             try
             {
-                var options = new JsonSerializerOptions
+
+
+                var response = await _http.PostAsJsonAsync($"api/Service/PostActions?userId={IdUser}&serviceTypeId={(int)ServiceTypeEnum.FailReport}", PostActions);
+
+                if (!response.IsSuccessStatusCode)
                 {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
-                    IgnoreReadOnlyProperties = true,
-                    WriteIndented = true
-                };
+                    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                    {
+                        throw new Exception($"Error al crear el FailReport: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                    }
 
-                var url = $"api/License/PostActions?userId={IdUser}";
+                }
 
-                var response = await _http.PostAsJsonAsync(url, PostActions, options);
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
                 result = (result is null) ? new ApiResponse<List<ActionResult>>()
                 {
@@ -334,25 +370,87 @@
             }
             return result;
 
+        }
+
+        public async Task<ApiResponse<List<byte>>> ExportFailReports(int IdUser, int IdDealer, string Filter = "")
+        {
+            ApiResponse<List<byte>> result;
+            string fileUrl = string.Empty;
+          
+            try
+            {
+                
+                var response = await _http.GetAsync($"api/Service/Export?filter={Filter}&userId={IdUser}&serviceTypeId={(int)ServiceTypeEnum.FailReport}&dealerId={IdDealer}");
+
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                    {
+                        throw new Exception($"Error al crear el FailReport: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                    }
+
+                }
+
+                var fileContent = await response.Content.ReadAsByteArrayAsync();
+                result = new ApiResponse<List<byte>>()
+                {
+                    Processed = true,
+                    Message = "Exportación exitosa.",
+                    Data = fileContent.ToList()
+                };
+            }
+            catch (HttpRequestException httpEx)
+            {
+                result = new ApiResponse<List<byte>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message),
+                    Data = []
+                };
+            }
+            catch (NotSupportedException notSupportedEx)
+            {
+                result = new ApiResponse<List<byte>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message),
+                    Data = []
+                };
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<byte>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message),
+                    Data = []
+                };
+            }
+
+            return result;
         }
 
 
         /// <summary>
-        /// DETALLES DE LICENCIA
+        /// DETALLES DE REPORTE FALLA
+        ///  part = P , labortime = L
         /// </summary>
 
-        public async Task<ApiResponse<List<LicenseDetail>>> GetLicenseDetails(int IdUser, int IdLicense, int RowFrom = 0, string Filter = "")
+        public async Task<ApiResponse<List<FailReportDetail>>> GetFailReportDetails(int IdService, string Filter = "", ServiceDetailTypeEnum dType = ServiceDetailTypeEnum.LaborTime)
         {
-            ApiResponse<List<LicenseDetail>>? result;
+            ApiResponse<List<FailReportDetail>>? result;
 
             try
             {
-                var url = $"api/License/GetDetails?rowFrom={RowFrom}&licenseId={IdLicense}&userId={IdUser}";
+                var url = $"api/Service/GetDetails?serviceId={IdService}";
+
+                url = (dType == ServiceDetailTypeEnum.LaborTime) ? $"{url}&type=L" : $"{url}&type=P";
                 url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
 
-                result = await _http.GetFromJsonAsync<ApiResponse<List<LicenseDetail>>>(url);
+                result = await _http.GetFromJsonAsync<ApiResponse<List<FailReportDetail>>>(url);
 
-                result = (result is null) ? new ApiResponse<List<LicenseDetail>>()
+                result = (result is null) ? new ApiResponse<List<FailReportDetail>>()
                 {
                     Processed = false,
                     Message = "La respuesta del servidor no contiene datos."
@@ -361,7 +459,7 @@
             }
             catch (HttpRequestException httpEx)
             {
-                result = new ApiResponse<List<LicenseDetail>>()
+                result = new ApiResponse<List<FailReportDetail>>()
                 {
                     Processed = false,
                     Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
@@ -370,7 +468,7 @@
             }
             catch (NotSupportedException notSupportedEx)
             {
-                result = new ApiResponse<List<LicenseDetail>>()
+                result = new ApiResponse<List<FailReportDetail>>()
                 {
                     Processed = false,
                     Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
@@ -379,7 +477,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<List<LicenseDetail>>()
+                result = new ApiResponse<List<FailReportDetail>>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
@@ -390,73 +488,30 @@
 
         }
 
-        public async Task<ApiResponse<List<LicenseDetail>>> GetLicenseDetailsBy(int IdUser, string Filter)
-        {
-            ApiResponse<List<LicenseDetail>>? result;
-
-            try
-            {
-                var url = $"api/License/GetDetailBy?userId={IdUser}&filter={Filter}";
-
-                result = await _http.GetFromJsonAsync<ApiResponse<List<LicenseDetail>>>(url);
-
-                result = (result is null) ? new ApiResponse<List<LicenseDetail>>()
-                {
-                    Processed = false,
-                    Message = "La respuesta del servidor no contiene datos."
-                } : result;
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<LicenseDetail>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<LicenseDetail>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
-            catch (Exception ex)
-            {
-                result = new ApiResponse<List<LicenseDetail>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
-                };
-            }
-
-            return result;
-
-        }
-
-        public async Task<ApiResponse<List<ActionResult>>> CreateLicenseDetail(LicenseDetail Detail, int IdUser)
+        public async Task<ApiResponse<List<ActionResult>>> CreateFailReportDetail(FailReportDetail Detail, int IdUser)
         {
             ApiResponse<List<ActionResult>>? result;
-            List<LicenseDetailUp> _licenseList = ([]);
+            List<FailReportDetailUp> _ServiceList = ([]);
             try
             {
-                var _license = new LicenseDetailUp()
+                var _Service = new FailReportDetailUp()
                 {
+                    Id          = Detail.Id,
+                    ServiceId   = Detail.ServiceId,
+                    ItemId      = Detail.ItemId,
+                    Type        = Detail.Type,
+                    Quantity    = Detail.Quantity ?? 0,
+                    UnitPrice   = Detail.UnitPrice ?? 0,
+                    IsExternal  = Detail.IsExternal,
+                    IsTax       = Detail.IsTax,
+                    IsActive    = Detail.IsActive 
 
-                    Id = Detail.Id,
-                    IsActive = Detail.IsActive,
-                    LicenseId = Detail.LicenseId,
-                    VIN = Detail.VIN
                 };
 
-                _licenseList.Add(_license);
+                _ServiceList.Add(_Service);
 
-                var url = $"api/License/PostLicenseDetails?userId={IdUser}";
-                var response = await _http.PostAsJsonAsync(url, _licenseList);
+                var url = $"api/Service/PostDetails?userId={IdUser}";
+                var response = await _http.PostAsJsonAsync(url, _ServiceList);
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
                 result = (result is null) ? new ApiResponse<List<ActionResult>>()
@@ -495,33 +550,36 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> UpdateLicenseDetail(LicenseDetail Detail, int IdUser)
+        public async Task<ApiResponse<List<ActionResult>>> UpdateFailReportDetail(FailReportDetail Detail, int IdUser)
         {
             ApiResponse<List<ActionResult>>? result;
-            List<LicenseDetailUp> _licenseList = ([]);
             try
             {
-                var _license = new LicenseDetailUp()
+                var _Detail = new FailReportDetailUp()
                 {
-
                     Id = Detail.Id,
-                    IsActive = Detail.IsActive,
-                    LicenseId = Detail.LicenseId,
-                    VIN = Detail.VIN
+                    ServiceId = Detail.ServiceId,
+                    ItemId = Detail.ItemId,
+                    Type = Detail.Type,
+                    Quantity = Detail.Quantity ?? 0,
+                    UnitPrice = Detail.UnitPrice ?? 0,
+                    IsExternal = Detail.IsExternal,
+                    IsTax = Detail.IsTax,
+                    IsActive = Detail.IsActive
                 };
 
-                _licenseList.Add(_license);
-                
-                var url = $"api/License/PostLicenseDetails?userId={IdUser}";
+                var url = $"api/Service/PostDetails?userId={IdUser}";
+                var response = await _http.PostAsJsonAsync(url, _Detail);
 
-                var response = await _http.PostAsJsonAsync(url, _licenseList);
+               
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
                 result = (result is null) ? new ApiResponse<List<ActionResult>>()
                 {
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
                 } : result;
-
+               
+               
             }
             catch (HttpRequestException httpEx)
             {
@@ -553,7 +611,7 @@
 
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> ActionsLicenseDetail(List<PostAction> PostActions, int IdUser)
+        public async Task<ApiResponse<List<ActionResult>>> ActionsFailReportDetail(List<PostAction> PostActions, int IdUser)
         {
             ApiResponse<List<ActionResult>>? result;
             List<PostAction> PostActionList = ([]);
@@ -567,7 +625,7 @@
                     WriteIndented = true
                 };
 
-                var url = $"api/License/PostDetailsActions?userId={IdUser}";
+                var url = $"api/Service/PostActionsDetails?userId={IdUser}";
 
                 var response = await _http.PostAsJsonAsync(url, PostActions, options);
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
@@ -608,7 +666,7 @@
 
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> DeleteLicenseDetail(List<PostAction> PostActions, int IdUser)
+        public async Task<ApiResponse<List<ActionResult>>> DeleteFailReportDetail(List<PostAction> PostActions, int IdUser)
         {
             ApiResponse<List<ActionResult>>? result;
             List<PostAction> PostActionList = ([]);
@@ -622,8 +680,8 @@
                     WriteIndented = true
                 };
 
-                var url = $"api/License/DeleteLicenseDetail?userId={IdUser}";
-                
+                var url = $"api/Service/Delete_Details?userId={IdUser}";
+
                 var response = await _http.PostAsJsonAsync(url, PostActions, options);
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
                 result = (result is null) ? new ApiResponse<List<ActionResult>>()
@@ -663,130 +721,6 @@
 
         }
 
-        public async Task<ApiResponse<bool>> ImportLicenseDetails(int IdUser, int IdLicense, MultipartFormDataContent FormData)
-        {
-            ApiResponse<bool> result;
-
-            try
-            {
-                var url = $"api/License/ImportLicenseDetails?userId={IdUser}&licenseId={IdLicense}";
-                var response = await _http.PostAsync(url, FormData);
-                if (!response.IsSuccessStatusCode)
-                {
-                    result = new ApiResponse<bool>()
-                    {
-                        Processed = false,
-                        Message = "Error al Importar.",
-                        Data = false
-                    };
-                }
-                else
-                {
-                    result = new ApiResponse<bool>()
-                    {
-                        Processed = true,
-                        Message = "Importacion exitosa.",
-                        Data = true
-                    };
-                }
-
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<bool>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message),
-                    Data = false
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<bool>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message),
-                    Data = false
-                };
-            }
-            catch (Exception ex)
-            {
-                result = new ApiResponse<bool>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message),
-                    Data = false
-                };
-            }
-
-            return result;
-        }
-
-        public async Task<ApiResponse<List<byte>>> ExportLicenseDetails(int IdUser, int IdLicense, string Filter = "")
-        {
-            ApiResponse<List<byte>> result; 
-            string fileUrl = string.Empty;
-            try
-            {
-
-                var url = $"api/License/ExportDetails?userId={IdUser}&licenseId={IdLicense}";
-                url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
-
-                var response = await _http.GetAsync(url);
-                if (!response.IsSuccessStatusCode)
-                {
-                    result = new ApiResponse<List<byte>>()
-                    {
-                        Processed = false,
-                        Message = "Error al Exportar ",
-                        Data = []
-                    };
-                }
-                else {
-                    var fileContent = await response.Content.ReadAsByteArrayAsync();
-                    result = new ApiResponse<List<byte>>()
-                    {
-                        Processed = true,
-                        Message = "Exportación exitosa.",
-                        Data = fileContent.ToList()
-                    };
-                }
-
-                
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<byte>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message),
-                    Data = []
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<byte>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message),
-                    Data = []
-                };
-            }
-            catch (Exception ex)
-            {
-                result = new ApiResponse<List<byte>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message),
-                    Data = []
-                };
-            }
-
-            return result;
-        }
-
-        
 
     }
 
