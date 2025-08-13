@@ -7,11 +7,10 @@
         <MudGrid Spacing="2">
             <MudItem xs="12">
                 <MudStack Row="false" Class="pa-2 mud-theme-info mud-typography-h6" Spacing="1" style="line-height:1.1;">
-                   <div>CLIENTE : @currentDispatch?.CustomerName</div>
-                   <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd" >
-                        <div>GUIA: @currentDispatch?.GuideId</div>
-                        <div>BULTO: @currentDispatch?.Number</div>
-                    </MudStack>         
+                    <div>CLIENTE : @currentPacking?.CustomerName</div>
+                    <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                        <div>BULTO: @currentPacking?.Code</div>
+                    </MudStack>
                 </MudStack>
             </MudItem>
             <MudItem xs="12">
@@ -23,10 +22,10 @@
                                     <MudStack Row>
                                         <MudText Class="mr-2">@context.Item.PartName</MudText>
                                         <MudText Class="mr-2">@context.Item.Quantity</MudText>
-                                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Close" OnClick="() => ClickRemovePart(context.Item)" />
+                                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Close" OnClick="() => ClickRemovePart(context.Item)" Disabled="@(currentPacking?.PackageClosed ?? false)" />
                                     </MudStack>
                                 </CellTemplate>
-                            </TemplateColumn>                           
+                            </TemplateColumn>
                         </Columns>
                         <PagerContent>
                             <MudStack Row="false" Spacing="2">
@@ -40,14 +39,14 @@
             </MudItem>
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.Center">
-                    <MudStack Row="true" Spacing="5">                        
-                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="ClickCheckPackage" Disabled="@(currentDispatch?.PackageClosed ?? false)" />
-                        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Search" Size="Size.Medium" OnClick="ClickSearchPackage" Disabled="@(currentDispatch?.PackageClosed ?? false)" />
+                    <MudStack Row="true" Spacing="5">
+                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="ClickCheckPackage" Disabled="@(currentPacking?.PackageClosed ?? false)" />
+                        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Search" Size="Size.Medium" OnClick="ClickSearchPackage" Disabled="@(currentPacking?.PackageClosed ?? false)" />
                         <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshPackage" />
                         <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="ClickClosePackage" />
                     </MudStack>
                 </MudStack>
-            </MudItem>        
+            </MudItem>
         </MudGrid>
     </MudPaper>
 </div>
@@ -60,10 +59,10 @@
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
 
-    [Parameter] public Models.Dispatch? currentDispatch { get; set; }
-    [Parameter] public Models.DispatchStep Value { get; set; }
-    [Parameter] public EventCallback<Models.DispatchStep> ValueChanged { get; set; }
-    private Models.DispatchStep CurrentStep
+    [Parameter] public Models.Packing? currentPacking { get; set; }
+    [Parameter] public Models.PackingStep Value { get; set; }
+    [Parameter] public EventCallback<Models.PackingStep> ValueChanged { get; set; }
+    private Models.PackingStep CurrentStep
     {
         get => Value;
         set
@@ -97,7 +96,7 @@
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Models.PackageDetail> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetPackageDetails?packageId={currentDispatch?.PackageId}");
+        HttpResponseMessage response = await Http.GetAsync($"Packing/GetPackageDetails?packageId={currentPacking?.PackageId}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.PackageDetail>>>();
@@ -124,14 +123,14 @@
     }
     private async Task OnSearch(string text)
     {
-        if (text.Length >= 3 && (await GetPackageDetailByPart(currentDispatch!.PackageId, text) is Models.PackageDetail MyPackageDetail))
-        {       
-            currentDispatch.PartId = MyPackageDetail.PartId;
-            currentDispatch.PartName = MyPackageDetail.PartName;
-            currentDispatch.Pending = MyPackageDetail.Pending;
-            currentDispatch.Quantity = null;
-            Dispatch.PreviousStep = Models.DispatchStep.Package;
-            CurrentStep = Models.DispatchStep.SetPackage;
+        if (text.Length >= 3 && (await GetPackageDetailByPart(currentPacking!.PackageId, text) is Models.PackageDetail MyPackageDetail))
+        {
+            currentPacking.PartId = MyPackageDetail.PartId;
+            currentPacking.PartName = MyPackageDetail.PartName;
+            currentPacking.Pending = MyPackageDetail.Pending;
+            currentPacking.Quantity = null;
+            Packing.PreviousStep = Models.PackingStep.Package;
+            CurrentStep = Models.PackingStep.SetPackage;
             await Task.CompletedTask;
             //await PackageMudDataGrid!.ReloadServerData();
         }
@@ -139,13 +138,13 @@
     private async Task<Models.PackageDetail?> GetPackageDetailByPart(int? PackageId, string ScanCode)
     {
         Models.PackageDetail? PackageDetailResut = null;
-        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetPackageDetailByPart?packageId={PackageId}&scanCode={ScanCode}");
+        HttpResponseMessage response = await Http.GetAsync($"Packing/GetPackageDetailByPart?packageId={PackageId}&scanCode={ScanCode}");
         if (response.StatusCode == System.Net.HttpStatusCode.OK)
-        {           
+        {
             var Resut = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.PackageDetail>>>();
             PackageDetailResut = Resut!.data?.FirstOrDefault();
         }
-        else if (response.StatusCode  == System.Net.HttpStatusCode.Conflict)
+        else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
         {
             var conflictContent = await response.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
             await DialogService.ShowDialog(conflictContent?.message!, "Error Repuesto", "OK", Color.Error, Icons.Material.Filled.Error);
@@ -154,26 +153,26 @@
     }
     private async Task ClickSelectPackage(Models.PackageDetail item)
     {
-        if (await GetPackageDetailByPart(currentDispatch!.PackageId, item.PartInnerCode!) is Models.PackageDetail MyPackageDetail)
+        if (!(currentPacking?.PackageClosed ?? false) && await GetPackageDetailByPart(currentPacking!.PackageId, item.PartInnerCode!) is Models.PackageDetail MyPackageDetail)
         {
-            currentDispatch!.PackageId = MyPackageDetail.PackageId;
-            currentDispatch.PartName = MyPackageDetail.PartName;
-            currentDispatch.PartId = MyPackageDetail.PartId;
+            currentPacking!.PackageId = MyPackageDetail.PackageId;
+            currentPacking.PartName = MyPackageDetail.PartName;
+            currentPacking.PartId = MyPackageDetail.PartId;
 
-            Dispatch.PreviousStep = Models.DispatchStep.Package;
-            CurrentStep = Models.DispatchStep.SetPackage;
+            Packing.PreviousStep = Models.PackingStep.Package;
+            CurrentStep = Models.PackingStep.SetPackage;
         }
         await Task.CompletedTask;
     }
     private async Task ClickRemovePart(Models.PackageDetail item)
     {
-        var result_Post_Zone = await Http.PostAsync($"api/Inventory/DeletePackageDetail?packageId={item.PackageId}&partId={item.PartId}", null);
+        var result_Post_Zone = await Http.PostAsync($"Packing/DeletePackageDetail?packageId={item.PackageId}&partId={item.PartId}", null);
         if (result_Post_Zone.IsSuccessStatusCode)
         {
             var result = await DialogService.ShowDialog("Removido!", "Repuesto", "OK", Color.Info, Icons.Material.Filled.Commit);
             if (!result!.Canceled)
             {
-                await PackageDetailMudDataGrid!.ReloadServerData(); 
+                await PackageDetailMudDataGrid!.ReloadServerData();
             }
 
         }
@@ -181,29 +180,28 @@
     }
     private async Task ClickClosePackage(MouseEventArgs args)
     {
-        CurrentStep = Models.DispatchStep.GuideDetails;
+        CurrentStep = Models.PackingStep.PackingDetails;
         await Task.CompletedTask;
     }
     private async Task ClickSearchPackage(MouseEventArgs args)
     {
-        CurrentStep = Models.DispatchStep.Pending;
+        CurrentStep = Models.PackingStep.Pending;
         await Task.CompletedTask;
     }
     private async Task ClickCheckPackage(MouseEventArgs args)
     {
-        DialogOptions options2 = new DialogOptions { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
-        var dialogReference = await DialogService.ShowAsync<PackageWeightConfirm>("", new DialogParameters { ["currentDispatch"] = currentDispatch}, options2);
-        var result = await dialogReference.Result;
-
-        if (!result!.Canceled)
+        if (PackageDetailMudDataGrid?.FilteredItems.Count() > 0)
         {
-            CurrentStep = Models.DispatchStep.GuideDetails; // && dialogResult.Data is not null
+            DialogOptions options2 = new DialogOptions { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
+            var dialogReference = await DialogService.ShowAsync<PackingPackageWeightConfirm>("", new DialogParameters { ["currentPacking"] = currentPacking }, options2);
+            var result = await dialogReference.Result;
+            if (!result!.Canceled)
+            {
+                CurrentStep = Models.PackingStep.PackingDetails; // && dialogResult.Data is not null
+            }
+
         }
-        // {
-        // dynamic contactData = dialogResult.Data;
-        // SelectedContact!.AgentId = contactData.ContactId;
-        // SelectedContact!.AgentName = contactData.ContactName;
-        // }
         await Task.CompletedTask; ;
     }
+}
 }

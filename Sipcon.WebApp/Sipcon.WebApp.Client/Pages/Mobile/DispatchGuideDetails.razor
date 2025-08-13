@@ -1,0 +1,205 @@
+﻿@* @page "/mobile-package" *@
+@using Sipcon.WebApp.Client.Layout
+@layout MobileLayout
+
+<div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
+    <MudPaper Elevation="2" Class="pa-3">
+        <MudGrid Spacing="2">
+            <MudItem xs="12">
+                <MudStack Row="false" Class="pa-2 mud-theme-info mud-typography-h6" Spacing="1" style="line-height:1.1;">
+                    <div>CLIENTE : @currentDispatch?.CustomerName</div>
+                    <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                        <div>GUIA: @currentDispatch?.GuideId</div>                  
+                    </MudStack>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12">
+                <MudText>
+                    <MudDataGrid @ref="GuideDetailslMudDataGrid" T="Models.GuideDetails" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" Loading="_loading" FixedHeader  @bind-CurrentPage="PackageCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers">
+                        <Columns>
+                            <TemplateColumn CellClass="d-flex justify-center align-center">
+                                <CellTemplate>
+                                    <MudStack Row>
+                                        <MudText Class="mr-2">@context.Item.Code</MudText>                                        
+                                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Close" OnClick="() => ClickDeletePackage(context.Item)" />
+                                    </MudStack>
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                        <PagerContent>
+                            <MudStack Row="false" Spacing="2">
+                                <MudPaper Class="pa-3">
+                                    <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Style="height:40px;" />
+                                </MudPaper>
+                            </MudStack>
+                        </PagerContent>
+                    </MudDataGrid>
+                </MudText>
+            </MudItem>
+            <MudItem xs="12">
+                <MudStack Row="true" Justify="Justify.Center">
+                    <MudStack Row="true" Spacing="5">
+                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="ClickCheckGuides" Disabled="@(currentDispatch?.GuideClosed ?? false)" />
+                        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Search" Size="Size.Medium" OnClick="ClickSearchPackage" Disabled="@(currentDispatch?.GuideClosed ?? false)" />
+                        <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshGuideDetails" />
+                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="ClickCloseGuideDetails" />
+                    </MudStack>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</div>
+<style>
+    .hide-datagrid-headers .mud-table-head {
+        display: none !important;
+    }
+</style>
+@code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+
+    [Parameter] public Models.Dispatch? currentDispatch { get; set; }
+    [Parameter] public Models.DispatchStep Value { get; set; }
+    [Parameter] public EventCallback<Models.DispatchStep> ValueChanged { get; set; }
+    private Models.DispatchStep CurrentStep
+    {
+        get => Value;
+        set
+        {
+            if (Value != value)
+            {
+                Value = value;
+                ValueChanged.InvokeAsync(Value);
+            }
+        }
+    }
+
+    bool _loading = true;
+    string searchString = "";
+    private int PackageCurrentPage = 0;
+
+
+    private MudDataGrid<Models.GuideDetails>? GuideDetailslMudDataGrid;
+
+
+    Func<Models.GuideDetails, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    {
+        nameof(Models.GuideDetails.Code) => o => o.Code ?? "",       
+        _ => null!
+    };
+
+    private async Task<GridData<Models.GuideDetails>> ServerReload(GridState<Models.GuideDetails> state)
+    {
+        _loading = true;
+        var totalItems = 0;
+        var mOffset = state.Page * state.PageSize;
+        IEnumerable<Models.GuideDetails> data;
+        HttpResponseMessage response = await Http.GetAsync($"Packing/GetPackagesFromGuide?guideId={currentDispatch?.GuideId}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.GuideDetails>>>();
+            totalItems = content2!.total ?? 0;
+            data = content2!.data ?? new List<Models.GuideDetails>();
+        }
+        else
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
+        if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Models.GuideDetails> sortDefinition)
+        {
+            data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
+        }
+        _loading = false;
+        return new GridData<Models.GuideDetails> { TotalItems = totalItems, Items = data };
+
+    }
+
+    private async Task ClickRefreshGuideDetails(MouseEventArgs ev)
+    {
+        await GuideDetailslMudDataGrid!.ReloadServerData();
+    }
+    private async Task OnSearch(string text)
+    {
+        if (text.Length >= 3 && (await GetGuideDetailsByPart(currentDispatch!.PackageId, text) is Models.GuideDetails MyGuideDetails))
+        {
+            currentDispatch.Quantity = null;
+            Dispatch.PreviousStep = Models.DispatchStep.Package;
+            await Task.CompletedTask;            
+        }
+    }
+    private async Task<Models.GuideDetails?> GetGuideDetailsByPart(int? PackageId, string ScanCode)
+    {
+        Models.GuideDetails? PackageDetailResut = null;
+        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetPackageDetailByPart?packageId={PackageId}&scanCode={ScanCode}");
+        if (response.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+            var Resut = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.GuideDetails>>>();
+            PackageDetailResut = Resut!.data?.FirstOrDefault();
+        }
+        else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflictContent = await response.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+            await DialogService.ShowDialog(conflictContent?.message!, "Error Repuesto", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        return await Task.FromResult(PackageDetailResut);
+    }
+
+    private async Task ClickDeletePackage(Models.GuideDetails item)
+    {
+        var result_Post_Zone = await Http.PostAsync($"Packing/DeletePackge?packageCode={item.Code}&guideId={currentDispatch?.GuideId}&userId={currentDispatch?.UserId}", null);
+        if (result_Post_Zone.IsSuccessStatusCode)
+        {
+            var result = await DialogService.ShowDialog("Removido!", "Bulto", "OK", Color.Info, Icons.Material.Filled.Commit);
+            if (!result!.Canceled)
+            {
+                await GuideDetailslMudDataGrid!.ReloadServerData();
+            }
+
+        }
+        await Task.CompletedTask;
+    }
+    private async Task ClickCloseGuideDetails(MouseEventArgs args)
+    {
+        CurrentStep = Models.DispatchStep.Guides;
+        await Task.CompletedTask;
+    }
+    private async Task ClickSearchPackage(MouseEventArgs args)
+    {
+        CurrentStep = Models.DispatchStep.Package;
+        await Task.CompletedTask;
+    }
+
+    private async Task ClickCheckGuides(MouseEventArgs args)
+    {
+        if (await IsValidGuide(currentDispatch))
+        {
+            await CloseGuide();
+        }
+
+    }
+    private async Task<bool> IsValidGuide(Models.Dispatch? dispatch)
+    {
+        string msgresult = "";
+        if (GuideDetailslMudDataGrid!.FilteredItems.Count() == 0) msgresult = "No hay bultos para confirmar";
+        else if (GuideDetailslMudDataGrid!.FilteredItems.Any(r => r.Closed == false)) msgresult = "Algun bulto esta abierto!";
+        if (msgresult.Length > 0) await DialogService.ShowDialog(msgresult, "Error GUIA", "OK", Color.Error, Icons.Material.Filled.Error);
+
+        return (msgresult.Length == 0);
+    }
+    private async Task CloseGuide()
+    {
+        if (GuideDetailslMudDataGrid?.FilteredItems.Count() > 0)
+        {
+            DialogOptions options2 = new DialogOptions { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
+            var dialogReference = await DialogService.ShowAsync<DispatchGuideConfirm>("", new DialogParameters { ["currentDispatch"] = currentDispatch }, options2);
+            var result = await dialogReference.Result;
+            if (!result!.Canceled)
+            {
+                CurrentStep = Models.DispatchStep.Guides; // && dialogResult.Data is not null
+            }
+
+        }
+        await Task.CompletedTask;
+    }
+}

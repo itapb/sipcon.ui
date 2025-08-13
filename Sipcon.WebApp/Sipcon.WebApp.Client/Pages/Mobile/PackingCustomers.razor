@@ -1,0 +1,121 @@
+﻿@* @page "/mobile-customers" *@
+@using Sipcon.WebApp.Client.Layout
+@using Sipcon.WebApp.Client.Pages.Mobile.Models
+@layout MobileLayout
+<div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
+    <MudPaper Elevation="2" Class="pa-3">
+        <MudGrid Spacing="2">
+            <MudItem xs="12">
+                <MudStack Row="false" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex justify-center align-center">@strTitle</MudPaper>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12">
+                <MudText>
+                    <MudDataGrid @ref="ContactsCatalogMudDataGrid" T="Customer" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" Loading="_loading" FixedHeader SelectedItemChanged="ClickSelectContact" @bind-CurrentPage="ContactCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers">
+                        <Columns>
+                            <PropertyColumn Property="x => x.Name" Title="" CellClass="d-flex justify-center align-center" />
+                        </Columns>
+                    </MudDataGrid>
+                </MudText>
+            </MudItem>
+            <MudItem xs="12">
+                <MudStack Row="true" Justify="Justify.Center">
+                    <MudStack Row="true" Spacing="5">
+                        <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshContactsCatalog" />
+                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" Href="process-list" />
+                    </MudStack>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</div>
+<style>
+    .hide-datagrid-headers .mud-table-head {
+        display: none !important;
+    }
+</style>
+@code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Parameter] public Models.Packing? currentPacking { get; set; }
+    [Parameter] public Models.PackingStep Value { get; set; }
+    [Parameter] public EventCallback<Models.PackingStep> ValueChanged { get; set; }
+    private Models.PackingStep currentStep
+    {
+        get => Value;
+        set
+        {
+            if (Value != value)
+            {
+                Value = value;
+                ValueChanged.InvokeAsync(Value);
+            }
+        }
+    }
+
+    string strTitle { get; set; } = "CLIENTES";
+    bool _loading = true;
+    string searchString = "";
+    private int ContactCurrentPage = 0;
+    private MudDataGrid<Customer>? ContactsCatalogMudDataGrid;
+    [Parameter] public string? ContactType { get; set; } = "P";
+
+
+    Func<Customer, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    {
+        nameof(Customer.Id) => o => o.Id ?? 0,
+        nameof(Customer.Name) => o => o.Name ?? "",
+        _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto
+    };
+
+    private async Task<GridData<Customer>> ServerReload(GridState<Customer> state)
+    {
+        _loading = true;
+        var totalItems = 0;
+        var mOffset = state.Page * state.PageSize;
+        IEnumerable<Customer> data;
+        HttpResponseMessage response = await Http.GetAsync($"Packing/GetCustomersForPacking?supplierId={currentPacking?.SupplierId}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Customer>>>();
+            totalItems = content2!.total ?? 0;
+            data = content2!.data ?? new List<Customer>();
+        }
+        else
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
+        if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Customer> sortDefinition)
+        {
+            data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
+        }
+        _loading = false;
+        return new GridData<Customer> { TotalItems = totalItems, Items = data };
+    }
+
+
+    private async Task ClickRefreshContactsCatalog(MouseEventArgs ev)
+    {
+        await ContactsCatalogMudDataGrid!.ReloadServerData();
+    }
+    private async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            _loading = true;
+            searchString = text;
+            await ContactsCatalogMudDataGrid!.ReloadServerData();
+        }
+    }
+    private async Task ClickSelectContact(Customer item)
+    {
+        Useful.customerId = item.Id ?? 0;
+        Useful.customerName = item.Name ?? "";
+
+        currentPacking!.CustomerId = item.Id;
+        currentPacking.CustomerName = item.Name ?? "";
+        currentStep = Models.PackingStep.PackingDetails;
+        await Task.CompletedTask;
+    }
+}

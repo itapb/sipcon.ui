@@ -7,6 +7,9 @@ namespace Sipcon.WebApp.Client.Helper
         internal static int userId = 1;
         internal static int supplierId = 4069;
         internal static int dealerId = 5103;
+        internal static int customerId = 0;
+        internal static string customerName = "";
+
         internal static string OkSavedMessage = "Registro guardado satisfactoriamente.";
         internal static async Task<DialogResult?> ShowDialog(this IDialogService dialogService, string? strMessage, string strTitle, string strPrimaryButton, Color mColor, string? strIcon)
         {

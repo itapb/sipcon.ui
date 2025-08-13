@@ -21,14 +21,15 @@
                             <TemplateColumn CellClass="d-flex justify-center align-center">
                                 <CellTemplate>
                                     <MudStack Row>
-                                        <MudText Class="mr-2" Color="@((context.Item.Closed ?? false) ? Color.Success : Color.Inherit)">@context.Item.Code</MudText>
-                                        <MudText Class="mr-2" Color="@((context.Item.Closed ?? false) ? Color.Success : Color.Inherit)">@context.Item.Weight Kg</MudText>
+                                        <MudText Class="mr-2" >@context.Item.Code</MudText>
+                                        <MudText Class="mr-2" >@context.Item.Weight Kg</MudText>
+                                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Filled.AddBox" OnClick="() => ClickAddPackage(context.Item)" />
                                     </MudStack>
                                 </CellTemplate>
                             </TemplateColumn>
-                        </Columns>
+                        </Columns>                        
                         <PagerContent>
-                            <MudStack Row="false" Spacing="2" >
+                            <MudStack Row="false" Spacing="2">
                                 <MudPaper Class="pa-3">
                                     <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Style="height:40px;" />
                                 </MudPaper>
@@ -39,10 +40,8 @@
             </MudItem>
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.Center">
-                    <MudStack Row="true" Spacing="5">
-                        <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Add" Size="Size.Medium" OnClick="ClickAddPackage" />
-                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="ClickCheckGuides" />
-                        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshGuides" />
+                    <MudStack Row="true" Spacing="5">                                              
+                        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshDispatchPackages" />
                         <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" OnClick="ClickCloseGuides" Size="Size.Medium" />
                     </MudStack>
                 </MudStack>
@@ -90,17 +89,17 @@
     };
 
     private async Task<GridData<Models.Package>> ServerReload(GridState<Models.Package> state)
-    {        
+    {
         _loading = true;
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Models.Package> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetPackages?guideId={currentDispatch?.GuideId}");
+        HttpResponseMessage response = await Http.GetAsync($"Packing/GetPackages?supplierId={currentDispatch?.SupplierId}&customerId={currentDispatch?.CustomerId}&userId={currentDispatch?.UserId}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.Package>>>();
             totalItems = content2!.total ?? 0;
-            data = content2!.data ?? new List<Models.Package>();
+            data = content2!.data?.Where(r => r.Closed == true) ?? new List<Models.Package>();
         }
         else
         {
@@ -116,7 +115,7 @@
 
     }
 
-    private async Task ClickRefreshGuides(MouseEventArgs ev)
+    private async Task ClickRefreshDispatchPackages(MouseEventArgs ev)
     {
         await PackagesMudDataGrid!.ReloadServerData();
     }
@@ -130,61 +129,40 @@
         }
     }
     private async Task ClickSelectPackage(Models.Package item)
-    { 
+    {
         currentDispatch!.PackageId = item.Id;
-        currentDispatch!.Code = item.Code;
-        currentDispatch!.PackageClosed = item.Closed;
+        currentDispatch!.Code = item.Code;        
         currentDispatch!.Number = item.Number;
         CurrentStep = Models.DispatchStep.Package;
         await Task.CompletedTask;
     }
-    private async Task ClickCloseGuides(MouseEventArgs args)
+    private void CloseDispatchPackages()
     {
         currentDispatch!.PackageId = 0;
-        CurrentStep = Models.DispatchStep.Guides; 
+        CurrentStep = Models.DispatchStep.GuideDetails;
+    }
+    private async Task ClickCloseGuides(MouseEventArgs args)
+    {
+        CloseDispatchPackages();
         await Task.CompletedTask;
     }
-    private async Task CloseGuide()
-    {
-        var result_Post_Zone = await Http.PostAsync($"api/Inventory/CloseGuide?guideId={currentDispatch?.GuideId}", null);
-        if (result_Post_Zone.IsSuccessStatusCode)
-        {
-            var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Guia", "OK", Color.Info, Icons.Material.Filled.Commit);
-            if (!result!.Canceled)
-            {
-                CurrentStep = Models.DispatchStep.Guides;
-            }
+     
 
-        }
-    }
-    private async Task ClickCheckGuides(MouseEventArgs args)
+    private async Task ClickAddPackage(Models.Package item)
     {
-        if  (await IsValidGuide(currentDispatch))
-        {
-            await CloseGuide();
-        }
-
-    }
-    private async Task<bool> IsValidGuide(Models.Dispatch? dispatch)
-    {      
-        string msgresult = "";
-        if (PackagesMudDataGrid!.FilteredItems.Count() == 0)  msgresult = "No hay bultos para confirmar";       
-        else if (PackagesMudDataGrid!.FilteredItems.Any(r => r.Closed == false)) msgresult = "Algun bulto esta abierto!";
-        if (msgresult.Length > 0) await DialogService.ShowDialog(msgresult, "Error GUIA", "OK", Color.Error, Icons.Material.Filled.Error);
-
-        return (msgresult.Length ==0);
-    }
-    private async Task ClickAddPackage(MouseEventArgs args)
-    {
-        var result_NewPackage = await Http.PostAsync($"api/Inventory/NewPackage?guideId={currentDispatch?.GuideId}", null);
+        var result_NewPackage = await Http.PostAsync($"Packing/AddPackge?packageCode={item.Code}&guideId={currentDispatch?.GuideId}&userId={currentDispatch?.UserId}", null);
         if (result_NewPackage.IsSuccessStatusCode)
         {
-            var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Nuevo Bulto", "OK", Color.Info, Icons.Material.Filled.Commit);
+            var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Bulto en Guia", "OK", Color.Info, Icons.Material.Filled.Commit);
             if (!result!.Canceled)
             {
-                await PackagesMudDataGrid!.ReloadServerData();
+                if (PackagesMudDataGrid?.FilteredItems.Count() == 1)
+                    CloseDispatchPackages();
+                else
+                    await PackagesMudDataGrid!.ReloadServerData();
             }
 
         }
     }
+
 }
