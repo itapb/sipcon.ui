@@ -18,7 +18,7 @@
                         </MudPaper>
                     </MudItem>
                     <MudItem xs="12">
-                        <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.LastChild"><MudTextField T="String" Label="NRO GUIA" @bind-Value="Nguide" Class="d-flex align-center justify-center" Required="true" RequiredError="Campo requerido"></MudTextField></MudFocusTrap>
+                        <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.LastChild"><MudTextField T="String" Label="NRO GUIA" @bind-Value="Nguide" Class="d-flex align-center justify-center"></MudTextField></MudFocusTrap>
                     </MudItem>
                     <MudItem xs="12">
                         <MudSelect T="Provider" Label="PROVEEDOR" ToStringFunc="@ConvertProviderFunc" ValueChanged="OnProviderValueChanged" Value="ProviderSelected" Class="d-flex align-center justify-center" Required="true" RequiredError="Campo requerido">
@@ -65,7 +65,7 @@
         await form!.Validate();
         if (form.IsValid)
         {
-            var result_Post_Zone = await Http.PostAsync($"Packing/CloseGuide?guideId={currentDispatch?.GuideId}&providerId={ProviderSelected?.Id}&guideNumber={Nguide}&userId={currentDispatch?.UserId}", null);
+            var result_Post_Zone = await Http.PostAsync($"api/Packing/CloseGuide?guideId={currentDispatch?.GuideId}&providerId={ProviderSelected?.Id}&guideNumber={Nguide}&userId={currentDispatch?.UserId}", null);
             if (result_Post_Zone.IsSuccessStatusCode)
             {
                 var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Guia", "OK", Color.Info, Icons.Material.Filled.Commit);
@@ -89,7 +89,7 @@
     }
     private async Task LoadProviders()
     {
-        var ProvidersResult = await Http.GetFromJsonAsync<WebApiResponse<List<Provider>>>("Packing/GetProviderToDeliver");
+        var ProvidersResult = await Http.GetFromJsonAsync<WebApiResponse<List<Provider>>>("api/Packing/GetProviderToDeliver");
         if (ProvidersResult != null)
         {
             Providers = ProvidersResult.data;

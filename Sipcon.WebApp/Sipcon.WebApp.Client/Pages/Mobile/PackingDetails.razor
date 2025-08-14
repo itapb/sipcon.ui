@@ -94,7 +94,7 @@
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Models.Package> data;
-        HttpResponseMessage response = await Http.GetAsync($"Packing/GetPackages?supplierId={currentPacking?.SupplierId}&customerId={currentPacking?.CustomerId}&userId={currentPacking?.UserId}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Packing/GetPackages?supplierId={currentPacking?.SupplierId}&customerId={currentPacking?.CustomerId}&userId={currentPacking?.UserId}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.Package>>>();
@@ -162,7 +162,7 @@
     }
     private async Task ClickAddPackage(MouseEventArgs args)
     {
-        var result_NewPackage = await Http.PostAsync($"Packing/NewPackage?supplierId={currentPacking?.SupplierId}&customerId={currentPacking?.CustomerId}", null);
+        var result_NewPackage = await Http.PostAsync($"api/Packing/NewPackage?supplierId={currentPacking?.SupplierId}&customerId={currentPacking?.CustomerId}", null);
         if (result_NewPackage.IsSuccessStatusCode)
         {
             var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Nuevo Bulto", "OK", Color.Info, Icons.Material.Filled.Commit);

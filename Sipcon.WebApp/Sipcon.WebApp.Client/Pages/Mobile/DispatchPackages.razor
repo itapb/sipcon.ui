@@ -94,7 +94,7 @@
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Models.Package> data;
-        HttpResponseMessage response = await Http.GetAsync($"Packing/GetPackages?supplierId={currentDispatch?.SupplierId}&customerId={currentDispatch?.CustomerId}&userId={currentDispatch?.UserId}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Packing/GetPackages?supplierId={currentDispatch?.SupplierId}&customerId={currentDispatch?.CustomerId}&userId={currentDispatch?.UserId}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.Package>>>();
@@ -125,7 +125,7 @@
         {
             _loading = true;
             searchString = text;
-            await PackagesMudDataGrid!.ReloadServerData();
+            await AddScannedPackage(text);            
         }
     }
     private async Task ClickSelectPackage(Models.Package item)
@@ -146,12 +146,28 @@
         CloseDispatchPackages();
         await Task.CompletedTask;
     }
-     
+    private async Task AddScannedPackage(string? InputCode)
+    {
+        var result_NewPackage = await AddPackage(InputCode, currentDispatch?.GuideId, currentDispatch?.UserId);
+        if (result_NewPackage!.IsSuccessStatusCode)
+        {
+            var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Bulto en Guia", "OK", Color.Info, Icons.Material.Filled.Commit);
+            searchString = "";
+            await PackagesMudDataGrid!.ReloadServerData();
+        }else if (result_NewPackage.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflictContent = await result_NewPackage.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();           
+            await DialogService.ShowDialog(conflictContent?.message!.Replace("USP_POST_GUIDE_ADDPACKGE : ",""), "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+
+    }
+    private async Task<HttpResponseMessage?> AddPackage(string? Code, int? GuideId, int? UserId) => await Http.PostAsync($"api/Packing/AddPackge?packageCode={Code}&guideId={GuideId}&userId={UserId}", null);
 
     private async Task ClickAddPackage(Models.Package item)
     {
-        var result_NewPackage = await Http.PostAsync($"Packing/AddPackge?packageCode={item.Code}&guideId={currentDispatch?.GuideId}&userId={currentDispatch?.UserId}", null);
-        if (result_NewPackage.IsSuccessStatusCode)
+        //var result_NewPackage = await Http.PostAsync($"api/Packing/AddPackge?packageCode={item.Code}&guideId={currentDispatch?.GuideId}&userId={currentDispatch?.UserId}", null);
+        var result_NewPackage = await AddPackage(item.Code,currentDispatch?.GuideId,currentDispatch?.UserId);
+        if (result_NewPackage!.IsSuccessStatusCode)
         {
             var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Bulto en Guia", "OK", Color.Info, Icons.Material.Filled.Commit);
             if (!result!.Canceled)

@@ -306,7 +306,7 @@
 
 
         var strMovementActions = System.Text.Json.JsonSerializer.Serialize(SelectedActions);
-        var result_PostMovementActions = (SelectedActions is not null) ? await Http.PostAsync($"api/Inventory/PostMovementActions?userId={SelectedActions.UserId}", new StringContent($"[{strMovementActions}]", null, "application/json")) : null;
+        var result_PostMovementActions = (SelectedActions is not null) ? await Http.PostAsync($"api/Movements/PostMovementActions?userId={SelectedActions.UserId}", new StringContent($"[{strMovementActions}]", null, "application/json")) : null;
         if ((result_PostMovementActions?.IsSuccessStatusCode ?? false))
         {
             var rest = result_PostMovementActions.Content.ReadAsStringAsync();

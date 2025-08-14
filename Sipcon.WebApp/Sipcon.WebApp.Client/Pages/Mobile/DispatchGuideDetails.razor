@@ -94,7 +94,7 @@
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Models.GuideDetails> data;
-        HttpResponseMessage response = await Http.GetAsync($"Packing/GetPackagesFromGuide?guideId={currentDispatch?.GuideId}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Packing/GetPackagesFromGuide?guideId={currentDispatch?.GuideId}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.GuideDetails>>>();
@@ -121,33 +121,33 @@
     }
     private async Task OnSearch(string text)
     {
-        if (text.Length >= 3 && (await GetGuideDetailsByPart(currentDispatch!.PackageId, text) is Models.GuideDetails MyGuideDetails))
+        if (text.Length == 0 || text.Length >= 3)
         {
-            currentDispatch.Quantity = null;
-            Dispatch.PreviousStep = Models.DispatchStep.Package;
-            await Task.CompletedTask;            
+            searchString = text;
+            await AddScannedPackage(text);
         }
-    }
-    private async Task<Models.GuideDetails?> GetGuideDetailsByPart(int? PackageId, string ScanCode)
-    {
-        Models.GuideDetails? PackageDetailResut = null;
-        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetPackageDetailByPart?packageId={PackageId}&scanCode={ScanCode}");
-        if (response.StatusCode == System.Net.HttpStatusCode.OK)
-        {
-            var Resut = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.GuideDetails>>>();
-            PackageDetailResut = Resut!.data?.FirstOrDefault();
-        }
-        else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
-        {
-            var conflictContent = await response.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
-            await DialogService.ShowDialog(conflictContent?.message!, "Error Repuesto", "OK", Color.Error, Icons.Material.Filled.Error);
-        }
-        return await Task.FromResult(PackageDetailResut);
     }
 
+    private async Task AddScannedPackage(string? InputCode)
+    {
+        var result_NewPackage = await AddPackage(InputCode, currentDispatch?.GuideId, currentDispatch?.UserId);
+        if (result_NewPackage!.IsSuccessStatusCode)
+        {
+            var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Bulto en Guia", "OK", Color.Info, Icons.Material.Filled.Commit);
+            searchString = "";
+            await GuideDetailslMudDataGrid!.ReloadServerData();
+        }
+        else if (result_NewPackage.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflictContent = await result_NewPackage.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+            await DialogService.ShowDialog(conflictContent?.message!.Replace("USP_POST_GUIDE_ADDPACKGE : ", ""), "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+
+    }
+    private async Task<HttpResponseMessage?> AddPackage(string? Code, int? GuideId, int? UserId) => await Http.PostAsync($"api/Packing/AddPackge?packageCode={Code}&guideId={GuideId}&userId={UserId}", null);
     private async Task ClickDeletePackage(Models.GuideDetails item)
     {
-        var result_Post_Zone = await Http.PostAsync($"Packing/DeletePackge?packageCode={item.Code}&guideId={currentDispatch?.GuideId}&userId={currentDispatch?.UserId}", null);
+        var result_Post_Zone = await Http.PostAsync($"api/Packing/DeletePackge?packageCode={item.Code}&guideId={currentDispatch?.GuideId}&userId={currentDispatch?.UserId}", null);
         if (result_Post_Zone.IsSuccessStatusCode)
         {
             var result = await DialogService.ShowDialog("Removido!", "Bulto", "OK", Color.Info, Icons.Material.Filled.Commit);

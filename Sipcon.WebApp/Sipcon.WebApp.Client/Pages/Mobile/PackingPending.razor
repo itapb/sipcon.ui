@@ -95,7 +95,7 @@
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Models.PackageDetail> data;
-        HttpResponseMessage response = await Http.GetAsync($"Packing/GetPackageDetailsPending?packageId={currentPacking?.PackageId}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Packing/GetPackageDetailsPending?packageId={currentPacking?.PackageId}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.PackageDetail>>>();
@@ -145,7 +145,7 @@
     private async Task<Models.PackageDetail?> GetPackageDetailByPart(int? PackageId, string ScanCode)
     {
         Models.PackageDetail? PackageDetailResut = null;
-        HttpResponseMessage response = await Http.GetAsync($"Packing/GetPackageDetailByPart?packageId={PackageId}&scanCode={ScanCode}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Packing/GetPackageDetailByPart?packageId={PackageId}&scanCode={ScanCode}");
         if (response.StatusCode == System.Net.HttpStatusCode.OK)
         {
             var Resut = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.PackageDetail>>>();

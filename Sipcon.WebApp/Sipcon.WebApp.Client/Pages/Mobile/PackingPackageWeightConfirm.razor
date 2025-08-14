@@ -44,7 +44,7 @@
     }
     private async Task SetPackageWeight()
     {
-        var result_Post_Zone = await Http.PostAsync($"Packing/ClosePackage?packageId={currentPacking?.PackageId}&weight={mWeight}", null);
+        var result_Post_Zone = await Http.PostAsync($"api/Packing/ClosePackage?packageId={currentPacking?.PackageId}&weight={mWeight}", null);
         if (result_Post_Zone.IsSuccessStatusCode)
         {
             var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Peso Bulto", "OK", Color.Info, Icons.Material.Filled.Commit);

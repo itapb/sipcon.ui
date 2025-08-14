@@ -78,7 +78,7 @@ else
     private async Task ClickRefreshMovement(MouseEventArgs args) => await MovementMudDataGrid!.ReloadServerData();
     private async Task ClickNewMovement(MouseEventArgs ev)
     {      
-        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/NewMovementWithContext?userId={Useful.userId}&supplierId={Useful.supplierId}&typeId={TypeId!.ToUpper()}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Movements/NewMovementWithContext?userId={Useful.userId}&supplierId={Useful.supplierId}&typeId={TypeId!.ToUpper()}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterMovementDetails>>();
@@ -128,7 +128,7 @@ else
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Movement> data;       
-        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetMovements?userId={Useful.userId}&supplierId={Useful.supplierId}&typeId={TypeId!.ToUpper()}&rowfrom={mOffset}&filter={searchString}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetMovements?userId={Useful.userId}&supplierId={Useful.supplierId}&typeId={TypeId!.ToUpper()}&rowfrom={mOffset}&filter={searchString}");
 
         if (response.IsSuccessStatusCode)
         {
@@ -181,7 +181,7 @@ else
             }
             else
             {
-                await PostActionAndReload(mActions, $"api/Inventory/PostMovementActions?userId={Useful.userId}");
+                await PostActionAndReload(mActions, $"api/Movements/PostMovementActions?userId={Useful.userId}");
             }
         }
 

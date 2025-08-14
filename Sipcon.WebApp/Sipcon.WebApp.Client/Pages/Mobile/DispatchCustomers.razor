@@ -74,7 +74,7 @@
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Customer> data;
-        HttpResponseMessage response = await Http.GetAsync($"Packing/GetCustomersForPacking?supplierId={currentDispatch?.SupplierId}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Packing/GetCustomersForPacking?supplierId={currentDispatch?.SupplierId}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Customer>>>();

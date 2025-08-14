@@ -175,7 +175,7 @@
     private async Task<bool> GetValidLocation(string InputlocationName)
     {
         bool isValidLocation = false;
-        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetValidLocation?movementDetailId={movementDetails!.Id}&locationName={InputlocationName}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetValidLocation?movementDetailId={movementDetails!.Id}&locationName={InputlocationName}");
         isValidLocation = response.IsSuccessStatusCode;
         if (isValidLocation)
         {
@@ -191,7 +191,7 @@
     {
         var AnMovementMobile = new movementMobile(Id: movementDetails!.Id, MovementId: movementDetails!.MovementId, PartId: movementDetails.PartId, LocationId: locationId, RealQty: InputRealQty, SerialCode: InputSerial);
         var strJsonMovementMobile = System.Text.Json.JsonSerializer.Serialize(AnMovementMobile);
-        var result_Post_Zone = await Http.PostAsync($"api/Inventory/PostMovementDetailMobile?userId={UserId}", new StringContent($"{strJsonMovementMobile}", null, "application/json"));
+        var result_Post_Zone = await Http.PostAsync($"api/Movements/PostMovementDetailMobile?userId={UserId}", new StringContent($"{strJsonMovementMobile}", null, "application/json"));
         if (result_Post_Zone.IsSuccessStatusCode)
         {
             await DialogService.ShowDialog("Movimiento Procesado!", "Procesado", "OK", Color.Success, Icons.Material.Filled.Check);
@@ -207,7 +207,7 @@
     private async Task GetMovementDetailsByUser()
     {
         InitializeFormFields();
-        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetMovementDetailsByUser?userId={UserId}&movementType={MovementType}&mode={ModeParameter}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetMovementDetailsByUser?userId={UserId}&movementType={MovementType}&mode={ModeParameter}");
         if (response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadFromJsonAsync<WebApiResponse<List<MovementDetails>>>();

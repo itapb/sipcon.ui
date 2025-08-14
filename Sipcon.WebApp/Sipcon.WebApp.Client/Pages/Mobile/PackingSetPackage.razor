@@ -60,7 +60,7 @@
     {
         var CustomerPackageDetail = new {PackageId = currentPacking!.PackageId, PartId = currentPacking!.PartId, Quantity = currentPacking!.Quantity };
         var strJsonCustomerPackageDetail = System.Text.Json.JsonSerializer.Serialize(CustomerPackageDetail);
-        var result_Post_Zone = await Http.PostAsync($"Packing/PostPackageDetail", new StringContent(strJsonCustomerPackageDetail, null, "application/json"));
+        var result_Post_Zone = await Http.PostAsync($"api/Packing/PostPackageDetail", new StringContent(strJsonCustomerPackageDetail, null, "application/json"));
         if (result_Post_Zone.IsSuccessStatusCode)
         {
             var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Bulto", "OK", Color.Info, Icons.Material.Filled.Commit);

@@ -96,7 +96,7 @@
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Models.PackageDetail> data;
-        HttpResponseMessage response = await Http.GetAsync($"Packing/GetPackageDetails?packageId={currentPacking?.PackageId}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Packing/GetPackageDetails?packageId={currentPacking?.PackageId}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.PackageDetail>>>();
@@ -138,7 +138,7 @@
     private async Task<Models.PackageDetail?> GetPackageDetailByPart(int? PackageId, string ScanCode)
     {
         Models.PackageDetail? PackageDetailResut = null;
-        HttpResponseMessage response = await Http.GetAsync($"Packing/GetPackageDetailByPart?packageId={PackageId}&scanCode={ScanCode}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Packing/GetPackageDetailByPart?packageId={PackageId}&scanCode={ScanCode}");
         if (response.StatusCode == System.Net.HttpStatusCode.OK)
         {
             var Resut = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.PackageDetail>>>();
@@ -166,7 +166,7 @@
     }
     private async Task ClickRemovePart(Models.PackageDetail item)
     {
-        var result_Post_Zone = await Http.PostAsync($"Packing/DeletePackageDetail?packageId={item.PackageId}&partId={item.PartId}", null);
+        var result_Post_Zone = await Http.PostAsync($"api/Packing/DeletePackageDetail?packageId={item.PackageId}&partId={item.PartId}", null);
         if (result_Post_Zone.IsSuccessStatusCode)
         {
             var result = await DialogService.ShowDialog("Removido!", "Repuesto", "OK", Color.Info, Icons.Material.Filled.Commit);

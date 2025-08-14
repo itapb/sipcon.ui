@@ -81,7 +81,7 @@
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Models.Guide> data;
-        HttpResponseMessage response = await Http.GetAsync($"Packing/GetGuides?supplierId={currentDispatch!.SupplierId}&customerId={currentDispatch.CustomerId}&userId={currentDispatch.UserId}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Packing/GetGuides?supplierId={currentDispatch!.SupplierId}&customerId={currentDispatch.CustomerId}&userId={currentDispatch.UserId}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.Guide>>>();
@@ -128,7 +128,7 @@
     }
     private async Task ClickAddGuide(MouseEventArgs args)
     {
-        var result_Post_Zone = await Http.PostAsync($"Packing/NewGuide?supplierId={currentDispatch?.SupplierId}&customerId={currentDispatch?.CustomerId}&userId={currentDispatch?.UserId}", null);
+        var result_Post_Zone = await Http.PostAsync($"api/Packing/NewGuide?supplierId={currentDispatch?.SupplierId}&customerId={currentDispatch?.CustomerId}&userId={currentDispatch?.UserId}", null);
         if (result_Post_Zone.IsSuccessStatusCode)
         {
             var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Nueva Guia", "OK", Color.Info, Icons.Material.Filled.Commit);

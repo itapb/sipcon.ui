@@ -10,7 +10,7 @@
         public int? ProviderId { get; set; }
         public string?  ProviderName { get; set; }
         public string? Number { get; set; }
-        public DateTime?   CreatedDate  { get; set; }
+        public DateTime?  CreatedDate  { get; set; }
         public DateTime? DeliveredDate  { get; set; }
         public string? StatusName  { get; set; }
         public int? UserId  { get; set; }
