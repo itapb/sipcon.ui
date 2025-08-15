@@ -112,7 +112,7 @@ else
         RequisitionTitle = "Pedidos";
         string hrefMovement =  "salesorder";       
 
-        $"Home,Inventario,Procesos,{RequisitionTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
+        $"Home,{RequisitionTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
         Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=PEDIDOS-PEDIDOS&userId={Useful.userId}");
         await LoadSaleOrderTypes();
     }
