@@ -22,6 +22,7 @@
                                     <MudStack Row>
                                         <MudText Class="mr-2" Color="@((context.Item.Closed ?? false) ? Color.Success : Color.Inherit)">@context.Item.Code</MudText>
                                         <MudText Class="mr-2" Color="@((context.Item.Closed ?? false) ? Color.Success : Color.Inherit)">@context.Item.Weight Kg</MudText>
+                                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Print" OnClick="() => ClickPrintPackage(context.Item)" Disabled="@(!(context.Item.Closed ?? false))"></MudIconButton>
                                     </MudStack>
                                 </CellTemplate>
                             </TemplateColumn>
@@ -147,7 +148,8 @@
     private async Task ClickDispatchGuide(MouseEventArgs args)
     {
 
-        if (await  IsValidAnyPackages()) CurrentStep = Models.PackingStep.DispatchGuide;
+        //if (await  IsValidAnyPackages()) CurrentStep = Models.PackingStep.DispatchGuide;
+        CurrentStep = Models.PackingStep.DispatchGuide;
         await Task.CompletedTask;
 
     }
@@ -181,4 +183,23 @@
 
         return (msgresult.Length == 0);
     }
+    private async Task ClickPrintPackage(Models.Package? item)
+    {
+        var strJsonSelectedPackage = System.Text.Json.JsonSerializer.Serialize(new { Type = "PK", RecordId = item?.Code });
+        var result_RequestPrint = await Http.PostAsync($"api/Print/RequestPrint?userId={currentPacking?.UserId}", new StringContent($"[{strJsonSelectedPackage}]", null, "application/json"));
+      
+        if (result_RequestPrint.IsSuccessStatusCode)
+        {
+            var RequestPrintContent = await result_RequestPrint.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
+            await DialogService.ShowDialog($"Solicitud de Impresion :{RequestPrintContent?.data?.FirstOrDefault()?.insertedRows}", "Bulto", "OK", Color.Info, Icons.Material.Filled.Commit);
+        } 
+        else if (result_RequestPrint.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var RequestPrintContent = await result_RequestPrint.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+            await DialogService.ShowDialog(RequestPrintContent?.message ,"Error", "OK", Color.Info, Icons.Material.Filled.Commit);
+        }
+        await Task.CompletedTask;
+    }
+    
+
 }
