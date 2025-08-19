@@ -1,0 +1,277 @@
+﻿@page "/backorders"
+@using System.Collections.Generic
+@using MudBlazor.Utilities
+<CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
+<MudDataGrid @ref="@BackOrderDataGrid" T="BackOrder"
+             ServerData="@ServerReload"
+             Hover FixedHeader Groupable
+             Height="calc(100vh - 290px)">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Back Orders<span class="ml-2" style="color: var(--mud-palette-warning);font-size: smaller;">2025</span></MudText>
+        <MudSpacer />
+        <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <Columns>
+
+        <PropertyColumn Property="x => x.SaleOrderNumber" Title="NRO ORDEN"
+                        @bind-Grouping="_saleOrderNumberGrouping" GroupBy="_groupBy1"
+                        @bind-GroupByOrder="_saleOrderNumberOrder"
+                        @bind-GroupExpanded="_saleOrderNumberExpanded">
+            <GroupTemplate>
+                @if (_customizeGroupTemplate)
+                {
+                    var color = context.Grouping.Key?.ToString() switch
+                    {
+                        "Healthcare" => Color.Primary,
+                        "Tech" => Color.Secondary,
+                        "Tourism" => Color.Info,
+                        _ => Color.Dark
+                    };
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Business" Color="@color" Size="Size.Small" Class="mr-2" />
+                        <span style="font-weight:bold">@context.Grouping.Key</span>
+                        <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
+                            @context.Grouping.Count() parte
+                        </MudChip>
+                    </div>
+                }
+                else
+                {
+                    <span style="font-weight:bold">@(context.Grouping.Key)</span>
+                }
+            </GroupTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.CreatedDate" Title="FECHA">
+            <GroupTemplate>
+                @if (_customizeGroupTemplate)
+                {
+                    <span style="font-weight:bold">FECHA: @context.Grouping.Key <MudChip Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small">total @context.Grouping.Count()</MudChip></span>
+                }
+                else
+                {
+                    <span style="font-weight:bold">@context.Title: @(context.Grouping.Key)</span>
+                }
+            </GroupTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.DealerName" Title="CONCESIONARIO" Groupable="false" />        
+        <PropertyColumn Property="x => x.PartInnerCode" Title="CODIGO" Groupable="false" />
+        <PropertyColumn Property="x => x.PartDescription" Title="DESCRIPCION" Groupable="false" />
+        <PropertyColumn Property="x => x.Quantity" Title="CANTIDAD" Groupable="false" Format="N0" />
+        <PropertyColumn Property="x => x.TypeName" Title="TIPO" Groupable="false" />                    
+     
+       
+       
+        
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="BackOrder" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+    </PagerContent>
+</MudDataGrid>
+
+<div class="d-flex flex-wrap mt-4">
+    <MudSwitch T="bool" @bind-Value="_customizeGroupTemplate" Color="@Color.Primary">Customize Group Template</MudSwitch>
+    <MudButton OnClick="@ExpandAllGroupsAsync" Color="@Color.Primary" Disabled="@(!(BackOrderDataGrid?.IsGrouped ?? false))">Expand all</MudButton>
+    <MudButton OnClick="@CollapseAllGroupsAsync" Color="@Color.Primary" Disabled="@(!(BackOrderDataGrid?.IsGrouped ?? false))">Collapse all</MudButton>
+</div>
+
+@code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    List<BreadcrumbItem> ItemsNavigate = new();
+#nullable enable
+    public static string __description__ = "Multi Level Grouping within DataGrid";
+    // For the Grid
+    private MudDataGrid<BackOrder> BackOrderDataGrid = null!;
+    private string? searchString = string.Empty;
+    // Bound Properties @bind-
+    private bool _customizeGroupTemplate;
+    private bool _customizeGroupBy;
+    private bool _customizeGroupStyle;
+    private bool _saleOrderNumberGrouping = true;  
+    private int _saleOrderNumberOrder;
+
+    // Display Options
+    private bool _saleOrderNumberExpanded = false;
+
+
+    // Primary grouping by industry type
+    private Func<BackOrder, object>? _groupBy1;
+
+    protected override void OnInitialized()
+    {
+        string hrefMovement = "backorders";
+        $"Home,Inventario,Procesos,BackOrders".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
+        // _groupBy1 = x =>
+        // {
+        //     if (_customizeGroupBy)
+        //     {
+        //         return x.SaleOrderNumber switch  { 100 => 100,  101 => 101, 103 => 103,  _ => 104  };
+        //     }
+
+        //     return x.SaleOrderNumber ?? 0;
+        // };
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+
+        if (firstRender)
+        {
+            // Check if the dataGrid is grouped and update the state accordingly (for IsGrouped)
+            if (BackOrderDataGrid?.IsGrouped == true)
+            {
+                StateHasChanged();
+            }
+        }
+    }
+  
+    private int LocationCurrentPage = 0;
+    bool _loading = true;
+    bool IsAllCheckBoxSelected = false;
+    private async Task<GridData<BackOrder>> ServerReload(GridState<BackOrder> state)
+    {
+        IsAllCheckBoxSelected = false;
+        _loading = true;
+        var mOffset = state.Page * state.PageSize;
+        var totalItems = 0;
+        IEnumerable<BackOrder> data;
+        HttpResponseMessage response = await Http.GetAsync($"api/BackOrder/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&rowFrom={mOffset}&filter={searchString}");
+
+        if (response.IsSuccessStatusCode)
+        {
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<BackOrder>>>();
+            totalItems = content2!.total ?? 0;
+            data = content2!.data ?? new List<BackOrder>(); ;
+        }
+        else
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
+
+        if (state.SortDefinitions != null && state.SortDefinitions.Any())
+        {
+            // on server or actual API would be IQueryable likely
+            IOrderedEnumerable<BackOrder>? orderedQuery = null;
+            foreach (var sort in state.SortDefinitions)
+            {
+                orderedQuery = data.OrderByDirection(sort.Descending ? SortDirection.Descending : SortDirection.Ascending, obj => GetPropertyValue(obj, sort.SortBy));
+            }
+            data = orderedQuery!.ToList();
+        }
+        _loading = false;
+
+        return new GridData<BackOrder> { TotalItems = totalItems, Items = data };
+    }
+
+    private static string GroupClassFunc(GroupDefinition<BackOrder> item)
+    {
+        var key = item.Grouping.Key?.ToString();
+
+        return item.Title switch
+        {
+            "NRO ORDEN" => key switch
+            {
+                "Healthcare" => "mud-theme-primary",
+                "Tech" => "mud-theme-secondary",
+                "Tourism" => "mud-theme-info",
+                _ => "mud-theme-dark"
+            },
+            "CONCESIONARIO" => key switch
+            {
+                "Northeast" or "Southeast" => "mud-theme-warning",
+                "West" or "Pacific" => "mud-theme-success",
+                "Midwest" => "mud-theme-info",
+                "Southwest" => "mud-theme-error",
+                _ => string.Empty
+            },
+            _ => key switch
+            {
+                "Continental" => "mud-theme-primary",
+                "Humid Subtropical" => "mud-theme-warning",
+                "Mediterranean" or "Tropical" => "mud-theme-info",
+                "Desert" or "Semi-arid" or "Arid" => "mud-theme-error",
+                _ => string.Empty
+            }
+        };
+    }
+
+    private static string GroupStyleFunc(GroupDefinition<BackOrder> item)
+    {
+        var indent = item.Level * 16; // 16px per level
+        var borderWidth = Math.Max(1, 4 - item.Level); // Decrease border width with depth
+
+        var style = new StyleBuilder()
+            .AddStyle("padding-left", $"{indent}px")
+            .AddStyle("border-left", $"{borderWidth}px solid")
+            .AddStyle("border-color", GetBorderColor(item))
+            .AddStyle("opacity", $"{1 - (item.Level - 1) * 0.2}") // Fade out deeper levels slightly
+            .Build();
+
+        return style;
+    }
+
+    private static string GetBorderColor(GroupDefinition<BackOrder> item)
+    {
+        var key = item.Grouping.Key?.ToString();
+
+        return item.Title switch
+        {
+            // Primary level (Industry)
+            "NRO ORDEN" => key switch
+            {
+                "Healthcare" => "var(--mud-palette-primary)",
+                "Tech" => "var(--mud-palette-secondary)",
+                "Tourism" => "var(--mud-palette-info)",
+                _ => "var(--mud-palette-dark)"
+            },
+            "CONCESIONARIO" => key switch
+            {
+                "Northeast" or "Southeast" => "var(--mud-palette-warning)",
+                "West" or "Pacific" => "var(--mud-palette-success)",
+                "Midwest" => "var(--mud-palette-info)",
+                "Southwest" => "var(--mud-palette-error)",
+                _ => "var(--mud-palette-dark)"
+            },
+            "CODIGO" => key switch
+            {
+                "Continental" => "var(--mud-palette-primary)",
+                "Humid Subtropical" => "var(--mud-palette-warning)",
+                "Mediterranean" or "Tropical" => "var(--mud-palette-info)",
+                "Desert" or "Semi-arid" or "Arid" => "var(--mud-palette-error)",
+                _ => "var(--mud-palette-dark)"
+            },
+            _ => "var(--mud-palette-dark)"
+        };
+    }
+
+    private Task ExpandAllGroupsAsync()
+    {
+        return BackOrderDataGrid.ExpandAllGroupsAsync();
+    }
+
+    private Task CollapseAllGroupsAsync()
+    {
+        return BackOrderDataGrid.CollapseAllGroupsAsync();
+    }
+
+    private async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            _loading = true;
+            searchString = text;
+            await BackOrderDataGrid!.ReloadServerData();
+        }
+    }
+   
+
+
+    private static object? GetPropertyValue<TT>(TT obj, string propertyName)
+    {
+        return typeof(TT).GetProperty(propertyName)?.GetValue(obj);
+    }
+
+
+}
