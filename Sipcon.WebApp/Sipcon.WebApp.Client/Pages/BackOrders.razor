@@ -6,14 +6,29 @@
              ServerData="@ServerReload"
              Hover FixedHeader Groupable
              Height="calc(100vh - 290px)">
-    <ToolBarContent>
-        <MudText Typo="Typo.h6">Back Orders<span class="ml-2" style="color: var(--mud-palette-warning);font-size: smaller;">2025</span></MudText>
-        <MudSpacer />
+    <ToolBarContent>        
         <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        <MudSwitch T="bool?" Color="Color.Primary" ValueChanged="OnSwitchValueChanged">@(_saleOrderNumberGrouping ? "NRO ORDEN" : "CODIGO PARTE")</MudSwitch>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshBackOrder"></MudIconButton>
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+            @foreach (var strmodulo in Modules!)
+            {
+                <MudMenuItem Label="@strmodulo.ActionDisplay" Icon="@(strmodulo.ActionDisplay.ToActionIcon())" IconColor="@Color.Info" OnClick="@(() => ClickMenuBackOrder(strmodulo.ActionName))" />
+            }
+        </MudMenu>
     </ToolBarContent>
     <Columns>
+        <TemplateColumn>
+            <HeaderTemplate>
+                <MudCheckBox @bind-Value="IsAllCheckBoxSelected" @bind-Value:after="AfterAsyncAllCheck" />
+            </HeaderTemplate>
+            <CellTemplate>
+                <MudCheckBox @bind-Value="@context.Item.IsSelected" />
+            </CellTemplate>
+        </TemplateColumn>
 
-        <PropertyColumn Property="x => x.SaleOrderNumber" Title="NRO ORDEN"
+        <PropertyColumn Property="x => x.SaleOrderNumber" Title="NRO ORDEN" Groupable="@(_saleOrderNumberGrouping)"
                         @bind-Grouping="_saleOrderNumberGrouping" GroupBy="_groupBy1"
                         @bind-GroupByOrder="_saleOrderNumberOrder"
                         @bind-GroupExpanded="_saleOrderNumberExpanded">
@@ -54,12 +69,45 @@
             </GroupTemplate>
         </PropertyColumn>
         <PropertyColumn Property="x => x.DealerName" Title="CONCESIONARIO" Groupable="false" />        
-        <PropertyColumn Property="x => x.PartInnerCode" Title="CODIGO" Groupable="false" />
+        <PropertyColumn Property="x => x.PartInnerCode" Title="CODIGO" Groupable="@(_partInnerCodeGrouping)"
+                        @bind-Grouping="_partInnerCodeGrouping" GroupBy="_groupBy1"
+                        @bind-GroupByOrder="_partInnerCoderOrder"
+                        @bind-GroupExpanded="_partInnerCodeExpanded" >
+
+            <GroupTemplate>
+                @if (_customizeGroupTemplate)
+                {
+                    var color = context.Grouping.Key?.ToString() switch
+                    {
+                        "Healthcare" => Color.Primary,
+                        "Tech" => Color.Secondary,
+                        "Tourism" => Color.Info,
+                        _ => Color.Dark
+                    };
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Business" Color="@color" Size="Size.Small" Class="mr-2" />
+                        <span style="font-weight:bold">@context.Grouping.Key</span>
+                        <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
+                            @context.Grouping.Count() concesionario
+                        </MudChip>
+                    </div>
+                }
+                else
+                {
+                    <span style="font-weight:bold">@(context.Grouping.Key)</span>
+                }
+            </GroupTemplate>
+        </PropertyColumn>
+
         <PropertyColumn Property="x => x.PartDescription" Title="DESCRIPCION" Groupable="false" />
         <PropertyColumn Property="x => x.Quantity" Title="CANTIDAD" Groupable="false" Format="N0" />
-        <PropertyColumn Property="x => x.TypeName" Title="TIPO" Groupable="false" />                    
-     
-       
+        <PropertyColumn Property="x => x.TypeName" Title="TIPO" Groupable="false" />   
+
+        <TemplateColumn>
+            <CellTemplate>
+                <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditBackOrder(context.Item)" />
+            </CellTemplate>
+        </TemplateColumn>
        
         
     </Columns>
@@ -70,47 +118,52 @@
 
 <div class="d-flex flex-wrap mt-4">
     <MudSwitch T="bool" @bind-Value="_customizeGroupTemplate" Color="@Color.Primary">Customize Group Template</MudSwitch>
-    <MudButton OnClick="@ExpandAllGroupsAsync" Color="@Color.Primary" Disabled="@(!(BackOrderDataGrid?.IsGrouped ?? false))">Expand all</MudButton>
-    <MudButton OnClick="@CollapseAllGroupsAsync" Color="@Color.Primary" Disabled="@(!(BackOrderDataGrid?.IsGrouped ?? false))">Collapse all</MudButton>
+    <MudButton OnClick="@ExpandAllGroupsAsync" Color="@Color.Primary" >Expand all</MudButton>
+    <MudButton OnClick="@CollapseAllGroupsAsync" Color="@Color.Primary" >Collapse all</MudButton>
 </div>
 
 @code {
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
+    public string customstr { get; set; } = "NRO ORDEN VENTA";
     List<BreadcrumbItem> ItemsNavigate = new();
-#nullable enable
-    public static string __description__ = "Multi Level Grouping within DataGrid";
+    private List<Module>? Modules;
+    DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
     // For the Grid
     private MudDataGrid<BackOrder> BackOrderDataGrid = null!;
     private string? searchString = string.Empty;
     // Bound Properties @bind-
-    private bool _customizeGroupTemplate;
+    private bool _customizeGroupTemplate = true;
     private bool _customizeGroupBy;
     private bool _customizeGroupStyle;
-    private bool _saleOrderNumberGrouping = true;  
+    private bool _saleOrderNumberGrouping = false;  
     private int _saleOrderNumberOrder;
+
+    private bool _partInnerCodeGrouping = true;
+    private int _partInnerCoderOrder;
 
     // Display Options
     private bool _saleOrderNumberExpanded = false;
+    private bool _partInnerCodeExpanded = false;
+
 
 
     // Primary grouping by industry type
     private Func<BackOrder, object>? _groupBy1;
+    private async Task AfterAsyncAllCheck()
+    {
+        if (BackOrderDataGrid != null)
+            BackOrderDataGrid.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
+        await Task.CompletedTask;
+    }
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         string hrefMovement = "backorders";
         $"Home,Inventario,Procesos,BackOrders".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
-        // _groupBy1 = x =>
-        // {
-        //     if (_customizeGroupBy)
-        //     {
-        //         return x.SaleOrderNumber switch  { 100 => 100,  101 => 101, 103 => 103,  _ => 104  };
-        //     }
-
-        //     return x.SaleOrderNumber ?? 0;
-        // };
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-BACKORDER&userId={Useful.userId}");
     }
+
 
     protected override void OnAfterRender(bool firstRender)
     {
@@ -125,7 +178,7 @@
             }
         }
     }
-  
+
     private int LocationCurrentPage = 0;
     bool _loading = true;
     bool IsAllCheckBoxSelected = false;
@@ -265,13 +318,88 @@
             await BackOrderDataGrid!.ReloadServerData();
         }
     }
-   
+
 
 
     private static object? GetPropertyValue<TT>(TT obj, string propertyName)
     {
         return typeof(TT).GetProperty(propertyName)?.GetValue(obj);
     }
+    private async Task ClickEditBackOrder(BackOrder item) 
+    {
+        BackOrderItem mBackOrderItem = new BackOrderItem
+        {
+            BackOrderId = item.Id,           
+            Quantity = item.Quantity
+        };
+        var dialogReference = await DialogService.ShowAsync(typeof(PartToBackOrderDetails), "", new DialogParameters { ["mBackOrderItem"] = mBackOrderItem }, options);
+        if (!((await dialogReference.Result)!.Canceled)) await BackOrderDataGrid!.ReloadServerData();      
+    }
+    private async Task ClickRefreshBackOrder(MouseEventArgs ev)
+    {
+        await BackOrderDataGrid!.ReloadServerData();
+    }
+    private async Task ClickMenuBackOrder(string? actionName)
+    {       
+        var mActions = BackOrderDataGrid?.FilteredItems.Where(item => item.IsSelected )
+                                                         .Select(item => new Client.Models.Action
+                                                         {
+                                                             UserId = Useful.userId,
+                                                             RecordId = item.Id,
+                                                             ModuleId = Modules!.FirstOrDefault()?.Id,
+                                                             actionName = actionName,
+                                                             ActionComment = "",
+                                                             RelatedId = 0
+                                                         }).ToList();
+
+        if (mActions?.Count == 0)
+        {
+            await DialogService.ShowDialog("Accion no permitada, Verificar datos seleccionado(s)", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        else if (mActions?.Count > 0)
+        {
+            if (actionName == "ASSIGN")
+            {
+                string ModuleName = "INVENTARIO-PROCESOS-BACKORDER";
+                var dialogReference = await DialogService.ShowAsync<AssignUserToBackOrder>("", new DialogParameters { ["SelectedActions"] = mActions, ["moduleName"] = ModuleName }, options);
+                if (await Useful.AsyncDialogResultIsOk(dialogReference)) await BackOrderDataGrid!.ReloadServerData();
+            }
+            else
+            {
+                await PostActionAndReload(mActions, $"api/BackOrder/PostActions?userId={Useful.userId}");
+            }
+        }
+        await Task.CompletedTask;
+    }
+    private async Task PostActionAndReload(List<Models.Action>? actions, string requesturi)
+    {
+        var result_Post_Actions = (actions?.Count > 0) ? await Http.PostAsync(requesturi, new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json")) : null;
+        if ((result_Post_Actions?.IsSuccessStatusCode ?? false))
+        {
+            var rest = result_Post_Actions.Content.ReadAsStringAsync();
+            await DialogService.ShowDialog(Useful.OkSavedMessage, "Accion", "OK", Color.Info, Icons.Material.Filled.Commit);
+            await BackOrderDataGrid!.ReloadServerData();
+        }
+        else if (result_Post_Actions?.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflictContent = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+            await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        else
+        {
+            var errorMessage = await result_Post_Actions!.Content.ReadAsStringAsync() ?? "";            
+            await DialogService.ShowUnexpected(); ;
+        }
+    }
 
 
+    private async Task OnSwitchValueChanged(bool? valueinput)
+    {
+        var boolresult = valueinput ?? false;
+        _saleOrderNumberGrouping = boolresult;
+        _partInnerCodeGrouping = !boolresult;
+
+        await BackOrderDataGrid!.ReloadServerData();
+        await Task.CompletedTask;
+    }
 }
