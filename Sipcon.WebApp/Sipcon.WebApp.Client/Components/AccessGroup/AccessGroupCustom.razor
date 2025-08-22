@@ -1,0 +1,154 @@
+﻿
+@using Sipcon.WebApp.Client.Models
+@using Sipcon.WebApp.Client.Enum
+@using Sipcon.WebApp.Client.Services
+
+@inject ISecurityService SecurityService
+
+
+<MudDataGrid @ref="_accessGroupDetailGrid"
+             T="AccessUserDetail"
+             ServerData="ServerReload"
+             Striped="true"
+             Dense="true"
+             Hover="true"
+             Filterable="false"
+             FixedHeader Height="calc(100vh - 400px)"
+             @bind-CurrentPage="_CurrentPage">
+        <ToolBarContent>
+            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="_searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshCatalog"></MudIconButton>
+        </ToolBarContent>
+        <Columns>
+        <TemplateColumn T="AccessUserDetail" Title="CODIGO">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">
+                    @("#" + context.Item.AccessGroupId.ToString().PadLeft(10, '0'))
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+            <TemplateColumn T="AccessUserDetail" Title="GRUPO">
+                <CellTemplate>
+                    <MudText Typo="Typo.caption" Inline="true" Style="font-weight:bold;font-style:italic">
+                    @context.Item.AccessGroup.ToUpper()
+                    </MudText>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="AccessUserDetail" Title="">
+                <CellTemplate>
+                    <div class="d-flex justify-center">
+                        @if (context.Item.Assign)
+                        {
+                            string style = "";
+                            style += "color:#fff";
+                            style += ";background-color:#00ca5f";
+                            style += ";font-size: 11px";
+                            style += ";font-style:italic";
+
+                            <MudChip T="string" Style="@style" Label="true" Disabled="true">
+                                ASIGNADO
+                            </MudChip>
+                        }
+                        else
+                        {
+                            string style = "";
+                            style += "color:#fff";
+                            style += ";background-color:#757575";
+                            style += ";font-size: 11px";
+                            style += ";font-style:italic";
+
+                            <MudChip T="string" Style="@style" Label="true" Disabled="true">
+                                DESASIGNADO
+                            </MudChip>
+
+                        }
+
+
+                    </div>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn>
+                <CellTemplate>
+                    <MudSwitch T="bool" @bind-Value="context.Item.Assign" @bind-Value:after="() => AfterValueChange(context.Item)" Label="" LabelPlacement="Placement.End" Color="Color.Success" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="AccessUserDetail" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        </PagerContent>
+    </MudDataGrid>
+
+
+
+
+@code {
+
+    [Parameter] public int? IdAccessUser { get; set; }
+    
+    private MudDataGrid<AccessUserDetail>? _accessGroupDetailGrid;
+
+    private string _searchString = string.Empty;
+    private int _CurrentPage = 0;
+    private int _rowCount = 0;
+    private int _rowsTotal = 0;
+
+    private async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            _searchString = text;
+            await _accessGroupDetailGrid!.ReloadServerData();
+        }
+    }
+
+    private async Task ClickRefreshCatalog(MouseEventArgs ev)
+    {
+        _searchString = string.Empty;
+        await _accessGroupDetailGrid!.ReloadServerData();
+    }
+
+
+    Func<AccessUserDetail, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    {
+        nameof(AccessUserDetail.AccessGroup) => o => o.AccessGroup ?? "",
+        _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto
+    };
+
+
+    private async Task<GridData<AccessUserDetail>> ServerReload(GridState<AccessUserDetail> state)
+    {
+       
+        _rowCount = state.Page * state.PageSize;
+        IEnumerable<AccessUserDetail> _details = new List<AccessUserDetail>();
+        var serviceResponse = await SecurityService.GetAccessGroupUser(IdAccessUser ?? 0, _rowCount, null, _searchString);
+
+        if (serviceResponse.Processed)
+        {
+            _details = serviceResponse.Data;
+            _rowsTotal = serviceResponse.Total;
+           
+        }
+        else
+        {
+            _details = new List<AccessUserDetail>();
+            _rowsTotal = 0;
+        }
+
+        return new GridData<AccessUserDetail> { TotalItems = _rowsTotal, Items = _details };
+
+    }
+
+
+    private async Task AfterValueChange(AccessUserDetail detail)
+    {
+        var serviceResponse = await SecurityService.CreateAccessUserDetail(detail, Useful.userId);
+        if (!serviceResponse.Processed)
+        {
+            await _accessGroupDetailGrid!.ReloadServerData();
+        }
+        await Task.CompletedTask;
+    }
+   
+   
+}

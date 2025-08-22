@@ -1,0 +1,143 @@
+﻿@using Sipcon.WebApp.Client.Models
+@using Sipcon.WebApp.Client.Enum
+@using Sipcon.WebApp.Client.Services
+
+@inject ISecurityService SecurityService
+@inject IDialogService DialogService
+
+<MudGrid Spacing="0">
+    <MudItem xs="12">
+        <MudPaper Elevation="2" Class="jpv1-dialog-background-title pa-3" Square="true">
+        <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+            <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                <MudStack Row="true">
+                    <MudText Typo="Typo.h6" Color="Color.Info">@(Title ?? "Usuarios")</MudText>
+                </MudStack>
+                <MudStack>
+                    <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="CloseClick" />
+                </MudStack>
+            </MudStack>
+        </MudPaper></MudPaper>
+    </MudItem>
+
+    <MudItem xs="12">
+        <MudDataGrid @ref="AccessUserGrid" 
+            T="AccessUserDetail" 
+            ServerData="ServerReload" 
+            Striped="true" 
+            Hover="true" 
+            Filterable="false" 
+            FixedHeader Height="calc(100vh - 400px)" 
+            @bind-CurrentPage="_CurrentPage">
+        <ToolBarContent>
+            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="_searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshCatalog"></MudIconButton>
+        </ToolBarContent>
+        <Columns>
+                <TemplateColumn T="AccessUserDetail" Title="CODIGO">
+                    <CellTemplate>
+                        <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">
+                            @("#" + context.Item.UserId.ToString().PadLeft(10, '0'))
+                        </MudText>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn T="AccessUserDetail" Title="NOMBRE Y APELLIDOS">
+                    <CellTemplate>
+                        <MudText Typo="Typo.caption" Align="Align.Start"><b>@(context.Item.UserName.ToUpper() + " " + context.Item.UserLastName.ToUpper())</b></MudText>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn T="AccessUserDetail" Title="USUARIO">
+                    <CellTemplate>
+                        <MudText Typo="Typo.caption" Align="Align.Start">
+                            @(context.Item.Login.ToUpper())
+                        </MudText>
+                    </CellTemplate>
+                </TemplateColumn>
+            <TemplateColumn>
+                <CellTemplate>
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Filled.NextPlan" OnClick="() => ClickSelect(context.Item)" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="AccessUserDetail" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        </PagerContent>
+    </MudDataGrid>
+    </MudItem>
+</MudGrid>
+
+
+@code {
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;   
+    [Parameter] public int IdAccessGroup { get; set; }
+    [Parameter] public string? Title { get; set; }
+    
+    private MudDataGrid<AccessUserDetail>? AccessUserGrid;
+
+    string _searchString = "";
+    private int _CurrentPage = 0;
+    private int _rowCount = 0;
+    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
+    private int _rowsTotal = 0;
+
+    private async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            _searchString = text;
+            await AccessUserGrid!.ReloadServerData();
+        }
+    }
+
+    Func<AccessUserDetail, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    {
+        nameof(AccessUserDetail.Login) => o => o.Login ?? "",
+        nameof(AccessUserDetail.UserName) => o => o.UserName ?? "",
+        nameof(AccessUserDetail.UserLastName) => o => o.UserLastName ?? "",
+        _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto
+    };
+
+
+    private async Task<GridData<AccessUserDetail>> ServerReload(GridState<AccessUserDetail> state)
+    {
+        _rowCount = state.Page * state.PageSize;
+        IEnumerable<AccessUserDetail> _Details = new List<AccessUserDetail>();
+       
+        var serviceResponse = await SecurityService.GetAccessUserDetails(IdAccessGroup, _rowCount, false, _searchString);
+        if (serviceResponse.Processed)
+        {
+            _Details = serviceResponse.Data;
+            _rowsTotal = serviceResponse.Total;
+           
+        }
+        else
+        {
+            _Details = new List<AccessUserDetail>();
+            _rowsTotal = 0;
+        }
+
+        return new GridData<AccessUserDetail> { TotalItems = _rowsTotal, Items = _Details };
+
+    }
+
+
+    private async Task ClickRefreshCatalog(MouseEventArgs ev)
+    {
+        await AccessUserGrid!.ReloadServerData();
+    }
+
+
+    private async Task ClickSelect(AccessUserDetail item)  
+    {  
+        MudDialog?.Close(DialogResult.Ok(item));
+        await Task.CompletedTask;  
+    }  
+   
+
+    private void CloseClick(MouseEventArgs args)
+    {
+        MudDialog?.Close();
+    }
+}

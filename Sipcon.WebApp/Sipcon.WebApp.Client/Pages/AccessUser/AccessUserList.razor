@@ -1,27 +1,28 @@
-﻿@page "/license"
+﻿@page "/accessuser"
 
 
 @using Sipcon.WebApp.Client.Models
 @using Sipcon.WebApp.Client.Services
 @using Sipcon.WebApp.Client.Utils
 @using Sipcon.WebApp.Client.Enum
+@using Sipcon.WebApp.Client.Components.AccessUser
 @using System.Text.Json
 
 
-@inject ILicenseService LicenseService
+@inject ISecurityService SecurityService
 @inject IDialogService DialogService
 @inject UtilModuleActions ModuleActionsService
 @inject IJSRuntime JSRuntime
 
-<PageTitle>Licencia</PageTitle>
+<PageTitle>Usuarios</PageTitle>
 <CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
 
 <MudDataGrid @ref="_mudDataGrid"
 MultiSelection="true" 
-SelectedItems="@selectedLicense"
+SelectedItems="@selectedAccessGroup"
 SortMode="SortMode.Multiple"
 Filterable="true"
-FixedHeader Height="calc(92vh - 235px)"
+FixedHeader Height="calc(98vh - 235px)"
 Hideable="true"
 Loading="_loading"
 Bordered="false"
@@ -29,7 +30,7 @@ Dense="true"
 ServerData="LoadGridData">
 
     <ToolBarContent>
-        <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddLicense()"></MudIconButton>
+        <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddUserAsync()"></MudIconButton>
         <MudTextField @bind-Value="_searchString" Placeholder="buscar" Adornment="Adornment.Start" Immediate="true"
         Typo="Typo.caption"
         AdornmentIcon="@Icons.Material.Filled.Search"
@@ -49,71 +50,33 @@ ServerData="LoadGridData">
         </MudMenu>
     </ToolBarContent>
     <Columns>
-        <SelectColumn T="License" />
-        <TemplateColumn T="License" Title="NRO.">
+        <SelectColumn T="AccessUserDetail" />
+        <TemplateColumn T="AccessUserDetail" Title="USUARIO">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@("#" + context.Item.Id.ToString())</MudText>
-            </CellTemplate>
-        </TemplateColumn>
-        <TemplateColumn T="License" Title="DESCRIP.">
-            <CellTemplate>
-                <MudText Typo="Typo.caption" Inline="true" Style="font-weight:bold;">@context.Item.Description.ToUpper()</MudText>
-            </CellTemplate>
-        </TemplateColumn>
-        <TemplateColumn T="License" Title="TIPO">
-            <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Start"><b>@context.Item.Type.ToUpper()</b></MudText>
-            </CellTemplate>
-        </TemplateColumn>
-        <TemplateColumn T="License" Title="EXPIRACION">
-            <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.ExpirationDate?.ToString("dd MMM yyyy"))</MudText>
-            </CellTemplate>
-        </TemplateColumn>
-        <TemplateColumn T="License" Title="ESTATUS">
-            <CellTemplate>
-                <div class="d-flex justify-center">
-                    @if (context.Item.EstatusName != null)
-                    {
-                        string style = "";
+                <MudStack Row="true">
+                    <MudAvatar Color="Color.Dark">@(string.IsNullOrEmpty(context.Item.Login) ? "U" : context.Item.Login.ToUpper().Substring(0, 1))</MudAvatar>
+                    <MudText Typo="Typo.caption" Inline="true" Style="font-size: 12px;font-style:italic">@(context.Item.Login.ToUpper())</MudText>
+                </MudStack>
 
-                        if (context.Item.EstatusName.ToUpper() == "CREADO")
-                            style += "";
-                        else if (context.Item.EstatusName.ToUpper() == "ACTIVADO")
-                        {
-                            style += "color:#fff";
-                            style += ";background-color:#0099F3";
-                        }
-                        else if (context.Item.EstatusName.ToUpper() == "APROBADO")
-                        {
-                            style += "color:#fff";
-                            style += ";background-color:#0099F3";
-                        }
-                        else if (context.Item.EstatusName.ToUpper() == "PROCESADO")
-                        {
-                            style += "color:#fff";
-                            style += ";background-color:#757575";
-                        }
-                        else
-                        {
-                            style += "color:#fff";
-                            style += ";background-color:#FF7043";
-                        }
-                        style += ";font-size: 11px";
-                        style += ";font-style:italic";
-
-                        <MudChip T="string" Style="@style" Label="true" Disabled="true">
-                            @(context.Item.EstatusName.ToUpper())
-                        </MudChip>
-                    }
-                   
-                </div>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn T="AccessUserDetail" Title="NOMBRES Y APELLIDOS">
+            <CellTemplate>
+                <MudChatBubble Style="min-width: 250px;">@(context.Item.UserName.ToUpper() + " " + context.Item.UserLastName.ToUpper())</MudChatBubble>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn T="AccessUserDetail" Title="CODIGO">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">
+                    @("#" + context.Item.UserId.ToString().PadLeft(10, '0'))
+                </MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn >
             <CellTemplate>
                 <MudStack Row="true">
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" Href="@("licensedetails/" + context.Item.Id)" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditUserAsync(context.Item)" />
+                    <MudIconButton Icon="@Icons.Material.Outlined.Groups" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditRolesAsync(context.Item)" />
                 </MudStack>
 
             </CellTemplate>
@@ -121,7 +84,7 @@ ServerData="LoadGridData">
     </Columns>
 
     <PagerContent>
-        <MudDataGridPager T="License" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        <MudDataGridPager T="AccessUserDetail" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
     </PagerContent>
 </MudDataGrid>
 
@@ -129,7 +92,7 @@ ServerData="LoadGridData">
     <TitleContent>
         <MudStack Row="true">
             <MudIcon Icon="@Icons.Material.Outlined.CarRepair" Color="@(_success? Color.Default: Color.Error)" Style="font-size: 2rem;"></MudIcon>
-            <MudText Typo="Typo.h6">LICENCIA</MudText>
+            <MudText Typo="Typo.h6">Usuarios</MudText>
         </MudStack>
     </TitleContent>
     <DialogContent>
@@ -149,53 +112,54 @@ ServerData="LoadGridData">
 
 
 @code {
-    private IEnumerable<License> _Licenses = new List<License>();
+    private IEnumerable<AccessUserDetail> _accessGroupList = new List<AccessUserDetail>();
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
     bool _success = false;
 
     private int _rowCount = 0;
-    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
-    private int _supplierId = 4069; 
     private int _rowsTotal = 0; 
 
     private string _searchString = string.Empty;
     private bool _loading = true;
-    private string _moduleName = "SERVICIOS-LICENCIA";
+    private string _moduleName = "SEGURIDAD-USUARIOS";
 
-    private MudDataGrid<License>? _mudDataGrid;
-    private HashSet<License> selectedLicense = new([]);
+    private MudDataGrid<AccessUserDetail>? _mudDataGrid;
+    private HashSet<AccessUserDetail> selectedAccessGroup = new([]);
     private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
 
     private List<BreadcrumbItem> _itemsNavigate =
-                [
+    [
         new("Home", href: "", icon: Icons.Material.Filled.Home),
-        new("Licencia",  href: "license", disabled: false, icon: Icons.Material.Filled.CarCrash),
+        new("Seguridad", href: "#", icon: Icons.Material.Filled.Security, disabled:true),
+        new("Usuarios",  href: "accessuser", icon: Icons.Material.Filled.VerifiedUser, disabled: true),
     ];
 
 
-    private async Task<GridData<License>> LoadGridData(GridState<License> state)
+
+
+    private async Task<GridData<AccessUserDetail>> LoadGridData(GridState<AccessUserDetail> state)
     {
 
         _rowCount = state.Page * state.PageSize;
 
-        await GetLicenses();
+        await GetAccessUserDetails();
 
-        return new GridData<License> { TotalItems = _rowsTotal, Items = _Licenses };
+        return new GridData<AccessUserDetail> { TotalItems = _rowsTotal, Items = _accessGroupList };
     }
 
-    private async Task GetLicenses()
+    private async Task GetAccessUserDetails()
     {
         _loading = true;
-        var serviceResponse = await LicenseService.GetLicenses(_iduser, _supplierId, _rowCount, _searchString);
+        var serviceResponse = await SecurityService.GetAccessUserDetails(0, _rowCount, false, _searchString);
         if (serviceResponse.Processed)
         {
-            _Licenses = serviceResponse.Data;
+            _accessGroupList = serviceResponse.Data.OrderBy(s => s.UserName);
             _rowsTotal = serviceResponse.Total;
 
-            if (_Licenses.Count() > 0)
+            if (_accessGroupList.Any())
             {
-                _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
+                _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
             }
             else { _itemsModules = new List<ModuleAction>([]); }
 
@@ -204,7 +168,7 @@ ServerData="LoadGridData">
         else
         {
             Console.WriteLine($"Error: {serviceResponse.Message}");
-            _Licenses = new List<License>();
+            _accessGroupList = new List<AccessUserDetail>();
             _rowsTotal = 0;
             _itemsModules = new List<ModuleAction>([]);
         }
@@ -244,22 +208,32 @@ ServerData="LoadGridData">
     }
 
 
-    private async Task ClickAddLicense()
+    private async Task ClickEditRolesAsync(AccessUserDetail Detail)
     {
-        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
 
-        var parameters = new DialogParameters<LicenseDialog> { { x => x.IdLicense, 0 }, { x => x.IdSupplier, _supplierId }, { x => x.ActionsModal, ActionsEnum.Create } };
-        var dialog = await DialogService.ShowAsync<LicenseDialog>("License", parameters, options);
+        DialogOptions options = new() { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
+
+        var parameters = new DialogParameters<AccessUserDialog> { { x => x.Usuario, Detail }};
+        var dialog = await DialogService.ShowAsync<AccessUserDialog>("USUARIOS", parameters, options);
         var result = await dialog.Result;
+
         if (!result!.Canceled)
         {
             await _mudDataGrid!.ReloadServerData();
             StateHasChanged();
         }
-
         await Task.CompletedTask;
     }
 
+
+    private async Task OpenContactForm(int? mId)
+    {
+        await DialogService.OpenForm<ContactForm, Contact>(mId, null, _moduleName);
+        await _mudDataGrid!.ReloadServerData();
+    } 
+
+    private async Task ClickEditUserAsync(AccessUserDetail item) => await OpenContactForm(item.UserId);
+    private async Task ClickAddUserAsync() => await OpenContactForm(0);
 
     private void OpenNested() => _nestedVisible = true;
 
@@ -285,7 +259,7 @@ ServerData="LoadGridData">
 
     private async Task ActivateItemsAsync(int moduleId, string moduleActionName)
     {
-        if (selectedLicense.Any())
+        if (selectedAccessGroup.Any())
         {
             var option = new DialogOptions
             {
@@ -295,26 +269,26 @@ ServerData="LoadGridData">
                 BackdropClick = false
             };
             bool? result = await DialogService.ShowMessageBox(
-                "Activar Licencia",
-                $"Seguro de Activar Licencias seleccionadas? ",
+                "Activar Usuarios",
+                $"Seguro de Activar Usuarios seleccionados? ",
                 yesText: "Si", noText: "No", "", option);
 
             if (result == true)
             {
                 List<PostAction> ActionList = ([]);
 
-                foreach (var item in selectedLicense)
+                foreach (var item in selectedAccessGroup)
                 {
                     var VehicleAction = new PostAction
                     {
-                        RecordId = item.Id,
+                        RecordId = item.UserId,
                         ModuleId = moduleId,
                         ActionName = moduleActionName
                     };
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await LicenseService.ActionsLicense(ActionList, _iduser);
+                var serviceResponse = await SecurityService.ActionsAccessGroup(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -337,14 +311,14 @@ ServerData="LoadGridData">
 
         }
 
-        selectedLicense = new([]);
+        selectedAccessGroup = new([]);
         await Task.CompletedTask;
     }
 
 
     private async Task DesactivateItemsAsync(int moduleId, string moduleActionName)
     {
-        if (selectedLicense.Any())
+        if (selectedAccessGroup.Any())
         {
             var option = new DialogOptions
             {
@@ -354,26 +328,26 @@ ServerData="LoadGridData">
                 BackdropClick = false
             };
             bool? result = await DialogService.ShowMessageBox(
-                "Detalle Licencia",
-                $"Seguro de Inactivar Licencia seleccionados?",
+                "Desactivar Usuarios",
+                $"Seguro de Inactivar Usuarios seleccionados?",
                 yesText: "Si", noText: "No", "", option);
 
             if (result == true)
             {
                 List<PostAction> ActionList = ([]);
 
-                foreach (var item in selectedLicense)
+                foreach (var item in selectedAccessGroup)
                 {
                     var _action = new PostAction
                     {
-                        RecordId = item.Id,
+                        RecordId = item.UserId,
                         ModuleId = moduleId,
                         ActionName = moduleActionName
                     };
                     ActionList.Add(_action);
                 }
 
-                var serviceResponse = await LicenseService.ActionsLicense(ActionList, _iduser);
+        var serviceResponse = await SecurityService.ActionsAccessGroup(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -396,7 +370,7 @@ ServerData="LoadGridData">
 
         }
 
-        selectedLicense = new([]);
+        selectedAccessGroup = new([]);
         await Task.CompletedTask;
     }
 

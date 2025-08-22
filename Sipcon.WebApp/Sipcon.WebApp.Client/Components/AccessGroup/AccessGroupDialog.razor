@@ -1,0 +1,295 @@
+﻿
+@using Sipcon.WebApp.Client.Services
+@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+@using Sipcon.WebApp.Client.Utils
+@using Sipcon.WebApp.Client.Enum
+@using FluentValidation
+
+@inject ISecurityService SecurityService
+@inject IDialogService DialogService
+
+
+<MudForm Model="@_model" @ref="@form" Validation="@(_modelValidator.ValidateValue)" ValidationDelay="0" >
+    <MudDialog Class="blur dialog-background"  ActionsClass="dialog-background-surface">
+       
+        <DialogContent>
+
+            <MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
+
+                <MudCard>
+
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudGrid Spacing="0" Justify="Justify.Center">
+                                <MudItem xs="12" sm="4">
+                                    <div class="d-flex justify-left">
+
+                                        <MudSwitch @bind-Value="_model.IsActive" Label="Activo" LabelPlacement="Placement.End" Color="Color.Success" Disabled="@(ActionsModal == ActionsEnum.Create ? true : false)" />
+                                        <MudHidden @bind-value="IdAccessGroup" />
+
+                                    </div>
+                                </MudItem>
+
+                                <MudItem xs="12" sm="2">
+
+                                </MudItem>
+                                <MudItem xs="12" sm="6">
+                                    <div class="d-flex justify-right" style="justify-content: end;">
+
+                                        <MudButton OnClick="Cancel">Cancelar</MudButton>
+                                        <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Aceptar" OnClick="@(async () => await OnValidSubmit())" Color="Color.Info" Size="Size.Small" />
+
+
+                                    </div>
+                                </MudItem>
+                            </MudGrid>
+
+
+                        </CardHeaderContent>
+
+                    </MudCardHeader>
+
+                </MudCard>
+
+            </MudContainer>
+
+            <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
+                <MudGrid Spacing="1" Justify="Justify.Center">
+
+                    <MudItem xs="12" sm="4">
+                        <MudCard>
+
+                            <MudCardContent Style="padding-top: 0px;">
+                                <div class="d-flex justify-center" >
+
+                                    <MudTooltip Text="Imagen">
+                                        <MudImage Src="@("Images/changan_marca.jpeg")" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg "
+                                                  FallbackSrc="@("Images/changan_emblema.png")" Width="125" Height="107"></MudImage>
+                                    </MudTooltip>
+                                </div>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12" sm="8">
+                        <MudCard>
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudStack Row="true">
+                                        <MudIcon Icon="@Icons.Material.Filled.VerifiedUser" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
+                                        <MudText Typo="Typo.subtitle2">Rol</MudText>
+                                    </MudStack>
+
+                                </CardHeaderContent>
+                                <CardHeaderActions>
+                                    
+                                </CardHeaderActions>
+                            </MudCardHeader>
+                            <MudCardContent Style="padding-top: 0px;">
+                                <MudHidden @bind-value="_model.Id" />
+
+                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Name" 
+                                              Label="Descripci&oacute;n" 
+                                              MaxLength="100"
+                                              Variant="Variant.Text"
+                                              Margin="Margin.Dense" 
+                                              Disabled="@(!_model.IsActive)" 
+                                              For="@(() => _model.Name)"
+                                              Immediate="true" />
+                                
+
+                            </MudCardContent>
+
+                        </MudCard>
+                    </MudItem>
+                    
+                </MudGrid>
+            </MudContainer>
+
+            <MudDialog @bind-Visible="_nestedModalVisible">
+                <TitleContent>
+                    <MudStack Row="true">
+                        <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="@(_successModal ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
+                        <MudText Typo="Typo.h6">Licencia</MudText>
+                    </MudStack>
+                </TitleContent>
+                <DialogContent>
+                    <MudStack Row="true">
+                        <MudText Class="nested"><p>@_errorModalMessage!</p> </MudText>
+                    </MudStack>
+                </DialogContent>
+                <DialogActions>
+                    <MudButton Color="Color.Info" OnClick="CloseNestedModal" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
+                </DialogActions>
+            </MudDialog>
+
+        </DialogContent>
+       
+    </MudDialog>
+</MudForm>
+
+<style>
+    .blur {
+    backdrop-filter: blur(10px);
+    }
+
+    .dialog-background {
+    background-color: transparent;
+    }
+
+    .dialog-background-title {
+    background: rgb(from var(--mud-palette-info-lighten) r g b / 50%);
+    color: var(--mud-palette-white);
+    }
+
+    .dialog-background-surface {
+    background: rgb(from var(--mud-palette-surface) r g b / 75%);
+    }
+</style>
+
+@code {
+
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public int IdAccessGroup { get; set; } 
+    [Parameter] public ActionsEnum ActionsModal { get; set; }
+
+    private MudForm? form;
+    private AccessGroup _model { get; set; } = new AccessGroup();
+
+    private string _errorModalMessage = string.Empty;
+    private bool _nestedModalVisible;
+    bool _successModal = false;
+
+    
+    AccessGroupValidator _modelValidator = new AccessGroupValidator();
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        if (ActionsModal == ActionsEnum.Create)
+        {
+            _model = new AccessGroup();
+        }
+        else
+        {
+            await GetAccessGroup();
+
+        }
+
+        await Task.CompletedTask;
+    }
+
+
+    private async Task GetAccessGroup()
+    {
+        _model = new AccessGroup();
+        var serviceResponse = await SecurityService.GetAccessGroups(0, "");
+        if (serviceResponse.Processed)
+        {
+            
+            IEnumerable<AccessGroup> _accessGroupList = serviceResponse.Data.OrderBy(s => s.Name);
+            if (_accessGroupList.Any())
+            {
+                _model = _accessGroupList.Where(s => s.Id == IdAccessGroup).FirstOrDefault() ?? new AccessGroup();
+            }
+            
+        }
+        else
+        {
+            Console.WriteLine($"Error: {serviceResponse.Message}");
+            _model = new AccessGroup();
+        }
+
+    }
+
+
+    private async Task OnValidSubmit()
+    {
+        await form!.Validate();
+        if (form.IsValid)
+        {
+            _errorModalMessage = "";
+
+            var serviceResponse = await SecurityService.UpdateAccessGroup(_model!, Useful.userId);
+            if (serviceResponse.Processed)
+            {
+                
+                _errorModalMessage = MessageEnum.SaveOK.GetStringValue();
+                _successModal = true;
+
+            }
+            else
+            {
+                _successModal = false;
+                _errorModalMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue(); ;
+                Console.WriteLine(serviceResponse.Message);
+
+            }
+            OpenNested();
+        }
+
+        StateHasChanged();
+        await Task.CompletedTask;
+
+    }
+
+
+
+    private void Cancel()
+    {
+        if (_successModal)
+            MudDialog.Close(DialogResult.Ok(true));
+        else
+        {
+            MudDialog!.Cancel();
+        }
+    }
+
+    private void OpenNested() => _nestedModalVisible = true;
+
+    private async Task CloseNestedModal()
+    {
+        _nestedModalVisible = false;
+       
+        await Task.Delay(50);
+        if (_successModal)
+            MudDialog.Close(DialogResult.Ok(true));
+
+        await Task.CompletedTask;
+
+    }
+    
+
+    /// <summary>
+    /// Validacion del formulario 
+    /// </summary>
+    /// <typeparam name="AccessGroup"></typeparam>
+    public class AccessGroupValidator : AbstractValidator<AccessGroup>
+    {
+        public AccessGroupValidator()
+        {
+
+            RuleFor(x => x.Name)
+                .NotEmpty().WithMessage("Campo requerido")
+                .Length(10, 150).WithMessage("Campo requerido entre 10-150 carácteres");
+
+        }
+
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<AccessGroup>.CreateWithOptions((AccessGroup)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+
+    }
+
+   
+}

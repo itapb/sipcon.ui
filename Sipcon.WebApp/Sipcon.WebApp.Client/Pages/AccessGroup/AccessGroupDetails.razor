@@ -1,0 +1,319 @@
+﻿@page "/accessgroupdetails"
+@page "/accessgroupdetails/{IdAccesGroup}"
+
+@using Sipcon.WebApp.Client.Services
+@using Sipcon.WebApp.Client.Utils
+@using Sipcon.WebApp.Client.Enum
+@using Sipcon.WebApp.Client.Components.AccessGroup
+@using System.Globalization
+@using FluentValidation
+
+@inject ISecurityService SecurityService
+@inject UtilModuleActions ModuleActionsService
+
+
+<MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
+    <MudStack Row="true">
+        <CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
+        <MudSpacer />
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Outlined.KeyboardReturn" Color="Color.Info" Href="accessgroup" />
+    </MudStack>
+    <MudGrid Spacing="1" Justify="Justify.Center">
+        <MudItem xs="12" sm="7">
+
+            @* Datos Rol *@
+            <MudCard Elevation="2" Class="pa-1 mt-1">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudForm Model="@_model" @ref="@form" ValidationDelay="0" >
+                            <MudStack Row="true">
+                                <MudHidden @bind-Value="_model!.Id" />
+
+                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Name"
+                                              Style="line-height: 0.8rem;"
+                                              AdornmentIcon="@(_isEditMode ? Icons.Material.Filled.Edit : Icons.Material.Filled.Save)"
+                                              Adornment="Adornment.End"
+                                              AdornmentColor="Color.Info"
+                                              OnAdornmentClick="() => _isEditMode ? ClickEditAccessGroup() : ClickSaveAccessGroup()"
+                                              Placeholder="Rol"
+                                              MaxLength="150"
+                                              Validation="@_SelectValidator.Validation"
+                                              Variant="@(_isEditMode ? Variant.Filled : Variant.Text)"
+                                              Margin="Margin.None"
+                                              ReadOnly="@(!_model.IsActive || _isEditMode)" />
+
+                            </MudStack>
+
+                        </MudForm>
+                        
+
+                    </CardHeaderContent>
+                </MudCardHeader>
+            </MudCard>
+
+            @* Detalle Acciones Rol *@
+            <MudCard Elevation="2" Class="pa-1 mt-1">
+                <MudCardHeader Style="padding-bottom: 0px;">
+                    <CardHeaderContent>
+                        <MudStack Row="true">
+                            <MudIcon Icon="@Icons.Material.Outlined.GroupAdd" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
+                            <MudText Typo="Typo.subtitle2">Acciones Asociadas</MudText>
+
+                        </MudStack>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                            
+                    </CardHeaderActions>
+                </MudCardHeader>
+
+                <MudCardContent Style="padding-top: 0px;">
+
+                    <AccessGroupDetailCustom IdAccessGroup="@(Convert.ToInt32(IdAccesGroup))"></AccessGroupDetailCustom>
+                        
+                        
+                </MudCardContent>
+            </MudCard>
+
+        </MudItem>
+
+
+        <MudItem xs="12" sm="5">
+
+            @* Usuarios Asociados Roll *@
+            <MudCard Elevation="2" Class="pa-1 mt-1">
+                <MudCardHeader>
+                    <CardHeaderContent>
+
+                        <MudGrid Spacing="0" Justify="Justify.Center">
+                            <MudItem xs="12" sm="8">
+
+                                <div class="d-flex justify-left">
+
+                                    <MudStack Row="true">
+                                        <MudIcon Icon="@Icons.Material.Filled.LockPerson" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
+                                        <MudText Typo="Typo.subtitle2">Usuarios Asociados</MudText>
+
+                                    </MudStack>
+                                </div>
+                            </MudItem>
+
+                            <MudItem xs="12" sm="4">
+
+
+                            </MudItem>
+                        </MudGrid>
+
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                 
+
+                    </CardHeaderActions>
+
+                </MudCardHeader>
+                <MudCardContent Style="padding-top: 0px;">
+                       
+
+                    <MudFlexBreak />
+
+                    <div id="unique_id_scroll_section" class="ma-0" style="height:400px;overflow: auto;">
+
+                        <AccessUserDetailCustom IdAccessGroup="@(Convert.ToInt32(IdAccesGroup))"></AccessUserDetailCustom>
+
+                        <MudScrollToTop TopOffset="100"
+                                        Selector="#unique_id_scroll_section"
+                                        VisibleCssClass="visible absolute"
+                                        HiddenCssClass="invisible">
+
+                        </MudScrollToTop>
+                    </div>  
+                </MudCardContent>
+
+            </MudCard>
+
+        </MudItem>
+
+
+    </MudGrid>
+
+</MudContainer>
+    
+
+
+<MudDialog @bind-Visible="_nestedModalVisible">
+    <TitleContent>
+        <MudStack Row="true">
+            <MudIcon Icon="@Icons.Material.Outlined.VerifiedUser" Color="@(_success? Color.Default: Color.Error)" Style="font-size: 2rem;"></MudIcon>
+            <MudText Typo="Typo.subtitle2">ROLES</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Row="true">
+            <MudText Class="nested"><p>@_nestedErrorMessage!</p> </MudText>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Info" OnClick="@CloseNestedModal" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+
+        
+
+
+<style>
+    .blur {
+        backdrop-filter: blur(10px);
+    }
+
+    .dialog-background {
+        background-color: transparent;
+    }
+
+    .dialog-background-title {
+        background: rgb(from var(--mud-palette-info-lighten) r g b / 50%);
+        color: var(--mud-palette-white);
+    }
+
+    .dialog-background-surface {
+        background: rgb(from var(--mud-palette-surface) r g b / 75%);
+    }
+
+    .align-right input {
+        text-align: right;
+    }
+</style>
+
+@code {
+
+
+    [Parameter] public string? IdAccesGroup { get; set; }
+    public AccessGroup? _model { get; set; } = new AccessGroup();  
+    private MudForm? form;
+
+    private string _nestedErrorMessage = string.Empty;
+    private bool _nestedModalVisible  = false;
+    private bool _success = false;
+    private bool _isEditMode = true;
+
+    private string _moduleName = "SEGURIDAD-ROLES";
+    private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
+    private List<BreadcrumbItem> _itemsNavigate =
+               [
+        new("Home", href: "", icon: Icons.Material.Filled.Home),
+        new("Seguridad", href: "accessgroup", icon: Icons.Material.Filled.Security),
+        new("Detalle Rol",  href: "", icon: Icons.Material.Filled.VerifiedUser, disabled: true),
+    ];
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        await GetAccessGroup();
+
+        await Task.Delay(50);
+
+        StateHasChanged();
+        await Task.CompletedTask;
+
+    }
+
+    private async Task GetAccessGroup()
+    {
+
+        var serviceResponse = await SecurityService.GetAccessGroups(0, "");
+        if (serviceResponse.Processed)
+        {
+            int _Id = Convert.ToInt32(IdAccesGroup ?? "0");
+            IEnumerable<AccessGroup> _accessGroupList = serviceResponse.Data.OrderBy(s => s.Name);
+            _model = _accessGroupList.Where(s => s.Id == _Id).FirstOrDefault();
+
+            if (_accessGroupList.Any())
+            {
+                _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
+            }
+            else { _itemsModules = new List<ModuleAction>([]); }
+
+
+        }
+        else
+        {
+            Console.WriteLine($"Error: {serviceResponse.Message}");
+            _model = new AccessGroup();
+        }
+
+    }
+
+
+
+    private async Task ClickSaveAccessGroup()
+    {
+        await form!.Validate();
+        if (form.IsValid)
+        {
+
+            var serviceResponse = await SecurityService.UpdateAccessGroup(_model!, Useful.userId);
+            if (serviceResponse.Processed)
+            {
+                await Task.Delay(50);
+                _isEditMode = true;
+            }
+            else
+            {
+                _isEditMode = false;
+                _success = false;
+                _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue();
+                Console.WriteLine(serviceResponse.Message);
+                OpenNested();
+            }
+
+        }
+
+        StateHasChanged();
+        await Task.CompletedTask;
+
+    }
+
+
+    private async Task ClickEditAccessGroup()
+    {
+        _isEditMode = false;
+        
+        await Task.CompletedTask;
+
+    }
+
+    private void OpenNested() => _nestedModalVisible = true;
+
+    private void CloseNestedModal() => _nestedModalVisible = false;
+
+    SelectValidator<string> _SelectValidator = new SelectValidator<string>(x => x
+        .NotNull().WithMessage("Campo requerido")
+        .NotEmpty().WithMessage("Campo requerido")
+        .Length(10, 150).WithMessage("Campo requerido entre 10-150 carácteres"));
+
+
+    /// <summary>
+    /// Validacion del formulario
+    /// </summary>
+    /// <typeparam name="Vehicle"></typeparam>
+    public class SelectValidator<T> : AbstractValidator<T>
+    {
+
+        public SelectValidator(Action<IRuleBuilderInitial<T, T>> rule)
+        {
+            rule(RuleFor(x => x));
+        }
+
+
+        private IEnumerable<string> ValidateValue(T arg)
+        {
+            var result = Validate(arg);
+            if (result.IsValid)
+                return new string[0];
+            return result.Errors.Select(e => e.ErrorMessage);
+        }
+
+        public Func<T, IEnumerable<string>> Validation => ValidateValue;
+
+    }
+
+}
