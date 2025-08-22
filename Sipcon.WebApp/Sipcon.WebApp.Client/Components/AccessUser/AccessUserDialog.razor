@@ -1,0 +1,144 @@
+﻿
+@using Sipcon.WebApp.Client.Services
+@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+@using Sipcon.WebApp.Client.Utils
+@using Sipcon.WebApp.Client.Enum
+@using Sipcon.WebApp.Client.Components.AccessGroup
+@using FluentValidation
+
+@inject ISecurityService SecurityService
+@inject IDialogService DialogService
+
+
+
+<MudDialog Class="blur dialog-background"  ActionsClass="dialog-background-surface">
+       
+    <DialogContent>
+
+        <MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
+
+            <MudCard>
+
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudGrid Spacing="0" Justify="Justify.Center">
+                            <MudItem xs="12" sm="4">
+                                <div class="d-flex justify-left">
+
+
+                                </div>
+                            </MudItem>
+
+                            <MudItem xs="12" sm="2">
+
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <div class="d-flex justify-right" style="justify-content: end;">
+
+                                    <MudButton OnClick="Cancel">Cerrar</MudButton>
+                                    @* <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Aceptar" OnClick="Cancel" Color="Color.Info" Size="Size.Small" /> *@
+
+
+                                </div>
+                            </MudItem>
+                        </MudGrid>
+
+
+                    </CardHeaderContent>
+
+                </MudCardHeader>
+
+            </MudCard>
+
+        </MudContainer>
+
+        <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
+              
+            @* Datos Usuario *@
+            <MudCard Elevation="2" Class="pa-1 mt-1">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                       
+                            <MudStack Row="true">
+                                <MudHidden @bind-Value="Usuario!.UserId" />
+
+                                <MudChat ChatPosition="ChatBubblePosition.Start">
+                                    <MudAvatar Color="Color.Dark">@(string.IsNullOrEmpty(Usuario.Login) ? "U" : Usuario.Login.ToUpper().Substring(0, 1))</MudAvatar>
+                                    <MudChatBubble Style="min-width: 250px;">@(Usuario.UserName.ToUpper() + " " + Usuario.UserLastName.ToUpper())</MudChatBubble>
+                                    <MudChatFooter Style="font-size: 10px;font-style:italic" Text="@(Usuario.Login.ToUpper())" />
+                                </MudChat>
+
+                            </MudStack>
+
+                    </CardHeaderContent>
+                </MudCardHeader>
+            </MudCard>
+
+            @* Detalle Acciones Rol *@
+            <MudCard Elevation="2" Class="pa-1 mt-1">
+                <MudCardHeader Style="padding-bottom: 0px;">
+                    <CardHeaderContent>
+                        <MudStack Row="true">
+                            <MudIcon Icon="@Icons.Material.Outlined.GroupAdd" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
+                            <MudText Typo="Typo.subtitle2">Acciones Asociadas</MudText>
+
+                        </MudStack>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                            
+                    </CardHeaderActions>
+                </MudCardHeader>
+
+                <MudCardContent Style="padding-top: 0px;">
+
+                    <AccessGroupCustom IdAccessUser="@(Convert.ToInt32(Usuario!.UserId))"></AccessGroupCustom>
+                         
+                        
+                </MudCardContent>
+            </MudCard>
+              
+        </MudContainer>
+
+    </DialogContent>
+       
+</MudDialog>
+
+
+<style>
+    .blur {
+    backdrop-filter: blur(10px);
+    }
+
+    .dialog-background {
+    background-color: transparent;
+    }
+
+    .dialog-background-title {
+    background: rgb(from var(--mud-palette-info-lighten) r g b / 50%);
+    color: var(--mud-palette-white);
+    }
+
+    .dialog-background-surface {
+    background: rgb(from var(--mud-palette-surface) r g b / 75%);
+    }
+</style>
+
+@code {
+
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public AccessUserDetail? Usuario { get; set; }
+    
+
+
+    private void Cancel()
+    {
+        MudDialog!.Cancel();
+        
+    }
+
+   
+}

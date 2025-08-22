@@ -1,0 +1,368 @@
+﻿@page "/accessgroup"
+
+
+@using Sipcon.WebApp.Client.Models
+@using Sipcon.WebApp.Client.Services
+@using Sipcon.WebApp.Client.Utils
+@using Sipcon.WebApp.Client.Enum
+@using Sipcon.WebApp.Client.Components.AccessGroup
+@using Sipcon.WebApp.Client.Components.License
+@using System.Text.Json
+
+
+@inject ISecurityService SecurityService
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Roles</PageTitle>
+<CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
+
+<MudDataGrid @ref="_mudDataGrid"
+MultiSelection="true" 
+SelectedItems="@selectedAccessGroup"
+SortMode="SortMode.Multiple"
+Filterable="true"
+FixedHeader Height="calc(98vh - 235px)"
+Hideable="true"
+Loading="_loading"
+Bordered="false"
+Dense="true"
+ServerData="LoadGridData">
+
+    <ToolBarContent>
+        <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddAccessGroup()"></MudIconButton>
+        <MudTextField @bind-Value="_searchString" Placeholder="buscar" Adornment="Adornment.Start" Immediate="true"
+        Typo="Typo.caption"
+        AdornmentIcon="@Icons.Material.Filled.Search"
+        OnAdornmentClick="() => ClickSearch()"
+        IconSize="Size.Medium" Class="mt-0" 
+        OnKeyUp="HandleKeyDownSearch">
+        </MudTextField>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+            @foreach (var module in _itemsModules)
+            {
+                <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
+                Label="@module.Text"
+                OnClick="() => HandleMenuClick(module)" />
+            }
+        </MudMenu>
+    </ToolBarContent>
+    <Columns>
+        <SelectColumn T="AccessGroup" />
+        <TemplateColumn T="AccessGroup" Title="ROL">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Inline="true" Style="font-weight:bold;">@context.Item.Name.ToUpper()</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn T="AccessGroup" Title="CODIGO">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">
+                    @("#" + context.Item.Id.ToString().PadLeft(10, '0'))
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn T="AccessGroup" Title="ACTIVO">
+
+            <CellTemplate>
+                <div class="d-flex justify-center">
+                    <MudIcon Icon="@(context.Item.IsActive? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.IsActive? Color.Success: Color.Error)" Size="Size.Medium" />
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn >
+            <CellTemplate>
+                <MudStack Row="true">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" Href="@("accessgroupdetails/" + context.Item.Id)" />
+                </MudStack>
+
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+
+    <PagerContent>
+        <MudDataGridPager T="AccessGroup" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+    </PagerContent>
+</MudDataGrid>
+
+<MudDialog @bind-Visible="_nestedVisible">
+    <TitleContent>
+        <MudStack Row="true">
+            <MudIcon Icon="@Icons.Material.Outlined.CarRepair" Color="@(_success? Color.Default: Color.Error)" Style="font-size: 2rem;"></MudIcon>
+            <MudText Typo="Typo.h6">ROLES</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+
+        <MudStack Row="true">
+            <MudText Class="nested"><p>@_nestedErrorMessage!</p> </MudText>
+        </MudStack>
+
+    </DialogContent>
+    <DialogActions>
+
+        <MudButton Color="Color.Info" OnClick="CloseNested" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
+
+    </DialogActions>
+</MudDialog>
+
+
+
+@code {
+    private IEnumerable<AccessGroup> _accessGroupList = new List<AccessGroup>();
+    private string _nestedErrorMessage = string.Empty;
+    private bool _nestedVisible;
+    bool _success = false;
+
+    private int _rowCount = 0;
+    private int _supplierId = 4069; 
+    private int _rowsTotal = 0; 
+
+    private string _searchString = string.Empty;
+    private bool _loading = true;
+    private string _moduleName = "SEGURIDAD-ROLES";
+
+    private MudDataGrid<AccessGroup>? _mudDataGrid;
+    private HashSet<AccessGroup> selectedAccessGroup = new([]);
+    private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
+
+    private List<BreadcrumbItem> _itemsNavigate =
+    [
+        new("Home", href: "", icon: Icons.Material.Filled.Home),
+        new("Seguridad", href: "#", icon: Icons.Material.Filled.Security, disabled:true),
+        new("Roles",  href: "AccessGroup", icon: Icons.Material.Filled.VerifiedUser, disabled: true),
+    ];
+
+
+
+
+    private async Task<GridData<AccessGroup>> LoadGridData(GridState<AccessGroup> state)
+    {
+
+        _rowCount = state.Page * state.PageSize;
+
+        await GetAccessGroup();
+
+        return new GridData<AccessGroup> { TotalItems = _rowsTotal, Items = _accessGroupList };
+    }
+
+    private async Task GetAccessGroup()
+    {
+        _loading = true;
+        var serviceResponse = await SecurityService.GetAccessGroups(_rowCount, _searchString);
+        if (serviceResponse.Processed)
+        {
+            _accessGroupList = serviceResponse.Data.OrderBy(s => s.Name);
+            _rowsTotal = serviceResponse.Total;
+
+            if (_accessGroupList.Any())
+            {
+                _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
+            }
+            else { _itemsModules = new List<ModuleAction>([]); }
+
+
+        }
+        else
+        {
+            Console.WriteLine($"Error: {serviceResponse.Message}");
+            _accessGroupList = new List<AccessGroup>();
+            _rowsTotal = 0;
+            _itemsModules = new List<ModuleAction>([]);
+        }
+        _loading = false;
+    }
+
+
+    private async Task HandleKeyDownSearch(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            if (_searchString.Length >= 3 || _searchString == string.Empty)
+            {
+                Console.WriteLine($"Buscando: {_searchString}");
+                await _mudDataGrid!.ReloadServerData();
+            }
+
+        }
+    }
+
+    private async Task ClickSearch()
+    {
+
+        if (_searchString.Length >= 3 )
+        {
+            Console.WriteLine($"Buscando: {_searchString}");
+            await _mudDataGrid!.ReloadServerData();
+        }
+
+    }
+
+
+    private async Task HandleOnClickRefresh()
+    {
+        _searchString = string.Empty;
+        await _mudDataGrid!.ReloadServerData();
+    }
+
+
+    private async Task ClickAddAccessGroup()
+    {
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+
+        var parameters = new DialogParameters<AccessGroupDialog> { { x => x.IdAccessGroup, 0 }, { x => x.ActionsModal, ActionsEnum.Create } };
+        var dialog = await DialogService.ShowAsync<AccessGroupDialog>("Roles", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            await _mudDataGrid!.ReloadServerData();
+            StateHasChanged();
+        }
+
+        await Task.CompletedTask;
+    }
+
+
+    private void OpenNested() => _nestedVisible = true;
+
+    private void CloseNested() => _nestedVisible = false;
+
+
+    private async Task HandleMenuClick(ModuleAction module)
+    {
+        switch (module.ActionName)
+        {
+            case "ACTIVATE":
+                await ActivateItemsAsync(module.IdAction, module.ActionName);
+                break;
+            case "DEACTIVATE":
+                await DesactivateItemsAsync(module.IdAction, module.ActionName);
+                break;
+            default:
+                Console.WriteLine($"{MessageEnum.ActionsError.GetStringValue()}: {module.ActionName}");
+                break;
+        }
+    }
+
+
+    private async Task ActivateItemsAsync(int moduleId, string moduleActionName)
+    {
+        if (selectedAccessGroup.Any())
+        {
+            var option = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false
+            };
+            bool? result = await DialogService.ShowMessageBox(
+                "Activar Roles",
+                $"Seguro de Activar Roles seleccionados? ",
+                yesText: "Si", noText: "No", "", option);
+
+            if (result == true)
+            {
+                List<PostAction> ActionList = ([]);
+
+                foreach (var item in selectedAccessGroup)
+                {
+                    var VehicleAction = new PostAction
+                    {
+                        RecordId = item.Id,
+                        ModuleId = moduleId,
+                        ActionName = moduleActionName
+                    };
+                    ActionList.Add(VehicleAction);
+                }
+
+                var serviceResponse = await SecurityService.ActionsAccessGroup(ActionList, Useful.userId);
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = MessageEnum.ActivateOK.GetStringValue();
+
+                    OpenNested();
+                    await _mudDataGrid!.ReloadServerData();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ActivateNotOK.GetStringValue();
+                    Console.WriteLine(serviceResponse.Message);
+                    OpenNested();
+
+                }
+            }
+
+        }
+
+        selectedAccessGroup = new([]);
+        await Task.CompletedTask;
+    }
+
+
+    private async Task DesactivateItemsAsync(int moduleId, string moduleActionName)
+    {
+        if (selectedAccessGroup.Any())
+        {
+            var option = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false
+            };
+            bool? result = await DialogService.ShowMessageBox(
+                "Desactivar Roles",
+                $"Seguro de Inactivar Roles seleccionados?",
+                yesText: "Si", noText: "No", "", option);
+
+            if (result == true)
+            {
+                List<PostAction> ActionList = ([]);
+
+                foreach (var item in selectedAccessGroup)
+                {
+                    var _action = new PostAction
+                    {
+                        RecordId = item.Id,
+                        ModuleId = moduleId,
+                        ActionName = moduleActionName
+                    };
+                    ActionList.Add(_action);
+                }
+
+        var serviceResponse = await SecurityService.ActionsAccessGroup(ActionList, Useful.userId);
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = MessageEnum.DeactivateOK.GetStringValue();
+
+                    OpenNested();
+                    await _mudDataGrid!.ReloadServerData();
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.DeactivateNotOK.GetStringValue();
+                    Console.WriteLine(serviceResponse.Message);
+                    OpenNested();
+
+                }
+            }
+
+        }
+
+        selectedAccessGroup = new([]);
+        await Task.CompletedTask;
+    }
+
+
+}

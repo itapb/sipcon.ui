@@ -37,6 +37,7 @@ builder.Services.AddScoped<ICommentService, CommentRepository>();
 builder.Services.AddScoped<ILaborTimeService, LaborTimeRepository>();
 builder.Services.AddScoped<ILicenseService, LicenseRepository>();
 builder.Services.AddScoped<IFailReportService, FailReportRepository>();
+builder.Services.AddScoped<ISecurityService, SecurityRepository>();
 
 
 builder.Services.AddTransient<UtilModuleActions>();

@@ -88,6 +88,15 @@ namespace Sipcon.WebApp.Client.Helper
                 await MyMudDataGrid!.ReloadServerData();
         }
 
+        internal static async Task OpenForm<TComponent, TModel>(this IDialogService dialogService, int? Id, MudDataGrid<TModel>? MyMudDataGrid, string? Modulo) where TComponent : class, Microsoft.AspNetCore.Components.IComponent
+        {
+            var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
+            var dialogReference = await dialogService.ShowAsync<TComponent>("", new DialogParameters { ["Value"] = Id, ["Modulo"] = Modulo }, options);
+            var dialogResult = await dialogReference.Result;
+            if (!dialogResult!.Canceled)
+                await MyMudDataGrid!.ReloadServerData();
+        }
+
         internal static async Task<bool> AsyncDialogResultIsOk(IDialogReference? dialogReference) => !((await dialogReference!.Result)!.Canceled);
     }
 }

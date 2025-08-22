@@ -24,12 +24,55 @@
                         <MudGrid Spacing="2">
                             <MudItem xs="12">
                                 <MudText Typo="Typo.h6" GutterBottom="true">@GetTitle</MudText>
-                                <MudStack Row="true">                                   
-                                    <MudCheckBox @bind-Value="SelectedContact.IsSupplier" Label="Planta" @bind-Value:after="AfterAsyncSupplier" Required="!IsCheckboxValid" RequiredError="Alguna opcion requerida" />
-                                    <MudCheckBox @bind-Value="SelectedContact.IsDealer" Label="Concesionario" @bind-Value:after="AfterAsyncDealer" Required="!IsCheckboxValid" RequiredError="" />
-                                    <MudCheckBox @bind-Value="SelectedContact.IsCustomer" Label="Cliente" @bind-Value:after="AfterAsyncCustomer" Required="!IsCheckboxValid" RequiredError="" />
-                                    <MudCheckBox @bind-Value="SelectedContact.IsUser" Label="Usuario" @bind-Value:after="AfterAsyncUser" Required="!IsCheckboxValid" RequiredError="" />
-                                    <MudCheckBox @bind-Value="SelectedContact.IsProvider" Label="Proveedor" @bind-Value:after="AfterAsyncProvider" Required="!IsCheckboxValid" RequiredError="" />
+                                <MudStack Row="true">
+                                    @if (IsCheckboxValid)
+                                    {
+                                        if (SelectedContact.IsSupplier ?? false)
+                                        {
+                                            <MudCheckBox @bind-Value="SelectedContact.IsSupplier" Label="Planta" @bind-Value:after="AfterAsyncSupplier" Required="!IsCheckboxValid" ReadOnly="IsCheckboxValid" RequiredError="Alguna opcion requerida" />
+                                        }
+                                        if (SelectedContact.IsDealer ?? false)
+                                        {
+                                            <MudCheckBox @bind-Value="SelectedContact.IsDealer" Label="Concesionario" @bind-Value:after="AfterAsyncDealer" Required="!IsCheckboxValid" ReadOnly="IsCheckboxValid" RequiredError="" />
+                                        }
+                                        if (SelectedContact.IsCustomer ?? false)
+                                        {
+                                            <MudCheckBox @bind-Value="SelectedContact.IsCustomer" Label="Cliente" @bind-Value:after="AfterAsyncCustomer" Required="!IsCheckboxValid" ReadOnly="IsCheckboxValid" RequiredError="" />
+                                        }
+                                        if (SelectedContact.IsUser ?? false)
+                                        {
+                                            <MudCheckBox @bind-Value="SelectedContact.IsUser" Label="Usuario" @bind-Value:after="AfterAsyncUser" Required="!IsCheckboxValid" ReadOnly="IsCheckboxValid" RequiredError="" />
+                                        }
+                                        if (SelectedContact.IsProvider ?? false)
+                                        {
+                                            <MudCheckBox @bind-Value="SelectedContact.IsProvider" Label="Proveedor" @bind-Value:after="AfterAsyncProvider" Required="!IsCheckboxValid" ReadOnly="IsCheckboxValid" RequiredError="" />
+                                        }
+
+                                    }
+                                        else
+                                        {
+                                            switch (Modulo)
+                                            {
+                                                case "CONTACTOS-CONTACTOS":
+                                                        <MudCheckBox @bind-Value="SelectedContact.IsCustomer" Label="Cliente" @bind-Value:after="AfterAsyncCustomer" Required="!IsCheckboxValid" ReadOnly="IsCheckboxValid" RequiredError="" />
+                                                        <MudCheckBox @bind-Value="SelectedContact.IsProvider" Label="Proveedor" @bind-Value:after="AfterAsyncProvider" Required="!IsCheckboxValid" ReadOnly="IsCheckboxValid" RequiredError="" />
+                                                    break;
+                                                case "SEGURIDAD-CONTACTOS":
+                                                        <MudCheckBox @bind-Value="SelectedContact.IsSupplier" Label="Planta" @bind-Value:after="AfterAsyncSupplier" Required="!IsCheckboxValid" ReadOnly="IsCheckboxValid" RequiredError="Alguna opcion requerida" />
+                                                        <MudCheckBox @bind-Value="SelectedContact.IsDealer" Label="Concesionario" @bind-Value:after="AfterAsyncDealer" Required="!IsCheckboxValid" ReadOnly="IsCheckboxValid" RequiredError="" />
+                                                        <MudCheckBox @bind-Value="SelectedContact.IsCustomer" Label="Cliente" @bind-Value:after="AfterAsyncCustomer" Required="!IsCheckboxValid" ReadOnly="IsCheckboxValid" RequiredError="" />
+                                                        <MudCheckBox @bind-Value="SelectedContact.IsProvider" Label="Proveedor" @bind-Value:after="AfterAsyncProvider" Required="!IsCheckboxValid" ReadOnly="IsCheckboxValid" RequiredError="" />
+                                                        
+                                                    break;
+                                                case "SEGURIDAD-USUARIOS":
+                                                        <MudCheckBox @bind-Value="SelectedContact.IsUser" Label="Usuario" @bind-Value:after="AfterAsyncUser" Required="!IsCheckboxValid" ReadOnly="IsCheckboxValid" RequiredError="" />
+                                                    break;
+                                                default:
+                                                    break;
+                                                }
+                                        
+                                        }
+                                    
                                 </MudStack>
                             </MudItem>
                             <MudItem xs="6">
@@ -161,6 +204,8 @@ else
 
     [Parameter] public int? Value { get; set; }
     [Parameter] public EventCallback<int?> ValueChanged { get; set; }
+    [Parameter] public string Modulo { get; set; } = "CONTACTOS-CONTACTOS";
+
     private string GetTitle => ContactId switch { null => "Contactos", 0 => "Agregar Contacto", _ => "Editar Contacto" };
     bool FirstClickEditContact = false;
     bool IsCheckboxValid = false;

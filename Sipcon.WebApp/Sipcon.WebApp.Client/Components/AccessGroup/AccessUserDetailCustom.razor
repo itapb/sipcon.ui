@@ -1,0 +1,249 @@
+﻿
+@using Sipcon.WebApp.Client.Models
+@using Sipcon.WebApp.Client.Services
+@using Sipcon.WebApp.Client.Pages
+@using Sipcon.WebApp.Client.Utils
+@using Sipcon.WebApp.Client.Enum
+@using Sipcon.WebApp.Client.Components.AccessUser
+@using System.Text.Json
+
+
+@inject ISecurityService SecurityService
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+@inject IJSRuntime JSRuntime
+
+
+
+<MudDataGrid @ref="_mudDataGrid"
+             T="AccessUserDetail"
+             ServerData="LoadGridData"
+             Striped="true"
+             Dense="true"
+             Hover="true"
+             Filterable="false"
+             Bordered="false"
+             FixedHeader Height="calc(88vh - 90px)"
+             >
+
+    <ToolBarContent>
+        
+        <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddDetailAccessUser()"></MudIconButton>
+        <MudTextField @bind-Value="_searchString" Placeholder="Buscar" Adornment="Adornment.Start" Immediate="true"
+                      Typo="Typo.caption"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      OnAdornmentClick="() => ClickSearch()"
+                      IconSize="Size.Medium" 
+                      Class="mt-0" 
+                      OnKeyDown="HandleKeyDownSearch"></MudTextField>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
+    </ToolBarContent>
+    <Columns>
+        <TemplateColumn T="AccessUserDetail" Title="">
+            <CellTemplate>
+                <MudChat ChatPosition="ChatBubblePosition.Start">
+                    @* <MudChatHeader Name="@(context.Item.Login.ToUpper())" Time="" /> *@
+                    <MudAvatar Color="Color.Dark">@(string.IsNullOrEmpty(context.Item.Login) ? "U" : context.Item.Login.ToUpper().Substring(0, 1))</MudAvatar>
+                    <MudChatBubble Style="min-width: 250px;">@(context.Item.UserName.ToUpper() + " " + context.Item.UserLastName.ToUpper())</MudChatBubble>
+                    <MudChatFooter Style="font-size: 10px;font-style:italic" Text="@(context.Item.Login.ToUpper())" />
+                </MudChat>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn >
+            <CellTemplate>
+                @if (context.Item.Assign)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Text" Color="Color.Default" Size="Size.Medium" OnClick="() => ClickDeleteItemAsync(context.Item)" />
+                }
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+   @*  <PagerContent>
+        <MudDataGridPager T="AccessUserDetail" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+    </PagerContent> *@
+</MudDataGrid>
+
+<MudDialog @bind-Visible="_nestedVisible">
+    <TitleContent>
+        <MudStack Row="true">
+            <MudIcon Icon="@Icons.Material.Outlined.CarCrash" Color="@(_success ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
+            <MudText Typo="Typo.h6">Asginaciones Rol</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+
+        <MudStack Row="true">
+            <MudText Class="nested"><p>@_nestedErrorMessage!</p> </MudText>
+        </MudStack>
+
+    </DialogContent>
+    <DialogActions>
+
+        <MudButton Color="Color.Info" OnClick="CloseNested" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
+
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+
+    [Parameter] public int? IdAccessGroup { get; set; } = null;
+    
+    private MudDataGrid<AccessUserDetail>? _mudDataGrid;
+    
+    private IEnumerable<AccessUserDetail> _accessUserDetails = new List<AccessUserDetail>();
+    private string _nestedErrorMessage = string.Empty;
+    private bool _nestedVisible;
+    bool _success = false;
+
+    private int _rowCount = 0;
+    private int _rowsTotal = 0; 
+    private string _searchString = string.Empty;
+    private bool _loading = true;
+    
+
+    private async Task<GridData<AccessUserDetail>> LoadGridData(GridState<AccessUserDetail> state)
+    {
+
+        _rowCount = state.Page * state.PageSize;
+
+        await GetAccessUserDetails();
+
+        return new GridData<AccessUserDetail> { TotalItems = _rowsTotal, Items = _accessUserDetails };
+    }
+
+    private async Task GetAccessUserDetails()
+    {
+        _loading = true;
+        _rowsTotal = 0;
+        
+        _accessUserDetails = new List<AccessUserDetail>();
+
+        var serviceResponse = await SecurityService.GetAccessUserDetails(IdAccessGroup ?? 0, _rowCount, true, _searchString);
+        if (serviceResponse.Processed)
+        {
+            _accessUserDetails = serviceResponse.Data;
+            _rowsTotal = serviceResponse.Total;
+        }
+        
+        await Task.Delay(50);
+        StateHasChanged();
+        _loading = false;
+
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleKeyDownSearch(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            if (_searchString.Length >= 3 || _searchString == string.Empty)
+            {
+                Console.WriteLine($"Buscando: {_searchString}");
+                await _mudDataGrid!.ReloadServerData();
+
+            }
+
+        }
+    }
+
+    private async Task HandleOnClickRefresh()
+    {
+
+        Console.WriteLine($"Buscando: {_searchString}");
+        _searchString = string.Empty;
+        await _mudDataGrid!.ReloadServerData();
+    }
+
+
+    private async Task ClickSearch()
+    {
+
+        if (_searchString.Length >= 3)
+        {
+            Console.WriteLine($"Buscando: {_searchString}");
+            await _mudDataGrid!.ReloadServerData();
+        }
+
+    }
+   
+
+    private async Task ClickAddDetailAccessUser()
+    {
+     
+        DialogOptions options = new() { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
+
+        var parameters = new DialogParameters<AccesUserCatalog> { { x => x.IdAccessGroup, IdAccessGroup ?? 0 }, { x => x.Title, "USUARIOS" } };
+        var dialog = await DialogService.ShowAsync<AccesUserCatalog>("USUARIOS", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result!.Canceled && result.Data != null)
+        {
+            AccessUserDetail _detail = (AccessUserDetail?)result?.Data ?? new AccessUserDetail();
+            _detail.Assign = true;  
+
+            var serviceResponse = await SecurityService.CreateAccessUserDetail(_detail, Useful.userId);
+            if (serviceResponse.Processed)
+            {
+                await _mudDataGrid!.ReloadServerData();
+                await Task.Delay(50);
+                StateHasChanged();
+            }
+            else
+            {
+                _success = false;
+                _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.DeleteNotOK.GetStringValue();
+                Console.WriteLine(serviceResponse.Message);
+            }
+
+        }
+        await Task.CompletedTask;
+    }
+
+
+    private void OpenNested() => _nestedVisible = true;
+
+    private void CloseNested() => _nestedVisible = false;
+
+    private async Task ClickDeleteItemAsync(AccessUserDetail detail)
+    {
+        var option = new DialogOptions
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            BackdropClick = false
+        };
+        bool? confirm = await DialogService.ShowMessageBox(
+            "Eliminar Usuario-Rol",
+            $"Seguro de Eliminar? ",
+            yesText: "Si", noText: "No", "", option);
+
+        if (confirm == true)
+        {
+            detail.Assign = false;
+            var serviceResponse = await SecurityService.UpdateAccessUserDetail(detail, Useful.userId);
+            if (serviceResponse.Processed)
+            {
+                _success = true;
+                _nestedErrorMessage = MessageEnum.DeleteOK.GetStringValue();
+            }
+            else
+            {
+                _success = false;
+                _nestedErrorMessage = MessageEnum.DeleteNotOK.GetStringValue();
+                Console.WriteLine(serviceResponse.Message);
+            }
+
+            OpenNested();
+            await _mudDataGrid!.ReloadServerData();
+            StateHasChanged();
+
+        }
+       
+
+        await Task.CompletedTask;
+    }
+
+}
