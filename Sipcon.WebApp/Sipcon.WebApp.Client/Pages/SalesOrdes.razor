@@ -1,0 +1,206 @@
+﻿@page "/salesorder"
+<CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
+@if (SalesOrderId != null)
+{
+    <SalesOrderForm @bind-Value="SalesOrderId" SaleOrderTypes="SaleOrderTypes" />
+}
+else
+{
+    <MudDataGrid @ref="SalesOrderMudDataGrid" T="SaleOrder" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" FixedHeader Height="calc(100vh - 240px)" Loading="Loading" @bind-CurrentPage="ReceptionCurrentPage">
+        <ToolBarContent>
+            <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="ClickNewSalesOrder"></MudIconButton>
+            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshSalesOrder"></MudIconButton>
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+                @foreach (var strmodulo in Modules!)
+                {
+                    <MudMenuItem Label="@strmodulo.ActionDisplay" Icon="@(strmodulo.ActionDisplay.ToActionIcon())" IconColor="@Color.Info" OnClick="@(() => ClickMenuSalesOrder(strmodulo.ActionName))" />
+                }
+            </MudMenu>
+        </ToolBarContent>
+        <Columns>
+            <TemplateColumn>
+                <HeaderTemplate>
+                    <MudCheckBox @bind-Value="IsAllCheckBoxSelected" @bind-Value:after="AfterAsyncAllCheck" />
+                </HeaderTemplate>
+                <CellTemplate>
+                    <MudCheckBox @bind-Value="context.Item.IsSelected" />
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.Id" Title="NRO" />
+            <PropertyColumn Property="x => x.Created" Title="FECHA" />
+            <PropertyColumn Property="x => x.DealerName" Title="CONCESIONARIO" />
+            <PropertyColumn Property="x => x.TypeName" Title="TIPO" />
+            <PropertyColumn Property="x => x.StatusName" Title="STATUS" />            
+            <TemplateColumn StickyRight="true">
+                <CellTemplate>
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditSalesOrder(context.Item)" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="SaleOrder" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        </PagerContent>
+    </MudDataGrid>
+}
+
+@code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private ILogger<SalesOrdes> Logger { get; set; } = default!;
+    List<BreadcrumbItem> ItemsNavigate = new();
+
+    [Parameter]
+    public string? TypeId { get; set; } = "1";
+    private int? SalesOrderId = null;    //4
+
+    private bool IsAllCheckBoxSelected = false;
+    int ReceptionCurrentPage = 0;
+    bool Loading = false;
+    private MudDataGrid<SaleOrder>? SalesOrderMudDataGrid;
+    private List<Module>? Modules;
+    DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
+    private string searchString = string.Empty;
+    string RequisitionTitle = "";
+
+    public List<SaleOrderType>? SaleOrderTypes;
+
+    private async Task LoadSaleOrderTypes()
+    {
+        var SaleOrderTypesResult = await Http.GetFromJsonAsync<WebApiResponse<List<SaleOrderType>>>("api/SaleOrder/GetSaleOrderTypes");
+        SaleOrderTypes = SaleOrderTypesResult?.data ?? new List<SaleOrderType>();
+    }
+
+    private async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            Loading = true;
+            searchString = text;
+            await SalesOrderMudDataGrid!.ReloadServerData();
+        }
+    }
+    private async Task ClickRefreshSalesOrder(MouseEventArgs args) => await SalesOrderMudDataGrid!.ReloadServerData();
+    private async Task ClickNewSalesOrder(MouseEventArgs ev)
+    {
+        HttpResponseMessage response = await Http.GetAsync($"api/SaleOrder/NewSaleOrderWithContext?userId={Useful.userId}&dealerId={Useful.dealerId}&supplierId={Useful.supplierId}&typeId={TypeId!.ToUpper()}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterSalesOrderDetails>>();
+            var data = content2!.data ?? new MasterSalesOrderDetails();
+            SalesOrderId = data.SaleOrder?.Id;
+        }
+        else
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            Logger.LogError(Useful.TemplateLog(RequisitionTitle, errorMessage));
+            await DialogService.ShowUnexpected();
+        }
+        await Task.CompletedTask;
+    }
+    private async Task AfterAsyncAllCheck()
+    {
+        SalesOrderMudDataGrid?.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
+        await Task.CompletedTask;
+    }
+    private async Task ClickEditSalesOrder(SaleOrder item) => await Task.FromResult(SalesOrderId = item.Id);
+    protected override async Task OnInitializedAsync() => await LoadDataAsync();
+
+    private async Task LoadDataAsync()
+    {
+        RequisitionTitle = "Pedidos";
+        string hrefMovement =  "salesorder";       
+
+        $"Home,{RequisitionTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=PEDIDOS-PEDIDOS&userId={Useful.userId}");
+        await LoadSaleOrderTypes();
+    }
+    Func<SaleOrder, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    {
+        nameof(SaleOrder.Id) => o => o.Id ?? 0,
+        nameof(SaleOrder.Created) => o => o.Created,
+        nameof(SaleOrder.DealerName) => o => o.DealerName ?? "",
+        nameof(SaleOrder.TypeName) => o => o.TypeName ?? "",
+        nameof(SaleOrder.StatusName) => o => o.StatusName ?? "",      
+        _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto
+    };
+
+    private async Task<GridData<SaleOrder>> ServerReload(GridState<SaleOrder> state)
+    {
+        IsAllCheckBoxSelected = false;
+        Loading = true;
+        var totalItems = 0;
+        var mOffset = state.Page * state.PageSize;
+        IEnumerable<SaleOrder> data;
+        HttpResponseMessage response = await Http.GetAsync($"api/SaleOrder/GetAll?userId={Useful.userId}&dealerId={Useful.dealerId}&rowfrom={mOffset}&filter={searchString}");
+
+        if (response.IsSuccessStatusCode)
+        {
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<SaleOrder>>>();
+            totalItems = content2!.total ?? 0;
+            data = content2!.data ?? new List<SaleOrder>();
+
+            if (state.SortDefinitions.FirstOrDefault() is SortDefinition<SaleOrder> sortDefinition)
+            {
+                data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
+            }
+        }
+        else
+        {
+            data = new List<SaleOrder>();
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            Logger.LogError(Useful.TemplateLog(RequisitionTitle, errorMessage));
+            await DialogService.ShowUnexpected();
+        }
+
+        Loading = false;
+        return new GridData<SaleOrder> { TotalItems = totalItems, Items = data };
+    }
+
+    private async Task ClickMenuSalesOrder(string? actionName)
+    {
+        var strDictionary = new Dictionary<string, string> { { "GENERATE", "CREADO" }, { "DECLINE", "CREADO" } };
+        var mActions = SalesOrderMudDataGrid?.FilteredItems.Where(item => item.IsSelected && strDictionary[actionName!].Contains(item!.StatusName!.ToUpper()))
+                                                         .Select(item => new Client.Models.Action
+                                                         {
+                                                             UserId = Useful.userId,
+                                                             RecordId = item.Id,
+                                                             ModuleId = Modules!.FirstOrDefault()?.Id,
+                                                             actionName = actionName,
+                                                             ActionComment = "",
+                                                             RelatedId = 0
+                                                         }).ToList();
+
+        if (mActions?.Count == 0)
+        {
+            await DialogService.ShowDialog("Accion no permitada, Verificar datos seleccionado(s)", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        else if (mActions?.Count > 0)
+        {
+            await PostActionAndReload(mActions, $"api/SaleOrder/PostActions?userId={Useful.userId}");           
+        }
+
+    }
+    private async Task PostActionAndReload(List<Models.Action>? actions, string requesturi)
+    {
+        var result_Post_Actions = (actions?.Count > 0) ? await Http.PostAsync(requesturi, new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json")) : null;
+        if ((result_Post_Actions?.IsSuccessStatusCode ?? false))
+        {
+            var rest = result_Post_Actions.Content.ReadAsStringAsync();
+            await DialogService.ShowDialog(Useful.OkSavedMessage, "Accion", "OK", Color.Info, Icons.Material.Filled.Commit);
+            await SalesOrderMudDataGrid!.ReloadServerData();
+        }
+        else if (result_Post_Actions?.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflictContent = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+            await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        else
+        {
+            var errorMessage = await result_Post_Actions!.Content.ReadAsStringAsync() ?? "";
+            Logger.LogError(Useful.TemplateLog(RequisitionTitle, errorMessage));
+            await DialogService.ShowUnexpected(); ;
+        }
+    }
+}

@@ -1,0 +1,87 @@
+﻿@using Sipcon.WebApp.Client.Layout
+@layout MobileLayout
+<div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
+    @if (PartialTypes == null)
+    {
+        <LoadingForm IsMudDialog="@(MudDialog != null)" />
+    }
+    else
+    {
+        <MudForm @ref="form">
+            <MudPaper Elevation="2" Class="pa-3">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12">
+                        <MudPaper Class="pa-2 mud-theme-info mud-typography-h6 d-flex flex-column justify-center align-center" style="line-height:1.1;">                           
+                            <span>Movito de Cantidad Parcial</span>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudSelect T="PartialType" Label="MOTVIO" ToStringFunc="@ConvertPartialTypeFunc" ValueChanged="OnPartialTypeValueChanged" Value="PartialTypeSelected" Class="d-flex align-center justify-center" Required="true" RequiredError="Campo requerido">
+                            @foreach (var partialtype in PartialTypes!)
+                            {
+                                <MudSelectItem Value="partialtype" />
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudStack Row="true" Justify="Justify.Center">
+                            <MudStack Row="true" Spacing="5">
+                                <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="ClickPartialTypeCheck" />
+                                <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="ClickPartialTypeClose" />
+                            </MudStack>
+                        </MudStack>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudForm>
+    }
+</div>
+@code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Parameter] public Models.Dispatch? currentDispatch { get; set; } = default!;
+    private MudForm? form;
+
+    string? Nguide;
+    
+    record PartialType(int Id, string Name);
+
+    private Func<PartialType?, string> ConvertPartialTypeFunc = partialtype => partialtype?.Name!;
+    private PartialType? PartialTypeSelected;
+    private List<PartialType>? PartialTypes;
+    private Task OnPartialTypeValueChanged(PartialType selectedPartialType)
+    {
+        PartialTypeSelected = selectedPartialType;
+        return Task.CompletedTask;
+    }
+    private async Task ClickPartialTypeCheck(MouseEventArgs args)
+    {
+        await form!.Validate();
+        if (form.IsValid)
+        {
+            MudDialog?.Close(DialogResult.Ok<int>(PartialTypeSelected.Id));
+        }
+        
+        await Task.CompletedTask;
+    }
+    private async Task ClickPartialTypeClose(MouseEventArgs args)
+    {
+        MudDialog?.Cancel();
+        await Task.CompletedTask;
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPartialType();
+    }
+    private async Task LoadPartialType()
+    {
+        var PartialTypeResult = await Http.GetFromJsonAsync<WebApiResponse<List<PartialType>>>("api/Movements/GetPartialType");
+        if (PartialTypeResult != null)
+        {
+            PartialTypes = PartialTypeResult.data;
+        }
+        await Task.CompletedTask;
+    }
+
+}

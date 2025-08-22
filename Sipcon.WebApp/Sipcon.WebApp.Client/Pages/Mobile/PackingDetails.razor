@@ -7,10 +7,9 @@
         <MudGrid Spacing="2">
             <MudItem xs="12">
                 <MudStack Row="false" Class="pa-2 mud-theme-info mud-typography-h6" Spacing="1" style="line-height:1.1;">
-                    <div>CLIENTE : @currentDispatch?.CustomerName</div>
+                    <div>CLIENTE : @currentPacking?.CustomerName</div>
                     <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
-                        <div>GUIA: @currentDispatch?.GuideId</div>
-                        <div>BULTOS</div>
+                        <div>BULTOS</div>                      
                     </MudStack>
                 </MudStack>
             </MudItem>
@@ -23,12 +22,13 @@
                                     <MudStack Row>
                                         <MudText Class="mr-2" Color="@((context.Item.Closed ?? false) ? Color.Success : Color.Inherit)">@context.Item.Code</MudText>
                                         <MudText Class="mr-2" Color="@((context.Item.Closed ?? false) ? Color.Success : Color.Inherit)">@context.Item.Weight Kg</MudText>
+                                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Print" OnClick="() => ClickPrintPackage(context.Item)" Disabled="@(!(context.Item.Closed ?? false))"></MudIconButton>
                                     </MudStack>
                                 </CellTemplate>
                             </TemplateColumn>
                         </Columns>
                         <PagerContent>
-                            <MudStack Row="false" Spacing="2" >
+                            <MudStack Row="false" Spacing="2">
                                 <MudPaper Class="pa-3">
                                     <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Style="height:40px;" />
                                 </MudPaper>
@@ -41,9 +41,9 @@
                 <MudStack Row="true" Justify="Justify.Center">
                     <MudStack Row="true" Spacing="5">
                         <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Add" Size="Size.Medium" OnClick="ClickAddPackage" />
-                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="ClickCheckGuides" />
-                        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshGuides" />
-                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" OnClick="ClickCloseGuides" Size="Size.Medium" />
+                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="ClickDispatchGuide" />
+                        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshPacking" />
+                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" OnClick="ClickClosePacking" Size="Size.Medium" />
                     </MudStack>
                 </MudStack>
             </MudItem>
@@ -59,10 +59,10 @@
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
-    [Parameter] public Models.Dispatch? currentDispatch { get; set; } = default!;
-    [Parameter] public Models.DispatchStep Value { get; set; }
-    [Parameter] public EventCallback<Models.DispatchStep> ValueChanged { get; set; }
-    private Models.DispatchStep CurrentStep
+    [Parameter] public Models.Packing? currentPacking { get; set; } = default!;
+    [Parameter] public Models.PackingStep Value { get; set; }
+    [Parameter] public EventCallback<Models.PackingStep> ValueChanged { get; set; }
+    private Models.PackingStep CurrentStep
     {
         get => Value;
         set
@@ -90,12 +90,12 @@
     };
 
     private async Task<GridData<Models.Package>> ServerReload(GridState<Models.Package> state)
-    {        
+    {
         _loading = true;
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Models.Package> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetPackages?guideId={currentDispatch?.GuideId}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Packing/GetPackages?supplierId={currentPacking?.SupplierId}&customerId={currentPacking?.CustomerId}&userId={currentPacking?.UserId}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.Package>>>();
@@ -116,7 +116,7 @@
 
     }
 
-    private async Task ClickRefreshGuides(MouseEventArgs ev)
+    private async Task ClickRefreshPacking(MouseEventArgs ev)
     {
         await PackagesMudDataGrid!.ReloadServerData();
     }
@@ -130,53 +130,41 @@
         }
     }
     private async Task ClickSelectPackage(Models.Package item)
-    { 
-        currentDispatch!.PackageId = item.Id;
-        currentDispatch!.Code = item.Code;
-        currentDispatch!.PackageClosed = item.Closed;
-        currentDispatch!.Number = item.Number;
-        CurrentStep = Models.DispatchStep.Package;
+    {
+        currentPacking!.PackageId = item.Id;
+        currentPacking!.Code = item.Code;
+        currentPacking!.PackageClosed = item.Closed;
+        currentPacking!.Number = item.Number;
+        CurrentStep = Models.PackingStep.Package;
         await Task.CompletedTask;
     }
-    private async Task ClickCloseGuides(MouseEventArgs args)
+    private async Task ClickClosePacking(MouseEventArgs args)
     {
-        currentDispatch!.PackageId = 0;
-        CurrentStep = Models.DispatchStep.Guides; 
+        currentPacking!.PackageId = 0;
+        CurrentStep = Models.PackingStep.Customer;
         await Task.CompletedTask;
     }
-    private async Task CloseGuide()
-    {
-        var result_Post_Zone = await Http.PostAsync($"api/Inventory/CloseGuide?guideId={currentDispatch?.GuideId}", null);
-        if (result_Post_Zone.IsSuccessStatusCode)
-        {
-            var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Guia", "OK", Color.Info, Icons.Material.Filled.Commit);
-            if (!result!.Canceled)
-            {
-                CurrentStep = Models.DispatchStep.Guides;
-            }
 
-        }
-    }
-    private async Task ClickCheckGuides(MouseEventArgs args)
+    private async Task ClickDispatchGuide(MouseEventArgs args)
     {
-        if  (await IsValidGuide(currentDispatch))
-        {
-            await CloseGuide();
-        }
+
+        //if (await  IsValidAnyPackages()) CurrentStep = Models.PackingStep.DispatchGuide;
+        CurrentStep = Models.PackingStep.DispatchGuide;
+        await Task.CompletedTask;
 
     }
-    private async Task<bool> IsValidGuide(Models.Dispatch? dispatch)
-    {      
+    private async Task<bool> IsValidGuide(Models.Packing? packing)
+    {
         string msgresult = "";
-        if (PackagesMudDataGrid!.FilteredItems.Count() == 0)  msgresult = "No hay bultos para confirmar";       
+        if (PackagesMudDataGrid!.FilteredItems.Count() == 0) msgresult = "No hay bultos para confirmar";
         else if (PackagesMudDataGrid!.FilteredItems.Any(r => r.Closed == false)) msgresult = "Algun bulto esta abierto!";
         if (msgresult.Length > 0) await DialogService.ShowDialog(msgresult, "Error GUIA", "OK", Color.Error, Icons.Material.Filled.Error);
 
-        return (msgresult.Length ==0);
+        return (msgresult.Length == 0);
     }
     private async Task ClickAddPackage(MouseEventArgs args)
     {
-        var result_NewPackage = await Http.PostAsync($"api/Inventory/NewPackage?guideId={currentDispatch?.GuideId}", null);
+        var result_NewPackage = await Http.PostAsync($"api/Packing/NewPackage?supplierId={currentPacking?.SupplierId}&customerId={currentPacking?.CustomerId}", null);
         if (result_NewPackage.IsSuccessStatusCode)
         {
             var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Nuevo Bulto", "OK", Color.Info, Icons.Material.Filled.Commit);
@@ -187,4 +175,31 @@
 
         }
     }
+    private async Task<bool> IsValidAnyPackages()
+    {
+        string msgresult = "";
+        if (PackagesMudDataGrid!.FilteredItems.Count(r => r.Closed == true) == 0) msgresult = "No hay algun bulto cerrado!";        
+        if (msgresult.Length > 0) await DialogService.ShowDialog(msgresult, "Error GUIA", "OK", Color.Error, Icons.Material.Filled.Error);
+
+        return (msgresult.Length == 0);
+    }
+    private async Task ClickPrintPackage(Models.Package? item)
+    {
+        var strJsonSelectedPackage = System.Text.Json.JsonSerializer.Serialize(new { Type = "PK", RecordId = item?.Code });
+        var result_RequestPrint = await Http.PostAsync($"api/Print/RequestPrint?userId={currentPacking?.UserId}", new StringContent($"[{strJsonSelectedPackage}]", null, "application/json"));
+      
+        if (result_RequestPrint.IsSuccessStatusCode)
+        {
+            var RequestPrintContent = await result_RequestPrint.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
+            await DialogService.ShowDialog($"Solicitud de Impresion :{RequestPrintContent?.data?.FirstOrDefault()?.insertedRows}", "Bulto", "OK", Color.Info, Icons.Material.Filled.Commit);
+        } 
+        else if (result_RequestPrint.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var RequestPrintContent = await result_RequestPrint.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+            await DialogService.ShowDialog(RequestPrintContent?.message ,"Error", "OK", Color.Info, Icons.Material.Filled.Commit);
+        }
+        await Task.CompletedTask;
+    }
+    
+
 }

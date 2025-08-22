@@ -46,7 +46,7 @@ else
 @code {
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
-    [Inject] private ILogger<AssignUserToMovement> Logger { get; set; } = default!;
+    [Inject] private ILogger<AssignUserToBackOrder> Logger { get; set; } = default!;
 
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public List<Models.Action>? SelectedActions { get; set; }
@@ -64,7 +64,7 @@ else
             var content2 = await locationResponse.Content.ReadFromJsonAsync<WebApiResponse<List<Contact>>>();
             Contacts = content2!.data ?? new List<Contact>();
         }
-    } 
+    }
 
     private async Task SaveClick(MouseEventArgs args)
     {
@@ -74,7 +74,7 @@ else
             int ContactId = ContactSelected?.Id ?? 0;
             SelectedActions?.ToList().ForEach(m => { m.RelatedId = ContactId; m.ActionComment = ""; });
 
-            var result_Post_Actions = (SelectedActions?.Count > 0) ? await Http.PostAsync($"api/Movements/PostMovementActions?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
+            var result_Post_Actions = (SelectedActions?.Count > 0) ? await Http.PostAsync($"api/BackOrder/PostActions?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
             if ((result_Post_Actions?.IsSuccessStatusCode ?? false))
             {
                 var rest = result_Post_Actions.Content.ReadAsStringAsync();
@@ -91,6 +91,6 @@ else
         }
     }
     private void CancelClick(MouseEventArgs args) => MudDialog?.Close();
-    private void OnContactValueChanged(Contact selectedContact) =>  ContactSelected = selectedContact;
-    
+    private void OnContactValueChanged(Contact selectedContact) => ContactSelected = selectedContact;
+
 }

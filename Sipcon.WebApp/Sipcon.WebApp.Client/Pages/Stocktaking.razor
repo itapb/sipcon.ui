@@ -1,0 +1,80 @@
+﻿@page "/stocktaking"
+
+<CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
+    <MudDataGrid @ref="StocktakingMudDataGrid" T="Inventory" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 240px)" Loading="_loading" @bind-CurrentPage="LocationCurrentPage" Dense="true">
+        <ToolBarContent>            
+            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s=>OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshStocktaking"></MudIconButton>
+          
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.PartInnerCode" title="CODIGO" />
+            <PropertyColumn Property="x => x.PartName" title="DESCRIPCION" />
+            <PropertyColumn Property="x => x.Stock" title="EXISTENCIA" />  
+            <PropertyColumn Property="x => x.Price" title="PRECIO" />
+            <PropertyColumn Property="x => x.SupplierName" title="PLANTA" />
+            <PropertyColumn Property="x => x.LocationName" title="UBICACION" />
+            <PropertyColumn Property="x => x.ZoneName" title="ZONA" />
+            <PropertyColumn Property="x => x.WarehouseName" title="ALMACEN" />                
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="Inventory" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        </PagerContent>
+    </MudDataGrid>
+
+
+@code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+    private int? LocationId;
+    List<BreadcrumbItem> ItemsNavigate = [new("Home", href: "", icon: Icons.Material.Filled.Home), new("Inventario", href: "stocktaking", icon: Icons.Material.Filled.Inventory), new("Inventario", href: "stocktaking", icon: Icons.Material.Filled.Inventory2)];
+
+    string searchString = "";      
+    private int LocationCurrentPage = 0;
+    bool _loading = true;
+
+    private MudDataGrid<Inventory>? StocktakingMudDataGrid; 
+
+
+
+    private async Task<GridData<Inventory>> ServerReload(GridState<Inventory> state)
+    {        
+        _loading = true;
+        var mOffset = state.Page * state.PageSize;
+        var totalItems = 0;
+        IEnumerable<Inventory> data;
+        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&rowFrom={mOffset}&filter={searchString}");
+
+        if (response.IsSuccessStatusCode)
+        {            
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Inventory>>>();
+            totalItems = content2!.total ?? 0;           
+            data = content2!.data ?? new List<Inventory>(); ;
+        }
+        else
+        {         
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
+        _loading = false;     
+
+        return new GridData<Inventory> { TotalItems = totalItems, Items = data };
+    }
+
+
+    private async Task ClickRefreshStocktaking(MouseEventArgs args)
+    {
+        await StocktakingMudDataGrid!.ReloadServerData();
+    } 
+    public async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            _loading = true;
+            searchString = text;
+            await StocktakingMudDataGrid!.ReloadServerData();
+        }
+    }
+}

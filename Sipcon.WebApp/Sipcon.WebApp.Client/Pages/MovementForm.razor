@@ -184,7 +184,7 @@
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<MovementDetails> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetMovementWithContext?userId={Useful.userId}&movementId={MovementId}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetMovementWithContext?userId={Useful.userId}&movementId={MovementId}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterMovementDetails>>();
@@ -244,7 +244,7 @@
         if (form.IsValid)
         {
             var strMasterMovement = System.Text.Json.JsonSerializer.Serialize(MasterMovement);
-            var result_MasterMovement = await Http.PostAsync($"api/Inventory/PostMovements?userId={Useful.userId}", new StringContent($"[{strMasterMovement}]", null, "application/json"));
+            var result_MasterMovement = await Http.PostAsync($"api/Movements/PostMovements?userId={Useful.userId}", new StringContent($"[{strMasterMovement}]", null, "application/json"));
             if (result_MasterMovement.IsSuccessStatusCode)
             {
                 var sucessContent = await result_MasterMovement.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
@@ -294,7 +294,7 @@
             if (form.IsValid)
             {
                 var strMasterMovement = System.Text.Json.JsonSerializer.Serialize(MasterMovement);
-                var result_MasterMovement = await Http.PostAsync($"api/Inventory/PostMovements?userId={Useful.userId}", new StringContent($"[{strMasterMovement}]", null, "application/json"));
+                var result_MasterMovement = await Http.PostAsync($"api/Movements/PostMovements?userId={Useful.userId}", new StringContent($"[{strMasterMovement}]", null, "application/json"));
                 if (result_MasterMovement.IsSuccessStatusCode)
                 {
                     var sucessContent = await result_MasterMovement.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
@@ -319,7 +319,7 @@
         }
 
         var strMovementActions = System.Text.Json.JsonSerializer.Serialize(SelectedActions);
-        var result_PostMovementActions = (SelectedActions is not null) ? await Http.PostAsync($"api/Inventory/PostMovementActions?userId={SelectedActions.UserId}", new StringContent($"[{strMovementActions}]", null, "application/json")) : null;
+        var result_PostMovementActions = (SelectedActions is not null) ? await Http.PostAsync($"api/Movements/PostMovementActions?userId={SelectedActions.UserId}", new StringContent($"[{strMovementActions}]", null, "application/json")) : null;
         if ((result_PostMovementActions?.IsSuccessStatusCode ?? false))
         {
             var rest = result_PostMovementActions.Content.ReadAsStringAsync();
@@ -330,7 +330,7 @@
 
     private async Task DeleteMovementDetailAction(List<Models.Action>? actions)
     {        
-        var result_Post_Actions = (actions?.Count > 0) ? await Http.PostAsync($"api/Inventory/DeleteMovementDetail?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json")) : null;
+        var result_Post_Actions = (actions?.Count > 0) ? await Http.PostAsync($"api/Movements/DeleteMovementDetail?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json")) : null;
         if ((result_Post_Actions?.IsSuccessStatusCode ?? false))
         {
             //var rest = result_Post_Actions.Content.ReadAsStringAsync();
@@ -379,7 +379,7 @@
                 formData.Add(content, "file", file.Name);
                 Loading = true;
 
-                var response = await Http.PostAsync($"api/Inventory/ImportMovementDetail?userId={Useful.userId}&movementId={MovementId}", formData);
+                var response = await Http.PostAsync($"api/Movements/ImportMovementDetail?userId={Useful.userId}&movementId={MovementId}", formData);
                 if (response.IsSuccessStatusCode)
                 {
                     await DialogService.ShowDialog("Archivo cargado con exito!.", "Importar", "OK", Color.Info, Icons.Material.Filled.Commit);

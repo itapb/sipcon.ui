@@ -97,7 +97,7 @@ else
         if (form.IsValid)
         {
             var strnewMovementDetail = System.Text.Json.JsonSerializer.Serialize(newMovementDetail);
-            var result_newMovementDetail = await Http.PostAsync($"api/Inventory/PostMovementDetail?userId={Useful.userId}", new StringContent($"[{strnewMovementDetail}]", null, "application/json"));
+            var result_newMovementDetail = await Http.PostAsync($"api/Movements/PostMovementDetail?userId={Useful.userId}", new StringContent($"[{strnewMovementDetail}]", null, "application/json"));
             if (result_newMovementDetail.IsSuccessStatusCode)
             {
                 var sucessContent = await result_newMovementDetail.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();

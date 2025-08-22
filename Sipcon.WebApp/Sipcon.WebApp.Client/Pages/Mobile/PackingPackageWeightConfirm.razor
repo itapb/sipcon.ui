@@ -1,20 +1,18 @@
-﻿@page "/mobile-weightconfirm"
-@using Sipcon.WebApp.Client.Layout
+﻿@using Sipcon.WebApp.Client.Layout
 @layout MobileLayout
 <div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
     <MudPaper Elevation="2" Class="pa-2">
-        <MudGrid Spacing="2">    
-                <MudItem xs="12">
+        <MudGrid Spacing="2">
+            <MudItem xs="12">
                 <MudStack Row="false" Class="pa-2 mud-theme-info mud-typography-h6" Spacing="1" style="line-height:1.1;">
-                    <div>CLIENTE : @currentDispatch?.CustomerName</div>
-                    <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
-                        <div>GUIA: @currentDispatch?.GuideId</div>
-                        <div>BULTO: @currentDispatch?.Number</div>
+                    <div>CLIENTE : @currentPacking?.CustomerName</div>
+                    <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">                    
+                        <div>BULTO: @currentPacking?.PackageId</div>
                     </MudStack>
                 </MudStack>
-                </MudItem>
+            </MudItem>
             <MudItem xs="12">
-                <MudTextField T="Double?"  Label="Peso" @bind-Value="mWeight" Class="d-flex align-center justify-center"></MudTextField>
+                <MudTextField T="Double?" Label="Peso" @bind-Value="mWeight" Class="d-flex align-center justify-center"></MudTextField>
             </MudItem>
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.Center">
@@ -27,11 +25,11 @@
         </MudGrid>
     </MudPaper>
 </div>
-@code { 
+@code {
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
-    [Parameter] public Models.Dispatch? currentDispatch { get; set; }
+    [Parameter] public Models.Packing? currentPacking { get; set; }
     double? mWeight;
     private async Task ClickPackageWeightCheck(MouseEventArgs args)
     {
@@ -46,7 +44,7 @@
     }
     private async Task SetPackageWeight()
     {
-        var result_Post_Zone = await Http.PostAsync($"api/Inventory/ClosePackage?packageId={currentDispatch?.PackageId}&weight={mWeight}", null);
+        var result_Post_Zone = await Http.PostAsync($"api/Packing/ClosePackage?packageId={currentPacking?.PackageId}&weight={mWeight}", null);
         if (result_Post_Zone.IsSuccessStatusCode)
         {
             var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Peso Bulto", "OK", Color.Info, Icons.Material.Filled.Commit);

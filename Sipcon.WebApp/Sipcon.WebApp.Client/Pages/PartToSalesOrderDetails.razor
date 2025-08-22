@@ -1,0 +1,69 @@
+﻿@if (newSaleOrderDetails == null)
+{
+    <LoadingForm IsMudDialog="@(MudDialog != null)" />
+}
+else
+{
+    <MudForm @ref="form">
+        <div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
+            <MudPaper Elevation="2" Class="pa-3">
+                <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12">
+                            <MudTextField T="int?" Label="Cantidad" @bind-Value="newSaleOrderDetails.Quantity" For="@(() => newSaleOrderDetails.Quantity)" Required="true" Validation="@(new Func<int?, string>(ValidateInteger))"></MudTextField>
+                        </MudItem>                       
+                        <MudItem xs="12">
+                            <MudStack Row="true" Justify="Justify.Center">
+                                <MudStack Row="true" Spacing="4">
+                                    <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="CheckClick" />
+                                    <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="CloseClick" />
+                                </MudStack>
+                            </MudStack>
+                        </MudItem>
+                    </MudGrid>
+                </MudFocusTrap>
+            </MudPaper>
+        </div>
+    </MudForm>
+}
+@code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    private MudForm? form;
+    [Parameter] public NewSalesOrderDetails? newSaleOrderDetails { get; set; } = default!;
+  
+
+    private async Task CheckClick(MouseEventArgs args)
+    {
+        await form!.Validate();
+        if (form.IsValid)
+        {
+            var strnewSaleOrderDetails = System.Text.Json.JsonSerializer.Serialize(newSaleOrderDetails);
+            var result_newMovementDetail = await Http.PostAsync($"api/SaleOrder/PostDetail?userId={Useful.userId}", new StringContent(strnewSaleOrderDetails, null, "application/json"));
+            if (result_newMovementDetail.IsSuccessStatusCode)
+            {
+                var sucessContent = await result_newMovementDetail.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
+                if (sucessContent?.data![0] is ({ insertedRows: 1 } or { updatedRows: 1 }))
+                {
+                    var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Item", "OK", Color.Info, Icons.Material.Filled.Commit);
+                    if (!result!.Canceled)
+                        MudDialog?.Close(DialogResult.Ok(true));
+                }
+            }
+            else if (result_newMovementDetail.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                var conflictContent = await result_newMovementDetail.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+                await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+            else
+            {
+                var errorMessage = await result_newMovementDetail.Content.ReadAsStringAsync();
+                throw new Exception(errorMessage);
+            }
+        }
+    }
+    private void CloseClick(MouseEventArgs args) => MudDialog?.Cancel();
+
+    private string ValidateInteger(int? value) => (value.HasValue && value <= 0) ? $"El valor debe ser mayor a cero" : string.Empty;
+}
