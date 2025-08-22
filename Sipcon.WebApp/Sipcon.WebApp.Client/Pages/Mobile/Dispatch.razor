@@ -5,27 +5,22 @@
 @switch (CurrentStep)
 {
     case Models.DispatchStep.Customer:
-        <Customers @bind-Value="CurrentStep" currentDispatch="CurrentDispatch" />
+        <DispatchCustomers @bind-Value="CurrentStep" currentDispatch="CurrentDispatch" />
         break;
     case Models.DispatchStep.Guides:
-        <Guides @bind-Value="CurrentStep" currentDispatch="CurrentDispatch" />
+        <DispatchGuide @bind-Value="CurrentStep" currentDispatch="CurrentDispatch" />
         break;
     case Models.DispatchStep.GuideDetails:
-        <GuideDetails @bind-Value="CurrentStep" currentDispatch="CurrentDispatch" />
+        <DispatchGuideDetails @bind-Value="CurrentStep" currentDispatch="CurrentDispatch" />
         break;
     case Models.DispatchStep.Package:
-        <Package @bind-Value="CurrentStep" currentDispatch="CurrentDispatch" />
+        <DispatchPackages @bind-Value="CurrentStep" currentDispatch="CurrentDispatch" />
         break;
-    case Models.DispatchStep.Pending:
-        <Pending @bind-Value="CurrentStep" currentDispatch="CurrentDispatch" />
-        break;
-    case Models.DispatchStep.SetPackage:
-        <SetPackage @bind-Value="CurrentStep" currentDispatch="CurrentDispatch" />
-        break;
+
 }
 
 @code {
-    public  Models.Dispatch CurrentDispatch  = new() { UserId = 1, SupplierId = 4069, CustomerId = 0, GuideId = 0, PartId = 0, PackageId= 0 , CustomerName = "", Pending =0, PartName ="", Code = ""};
-    public Models.DispatchStep CurrentStep = Models.DispatchStep.Customer;
+    public Models.Dispatch CurrentDispatch = new() { UserId = Useful.userId, SupplierId = Useful.supplierId, CustomerId = Useful.customerId, GuideId = 0, PartId = 0, PackageId = 0, CustomerName = Useful.customerName, Pending = 0, PartName = "", Code = "" };
+    public Models.DispatchStep CurrentStep = Useful.customerId  == 0 ? Models.DispatchStep.Customer : Models.DispatchStep.Guides;
     public static Models.DispatchStep? PreviousStep;
 }

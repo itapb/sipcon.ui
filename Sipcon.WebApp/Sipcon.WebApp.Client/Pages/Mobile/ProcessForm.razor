@@ -27,7 +27,7 @@
                 <MudTextField T="int?" ReadOnly="true" Label="Cantidad Real" @bind-Value="InputRealQty"></MudTextField>
             </MudItem>
             <MudItem xs="12">
-                 <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.LastChild"><MudTextField @ref="bardCodeField" T="string" OnKeyUp="CodeFieldOnKeyUp" @bind-Value="InputCode" HelperText="@mHelpText" Variant="Variant.Filled"></MudTextField> </MudFocusTrap>
+                    <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.LastChild"><MudTextField @ref="bardCodeField" T="string" OnKeyUp="CodeFieldOnKeyUp" @bind-Value="InputCode" HelperText="@mHelpText" Variant="Variant.Filled" HelperId="custom-helper-text"></MudTextField> </MudFocusTrap>
             </MudItem>                
             }
             <MudItem xs="12">
@@ -44,13 +44,19 @@
    
     </MudPaper>
 </div>
-
+<style>
+    #custom-helper-text {
+        font-size: 1.2rem;
+        color: blue;
+        font-style: italic;
+    }
+ </style>
 @code {
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;   
     [Parameter] public string? MovementType { get; set; } = string.Empty;
     MovementDetails? movementDetails;
-    int UserId = 5077;
+    int UserId = 1;//5077;
 
     string mHelpText = "";
     bool ModeValue = true;
@@ -97,7 +103,7 @@
                 if (mStepId == 3) mHelpText = "Escanee el repuesto o codigo de barras";
                 break;
             case 2: //VALIDAR UBICACIÓN DEL MOVIMIENTO EN CURSO                
-                IsValidLocation = await GetValidLocation(InputCode);
+                IsValidLocation = await GetValidLocation(InputCode.ToUpper());
                 if (IsValidLocation)
                 {
                     mStepId = 3;
@@ -109,7 +115,7 @@
                 break;
             case 3: // VALIDAR REPUESTO DEL MOVIMIENTO EN CURSO                
 
-                IsValidPart = ValidPart(MovementType, InputCode);
+                IsValidPart = ValidPart(MovementType, InputCode.ToUpper());
                 if (IsValidPart)
                 {
                     if ((MovementType == "T" || MovementType == "P") && InputCode == "0")
@@ -159,7 +165,7 @@
     private bool ValidPart(string? movementType, string inputCode)    
     {
         bool isvalidPart = (((movementType == "T" || movementType == "P") && inputCode == "0") ||
-        (movementDetails!.PartBarcode == inputCode || movementDetails!.PartInnerCode == inputCode));
+        (movementDetails!.PartBarcode!.ToUpper() == inputCode || movementDetails!.PartInnerCode!.ToUpper() == inputCode));
         return isvalidPart;
     }   
     private bool ValidReal(string? movementType, string typeId ,int realQty)
@@ -170,12 +176,12 @@
         return isValid;
     } 
 
-    private record movementMobile(int? Id, int? MovementId, int? PartId, int? LocationId, int? RealQty, string? SerialCode);
+    private record movementMobile(int? Id, int? MovementId, int? PartId, int? LocationId, int? RealQty, string? SerialCode, int? PartialTypeId);
 
     private async Task<bool> GetValidLocation(string InputlocationName)
     {
         bool isValidLocation = false;
-        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetValidLocation?movementDetailId={movementDetails!.Id}&locationName={InputlocationName}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetValidLocation?movementDetailId={movementDetails!.Id}&locationName={InputlocationName}");
         isValidLocation = response.IsSuccessStatusCode;
         if (isValidLocation)
         {
@@ -189,15 +195,20 @@
     }
     private async Task PostMovemmentDetailMobile()
     {
-        var AnMovementMobile = new movementMobile(Id: movementDetails!.Id, MovementId: movementDetails!.MovementId, PartId: movementDetails.PartId, LocationId: locationId, RealQty: InputRealQty, SerialCode: InputSerial);
-        var strJsonMovementMobile = System.Text.Json.JsonSerializer.Serialize(AnMovementMobile);
-        var result_Post_Zone = await Http.PostAsync($"api/Inventory/PostMovementDetailMobile?userId={UserId}", new StringContent($"{strJsonMovementMobile}", null, "application/json"));
-        if (result_Post_Zone.IsSuccessStatusCode)
+        var PartialTypeIdInput = (MovementType == "P" && movementDetails!.TypeId!.ToUpper() == "P" && InputRealQty < movementDetails!.RequiredQty) ? await ReasonConfirmation() : 0;
+        if (PartialTypeIdInput != null)
         {
-            await DialogService.ShowDialog("Movimiento Procesado!", "Procesado", "OK", Color.Success, Icons.Material.Filled.Check);
-            await StepOne(); // Reset to step one after processing
-            StateHasChanged();
+            var AnMovementMobile = new movementMobile(Id: movementDetails!.Id, MovementId: movementDetails!.MovementId, PartId: movementDetails.PartId, PartialTypeId: PartialTypeIdInput, LocationId: locationId, RealQty: InputRealQty, SerialCode: InputSerial);
+            var strJsonMovementMobile = System.Text.Json.JsonSerializer.Serialize(AnMovementMobile);
+            var result_Post_Zone = await Http.PostAsync($"api/Movements/PostMovementDetailMobile?userId={UserId}", new StringContent($"{strJsonMovementMobile}", null, "application/json"));
+            if (result_Post_Zone.IsSuccessStatusCode)
+            {
+                await DialogService.ShowDialog("Movimiento Procesado!", "Procesado", "OK", Color.Success, Icons.Material.Filled.Check);
+                await StepOne(); // Reset to step one after processing
+                StateHasChanged();
+            }
         }
+
     }
     private async Task StepOne()
     {
@@ -207,7 +218,7 @@
     private async Task GetMovementDetailsByUser()
     {
         InitializeFormFields();
-        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetMovementDetailsByUser?userId={UserId}&movementType={MovementType}&mode={ModeParameter}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetMovementDetailsByUser?userId={UserId}&movementType={MovementType}&mode={ModeParameter}");
         if (response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadFromJsonAsync<WebApiResponse<List<MovementDetails>>>();
@@ -264,5 +275,18 @@
         ModeText = ModeValue ? "Picking" : "Entrega";
         ModeParameter = ModeValue ? "P" : "D";
         await StepOne();       
+    }
+
+    private async Task<int?> ReasonConfirmation()
+    {
+        int? ResultPartialTypeId = null;
+        DialogOptions options2 = new DialogOptions { MaxWidth = MaxWidth.Small, BackdropClick = false, NoHeader = true };
+        var dialogReference = await DialogService.ShowAsync<ReasonForQuantity>("", new DialogParameters { }, options2);
+        var result = await dialogReference.Result;
+        if (!result!.Canceled)
+        {
+            ResultPartialTypeId = (int)(result.Data ?? 0);
+        }
+        return ResultPartialTypeId;
     }
 }

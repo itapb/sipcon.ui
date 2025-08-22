@@ -1,0 +1,208 @@
+﻿@page "/dispatchguides"
+<CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
+@if (GuideId != null)
+{
+    <DispatchGuideForm @bind-Value="GuideId" />
+}
+else
+{
+    <MudDataGrid @ref="GuidesMudDataGrid" T="Mobile.Models.Guide" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" FixedHeader Height="calc(100vh - 240px)" Loading="Loading" @bind-CurrentPage="ReceptionCurrentPage">
+        <ToolBarContent>
+            <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="ClickNewGuide"></MudIconButton>
+            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshGuide"></MudIconButton>
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+                @foreach (var strmodulo in Modules!)
+                {
+                    <MudMenuItem Label="@strmodulo.ActionDisplay" Icon="@(strmodulo.ActionDisplay.ToActionIcon())" IconColor="@Color.Info" OnClick="@(() => ClickMenuGuides(strmodulo.ActionName))" />
+                }
+            </MudMenu>
+        </ToolBarContent>
+        <Columns>
+            <TemplateColumn>
+                <HeaderTemplate>
+                    <MudCheckBox @bind-Value="IsAllCheckBoxSelected" @bind-Value:after="AfterAsyncAllCheck" />
+                </HeaderTemplate>
+                <CellTemplate>
+                    <MudCheckBox @bind-Value="context.Item.IsSelected" />
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.Id" Title="NRO" />
+            <PropertyColumn Property="x => x.CreatedDate" Title="FECHA" />            
+            <PropertyColumn Property="x => x.CustomerName" Title ="CLIENTE" />            
+            <PropertyColumn Property="x => x.ProviderName" Title="PROVEEDOR" />
+            <PropertyColumn Property="x => x.Number" Title="NUMERO" />
+            <PropertyColumn Property="x => x.StatusName" Title="STATUS" />
+            <TemplateColumn StickyRight="true">
+                <CellTemplate>
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditGuide(context.Item)" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="Mobile.Models.Guide" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        </PagerContent>
+    </MudDataGrid>
+}
+
+@code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private ILogger<DispatchGuides> Logger { get; set; } = default!;
+    List<BreadcrumbItem> ItemsNavigate = new();
+
+    private int? GuideId = null;    //4
+
+    private bool IsAllCheckBoxSelected = false;
+    int ReceptionCurrentPage = 0;
+    bool Loading = false;
+    private MudDataGrid<Mobile.Models.Guide>? GuidesMudDataGrid;
+    private List<Module>? Modules;
+    DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
+    private string searchString = string.Empty;
+    string MovementTitle = "";
+    private Dictionary<string, string> strDictionaryContactName = new Dictionary<string, string> { { "r", "PROVEEDOR" }, { "t", "PLANTA" }, { "p", "CLIENTE" } };
+    private string strContactName = "";
+
+    private async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            Loading = true;
+            searchString = text;
+            await GuidesMudDataGrid!.ReloadServerData();
+        }
+    }
+    private async Task ClickRefreshGuide(MouseEventArgs args) => await GuidesMudDataGrid!.ReloadServerData();
+    private async Task ClickNewGuide(MouseEventArgs ev)
+    {
+        HttpResponseMessage response = await Http.GetAsync($"api/Movements/NewMovementWithContext?userId={Useful.userId}&supplierId={Useful.supplierId}&typeId=R");
+        if (response.IsSuccessStatusCode)
+        {
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterMovementDetails>>();
+            var data = content2!.data ?? new MasterMovementDetails();
+            GuideId = data.Movement?.Id;
+        }
+        else
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            Logger.LogError(Useful.TemplateLog(MovementTitle, errorMessage));
+            await DialogService.ShowUnexpected();
+        }
+        await Task.CompletedTask;
+    }
+    private async Task AfterAsyncAllCheck()
+    {
+        GuidesMudDataGrid?.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
+        await Task.CompletedTask;
+    }
+    private async Task ClickEditGuide(Mobile.Models.Guide item) => await Task.FromResult(GuideId = item.Id);
+    protected override async Task OnInitializedAsync() => await LoadDataAsync();
+
+    private async Task LoadDataAsync()
+    {
+        MovementTitle = "Despacho";
+        string hrefMovement = "dispatchguides";
+
+        $"Home,Inventario,Procesos,{MovementTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-{MovementTitle.ToUpper()}&userId={Useful.userId}");
+    }
+    Func<Mobile.Models.Guide, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    {
+        nameof(Mobile.Models.Guide.Id) => o => o.Id ?? 0,
+        nameof(Mobile.Models.Guide.CreatedDate) => o => o.CreatedDate ?? DateTime.Now,
+        nameof(Mobile.Models.Guide.CustomerName) => o => o.CustomerName ?? "",
+        nameof(Mobile.Models.Guide.ProviderName) => o => o.ProviderName ?? "",
+        nameof(Mobile.Models.Guide.Number) => o => o.Number ?? "",
+        nameof(Mobile.Models.Guide.StatusName) => o => o.StatusName ?? "",
+        _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto
+    };
+
+    private async Task<GridData<Mobile.Models.Guide>> ServerReload(GridState<Mobile.Models.Guide> state)
+    {
+        IsAllCheckBoxSelected = false;
+        Loading = true;
+        var totalItems = 0;
+        var mOffset = state.Page * state.PageSize;
+        IEnumerable<Mobile.Models.Guide> data;
+        HttpResponseMessage response = await Http.GetAsync($"api/GetAllGuides?userId={Useful.userId}&supplierId={Useful.supplierId}&rowfrom={mOffset}&filter={searchString}");
+
+        if (response.IsSuccessStatusCode)
+        {
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Mobile.Models.Guide>>>();
+            totalItems = content2!.total ?? 0;
+            data = content2!.data ?? new List<Mobile.Models.Guide>();
+
+            if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Mobile.Models.Guide> sortDefinition)
+            {
+                data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
+            }
+        }
+        else
+        {
+            data = new List<Mobile.Models.Guide>();
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            Logger.LogError(Useful.TemplateLog(MovementTitle, errorMessage));
+            await DialogService.ShowUnexpected();
+        }
+
+        Loading = false;
+        return new GridData<Mobile.Models.Guide> { TotalItems = totalItems, Items = data };
+    }
+
+    private async Task ClickMenuGuides(string? actionName)
+    {
+        var strDictionary = new Dictionary<string, string> { { "ASSIGN", "GENERADO" }, { "UNASSIGN", "ASIGNADO" }, { "GENERATE", "CREADO" }, { "DECLINE", "CREADO,GENERADO" } };
+        var mActions = GuidesMudDataGrid?.FilteredItems.Where(item => item.IsSelected && strDictionary[actionName!].Contains(item.StatusName!.ToUpper()))
+                                                         .Select(item => new Client.Models.Action
+                                                         {
+                                                             UserId = Useful.userId,
+                                                             RecordId = item.Id,
+                                                             ModuleId = Modules!.FirstOrDefault()?.Id,
+                                                             actionName = actionName,
+                                                             ActionComment = "",
+                                                             RelatedId = 0
+                                                         }).ToList();
+
+        if (mActions?.Count == 0)
+        {
+            await DialogService.ShowDialog("Accion no permitada, Verificar datos seleccionado(s)", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        else if (mActions?.Count > 0)
+        {
+            if (actionName == "ASSIGN")
+            {
+                string ModuleName = "INVENTARIO-MOVIL-RECEPCION";
+                var dialogReference = await DialogService.ShowAsync<AssignUserToMovement>("", new DialogParameters { ["SelectedActions"] = mActions, ["moduleName"] = ModuleName }, options);
+                if (await Useful.AsyncDialogResultIsOk(dialogReference)) await GuidesMudDataGrid!.ReloadServerData();
+            }
+            else
+            {
+                await PostActionAndReload(mActions, $"api/Movements/PostMovementActions?userId={Useful.userId}");
+            }
+        }
+
+    }
+    private async Task PostActionAndReload(List<Models.Action>? actions, string requesturi)
+    {
+        var result_Post_Actions = (actions?.Count > 0) ? await Http.PostAsync(requesturi, new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json")) : null;
+        if ((result_Post_Actions?.IsSuccessStatusCode ?? false))
+        {
+            var rest = result_Post_Actions.Content.ReadAsStringAsync();
+            await DialogService.ShowDialog(Useful.OkSavedMessage, "Accion", "OK", Color.Info, Icons.Material.Filled.Commit);
+            await GuidesMudDataGrid!.ReloadServerData();
+        }
+        else if (result_Post_Actions?.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflictContent = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+            await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        else
+        {
+            var errorMessage = await result_Post_Actions!.Content.ReadAsStringAsync() ?? "";
+            Logger.LogError(Useful.TemplateLog(MovementTitle, errorMessage));
+            await DialogService.ShowUnexpected(); ;
+        }
+    }
+}

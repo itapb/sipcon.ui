@@ -1,0 +1,32 @@
+﻿@page "/mobile-packing"
+@using Sipcon.WebApp.Client.Layout
+@inject NavigationManager navigationManager
+@layout MobileLayout
+
+@switch (CurrentStep)
+{
+    case Models.PackingStep.Customer:
+        <PackingCustomers @bind-Value="CurrentStep" currentPacking="CurrentPacking" />
+        break;
+    case Models.PackingStep.PackingDetails:
+        <PackingDetails @bind-Value="CurrentStep" currentPacking="CurrentPacking" />
+        break;
+    case Models.PackingStep.Package:
+        <PackingPackage @bind-Value="CurrentStep" currentPacking="CurrentPacking" />
+        break;
+    case Models.PackingStep.Pending:
+        <PackingPending @bind-Value="CurrentStep" currentPacking="CurrentPacking" />
+        break;
+    case Models.PackingStep.SetPackage:
+        <PackingSetPackage @bind-Value="CurrentStep" currentPacking="CurrentPacking" />
+        break;
+    case Models.PackingStep.DispatchGuide:
+        navigationManager.NavigateTo("mobile-dispatch");
+        break;
+}
+
+@code {
+    public Models.Packing CurrentPacking = new() { UserId = Useful.userId, SupplierId = Useful.supplierId, CustomerId = 0, PartId = 0, PackageId = 0, CustomerName = "", Pending = 0, PartName = "", Code = "" };
+    public Models.PackingStep CurrentStep = Models.PackingStep.Customer;
+    public static Models.PackingStep? PreviousStep;
+}

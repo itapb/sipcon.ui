@@ -6,6 +6,10 @@ namespace Sipcon.WebApp.Client.Helper
     { 
         internal static int userId = 1;
         internal static int supplierId = 4069;
+        internal static int dealerId = 5103;
+        internal static int customerId = 0;
+        internal static string customerName = "";
+
         internal static string OkSavedMessage = "Registro guardado satisfactoriamente.";
         internal static async Task<DialogResult?> ShowDialog(this IDialogService dialogService, string? strMessage, string strTitle, string strPrimaryButton, Color mColor, string? strIcon)
         {
@@ -68,7 +72,10 @@ namespace Sipcon.WebApp.Client.Helper
                 "TRASLADO" => Icons.Material.Filled.MoveDown,
                 "IMPRIMIR" => Icons.Material.Filled.Print,
                 "DESPACHO" => Icons.Material.Filled.LocalShipping,
+                "RECOLECCION" => Icons.Material.Filled.AddShoppingCart,
                 "INACTIVAR" => Icons.Material.Filled.Dangerous,
+                "PEDIDOS" => @Icons.Material.Filled.RequestPage,
+                "BACKORDERS" => Icons.Material.Filled.List,
                 _ => Icons.Material.Filled.HelpOutline
             };
         }

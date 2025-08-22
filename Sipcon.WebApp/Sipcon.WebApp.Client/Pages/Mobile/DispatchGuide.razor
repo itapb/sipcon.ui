@@ -21,7 +21,7 @@
                                 <MudPaper Class="pa-3">
                                     <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Style="height:40px;" />
                                 </MudPaper>
-                            </MudStack>   
+                            </MudStack>
                         </PagerContent>
                     </MudDataGrid>
                 </MudText>
@@ -30,7 +30,7 @@
                 <MudStack Row="true" Justify="Justify.Center">
                     <MudStack Row="true" Spacing="5">
                         <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Size="Size.Medium" OnClick="ClickAddGuide" />
-                        <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshGuides" />                        
+                        <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshGuides" />
                         <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="ClickCloseGuides" />
                     </MudStack>
                 </MudStack>
@@ -65,7 +65,7 @@
 
     bool _loading = true;
     string searchString = "";
-    private int GuideCurrentPage = 0;    
+    private int GuideCurrentPage = 0;
     private MudDataGrid<Models.Guide>? GuidesMudDataGrid;
 
 
@@ -80,8 +80,8 @@
         _loading = true;
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
-        IEnumerable < Models.Guide> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetGuides?supplierId={currentDispatch!.SupplierId}&customerId={currentDispatch.CustomerId}&userId={currentDispatch.UserId}");
+        IEnumerable<Models.Guide> data;
+        HttpResponseMessage response = await Http.GetAsync($"api/Packing/GetGuides?supplierId={currentDispatch!.SupplierId}&customerId={currentDispatch.CustomerId}&userId={currentDispatch.UserId}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.Guide>>>();
@@ -117,23 +117,24 @@
     private async Task ClickSelectGuide(Models.Guide item)
     {
         currentDispatch!.GuideId = item.Id ?? 0;
+        currentDispatch.GuideClosed = item.Closed;
         CurrentStep = Models.DispatchStep.GuideDetails;
         await Task.CompletedTask;
     }
     private async Task ClickCloseGuides(MouseEventArgs args)
     {
-        CurrentStep  = Models.DispatchStep.Customer;
+        CurrentStep = Models.DispatchStep.Customer;
         await Task.CompletedTask;
     }
     private async Task ClickAddGuide(MouseEventArgs args)
-    {        
-        var result_Post_Zone = await Http.PostAsync($"api/Inventory/NewGuide?supplierId={currentDispatch?.SupplierId}&customerId={currentDispatch?.CustomerId}&userId={currentDispatch?.UserId}", null);
+    {
+        var result_Post_Zone = await Http.PostAsync($"api/Packing/NewGuide?supplierId={currentDispatch?.SupplierId}&customerId={currentDispatch?.CustomerId}&userId={currentDispatch?.UserId}", null);
         if (result_Post_Zone.IsSuccessStatusCode)
         {
             var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Nueva Guia", "OK", Color.Info, Icons.Material.Filled.Commit);
             if (!result!.Canceled)
             {
-                await GuidesMudDataGrid!.ReloadServerData(); 
+                await GuidesMudDataGrid!.ReloadServerData();
             }
 
         }
