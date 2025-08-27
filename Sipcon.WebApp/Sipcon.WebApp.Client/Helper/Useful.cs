@@ -74,8 +74,9 @@ namespace Sipcon.WebApp.Client.Helper
                 "DESPACHO" => Icons.Material.Filled.LocalShipping,
                 "RECOLECCION" => Icons.Material.Filled.AddShoppingCart,
                 "INACTIVAR" => Icons.Material.Filled.Dangerous,
-                "PEDIDOS" => @Icons.Material.Filled.RequestPage,
+                "PEDIDOS" => Icons.Material.Filled.RequestPage,
                 "BACKORDERS" => Icons.Material.Filled.List,
+                "RECIBIR" => Icons.Material.Filled.CallReceived,
                 _ => Icons.Material.Filled.HelpOutline
             };
         }

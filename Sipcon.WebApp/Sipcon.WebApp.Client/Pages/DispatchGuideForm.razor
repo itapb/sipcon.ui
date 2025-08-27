@@ -4,24 +4,25 @@
             <MudStack>
                 <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
                     <MudStack Row="true" Spacing="2">
-                        <MudFab StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" Size="Size.Small" Label="Guardar" OnClick="SaveClick" ></MudFab>
+                        <MudFab StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" Size="Size.Small" Label="Guardar" OnClick="SaveClick" Disabled="@(!IsSentGuide)"></MudFab>
                         <MudButton OnClick="CloseClick">Cerrar</MudButton>
                     </MudStack>
                 </MudPaper>
                 <MudPaper Elevation="2" Style="height: 100%;">
                     <MudDataGrid @ref="GuideDetailsMudDataGrid" T="Models.GuideDetails" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 262px)" Loading="Loading" @bind-CurrentPage="PartCurrentPage">
-                        <ToolBarContent>
-                            <MudIconButton Icon="@Icons.Material.Filled.PlaylistAdd" Size="Size.Medium" OnClick="ClickAddGuideDetails" Color="Color.Info" Disabled="@(!IsCreatedGuide)"></MudIconButton>
-                            <MudIconButton Icon="@Icons.Material.Filled.PlaylistRemove" Size="Size.Medium" OnClick="ClickRemoveGuideDetails" Color="Color.Info" Disabled="@(!IsCreatedGuide)"></MudIconButton>
-                            <MudSpacer />
-                            <MudIconButton Icon="@Icons.Material.Filled.Upload" Size="Size.Medium" OnClick="ClickImportGuideDetails" Color="Color.Info" Disabled="@(!IsCreatedGuide)"></MudIconButton>
-                        </ToolBarContent>
                         <Columns>   
                             <PropertyColumn Property="x => x.PackageCode" Title="BULTO" />
                             <PropertyColumn Property="x => x.PartInnercode" Title="CODIGO" />
                             <PropertyColumn Property="x => x.PartDescription" Title="DESCRIPCION" />
                             <PropertyColumn Property="x => x.Quantity" Title="CANTIDAD" />
-                            
+                            <PropertyColumn Property="x => x.Received" Title="RECIBIDO" />
+                            <PropertyColumn Property="x => x.Observation" Title="OBSERVACION" />
+                            <PropertyColumn Property="x => x.SaleOrderId" Title="NRO PEDIDO" />
+                            <TemplateColumn>
+                                <CellTemplate>
+                                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditGuideDetails(context.Item)" Disabled="@(!IsSentGuide)" />
+                                </CellTemplate>
+                            </TemplateColumn>
                         </Columns>
                     </MudDataGrid>
                 </MudPaper>
@@ -43,10 +44,10 @@
                                     <MudTextField ReadOnly="true" @bind-Value="MasterGuide.CustomerName" Adornment="Adornment.Start" AdornmentText="Cliente :" Variant="Variant.Text" Class="align-right-input"></MudTextField>
                                 </MudItem>
                                 <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterGuide.Id" Adornment="Adornment.Start" AdornmentText="Nro Doc :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
-                                <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterGuide.CreatedDate" Adornment="Adornment.Start" AdornmentText="Fecha :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
-                                <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterGuide.DeliveredDate" Adornment="Adornment.Start" AdornmentText="Entregado :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
-                                <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterGuide.ProviderName" Adornment="Adornment.Start" AdornmentText="Proveedor :" Variant="Variant.Text" Class="align-right-input" /></MudItem>                                
-                                <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterGuide.Number" Label="Numero" Variant="Variant.Text" /></MudItem>
+                                <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterGuide.DeliveredDate" Adornment="Adornment.Start" AdornmentText="Fecha :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
+                                <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterGuide.StatusName" Adornment="Adornment.Start" AdornmentText="Status :" Variant="Variant.Text" Class="align-right-input" /></MudItem>                                
+                                <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterGuide.ProviderName" Adornment="Adornment.Start" AdornmentText="Proveedor :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
+                                <MudItem xs="12"><MudTextField ReadOnly="@(!IsSentGuide)" @bind-Value="MasterGuide.Number" Label="Numero" Variant="Variant.Text" Required="@(IsSentGuide)" RequiredError="Campo requerido" /></MudItem>
                             }
 
                         </MudGrid>
@@ -62,7 +63,7 @@
                 </MudPaper>
                 <MudPaper Elevation="2" Class="pa-2 mud-text-align-center flex-grow-0">
                     <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd" StretchItems="StretchItems.Start">
-                        <MudFab StartIcon="@Icons.Material.Filled.CheckCircleOutline" Color="Color.Info" Size="Size.Small" Label="Generar" OnClick="GenerateClick" Disabled="@(!IsCreatedGuide)" />
+                        <MudFab StartIcon="@Icons.Material.Filled.CheckCircleOutline" Color="Color.Info" Size="Size.Small" Label="Recibir" OnClick="ReceiveClick" Disabled="@(!IsSentGuide)" />
                     </MudStack>
                 </MudPaper>
             </MudStack>
@@ -81,14 +82,14 @@
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
     [Parameter] public int? Value { get; set; }
     [Parameter] public EventCallback<int?> ValueChanged { get; set; }
-    DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
+    DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
 
-   
+
     int PartCurrentPage = 0;
-    bool IsCreatedGuide = false; 
-   
-    
-  
+    bool IsSentGuide = false; 
+
+
+
 
     private int? GuideId
     {
@@ -104,7 +105,7 @@
     }
     private int UnitValue = 0;
     private int BultoValue = 0;
-    private double PesoValue = 0;
+    private decimal PesoValue = 0;
 
 
     private bool IsAllCheckBoxSelected = false;
@@ -112,13 +113,13 @@
     private Pages.Mobile.Models.Guide? MasterGuide;
     private MudDataGrid<Models.GuideDetails>? GuideDetailsMudDataGrid = new();
     private MudForm? form;
-  
+
 
     private void getTotals(IEnumerable<Models.GuideDetails> data)
     {       
         UnitValue = data.Sum(x => x.Quantity) ?? 0;
         BultoValue = data.GroupBy(x => x.PackageId).Count();
-        PesoValue = 0;
+        PesoValue = MasterGuide?.Weith ?? 0 ;
     }
     Func<Models.GuideDetails, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
     {
@@ -137,7 +138,7 @@
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Models.GuideDetails> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/GetGuideWithContext?userId={Useful.userId}&supplierId={Useful.supplierId}&guideId={GuideId}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Guide/GetGuideWithContext?guideId={GuideId}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterGuideDetails>>();
@@ -145,8 +146,8 @@
             var masterGuideDetails = content2!.data ?? new MasterGuideDetails();
             MasterGuide = masterGuideDetails.Guide;
             data = masterGuideDetails.GuideDetails!;
-            IsCreatedGuide = (MasterGuide!.StatusName!.ToUpper() == "CREADO");          
-           
+            IsSentGuide = (MasterGuide!.StatusName!.ToUpper() == "ENVIADO");          
+
             getTotals(data);
         }
         else
@@ -177,20 +178,101 @@
 
     private async Task SaveClick(MouseEventArgs args)
     {
-        await Task.CompletedTask;
+        await form!.Validate();
+        if (form.IsValid)
+        {
+            var strMasterMovement = System.Text.Json.JsonSerializer.Serialize(MasterGuide);
+            var result_MasterMovement = await Http.PostAsync($"api/Guide/PostGuideNumber?userId={Useful.userId}&guideId={MasterGuide!.Id}&guideNumber={MasterGuide.Number}", null);
+            if (result_MasterMovement.IsSuccessStatusCode)
+            {
+                var sucessContent = await result_MasterMovement.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
+                if (sucessContent?.data is ({ insertedRows: 1 } or { updatedRows: 1 }))
+                {
+                    var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Guardar", "OK", Color.Info, Icons.Material.Filled.Commit);
+                    if (!result!.Canceled)
+                        GuideId = null; 
+                }
+            }
+            else if (result_MasterMovement.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                var conflictContent = await result_MasterMovement.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+                await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+            else
+            {
+                var errorMessage = await result_MasterMovement.Content.ReadAsStringAsync();
+                throw new Exception(errorMessage);
+            }
+        }
     }
-    private async Task GenerateClick(MouseEventArgs args)
+    private async Task ReceiveClick(MouseEventArgs args)
     {
-        await Task.CompletedTask;
-    }
+        var SelectedActions = GuideDetailsMudDataGrid?.FilteredItems.Count() > 0 ?
+                               new Client.Models.Action
+                               {
+                                   UserId = Useful.userId,
+                                   RecordId = MasterGuide!.Id,
+                                   ModuleId = 17,
+                                   actionName = "RECEIVE",
+                                   ActionComment = "",
+                                   RelatedId = 0
+                               }
+                               : null;
 
-    private async Task DeleteMovementDetailAction(List<Models.Action>? actions)
-    {
-        await Task.CompletedTask;
+        if (SelectedActions is null)
+        {
+            await DialogService.ShowDialog("No hay detalles para procesar Guia.", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            return;
+        }
+
+        await form!.Validate();
+        var IsSuccess = false;
+        if (form.IsValid)
+        {
+           
+            var result_MasterGuide = await Http.PostAsync($"api/Guide/PostGuideNumber?userId={Useful.userId}&guideId={MasterGuide!.Id}&guideNumber={MasterGuide.Number}", null);
+            if (result_MasterGuide.IsSuccessStatusCode)
+            {
+                var sucessContent = await result_MasterGuide.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
+                IsSuccess = (sucessContent?.data is ({ insertedRows: 1 } or { updatedRows: 1 }));
+            }
+            else if (result_MasterGuide.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                var conflictContent = await result_MasterGuide.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+                await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+            else
+            {
+                var errorMessage = await result_MasterGuide.Content.ReadAsStringAsync();
+                throw new Exception(errorMessage);
+            }
+        }
+
+        if (!IsSuccess)
+        {
+            return;
+        }
+        var strMovementActions = System.Text.Json.JsonSerializer.Serialize(SelectedActions);
+        var result_PostMovementActions = (SelectedActions is not null) ? await Http.PostAsync($"api/Guide/PostGuidesActions?userId={Useful.userId}", new StringContent($"[{strMovementActions}]", null, "application/json")) : null;
+        if ((result_PostMovementActions?.IsSuccessStatusCode ?? false))
+        {
+            var rest = result_PostMovementActions.Content.ReadAsStringAsync();
+            await DialogService.ShowDialog(Useful.OkSavedMessage, "Accion", "OK", Color.Info, Icons.Material.Filled.Commit);
+            GuideId = null;
+        }
     }
-    private async Task ClickImportGuideDetails(MouseEventArgs args)
+       
+    private async Task ClickEditGuideDetails(GuideDetails item)
     {
-        await Task.CompletedTask;
-    }  
+        GuideDetails mGuideDetails = new GuideDetails
+        {
+            Id = item.Id,
+            Received = item.Received,
+            Observation = item.Observation,
+            Quantity = item.Quantity
+        };
+        var dialogReference = await DialogService.ShowAsync(typeof(PartToDispatchGuideDetails), "", new DialogParameters { ["mGuideDetails"] = mGuideDetails }, options);
+        if (!((await dialogReference.Result)!.Canceled)) await GuideDetailsMudDataGrid!.ReloadServerData();
+    }
 
 }
