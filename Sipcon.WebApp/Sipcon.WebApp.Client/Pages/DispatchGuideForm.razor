@@ -16,9 +16,14 @@
                             <PropertyColumn Property="x => x.PartDescription" Title="DESCRIPCION" />
                             <PropertyColumn Property="x => x.Quantity" Title="CANTIDAD" />
                             <PropertyColumn Property="x => x.Received" Title="RECIBIDO" />
-                            <PropertyColumn Property="x => x.Observation" Title="OBSERVACION" />
+                            <PropertyColumn Property="x => x.Observation" Title="OBSERVACION" />                           
+                            <TemplateColumn Title="CONFIRMADO">                               
+                                <CellTemplate>
+                                    @(context.Item.Confirmed == true ?@<MudIcon Color="Color.Success" Icon="@Icons.Material.Filled.CheckCircleOutline" /> : @<MudIcon Color="Color.Error" Icon="@Icons.Material.Filled.RemoveCircleOutline" />)
+                                </CellTemplate>
+                                </TemplateColumn>
                             <PropertyColumn Property="x => x.SaleOrderId" Title="NRO PEDIDO" />
-                            <TemplateColumn>
+                            <TemplateColumn >
                                 <CellTemplate>
                                     <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditGuideDetails(context.Item)" Disabled="@(!IsSentGuide)" />
                                 </CellTemplate>
@@ -166,20 +171,12 @@
 
     private void CloseClick() => GuideId = null;
 
-    private async Task ClickAddGuideDetails(MouseEventArgs ev)
-    {
-        await Task.CompletedTask;
-    }
 
-    private async Task ClickRemoveGuideDetails(MouseEventArgs ev)
-    {
-        await Task.CompletedTask;
-    }
 
     private async Task SaveClick(MouseEventArgs args)
     {
         await form!.Validate();
-        if (form.IsValid)
+        if (form.IsValid )
         {
             var strMasterMovement = System.Text.Json.JsonSerializer.Serialize(MasterGuide);
             var result_MasterMovement = await Http.PostAsync($"api/Guide/PostGuideNumber?userId={Useful.userId}&guideId={MasterGuide!.Id}&guideNumber={MasterGuide.Number}", null);
@@ -205,6 +202,14 @@
             }
         }
     }
+    private async Task<bool> IsConfirmedGuideDetails()
+    {
+        bool result = (GuideDetailsMudDataGrid?.FilteredItems is IEnumerable<GuideDetails> mguidedetails &&  mguidedetails.All(item => (item.Confirmed ?? false)));
+        if (!result)
+            await DialogService.ShowDialog("Debe confirmar cada elemento de la Guia"!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+       
+        return result;        
+    }
     private async Task ReceiveClick(MouseEventArgs args)
     {
         var SelectedActions = GuideDetailsMudDataGrid?.FilteredItems.Count() > 0 ?
@@ -227,7 +232,7 @@
 
         await form!.Validate();
         var IsSuccess = false;
-        if (form.IsValid)
+        if (await IsConfirmedGuideDetails() && form.IsValid)
         {
            
             var result_MasterGuide = await Http.PostAsync($"api/Guide/PostGuideNumber?userId={Useful.userId}&guideId={MasterGuide!.Id}&guideNumber={MasterGuide.Number}", null);
