@@ -73,7 +73,7 @@
                             <MudStack Row="true">
                                 <MudSpacer />
                                 <MudSwitch @bind-Value="_model.IsTax" Label="Impuesto" LabelPlacement="Placement.End" Color="Color.Success" ReadOnly="@(!_model.IsActive || _isReadOnly)" />
-                                <MudSwitch @bind-Value="_model.IsExternal" @bind-Value:after="AfterValueChange" Label="Externo" LabelPlacement="Placement.End" Color="Color.Success" ReadOnly="@(!_model.IsActive || _isReadOnly)" />
+                                <MudSwitch @bind-Value="_model.IsExternal" @bind-Value:after="AfterSupplierValueChange" Label="Externo" LabelPlacement="Placement.End" Color="Color.Success" ReadOnly="@(!_model.IsActive || _isReadOnly)" />
                             </MudStack>
                             
                             <MudStack Row="true">
@@ -341,7 +341,7 @@
 
     }
 
-    private void AfterValueChange()
+    private void AfterSupplierValueChange()
     {
         if (!_model.IsExternal)
         {

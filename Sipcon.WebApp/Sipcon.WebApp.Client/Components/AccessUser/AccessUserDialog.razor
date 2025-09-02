@@ -25,7 +25,16 @@
                         <MudGrid Spacing="0" Justify="Justify.Center">
                             <MudItem xs="12" sm="4">
                                 <div class="d-flex justify-left">
+                                    <MudStack Row="true">
+                                        <MudHidden @bind-Value="Usuario!.UserId" />
 
+                                        <MudChat ChatPosition="ChatBubblePosition.Start">
+                                            <MudAvatar Color="Color.Dark">@(string.IsNullOrEmpty(Usuario.Login) ? "U" : Usuario.Login.ToUpper().Substring(0, 1))</MudAvatar>
+                                            <MudChatBubble Style="min-width: 250px;">@(Usuario.UserName.ToUpper() + " " + Usuario.UserLastName.ToUpper())</MudChatBubble>
+                                            <MudChatFooter Style="font-size: 10px;font-style:italic" Text="@(Usuario.Login.ToUpper())" />
+                                        </MudChat>
+
+                                    </MudStack>
 
                                 </div>
                             </MudItem>
@@ -35,11 +44,7 @@
                             </MudItem>
                             <MudItem xs="12" sm="6">
                                 <div class="d-flex justify-right" style="justify-content: end;">
-
                                     <MudButton OnClick="Cancel">Cerrar</MudButton>
-                                    @* <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Aceptar" OnClick="Cancel" Color="Color.Info" Size="Size.Small" /> *@
-
-
                                 </div>
                             </MudItem>
                         </MudGrid>
@@ -55,33 +60,13 @@
 
         <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
               
-            @* Datos Usuario *@
-            <MudCard Elevation="2" Class="pa-1 mt-1">
-                <MudCardHeader>
-                    <CardHeaderContent>
-                       
-                            <MudStack Row="true">
-                                <MudHidden @bind-Value="Usuario!.UserId" />
-
-                                <MudChat ChatPosition="ChatBubblePosition.Start">
-                                    <MudAvatar Color="Color.Dark">@(string.IsNullOrEmpty(Usuario.Login) ? "U" : Usuario.Login.ToUpper().Substring(0, 1))</MudAvatar>
-                                    <MudChatBubble Style="min-width: 250px;">@(Usuario.UserName.ToUpper() + " " + Usuario.UserLastName.ToUpper())</MudChatBubble>
-                                    <MudChatFooter Style="font-size: 10px;font-style:italic" Text="@(Usuario.Login.ToUpper())" />
-                                </MudChat>
-
-                            </MudStack>
-
-                    </CardHeaderContent>
-                </MudCardHeader>
-            </MudCard>
-
             @* Detalle Acciones Rol *@
             <MudCard Elevation="2" Class="pa-1 mt-1">
                 <MudCardHeader Style="padding-bottom: 0px;">
                     <CardHeaderContent>
                         <MudStack Row="true">
-                            <MudIcon Icon="@Icons.Material.Outlined.GroupAdd" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
-                            <MudText Typo="Typo.subtitle2">Acciones Asociadas</MudText>
+                            <MudIcon Icon="@Icons.Material.Outlined.Groups" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
+                            <MudText Typo="Typo.subtitle2">Roles Asociados</MudText>
 
                         </MudStack>
                     </CardHeaderContent>

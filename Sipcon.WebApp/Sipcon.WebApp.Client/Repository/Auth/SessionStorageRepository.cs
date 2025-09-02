@@ -1,0 +1,38 @@
+﻿using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
+using Sipcon.WebApp.Client.Enum;
+using Sipcon.WebApp.Client.Services;
+using System.Text.Json;
+using static MudBlazor.Colors;
+
+namespace Sipcon.WebApp.Client.Repository.Auth
+{
+    public class SessionStorageRepository(IJSRuntime jsRuntime) : ISessionStorageService
+    {
+        private readonly IJSRuntime _js = jsRuntime;
+        private readonly string _tipoAlmacenamiento = "sessionStorage.";
+
+        public async Task<T> GetValue<T>(ValuesKey key)
+        {
+            string data = await _js.InvokeAsync<string>($"{_tipoAlmacenamiento}getItem", key.ToString()).ConfigureAwait(false);
+
+            var setData = data == null ? default : JsonSerializer.Deserialize<T>(data);
+            return setData!;
+        }
+
+        public async Task SetValue<T>(ValuesKey key, T value)
+        {
+            await _js.InvokeVoidAsync($"{_tipoAlmacenamiento}setItem", key.ToString(), JsonSerializer.Serialize(value)).ConfigureAwait(false);
+        }
+
+        public async Task RemoveValue(ValuesKey key)
+        {
+            await _js.InvokeVoidAsync($"{_tipoAlmacenamiento}removeItem", key.ToString()).ConfigureAwait(false);
+        }
+
+        public async Task ClearAll()
+        {
+            await _js.InvokeVoidAsync($"{_tipoAlmacenamiento}clear").ConfigureAwait(false);
+        }
+    }
+}

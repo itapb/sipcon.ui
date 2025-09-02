@@ -1,18 +1,28 @@
+
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
-using Sipcon.WebApp.Client.Services;
 using Sipcon.WebApp.Client.Repository;
+using Sipcon.WebApp.Client.Repository.Auth;
+using Sipcon.WebApp.Client.Services;
 using Sipcon.WebApp.Client.Utils;
-using Sipcon.WebApp.Client.Interfaces;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
-builder.Services.AddMudServices();
 //builder.Services.AddScoped<TokenHandler>();
 var backEndUrl = builder.Configuration.GetValue<string>("BackEndUrl")!;
 builder.Services.AddHttpClient("ServerAPI", client => client.BaseAddress = new Uri(backEndUrl)); //.AddHttpMessageHandler<TokenHandler>();
 builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("ServerAPI"));
+builder.Services.AddMudServices();
+builder.Services.AddAuthorizationCore();
+builder.Services.AddTransient<ILocalStorageService, LocalStorageRepository>();
+builder.Services.AddTransient<ISessionStorageService, SessionStorageRepository>();
+builder.Services.AddScoped<AuthenticationProviderJWT>();
+builder.Services.AddScoped<AuthenticationStateProvider, AuthenticationProviderJWT>(x => x.GetRequiredService<AuthenticationProviderJWT>());
+builder.Services.AddScoped<IAuthorizeService, AuthenticationProviderJWT>(x => x.GetRequiredService<AuthenticationProviderJWT>());
 
+
+builder.Services.AddScoped<IModelService, ModelRepository>();
 builder.Services.AddScoped<IModelService, ModelRepository>();
 builder.Services.AddScoped<IModuleService, ModuleRepository>();
 builder.Services.AddScoped<IVehicleService, VehicleRepository>();

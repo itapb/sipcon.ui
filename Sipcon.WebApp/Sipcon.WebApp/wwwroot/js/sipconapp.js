@@ -8,3 +8,18 @@ function downloadFile(url, fileName) {
     link.click();
     document.body.removeChild(link);
 }
+
+function timerInactivo(dotnetHelper) {
+    var timer;
+    document.onmousemove = resetTimer;
+    document.onkeyup = resetTimer;
+    function resetTimer() {
+        clearTimeout(timer);
+        timer = setTimeout(logout, 500000); // 5 minutos         
+    }
+
+    function logout() {
+        dotnetHelper.invokeMethodAsync('logout') ;
+    }
+
+}
