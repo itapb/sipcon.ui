@@ -68,7 +68,7 @@
             </TemplateColumn>
             <TemplateColumn>
                 <CellTemplate>
-                    <MudSwitch T="bool" @bind-Value="context.Item.Assign" @bind-Value:after="() => AfterValueChange(context.Item)" Label="" LabelPlacement="Placement.End" Color="Color.Success" />
+                    <MudSwitch T="bool" @bind-Value="context.Item.Assign" @bind-Value:after="() => AfterSupplierValueChange(context.Item)" Label="" LabelPlacement="Placement.End" Color="Color.Success" />
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
@@ -139,7 +139,7 @@
     }
 
 
-    private async Task AfterValueChange(AccessGroupDetail detail)
+    private async Task AfterSupplierValueChange(AccessGroupDetail detail)
     {
         var serviceResponse = await SecurityService.UpdateAccessGroupDetail(detail, Useful.userId);
         if (!serviceResponse.Processed)

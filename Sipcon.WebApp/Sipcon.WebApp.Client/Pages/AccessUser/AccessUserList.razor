@@ -77,6 +77,11 @@ ServerData="LoadGridData">
                 <MudStack Row="true">
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditUserAsync(context.Item)" />
                     <MudIconButton Icon="@Icons.Material.Outlined.Groups" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditRolesAsync(context.Item)" />
+                    @if (string.IsNullOrEmpty(context.Item.Login))
+                    {
+                        <MudIconButton Icon="@Icons.Material.Filled.PersonAdd" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditLoginAsync(context.Item)" />
+                    }
+                    
                 </MudStack>
 
             </CellTemplate>
@@ -112,7 +117,9 @@ ServerData="LoadGridData">
 
 
 @code {
+    [Inject] private HttpClient _httpClient { get; set; } = null!;
     private IEnumerable<AccessUserDetail> _accessGroupList = new List<AccessUserDetail>();
+
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
     bool _success = false;
@@ -222,6 +229,80 @@ ServerData="LoadGridData">
             await _mudDataGrid!.ReloadServerData();
             StateHasChanged();
         }
+        await Task.CompletedTask;
+    }
+
+    private async Task ClickEditLoginAsync(AccessUserDetail User)
+    {
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+        var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, $"Asignar Login-Usuario: {User.UserName} {User.UserLastName}" }, { x => x.Label, "Login-Usuario." } };
+        var dialog = await DialogService.ShowAsync<TextItemDialog>("Asignar Login", parameters, options);
+
+        var resultDialog = await dialog.Result;
+        if (!resultDialog!.Canceled)
+        {
+            try
+            {
+                var _Login = (string)(resultDialog.Data ?? string.Empty);
+
+                var _modelTempory = new TemporyKey
+                {
+                    UserId = User.UserId,
+                    Login = _Login
+                };
+                var url = $"api/Security/Post_CrendentialsUser?userId={Useful.userId}";
+                var response = await _httpClient.PostAsJsonAsync(url, _modelTempory);
+
+                if (!response.IsSuccessStatusCode)
+                {
+
+                    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                    {
+                        throw new Exception($"Error Post_CrendentialsUser: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                    }
+
+                }
+                else
+                {
+                    var result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                    if (result != null)
+                    {
+                        if (result.Processed)
+                        {
+
+                            _success = true;
+                            _nestedErrorMessage = MessageEnum.SaveOK.GetStringValue();
+
+                            OpenNested();
+                            await _mudDataGrid!.ReloadServerData();
+
+                        }
+                        else
+                        {
+                            _success = false;
+                            _nestedErrorMessage = result.Message ?? MessageEnum.SaveNotOK.GetStringValue();
+                            OpenNested();
+
+                        }
+                    }
+                    else
+                    {
+                        throw new Exception($"Error Server retorno una respuesta vacia Post_CrendentialsUser");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _success = false;
+                _nestedErrorMessage = ex.Message ?? MessageEnum.SaveNotOK.GetStringValue();
+                OpenNested();
+            }
+          
+
+        }
+
+        StateHasChanged();
         await Task.CompletedTask;
     }
 

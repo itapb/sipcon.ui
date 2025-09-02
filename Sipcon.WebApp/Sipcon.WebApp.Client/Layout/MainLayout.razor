@@ -1,5 +1,6 @@
 ﻿@inherits LayoutComponentBase
 @using Microsoft.Extensions.Logging
+@using Sipcon.WebApp.Client.Repository.Auth
 @inject ILogger<MainLayout> Logger
 
 <MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
@@ -8,15 +9,155 @@
 <MudSnackbarProvider />
 <MudLayout>
    <MudAppBar Elevation="1">
-       <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
-       <MudText Typo="Typo.h5" Class="ml-3">Sipcon</MudText>
-       <MudSpacer />
-       <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
-       <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudText Typo="Typo.h5" Class="ml-3">Sipcon</MudText>
+        <MudSpacer />
+        <MudText Typo="Typo.body1" Style="@( _isDarkMode ? "color:white; margin-right: 16px;" : "")">
+            <AuthorizeView>
+                <Authorized>
+                    <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center">
+                        <MudText Typo="Typo.subtitle1" Align="Align.Center" Class="d-inline-flex" Style="white-space: nowrap;">
+                            @(string.IsNullOrEmpty(_userActive.Name) ? "" : $"Bienvenido, {_userActive.Name} {_userActive.LastName}")
+                        </MudText>
+                        <MudChip T="string" Icon="@Icons.Material.Filled.DomainAdd" Label="true" 
+                                 Color="Color.Primary" 
+                                 OnClick="OpenDrawer"
+                                 OnClose="OpenDrawer" 
+                                 CloseIcon="@Icons.Material.Filled.Edit">
+                                 @(SelectedSupplierText ?? "Planta?")
+                        </MudChip>
+                        <MudChip T="string" Icon="@Icons.Material.Filled.EmojiTransportation" Label="true" 
+                                 Color="Color.Info"
+                                 OnClick="OpenDrawer"
+                                 OnClose="OpenDrawer"
+                                 CloseIcon="@Icons.Material.Filled.Edit">
+                            @(SelectedDealerText ?? "Concesionario?")
+                        </MudChip>
+                        <MudChip T="string" Icon="@Icons.Material.Filled.ExitToApp" Label="true"
+                                 Color="Color.Secondary"
+                                 OnClick="Logout"
+                                 Style="@( _isDarkMode ? "background-color: rgba(255,255,255,0.2); color:white;" : "")">
+                                 @("Salir")
+                        </MudChip>
+                    </MudStack>
+                </Authorized>
+                <NotAuthorized>
+                    <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                   Href="login"
+                                   Style="@(_isDarkMode ? "background-color: rgba(255,255,255,0.2); color:white;" : "")">
+                            <MudIcon Icon="@Icons.Material.Filled.Login" />Iniciar Sesión
+                        </MudButton>
+                        @* <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       Href="register">
+                <MudIcon Icon="@Icons.Material.Filled.HowToReg" />Registrarse
+            </MudButton> *@
+                    </MudStack>
+                </NotAuthorized>
+            </AuthorizeView>
+        </MudText>
+        <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
+        <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" OnClick="@OpenDrawer" />
    </MudAppBar>
    <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Variant="DrawerVariant.Mini">
-       <NavMenu />
+        <NavMenu Modules="@_UserModules" />
    </MudDrawer>
+    @* //Drawer Right *@
+    <MudDrawer @bind-Open="@_open" Anchor="Anchor.End" Elevation="1" Variant="@DrawerVariant.Temporary" OverlayAutoClose="true">
+        <AuthorizeView>
+            <Authorized>
+                <MudPaper Class="pa-2">
+                    <MudStack Row="true">
+                        <MudAvatar Size="Size.Large" Color="Color.Dark">
+                            @(string.IsNullOrEmpty(_userActive.Login) ? "U" : _userActive.Login.ToUpper().Substring(0, 1))
+                        </MudAvatar>
+                        <MudStack Justify="Justify.Center" Spacing="0">
+                            <MudText Typo="Typo.body1">@(_userActive.Name + " " + _userActive.LastName)</MudText>
+                            <MudText Typo="Typo.caption" Inline="true" Style="font-size: 12px;font-style:italic;font-weight:bold;">@(string.IsNullOrEmpty(_userActive.Vat) ? "" : "Vat: " + _userActive.Vat.ToUpper())</MudText>
+                        </MudStack>
+                    </MudStack>
+                </MudPaper>
+
+                <MudPaper Class="pa-2">
+                    <MudStack Spacing="2">
+                        @* <MudChip T="string" Icon="@Icons.Material.Filled.DomainAdd" Label="true" Color="Color.Primary">@(SelectedSupplierText ?? "Planta?")</MudChip>
+                        <MudChip T="string" Icon="@Icons.Material.Filled.EmojiTransportation" Label="true" Color="Color.Info">@(SelectedDealerText ?? "Concesionario?")</MudChip>
+                       *@
+                        <MudList T="int" @bind-SelectedValue="@SelectedSupplierValue"
+                                 @bind-SelectedValue:after="() => AfterSupplierValueChange()"
+                                 SelectionMode="SelectionMode.SingleSelection"
+                                 ReadOnly="false" Color="Color.Info">
+
+                                <MudListItem Text="Plantas" Icon="@Icons.Material.Filled.DomainAdd"
+                                         @bind-Expanded="_expandedSupplier">
+                                    <NestedList>
+                                        @foreach (var item in _UserSuppliers)
+                                        {
+                                            <MudListItem Style="font-size: 10px;font-style:italic;" Value="@item.Id">@item.Name</MudListItem>
+                                        }
+                                    </NestedList>
+                                </MudListItem>
+                           
+                        </MudList>
+                        <div id="unique_id_scroll_section" class="ma-0" style="max-height:300px;overflow: auto;">
+                            <MudList T="int" @bind-SelectedValue="@SelectedDealerValue"
+                                     @bind-SelectedValue:after="() => AfterDealerValueChange()"
+                                     SelectionMode="SelectionMode.SingleSelection"
+                                     ReadOnly="false" Color="Color.Info">
+                                
+                                    <MudListItem Text="Concesionario"
+                                                 Icon="@Icons.Material.Filled.EmojiTransportation"
+                                                 @bind-Expanded="_expandedDealer">
+                                        <NestedList>
+                                            @foreach (var item in _UserDealers)
+                                            {
+                                                <MudListItem Style="font-size: 10px;font-style:italic;" Text="@item.Name" Value="@item.Id" />
+                                            }
+                                        </NestedList>
+                                    </MudListItem>
+                                  
+                            </MudList>
+
+                            <MudScrollToTop TopOffset="100"
+                                            Selector="#unique_id_scroll_section"
+                                            VisibleCssClass="visible absolute"
+                                            HiddenCssClass="invisible" />
+                        </div>
+                        <MudDivider />
+                        <MudButton Variant="Variant.Filled" Color="Color.Secondary"
+                                   OnClick="Logout"
+                                   Style="@( _isDarkMode ? "background-color: rgba(255,255,255,0.2); color:white;" : "")">
+                            <MudIcon Icon="@Icons.Material.Filled.Logout" />Cerrar Sesión
+                        </MudButton>
+                    </MudStack>
+                </MudPaper>
+            </Authorized>
+            <NotAuthorized>
+                <MudPaper Class="pa-2">
+                    <MudStack Row="true">
+                        <MudAvatar Size="Size.Large" Color="Color.Dark">
+                            <MudIcon Icon="@Icons.Material.Filled.Login" />
+                        </MudAvatar>
+                        <MudStack Justify="Justify.Center" Spacing="0">
+                            <MudText Typo="Typo.body1">Iniciar Sesión</MudText>
+                        </MudStack>
+                    </MudStack>
+                </MudPaper>
+                <MudPaper Class="pa-4">
+                    <MudStack Spacing="4">
+                        <MudDivider />
+
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                   OnClick="Login"
+                                   Style="@(_isDarkMode ? "background-color: rgba(255,255,255,0.2); color:white;" : "")">
+                            <MudIcon Icon="@Icons.Material.Filled.Login" />Iniciar Sesión
+                        </MudButton>
+                    </MudStack>
+                </MudPaper>
+
+            </NotAuthorized>
+        </AuthorizeView>
+    </MudDrawer>
    <MudMainContent Class="pt-16 pa-4">
         <ErrorBoundary @ref="errorBoundary">
             <ChildContent>@Body</ChildContent>
@@ -26,7 +167,6 @@
                     OnError(@ex);
                 }                
                 <p>@ex.Message</p>
-                <!--p>@ex.Message</!p-->
             </ErrorContent>
         </ErrorBoundary>
    </MudMainContent>
@@ -40,23 +180,97 @@
 </div> *@
 
 @code {
-   private ErrorBoundary? errorBoundary;
-   private bool _drawerOpen = true;
-   private bool _isDarkMode = false; // Set to false to start in light mode
-   private MudTheme? _theme = null;
+    
+    [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = null!;
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = null!;
 
-   public void OnError(Exception error)
-   {
-       Logger.LogError(error.Message);
-   }
-   protected override void OnParametersSet()
-   {
-       errorBoundary?.Recover();
-   }
+    private ErrorBoundary? errorBoundary;
+    private bool _isAthenticate = false;
+    private bool _drawerOpen = true;
+    private bool _open = false;
+    private bool _isDarkMode = false; // Set to false to start in light mode
 
-   protected override void OnInitialized()
-   {
-       base.OnInitialized();
+    private MudTheme? _theme = null;
+    private bool _expandedSupplier { get; set; } = false;
+    private bool _expandedDealer { get; set; } = false;
+    private User _userActive = new User();
+    private List<UserType> _UserDealers { get; set; } = new List<UserType>();
+    private List<UserType> _UserSuppliers { get; set; } = new List<UserType>();
+    private List<UserModule> _UserModules { get; set; } = new List<UserModule>();
+
+    private string SelectedSupplierText = "Planta";
+    private string SelectedDealerText = "Concesionario";
+    private int SelectedDealerValue = 0;
+    private int SelectedSupplierValue = 0;
+
+
+    private void OpenDrawer()
+    {
+        _open = !_open;
+    }
+
+    private void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private void DarkModeToggle()
+    {
+        _isDarkMode = !_isDarkMode;
+    }
+
+
+    public void OnError(Exception error)
+    {
+        Logger.LogError(error.Message);
+    }
+
+    // protected override async Task OnAfterRenderAsync(bool firstRender)
+    // {
+    //     if (!firstRender)
+    //     {
+            
+    //     }
+
+    //     await Task.CompletedTask;
+       
+    // }
+    protected override async Task OnParametersSetAsync()
+    {
+        errorBoundary?.Recover();
+
+        _isAthenticate = await AuthenticationStateProvider.IsUserAuthenticated();
+
+
+        _drawerOpen = _isAthenticate ? _isAthenticate : false;
+
+
+        if (_isAthenticate)
+        {
+            _UserSuppliers = await AuthenticationStateProvider.GetUserSupplierAsync();
+            _UserDealers = await AuthenticationStateProvider.GetUserDealerAsync();
+            _UserModules = await AuthenticationStateProvider.GetUserRoleAsync();
+            _userActive = await AuthenticationStateProvider.GetUserAsync();
+
+            int selectedDealer = await AuthenticationStateProvider.GetSelectedDealerAsync();
+            int selectedSupplier = await AuthenticationStateProvider.GetSelectedSupplierAsync();
+
+            // Console.WriteLine("User Modules: " + string.Join(", ", _UserModules.Select(m => m.Name)));
+            SelectedSupplierText = _UserSuppliers.Count > 0 ? _UserSuppliers.First(s => s.Id == selectedSupplier).Name : "Planta";
+            SelectedDealerText = _UserDealers.Count > 0 ? _UserDealers.First(s => s.Id == selectedDealer).Name : "Concesionario";
+        }
+
+        await Task.CompletedTask;
+        StateHasChanged();
+
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+
+        await AuthenticationStateProvider.SetTimerInactivo(DotNetObjectReference.Create(this));
 
        _theme = new()
        {
@@ -64,18 +278,46 @@
            PaletteDark = _darkPalette,
            LayoutProperties = new LayoutProperties()
        };
-   }
+        await Task.CompletedTask;
+    }
 
-   private void DrawerToggle()
-   {
-       _drawerOpen = !_drawerOpen;
-   }
+    [JSInvokableAttribute("logout")]
+    public async Task Logout()
+    {
+        if (_isAthenticate)
+        {
+            await AuthenticationStateProvider.Logout();
+            _open = false;
+            NavigationManager.NavigateTo("login");
+        }
+        
+    }
 
-   private void DarkModeToggle()
-   {
-       _isDarkMode = !_isDarkMode;
-   }
+    private async Task Login()
+    {
+        _open = false;
+        NavigationManager.NavigateTo("login");
+        await Task.CompletedTask;
+    }
 
+    private async Task AfterSupplierValueChange()
+    {
+        _expandedSupplier = !_expandedSupplier;
+        SelectedSupplierText = _UserSuppliers.FirstOrDefault(x => x.Id == SelectedSupplierValue)?.Name ?? "Planta";
+        await AuthenticationStateProvider.SetValueSessionStorage<int>(SelectedSupplierValue, ValuesKey.SELECTEDSUPPLIER);
+        _open = false;
+        await Task.CompletedTask;
+    }
+
+    private async Task AfterDealerValueChange()
+    {
+        _expandedDealer = !_expandedDealer;
+        SelectedDealerText = _UserDealers.FirstOrDefault(x => x.Id == SelectedDealerValue)?.Name ?? "Concesionario";
+        await AuthenticationStateProvider.SetValueSessionStorage<int>(SelectedDealerValue, ValuesKey.SELECTEDDEALER);
+        _open = false;
+        await Task.CompletedTask;
+    }
+ 
    private readonly PaletteLight _lightPalette = new()
    {
        Black = "#110e2d",

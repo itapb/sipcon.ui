@@ -1,0 +1,235 @@
+﻿@page "/login"
+@page "/login/{UserName}"
+
+@using Sipcon.WebApp.Client.Repository.Auth
+@using FluentValidation
+
+<MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="mt-10">
+    <MudPaper Class="pa-6 rounded-lg" Elevation="25">
+        <MudText Typo="Typo.h4" Class="mb-4" Style="text-align: center;">Iniciar Sesión</MudText>
+        <MudForm Model="@_model" @ref="@form" Validation="@(_modelValidator.ValidateValue)" ValidationDelay="0">
+
+            <MudIcon Icon="@Icons.Material.Filled.Business" Color="Color.Primary" Size="Size.Large" 
+                     Class="mx-auto d-block mb-2" />
+
+            <MudText Typo="Typo.h4" Color="Color.Primary" Class="mx-auto d-block mb-6">SipCon</MudText>
+            @* <MudText Typo="Typo.h6" Class="text-center mb-6">Iniciar Sesión</MudText> *@
+            
+            <MudTextField @bind-Value="_model.Login" Label="Usuario" Variant="Variant.Outlined"
+                          MaxLength="15"
+                          FullWidth="true" 
+                          Margin="Margin.Dense" 
+                          HelperText="Por favor, ingresa tu usuario." 
+                          For="@(() => _model.Login)"
+                          Immediate="true" />
+
+            <MudTextField @bind-Value="_model.Password" Label="Contraseña" Variant="Variant.Outlined"
+                          MaxLength="15"
+                          FullWidth="true" 
+                          Margin="Margin.Dense" 
+                          InputType="@_passwordInput"
+                          HelperText="Por favor, ingresa tu contraseña."
+                          Class="mt-4" 
+                          Adornment="Adornment.End" 
+                          AdornmentIcon="@_passWordInputIcon"
+                          OnAdornmentClick="ClickBottonShowPass"
+                          OnKeyUp="HandleKeyUpPassword"
+                          AdornmentAriaLabel="Show Password"
+                          For="@(() => _model.Password)"
+                          Immediate="true" />
+
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-6 w-100"
+                       OnClick="@(async () => await OnValidSubmit())">Iniciar Sesión</MudButton>
+
+            <MudText Class="text-center mt-4">
+                Olvidaste tu contraseña? <MudLink Href="replacepassword">Recuperar Contraseña</MudLink>
+            </MudText>
+        </MudForm>
+    </MudPaper>
+</MudContainer>
+
+
+<style>
+    .blur {
+        backdrop-filter: blur(10px);
+    }
+
+    .dialog-background {
+        background-color: transparent;
+    }
+
+    .dialog-background-title {
+        background: rgb(from var(--mud-palette-info-lighten) r g b / 50%);
+        color: var(--mud-palette-white);
+    }
+
+    .dialog-background-surface {
+        background: rgb(from var(--mud-palette-surface) r g b / 75%);
+    }
+
+    .align-right input {
+        text-align: right;
+    }
+
+    .uppercase-mud-textfield input.mud-input-slot {
+        text-transform: none;
+    }
+
+    input.mud-input-slot {
+        text-transform: none;
+    }
+</style>
+
+
+@code {
+
+    [Parameter] public string? UserName { get; set; }
+    private LoginRequest _model = new();
+    private MudForm? form;
+
+    [Inject] private HttpClient _httpClient { get; set; } = null!;
+    [Inject] private ISnackbar _snackbar { get; set; } = null!;
+    [Inject] private NavigationManager _navigationManager { get; set; } = null!;
+    [Inject] private AuthenticationProviderJWT _authenticationStateProvider { get; set; } = null!;
+
+
+    private bool _isShowPassword { get; set; } = false;
+    private InputType _passwordInput { get; set; } = InputType.Password;
+    private string _passWordInputIcon { get; set; } = Icons.Material.Filled.VisibilityOff;
+
+    LoginValidator _modelValidator = new LoginValidator();
+
+
+    protected override void OnInitialized()
+    {
+
+        _model = new LoginRequest();
+        _model.Login = UserName ?? string.Empty;
+
+    }
+
+    private void  ClickBottonShowPass()
+    {
+        if (_isShowPassword)
+        {
+            _isShowPassword = false;
+            _passwordInput = InputType.Password;
+            _passWordInputIcon = Icons.Material.Filled.VisibilityOff;
+
+        }
+        else
+        {
+            _isShowPassword = true;
+            _passwordInput = InputType.Text;
+            _passWordInputIcon = Icons.Material.Filled.Visibility;
+        }
+
+    }
+
+    private async Task HandleKeyUpPassword(KeyboardEventArgs e)
+    {
+
+        if (e.Key == "Enter")
+        {
+            await form!.Validate();
+            if (form.IsValid)
+            {
+                await HandleLogin();
+            }
+
+            StateHasChanged();
+            await Task.CompletedTask;
+
+        }
+    }
+
+    private async Task OnValidSubmit()
+    {
+        await form!.Validate();
+        if (form.IsValid)
+        {
+            await HandleLogin();
+        }
+
+        StateHasChanged();
+        await Task.CompletedTask;
+
+    }
+
+    private async Task HandleLogin()
+    {
+        try
+        {
+            var url = "api/Security/Auth_User";
+            var response = await _httpClient.PostAsJsonAsync(url, _model);
+
+            if (!response.IsSuccessStatusCode)
+            {
+
+                if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    throw new Exception($"Error Auth_User: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                }
+
+            }
+
+            var result = await response.Content.ReadFromJsonAsync <ApiResponse<LoginResponse>>();
+            if (result != null)
+            {
+                if (result.Processed)
+                {
+                    await _authenticationStateProvider.Login(result.Data);
+                 
+
+                    _navigationManager.NavigateTo("");
+                }else
+                {
+                    _snackbar.Add(result.Message, MudBlazor.Severity.Error);
+                }
+
+            }
+            else
+            {
+                _snackbar.Add("Error al iniciar sesión. Inténtelo de nuevo.", MudBlazor.Severity.Error);
+            }
+
+        }
+        catch (Exception ex)
+        {
+            _snackbar.Add($"Error al iniciar sesión: {ex.Message}", MudBlazor.Severity.Error);
+        }
+
+
+
+    }
+
+    /// <summary>
+    /// Validacion del formulario
+    /// </summary>
+    /// <typeparam name="Login"></typeparam>
+    public class LoginValidator : AbstractValidator<LoginRequest>
+    {
+        public LoginValidator()
+        {
+
+            RuleFor(x => x.Login)
+                .NotEmpty().WithMessage("Campo requerido")
+                .Length(2, 30).WithMessage("Campo requerido entre 2-30 carácteres");
+
+            RuleFor(x => x.Password)
+                .NotEmpty().WithMessage("Campo requerido")
+                .Length(4, 15).WithMessage("Campo requerido entre 4-15 carácteres");
+
+        }
+
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<LoginRequest>.CreateWithOptions((LoginRequest)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+
+    }
+}

@@ -1,4 +1,5 @@
 ﻿using MudBlazor;
+using Sipcon.WebApp.Client.Models;
 using Sipcon.WebApp.Client.Pages;
 namespace Sipcon.WebApp.Client.Helper
 {
@@ -9,6 +10,13 @@ namespace Sipcon.WebApp.Client.Helper
         internal static int dealerId = 5103;
         internal static int customerId = 0;
         internal static string customerName = "";
+
+        public static User UserActive { get; set; } = new User();
+        public static List<UserType> UserDealer { get; set; } = new List<UserType>();
+        public static List<UserType> UserSuppliers { get; set; } = new List<UserType>();
+        public static List<UserModule> UserModules { get; set; } = new List<UserModule>();
+        
+
 
         internal static string OkSavedMessage = "Registro guardado satisfactoriamente.";
         internal static async Task<DialogResult?> ShowDialog(this IDialogService dialogService, string? strMessage, string strTitle, string strPrimaryButton, Color mColor, string? strIcon)
@@ -94,7 +102,9 @@ namespace Sipcon.WebApp.Client.Helper
             var dialogReference = await dialogService.ShowAsync<TComponent>("", new DialogParameters { ["Value"] = Id, ["Modulo"] = Modulo }, options);
             var dialogResult = await dialogReference.Result;
             if (!dialogResult!.Canceled)
-                await MyMudDataGrid!.ReloadServerData();
+                if (MyMudDataGrid != null) {
+                    await MyMudDataGrid!.ReloadServerData();
+                }
         }
 
         internal static async Task<bool> AsyncDialogResultIsOk(IDialogReference? dialogReference) => !((await dialogReference!.Result)!.Canceled);

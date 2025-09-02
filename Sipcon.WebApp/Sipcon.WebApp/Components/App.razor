@@ -11,11 +11,11 @@
     <link href=@Assets["css/site.css"] rel="stylesheet" />
     <ImportMap />
     <link rel="icon" type="image/ico" href="ico.ico" />
-    <HeadOutlet @rendermode="PageRenderMode" />
+    <HeadOutlet @rendermode="@PageRenderMode" />
 </head>
 
 <body>
-    <Routes @rendermode="PageRenderMode" />
+    <Routes @rendermode="@PageRenderMode" />
     <script src="_framework/blazor.web.js"></script>
     <script src=@Assets["_content/MudBlazor/MudBlazor.min.js"]></script>
 
@@ -28,5 +28,9 @@
     private HttpContext HttpContext { get; set; } = default!;
 
     private IComponentRenderMode? PageRenderMode
-        => HttpContext.AcceptsInteractiveRouting() ? InteractiveAuto : null;
+        => HttpContext.AcceptsInteractiveRouting() ? new InteractiveAutoRenderMode(prerender: false) : null;
+    // new InteractiveAutoRenderMode(prerender: false)
+    //InteractiveAuto
+    //InteractiveServer
+    //InteractiveWebAssembly
 }

@@ -1,45 +1,155 @@
-﻿
-<MudNavMenu>
-    <MudNavLink Href="contacts" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.ImportContacts" IconColor="Color.Info">Contactos</MudNavLink>
-    <MudNavGroup Title="Vehiculos" Icon="@Icons.Material.Filled.DirectionsCar" IconColor="Color.Info">
-        <MudNavLink Href="vehicles">Vehiculos</MudNavLink>
-        <MudNavLink Href="models">Modelos</MudNavLink>
-        <MudNavLink Href="labortime">Mano de Obra</MudNavLink>
-    </MudNavGroup>
-    <MudNavGroup Title="Polizas" Icon="@Icons.Custom.FileFormats.FileDocument" IconColor="Color.Info">
-        <MudNavLink Href="policy">Polizas</MudNavLink>
-        <MudNavLink Href="policytypes">Tipos</MudNavLink>
-    </MudNavGroup>   
-    <MudNavGroup Title="Servicios" Icon="@Icons.Material.Filled.Speed" IconColor="Color.Info">
-        <MudNavLink Href="assistence">Asistencia Tecnica</MudNavLink>
-        <MudNavLink Href="license">Licencias</MudNavLink>
-        <MudNavLink Href="maintenance">Mantenimiento</MudNavLink>
-        <MudNavLink Href="failreport">Reporte Falla</MudNavLink>
-    </MudNavGroup>
-    <MudNavGroup Title="Inventario" Icon="@Icons.Material.Filled.Inventory" IconColor="Color.Info">
-        <MudNavLink Href="parts">Repuestos</MudNavLink>
-        <MudNavLink Href="stocktaking">Inventario</MudNavLink>
-        <MudNavLink Href="warehouses">Almacen</MudNavLink>
-        <MudNavLink Href="zones">Zonas</MudNavLink>
-        <MudNavLink Href="locations">Ubicaciones</MudNavLink>
-        <MudNavLink Href="test">Kardex</MudNavLink>
-        <MudNavGroup Title="Procesos">
-            <MudNavLink Href="reception">Recepcion</MudNavLink>
-            <MudNavLink Href="move">Traslado</MudNavLink>
-            <MudNavLink Href="test">Ajuste</MudNavLink>
-            <MudNavLink Href="collection">Recoleccion</MudNavLink>
-            <MudNavLink Href="dispatchguides">Despacho</MudNavLink>
-            <MudNavLink Href="backorders">BackOrders</MudNavLink>
-        </MudNavGroup>
-    </MudNavGroup>
-    <MudNavGroup Title="Pedidos" Icon="@Icons.Material.Filled.ShoppingCart" IconColor="Color.Info">
-        <MudNavLink Href="salesorder">Pedidos</MudNavLink>
-        <MudNavLink Href="test">Reclamos</MudNavLink>    
-    </MudNavGroup>
-    <MudNavGroup Title="Seguridad" Icon="@Icons.Material.Filled.Security" IconColor="Color.Info">
-        <MudNavLink Href="accessuser">Usuarios</MudNavLink>
-        <MudNavLink Href="accesscontact">Contactos</MudNavLink>
-        <MudNavLink Href="accessgroup">Roles</MudNavLink>
-    </MudNavGroup>
+﻿@* @attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization *@
 
-</MudNavMenu>
+<AuthorizeView > 
+     <Authorized>
+        <MudNavMenu>
+            @if (_ModuleNames.Contains("CONTACTOS-CONTACTOS"))
+            {
+                <MudNavLink Href="contacts" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.ImportContacts" IconColor="Color.Info">Contactos</MudNavLink>
+            }
+            
+            @if (_ModuleNames.Contains("VEHICULOS-VEHICULOS"))
+            {
+                <MudNavGroup Title="Vehiculos" Icon="@Icons.Material.Filled.DirectionsCar" IconColor="Color.Info">
+                    
+                    <MudNavLink Href="vehicles">Vehiculos</MudNavLink>
+                    @if (_ModuleNames.Contains("VEHICULOS-MODELOS"))
+                    {
+                        <MudNavLink Href="models">Modelos</MudNavLink>
+                    }
+                    @if (_ModuleNames.Contains("VEHICULOS-LABORTIME"))
+                    {
+                        <MudNavLink Href="labortime">Mano de Obra</MudNavLink>
+                    }
+                    
+                </MudNavGroup>
+            }
+
+
+            @if (_ModuleNames.Contains("POLIZAS-POLIZAS"))
+            {
+                <MudNavGroup Title="Polizas" Icon="@Icons.Custom.FileFormats.FileDocument" IconColor="Color.Info">
+                    <MudNavLink Href="policy">Polizas</MudNavLink>
+                    @if (_ModuleNames.Contains("POLIZAS-TIPOS"))
+                    {
+                        <MudNavLink Href="policytypes">Tipos</MudNavLink>
+                    }
+                </MudNavGroup>
+            }
+           
+            @if (_ModuleNames.Contains("SERVICIOS-ASISTENCIA TECNICA")
+                        || _ModuleNames.Contains("SERVICIOS-LICENCIA")
+                        || _ModuleNames.Contains("SERVICIOS-MANTENIMIENTO")
+                        || _ModuleNames.Contains("SERVICIOS-REPORTE FALLA")
+            )
+            {
+                <MudNavGroup Title="Servicios" Icon="@Icons.Material.Filled.Speed" IconColor="Color.Info">
+                    @if (_ModuleNames.Contains("SERVICIOS-ASISTENCIA TECNICA"))
+                    {
+                        <MudNavLink Href="assistence">Asistencia Tecnica</MudNavLink>
+                    }
+                    @if (_ModuleNames.Contains("SERVICIOS-LICENCIA"))
+                    {
+                        <MudNavLink Href="license">Licencias</MudNavLink>
+                    }
+                    @if (_ModuleNames.Contains("SERVICIOS-MANTENIMIENTO"))
+                    {
+                        <MudNavLink Href="maintenance">Mantenimiento</MudNavLink>
+                    }
+                    @if (_ModuleNames.Contains("SERVICIOS-REPORTE FALLA"))
+                    {
+                        <MudNavLink Href="failreport">Reporte Falla</MudNavLink>
+                    }
+                </MudNavGroup>
+            }
+            @if (_ModuleNames.Contains("INVENTARIO-INVENTARIO"))
+            {
+                <MudNavGroup Title="Inventario" Icon="@Icons.Material.Filled.Inventory" IconColor="Color.Info">
+                    @if (_ModuleNames.Contains("INVENTARIO-REPUESTOS"))
+                    {
+                        <MudNavLink Href="parts">Repuestos</MudNavLink>
+                    }
+
+                    <MudNavLink Href="stocktaking">Inventario</MudNavLink>
+                    <MudNavLink Href="warehouses">Almacen</MudNavLink>
+                    <MudNavLink Href="zones">Zonas</MudNavLink>
+                    @if (_ModuleNames.Contains("INVENTARIO-UBICACIONES"))
+                    {
+                        <MudNavLink Href="locations">Ubicaciones</MudNavLink>
+                    }
+                    
+                    <MudNavLink Href="test">Kardex</MudNavLink>
+                    <MudNavGroup Title="Procesos">
+                        <MudNavLink Href="reception">Recepcion</MudNavLink>
+                        <MudNavLink Href="move">Traslado</MudNavLink>
+                        <MudNavLink Href="test">Ajuste</MudNavLink>
+                        <MudNavLink Href="collection">Recoleccion</MudNavLink>
+                        
+                        @if (_ModuleNames.Contains("INVENTARIO-PROCESOS-DESPACHO"))
+                        {
+                            <MudNavLink Href="dispatchguides">Despacho</MudNavLink>
+                        }
+                        @if (_ModuleNames.Contains("INVENTARIO-PROCESOS-BACKORDER"))
+                        {
+                            <MudNavLink Href="backorders">BackOrders</MudNavLink>
+                        }
+                        
+                    </MudNavGroup>
+                </MudNavGroup>
+            }
+           
+            @if (_ModuleNames.Contains("PEDIDOS-PEDIDOS"))
+            {
+                <MudNavGroup Title="Pedidos" Icon="@Icons.Material.Filled.ShoppingCart" IconColor="Color.Info">
+                    <MudNavLink Href="salesorder">Pedidos</MudNavLink>
+                    <MudNavLink Href="test">Reclamos</MudNavLink>
+                </MudNavGroup>
+            }
+           
+            
+           
+            @if (_ModuleNames.Contains("SEGURIDAD-USUARIOS")
+                        || _ModuleNames.Contains("SEGURIDAD-CONTACTOS")
+                        || _ModuleNames.Contains("SEGURIDAD-ROLES")
+            )
+            {
+                <MudNavGroup Title="Seguridad" Icon="@Icons.Material.Filled.Security" IconColor="Color.Info">
+                    @* @if (_ModuleNames.Contains("SEGURIDAD-USUARIOS"))
+                    { *@
+                        <MudNavLink Href="accessuser">Usuarios</MudNavLink>
+                    @* } *@
+                    @if (_ModuleNames.Contains("SEGURIDAD-CONTACTOS"))
+                    {
+                        <MudNavLink Href="accesscontact">Contactos</MudNavLink>
+                    }
+                    @if (_ModuleNames.Contains("SEGURIDAD-ROLES"))
+                    {
+                        <MudNavLink Href="accessgroup">Roles</MudNavLink>
+                    }
+                   
+                </MudNavGroup>
+            }
+
+        </MudNavMenu>
+    </Authorized> 
+</AuthorizeView>
+
+@code {
+
+    [Parameter]
+    public List<UserModule> Modules { get; set; } = new List<UserModule>();
+
+    private List<string> _ModuleNames = new List<string>();  
+
+    
+    protected override async Task OnParametersSetAsync()
+    {
+
+        _ModuleNames = Modules.Select(s => s.Name).ToList();
+        await Task.CompletedTask;
+        
+    }
+
+
+}
