@@ -164,9 +164,9 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> CreateFailReport(FailReport FailReport, int IdUser)
+        public async Task<ApiResponse<ActionResult>> CreateFailReport(FailReport FailReport, int IdUser)
         {
-            ApiResponse<List<ActionResult>>? result;
+            ApiResponse<ActionResult>? result;
             try
             {
 
@@ -194,17 +194,17 @@
 
                 var response = await _http.PostAsJsonAsync($"api/Service/PostFailReport?userId={IdUser}", _assistence);
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
-                    {
-                        throw new Exception($"Error al crear el FailReport: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                    }
+                //if (!response.IsSuccessStatusCode)
+                //{
+                //    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                //    {
+                //        throw new Exception($"Error al crear el FailReport: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                //    }
                     
-                }
+                //}
 
-                result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
-                result = (result is null) ? new ApiResponse<List<ActionResult>>()
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
@@ -212,7 +212,7 @@
             }
             catch (HttpRequestException httpEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
@@ -220,7 +220,7 @@
             }
             catch (NotSupportedException notSupportedEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
@@ -229,7 +229,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
@@ -239,9 +239,9 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> UpdateFailReport(FailReport FailReport, int IdUser)
+        public async Task<ApiResponse<ActionResult>> UpdateFailReport(FailReport FailReport, int IdUser)
         {
-            ApiResponse<List<ActionResult>>? result;
+            ApiResponse<ActionResult>? result;
 
             try
             {
@@ -270,17 +270,17 @@
 
                 var response = await _http.PostAsJsonAsync($"api/Service/PostFailReport?userId={IdUser}", _assistence);
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
-                    {
-                        throw new Exception($"Error al crear el FailReport: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                    }
+                //if (!response.IsSuccessStatusCode)
+                //{
+                //    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                //    {
+                //        throw new Exception($"Error al crear el FailReport: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                //    }
 
-                }
+                //}
 
-                result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
-                result = (result is null) ? new ApiResponse<List<ActionResult>>()
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
@@ -288,7 +288,7 @@
             }
             catch (HttpRequestException httpEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
@@ -296,7 +296,7 @@
             }
             catch (NotSupportedException notSupportedEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
@@ -305,7 +305,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
@@ -315,9 +315,9 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> ActionsFailReport(List<PostAction> PostActions, int IdUser)
+        public async Task<ApiResponse<ActionResult>> ActionsFailReport(List<PostAction> PostActions, int IdUser)
         {
-            ApiResponse<List<ActionResult>>? result;
+            ApiResponse<ActionResult>? result;
             List<PostAction> PostActionList = ([]);
             try
             {
@@ -325,17 +325,17 @@
 
                 var response = await _http.PostAsJsonAsync($"api/Service/PostActions?userId={IdUser}&serviceTypeId={(int)ServiceTypeEnum.FailReport}", PostActions);
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
-                    {
-                        throw new Exception($"Error al crear el FailReport: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                    }
+                //if (!response.IsSuccessStatusCode)
+                //{
+                //    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                //    {
+                //        throw new Exception($"Error al crear el FailReport: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                //    }
 
-                }
+                //}
 
-                result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
-                result = (result is null) ? new ApiResponse<List<ActionResult>>()
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
@@ -344,7 +344,7 @@
             }
             catch (HttpRequestException httpEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
@@ -352,7 +352,7 @@
             }
             catch (NotSupportedException notSupportedEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
@@ -361,7 +361,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
@@ -488,9 +488,9 @@
 
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> CreateFailReportDetail(FailReportDetail Detail, int IdUser)
+        public async Task<ApiResponse<ActionResult>> CreateFailReportDetail(FailReportDetail Detail, int IdUser)
         {
-            ApiResponse<List<ActionResult>>? result;
+            ApiResponse<ActionResult>? result;
             List<FailReportDetailUp> _ServiceList = ([]);
             try
             {
@@ -513,8 +513,8 @@
                 var url = $"api/Service/PostDetails?userId={IdUser}";
                 var response = await _http.PostAsJsonAsync(url, _ServiceList);
 
-                result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
-                result = (result is null) ? new ApiResponse<List<ActionResult>>()
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
@@ -523,7 +523,7 @@
             }
             catch (HttpRequestException httpEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
@@ -531,7 +531,7 @@
             }
             catch (NotSupportedException notSupportedEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
@@ -540,7 +540,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
@@ -550,9 +550,9 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> UpdateFailReportDetail(FailReportDetail Detail, int IdUser)
+        public async Task<ApiResponse<ActionResult>> UpdateFailReportDetail(FailReportDetail Detail, int IdUser)
         {
-            ApiResponse<List<ActionResult>>? result;
+            ApiResponse<ActionResult>? result;
             try
             {
                 var _Detail = new FailReportDetailUp()
@@ -572,8 +572,8 @@
                 var response = await _http.PostAsJsonAsync(url, _Detail);
 
                
-                result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
-                result = (result is null) ? new ApiResponse<List<ActionResult>>()
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
@@ -583,7 +583,7 @@
             }
             catch (HttpRequestException httpEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
@@ -591,7 +591,7 @@
             }
             catch (NotSupportedException notSupportedEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
@@ -600,7 +600,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
@@ -611,9 +611,9 @@
 
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> ActionsFailReportDetail(List<PostAction> PostActions, int IdUser)
+        public async Task<ApiResponse<ActionResult>> ActionsFailReportDetail(List<PostAction> PostActions, int IdUser)
         {
-            ApiResponse<List<ActionResult>>? result;
+            ApiResponse<ActionResult>? result;
             List<PostAction> PostActionList = ([]);
             try
             {
@@ -628,8 +628,8 @@
                 var url = $"api/Service/PostActionsDetails?userId={IdUser}";
 
                 var response = await _http.PostAsJsonAsync(url, PostActions, options);
-                result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
-                result = (result is null) ? new ApiResponse<List<ActionResult>>()
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
@@ -638,7 +638,7 @@
             }
             catch (HttpRequestException httpEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
@@ -646,7 +646,7 @@
             }
             catch (NotSupportedException notSupportedEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
@@ -655,7 +655,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
@@ -666,9 +666,9 @@
 
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> DeleteFailReportDetail(List<PostAction> PostActions, int IdUser)
+        public async Task<ApiResponse<ActionResult>> DeleteFailReportDetail(List<PostAction> PostActions, int IdUser)
         {
-            ApiResponse<List<ActionResult>>? result;
+            ApiResponse<ActionResult>? result;
             List<PostAction> PostActionList = ([]);
             try
             {
@@ -683,8 +683,8 @@
                 var url = $"api/Service/Delete_Details?userId={IdUser}";
 
                 var response = await _http.PostAsJsonAsync(url, PostActions, options);
-                result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
-                result = (result is null) ? new ApiResponse<List<ActionResult>>()
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
@@ -693,7 +693,7 @@
             }
             catch (HttpRequestException httpEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
@@ -701,7 +701,7 @@
             }
             catch (NotSupportedException notSupportedEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
@@ -710,7 +710,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)

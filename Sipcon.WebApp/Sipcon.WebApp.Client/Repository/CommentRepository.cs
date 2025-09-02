@@ -60,9 +60,9 @@
 
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> CreateComment(Comment Comment, int IdUser)
+        public async Task<ApiResponse<ActionResult>> CreateComment(Comment Comment, int IdUser)
         {
-            ApiResponse<List<ActionResult>>? result;
+            ApiResponse<ActionResult>? result;
             try
             {
 
@@ -79,13 +79,13 @@
 
                 var response = await _http.PostAsJsonAsync($"api/Comment/PostComment?userId={IdUser}", _comment);
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new Exception($"Error al crear el Comment: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                }
+                //if (!response.IsSuccessStatusCode)
+                //{
+                //    throw new Exception($"Error al crear el Comment: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                //}
 
-                result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
-                result = (result is null) ? new ApiResponse<List<ActionResult>>()
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
@@ -93,7 +93,7 @@
             }
             catch (HttpRequestException httpEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
@@ -101,7 +101,7 @@
             }
             catch (NotSupportedException notSupportedEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
@@ -110,7 +110,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)

@@ -326,9 +326,9 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> CreateVehicle(Vehicle Vehicle, int IdUser)
+        public async Task<ApiResponse<ActionResult>> CreateVehicle(Vehicle Vehicle, int IdUser)
         {
-            ApiResponse<List<ActionResult>>? result;
+            ApiResponse<ActionResult>? result;
             List<Vehicle> vehicles = ([]);
             try
             {
@@ -337,13 +337,13 @@
 
                 var response = await _http.PostAsJsonAsync($"api/Vehicle/PostVehicles?userId={IdUser}", vehicles);
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new Exception($"Error Post Vehicle: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                }
+                //if (!response.IsSuccessStatusCode)
+                //{
+                //    throw new Exception($"Error Post Vehicle: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                //}
 
-                result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
-                result = (result is null) ? new ApiResponse<List<ActionResult>>()
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
@@ -352,7 +352,7 @@
             }
             catch (HttpRequestException httpEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
@@ -360,7 +360,7 @@
             }
             catch (NotSupportedException notSupportedEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
@@ -369,7 +369,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
@@ -379,9 +379,9 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> UpdateVehicle(Vehicle Vehicle, int IdUser)
+        public async Task<ApiResponse<ActionResult>> UpdateVehicle(Vehicle Vehicle, int IdUser)
         {
-            ApiResponse<List<ActionResult>>? result;
+            ApiResponse<ActionResult>? result;
             List<Vehicle> vehicles  = ([]);
             try
             {
@@ -389,13 +389,13 @@
 
                 var response = await _http.PostAsJsonAsync($"api/Vehicle/PostVehicles?userId={IdUser}", vehicles);
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new Exception($"Error Post Vehicle: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                }
+                //if (!response.IsSuccessStatusCode)
+                //{
+                //    throw new Exception($"Error Post Vehicle: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                //}
 
-                result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
-                result = (result is null) ? new ApiResponse<List<ActionResult>>()
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
@@ -404,7 +404,7 @@
             }
             catch (HttpRequestException httpEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Error al realizar la solicitud HTTP: " , httpEx.Message)
@@ -412,7 +412,7 @@
             }
             catch (NotSupportedException notSupportedEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
@@ -421,7 +421,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
@@ -432,9 +432,9 @@
 
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> ActionsVehicle(List<PostAction> PostActions, int IdUser)
+        public async Task<ApiResponse<ActionResult>> ActionsVehicle(List<PostAction> PostActions, int IdUser)
         {
-            ApiResponse<List<ActionResult>>? result;
+            ApiResponse<ActionResult>? result;
             List<PostAction> PostActionList = ([]);
             try
             {
@@ -449,13 +449,13 @@
                 
                 var response = await _http.PostAsJsonAsync($"api/Vehicle/PostActions?userId={IdUser}", PostActions, options);
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new Exception($"Error Post Vehicle: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                }
+                //if (!response.IsSuccessStatusCode)
+                //{
+                //    throw new Exception($"Error Post Vehicle: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                //}
 
-                result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
-                result = (result is null) ? new ApiResponse<List<ActionResult>>()
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
@@ -464,7 +464,7 @@
             }
             catch (HttpRequestException httpEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
@@ -472,7 +472,7 @@
             }
             catch (NotSupportedException notSupportedEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
@@ -481,7 +481,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)

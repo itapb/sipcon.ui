@@ -150,9 +150,9 @@
         }
 
 
-        public async Task<ApiResponse<List<ActionResult>>> CreatePolicy(Policy Policy, int IdUser)
+        public async Task<ApiResponse<ActionResult>> CreatePolicy(Policy Policy, int IdUser)
         {
-            ApiResponse<List<ActionResult>>? result;
+            ApiResponse<ActionResult>? result;
             try
             {
 
@@ -172,13 +172,13 @@
 
                 var response = await _http.PostAsJsonAsync($"api/Policy/PostPolicy?userId={IdUser}", _policy);
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new Exception($"Error al crear el Policy: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                }
+                //if (!response.IsSuccessStatusCode)
+                //{
+                //    throw new Exception($"Error al crear el Policy: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                //}
 
-                result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
-                result = (result is null) ? new ApiResponse<List<ActionResult>>()
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
@@ -186,7 +186,7 @@
             }
             catch (HttpRequestException httpEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
@@ -194,7 +194,7 @@
             }
             catch (NotSupportedException notSupportedEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
@@ -203,7 +203,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
@@ -213,9 +213,9 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> UpdatePolicy(Policy Policy, int IdUser)
+        public async Task<ApiResponse<ActionResult>> UpdatePolicy(Policy Policy, int IdUser)
         {
-            ApiResponse<List<ActionResult>>? result;
+            ApiResponse<ActionResult>? result;
 
             try
             {
@@ -236,13 +236,13 @@
 
                 var response = await _http.PostAsJsonAsync($"api/Policy/PostPolicy?userId={IdUser}", _policy);
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new Exception($"Error al crear el Policy: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                }
+                //if (!response.IsSuccessStatusCode)
+                //{
+                //    throw new Exception($"Error al crear el Policy: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                //}
 
-                result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
-                result = (result is null) ? new ApiResponse<List<ActionResult>>()
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
@@ -250,7 +250,7 @@
             }
             catch (HttpRequestException httpEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
@@ -258,7 +258,7 @@
             }
             catch (NotSupportedException notSupportedEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
@@ -267,7 +267,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
@@ -277,9 +277,9 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> ActionsPolicy(List<PostAction> PostActions, int IdUser)
+        public async Task<ApiResponse<ActionResult>> ActionsPolicy(List<PostAction> PostActions, int IdUser)
         {
-            ApiResponse<List<ActionResult>>? result;
+            ApiResponse<ActionResult>? result;
             List<PostAction> PostActionList = ([]);
             try
             {
@@ -287,13 +287,13 @@
 
                 var response = await _http.PostAsJsonAsync($"api/Policy/PostActions?userId={IdUser}", PostActions);
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new Exception($"Error accion Tipo Poliza: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                }
+                //if (!response.IsSuccessStatusCode)
+                //{
+                //    throw new Exception($"Error accion Tipo Poliza: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                //}
 
-                result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
-                result = (result is null) ? new ApiResponse<List<ActionResult>>()
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
@@ -302,7 +302,7 @@
             }
             catch (HttpRequestException httpEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
@@ -310,7 +310,7 @@
             }
             catch (NotSupportedException notSupportedEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
@@ -319,7 +319,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
