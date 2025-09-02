@@ -2,13 +2,14 @@
 @* <MudBreadcrumbs Items="ItemsNavigate"></MudBreadcrumbs> *@
 <CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
 @* <MudText Typo="Typo.h5" GutterBottom="true">Ubicaciones</MudText> *@
-@if (LocationId == null){
-<InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
+@if (LocationId == null)
+{
+    <InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
 
     <MudDataGrid @ref="LocationMudDataGrid" T="Location" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 260px)" Loading="_loading" @bind-CurrentPage="LocationCurrentPage">
         <ToolBarContent>
             <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddLocation" Color="Color.Info"></MudIconButton>
-            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s=>OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             <MudSpacer />
             <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshLocation"></MudIconButton>
             <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
@@ -41,15 +42,15 @@
             </TemplateColumn>
             <TemplateColumn>
                 <CellTemplate>
-                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="()=> ClickEditLocation(context.Item)" />
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditLocation(context.Item)" />
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
         <PagerContent>
-            <MudDataGridPager T="Location" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+            <MudDataGridPager T="Location" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
         </PagerContent>
     </MudDataGrid>
-} 
+}
 else
 {
     <LocationForm @bind-Value="LocationId" />
@@ -62,14 +63,14 @@ else
     private int? LocationId;
     List<BreadcrumbItem> ItemsNavigate = [new("Home", href: "", icon: Icons.Material.Filled.Home), new("Inventario", href: "locations", icon: Icons.Material.Filled.Inventory), new("Ubicaciones", href: "locations", icon: Icons.Material.Filled.LocationOn)];
     string searchString = "";
-   // string mMessage = "Ubicaciones";   
+    // string mMessage = "Ubicaciones";
     private int LocationCurrentPage = 0;
     bool _loading = true;
-    bool IsAllCheckBoxSelected = false;      
+    bool IsAllCheckBoxSelected = false;
     private MudDataGrid<Location>? LocationMudDataGrid;
     private List<Module>? Modules;
 
-   
+
     protected override async Task OnInitializedAsync()
     {
         Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-UBICACIONES&userId={Useful.userId}");
@@ -81,20 +82,20 @@ else
         var mOffset = state.Page * state.PageSize;
         var totalItems = 0;
         IEnumerable<Location> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Location/GetAll?filter={searchString}&rowFrom={mOffset}&userId={Useful.userId}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Location/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&rowFrom={mOffset}&filter={searchString}");
 
         if (response.IsSuccessStatusCode)
-        {            
+        {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Location>>>();
-            totalItems = content2!.total ?? 0;           
+            totalItems = content2!.total ?? 0;
             data = content2!.data ?? new List<Location>(); ;
         }
         else
-        {         
+        {
             var errorMessage = await response.Content.ReadAsStringAsync();
             throw new Exception(errorMessage);
         }
-        _loading = false;     
+        _loading = false;
 
         return new GridData<Location> { TotalItems = totalItems, Items = data };
     }
@@ -123,33 +124,33 @@ else
         var SelectedActions = (LocationMudDataGrid != null && ("ACTIVATE,DEACTIVATE".IndexOf(actionName!) > -1)) ?
                             (LocationMudDataGrid.FilteredItems.Where(item => item.IsSelected)
                                                              .Select(item => new Client.Models.Action
-                                                                 {
-                                                                     UserId = 1,
-                                                                     RecordId = item.Id,
-                                                                     ModuleId = Modules!.FirstOrDefault()?.Id,
-                                                                     actionName = actionName,
-                                                                     ActionComment = "",
-                                                                     RelatedId = 0
-                                                                 }).ToList()
+                                                             {
+                                                                 UserId = 1,
+                                                                 RecordId = item.Id,
+                                                                 ModuleId = Modules!.FirstOrDefault()?.Id,
+                                                                 actionName = actionName,
+                                                                 ActionComment = "",
+                                                                 RelatedId = 0
+                                                             }).ToList()
                              ) : null;
 
         var result_Post_Actions = (SelectedActions is not null && SelectedActions.Count > 0) ? await Http.PostAsync($"api/Location/PostActions?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
         if (result_Post_Actions is not null && result_Post_Actions.IsSuccessStatusCode)
         {
             var resultAction = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
-            if  (resultAction?.data![0].updatedRows > 0)
+            if (resultAction?.data![0].updatedRows > 0)
             {
                 await DialogService.ShowDialog("Ubicacion(es) Actualizado(s)!", "Ubicacion", "OK", Color.Info, Icons.Material.Filled.Commit);
                 await LocationMudDataGrid!.ReloadServerData();
             }
-            
+
 
         }
         await Task.CompletedTask;
-       
+
     }
 
-  
+
     private async Task AfterAsyncAllCheck()
     {
         if (LocationMudDataGrid != null)
@@ -165,8 +166,8 @@ else
             await LocationMudDataGrid!.ReloadServerData();
         }
     }
-  
-   private async Task OnInputFileChange(InputFileChangeEventArgs e)
+
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
     {
         if (e.FileCount == 1)
         {
@@ -218,7 +219,7 @@ else
     //     LocationId = item.Id;
     //     await Task.CompletedTask;
     // }
-   
+
     private async Task ClickAddLocation(MouseEventArgs ev) => await OpenLocationForm(0);
     private async Task ClickEditLocation(Location item) => await OpenLocationForm(item.Id);
     private async Task ClickRefreshLocation(MouseEventArgs ev)

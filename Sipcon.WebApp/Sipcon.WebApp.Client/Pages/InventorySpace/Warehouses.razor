@@ -69,7 +69,7 @@ else
         var mOffset = state.Page * state.PageSize;
         var totalItems = 0;
         IEnumerable<Warehouse> data;
-        HttpResponseMessage response = await masterComp.Http.GetAsync($"api/Warehouse/GetAll?filter={masterComp.searchString}&rowFrom={mOffset}&userId={Useful.userId}");
+        HttpResponseMessage response = await masterComp.Http.GetAsync($"api/Warehouse/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&rowFrom={mOffset}&filter={masterComp.searchString}");
 
         if (response.IsSuccessStatusCode)
         {
