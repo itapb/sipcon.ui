@@ -171,17 +171,19 @@
             _LaborTimes = serviceResponse.Data;
             _rowsTotal = serviceResponse.Total;
 
-            if (_LaborTimes.Count() > 0)
-            {
-                _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
-            }
-            else { _itemsModules = new List<ModuleAction>([]); }
+            // if (_LaborTimes.Count() > 0)
+            // {
+            //     _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
+            // }
+            // else { _itemsModules = new List<ModuleAction>([]); }
+            _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
         }
         else
         {
             _LaborTimes = new List<LaborTime>();
             _rowsTotal = 0;
-            _itemsModules = new List<ModuleAction>([]);
+            // _itemsModules = new List<ModuleAction>([]);
+            _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
         }
 
         _loading = false;

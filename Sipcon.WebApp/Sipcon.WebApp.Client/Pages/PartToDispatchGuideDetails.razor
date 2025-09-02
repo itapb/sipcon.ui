@@ -1,0 +1,73 @@
+﻿@if (mGuideDetails == null)
+{
+    <LoadingForm IsMudDialog="@(MudDialog != null)" />
+}
+else
+{
+    <MudForm @ref="form">
+        <div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
+            <MudPaper Elevation="2" Class="pa-3">
+                <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12">
+                            <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.LastChild"><MudTextField T="int?" Label="Cantidad Recibida" @bind-Value="mGuideDetails.Received" For="@(() => mGuideDetails.Received)" Required="true" Validation="@(new Func<int?, string>(ValidateInteger))"></MudTextField></MudFocusTrap>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField T="string" Label="Observacion" @bind-Value="mGuideDetails!.Observation" For="@(() => mGuideDetails.Observation)" Required="@(!(mGuideDetails?.Received == mGuideDetails?.Quantity))" RequiredError="Campo requerido"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudStack Row="true" Justify="Justify.Center">
+                                <MudStack Row="true" Spacing="4">
+                                    <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="CheckClick" />
+                                    <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="CloseClick" />
+                                </MudStack>
+                            </MudStack>
+                        </MudItem>
+                    </MudGrid>
+                </MudFocusTrap>
+            </MudPaper>
+        </div>
+    </MudForm>
+}
+@code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    private MudForm? form;
+    [Parameter] public GuideDetails? mGuideDetails { get; set; } = default!;
+  
+    private async Task CheckClick(MouseEventArgs args)
+    {
+        await form!.Validate();
+        if (form.IsValid)
+        {
+            var sGuideDetails = new { Id = mGuideDetails?.Id, Received = mGuideDetails?.Received, Observation = mGuideDetails?.Observation };
+    
+            var strmGuideDetails = System.Text.Json.JsonSerializer.Serialize(sGuideDetails);
+            var result_PostGuideDetail = await Http.PostAsync($"api/Guide/PostGuideDetail?userId={Useful.userId}", new StringContent($"[{strmGuideDetails}]", null, "application/json"));
+            if (result_PostGuideDetail.IsSuccessStatusCode)
+            {
+                var sucessContent = await result_PostGuideDetail.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
+                if (sucessContent?.data is ({ insertedRows: 1 } or { updatedRows: 1 }))
+                {
+                    var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Item", "OK", Color.Info, Icons.Material.Filled.Commit);
+                    if (!result!.Canceled)
+                        MudDialog?.Close(DialogResult.Ok(true));
+                }
+            }
+            else if (result_PostGuideDetail.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                var conflictContent = await result_PostGuideDetail.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+                await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+            else
+            {
+                var errorMessage = await result_PostGuideDetail.Content.ReadAsStringAsync();
+                throw new Exception(errorMessage);
+            }
+        }
+    }
+    private void CloseClick(MouseEventArgs args) => MudDialog?.Cancel();
+
+    private string ValidateInteger(int? value) => (value.HasValue && value < 0) ? $"El valor debe ser mayor o igual a cero" : string.Empty;
+}

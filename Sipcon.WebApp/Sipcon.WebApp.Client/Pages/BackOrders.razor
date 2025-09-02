@@ -8,7 +8,13 @@
              Height="calc(100vh - 290px)">
     <ToolBarContent>        
         <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-        <MudSwitch T="bool?" Color="Color.Primary" ValueChanged="OnSwitchValueChanged">@(_saleOrderNumberGrouping ? "NRO ORDEN" : "CODIGO PARTE")</MudSwitch>
+        <MudSpacer />
+        <MudSelect T="string" @bind-Value="SelectedmGroup" Immediate="true" FitContent="true" @bind-Value:after="AfterAsync">
+            @foreach (var mgroup in mGroups)
+            {
+                <MudSelectItem T="string" Value="@mgroup">@mgroup</MudSelectItem>
+            }
+        </MudSelect>
         <MudSpacer />
         <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshBackOrder"></MudIconButton>
         <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
@@ -48,6 +54,9 @@
                         <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
                             @context.Grouping.Count() parte
                         </MudChip>
+                        <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
+                            @context.Grouping.Sum(x => x.Quantity) Partes
+                        </MudChip>
                     </div>
                 }
                 else
@@ -85,10 +94,13 @@
                         _ => Color.Dark
                     };
                     <div class="d-flex align-center">
-                        <MudIcon Icon="@Icons.Material.Filled.Business" Color="@color" Size="Size.Small" Class="mr-2" />
+                        <MudIcon Icon="@Icons.Material.Filled.Hardware" Color="@color" Size="Size.Small" Class="mr-2" />
                         <span style="font-weight:bold">@context.Grouping.Key</span>
                         <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
-                            @context.Grouping.Count() concesionario
+                            @context.Grouping.Count() concesionario 
+                        </MudChip>
+                        <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
+                            @context.Grouping.Sum(x => x.Quantity) Partes
                         </MudChip>
                     </div>
                 }
@@ -101,9 +113,41 @@
 
         <PropertyColumn Property="x => x.PartDescription" Title="DESCRIPCION" Groupable="false" />
         <PropertyColumn Property="x => x.Quantity" Title="CANTIDAD" Groupable="false" Format="N0" />
-        <PropertyColumn Property="x => x.TypeName" Title="TIPO" Groupable="false" />   
 
-        <TemplateColumn>
+        <PropertyColumn Property="x => x.TypeName" Title="TIPO" Groupable="@(_typeIdCodeGrouping)"
+                        @bind-Grouping="_typeIdCodeGrouping" GroupBy="_groupBy1"
+                        @bind-GroupByOrder="_typeIdCodeOrder"
+                        @bind-GroupExpanded="_typeIdCodeExpanded">
+            <GroupTemplate>
+                @if (_customizeGroupTemplate)
+                {
+                    var color = context.Grouping.Key?.ToString() switch
+                    {
+                        "Healthcare" => Color.Primary,
+                        "Tech" => Color.Secondary,
+                        "Tourism" => Color.Info,
+                        _ => Color.Dark
+                    };
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Bloodtype" Color="@color" Size="Size.Small" Class="mr-2" />
+                        <span style="font-weight:bold">@context.Grouping.Key</span>
+                        <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
+                            @context.Grouping.Count() Tipo
+                        </MudChip>
+                        <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
+                            @context.Grouping.Sum(x => x.Quantity) Partes
+                        </MudChip>
+                    </div>
+                }
+                else
+                {
+                    <span style="font-weight:bold">@(context.Grouping.Key)</span>
+                }
+            </GroupTemplate>
+                    
+                    </PropertyColumn>
+
+            <TemplateColumn>
             <CellTemplate>
                 <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditBackOrder(context.Item)" />
             </CellTemplate>
@@ -123,6 +167,9 @@
 @code {
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
+    string SelectedmGroup = "NRO ORDEN";
+    string[] mGroups = ["NRO ORDEN", "CODIGO PARTE", "TIPO"];
+
     public string customstr { get; set; } = "NRO ORDEN VENTA";
     List<BreadcrumbItem> ItemsNavigate = new();
     private List<Module>? Modules;
@@ -134,20 +181,45 @@
     private bool _customizeGroupTemplate = true;
     private bool _customizeGroupBy;
     private bool _customizeGroupStyle;
-    private bool _saleOrderNumberGrouping = false;  
+    private bool _saleOrderNumberGrouping = true;  
     private int _saleOrderNumberOrder;
 
-    private bool _partInnerCodeGrouping = true;
+    private bool _partInnerCodeGrouping = false;
     private int _partInnerCoderOrder;
+
+    private bool _typeIdCodeGrouping = false;
+    private int _typeIdCodeOrder;
 
     // Display Options
     private bool _saleOrderNumberExpanded = false;
     private bool _partInnerCodeExpanded = false;
+    private bool _typeIdCodeExpanded = false;
 
 
 
     // Primary grouping by industry type
     private Func<BackOrder, object>? _groupBy1;
+
+    private async Task AfterAsync()
+    {
+        _saleOrderNumberGrouping = false;
+        _partInnerCodeGrouping = false;
+        _typeIdCodeGrouping = false;
+        switch (SelectedmGroup)
+        {
+            case "NRO ORDEN":
+                _saleOrderNumberGrouping = true;
+                break;
+            case "CODIGO PARTE":
+                _partInnerCodeGrouping = true;
+                break;
+            case "TIPO":
+                _typeIdCodeGrouping = true;
+                break;
+        }
+        await BackOrderDataGrid!.ReloadServerData();
+        await Task.CompletedTask;
+   }
     private async Task AfterAsyncAllCheck()
     {
         if (BackOrderDataGrid != null)
@@ -390,14 +462,4 @@
         }
     }
 
-
-    private async Task OnSwitchValueChanged(bool? valueinput)
-    {
-        var boolresult = valueinput ?? false;
-        _saleOrderNumberGrouping = boolresult;
-        _partInnerCodeGrouping = !boolresult;
-
-        await BackOrderDataGrid!.ReloadServerData();
-        await Task.CompletedTask;
-    }
 }

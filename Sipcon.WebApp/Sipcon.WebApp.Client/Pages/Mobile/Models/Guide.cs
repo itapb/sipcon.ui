@@ -16,7 +16,7 @@
         public int? UserId  { get; set; }
         public bool? Delivered { get; set; }
         public bool? Closed { get; set; }
-
+        public decimal? Weith { get; set; } = 0;
         public bool IsSelected { get; set; } = false;
     }
 }

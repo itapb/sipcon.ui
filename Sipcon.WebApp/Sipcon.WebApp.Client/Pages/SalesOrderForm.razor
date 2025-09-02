@@ -274,28 +274,22 @@
         await form!.Validate();
         var IsSuccess = false;
         if (form.IsValid)
-        {
-            var strMasterSalesOrder = System.Text.Json.JsonSerializer.Serialize(SelectedActions);
-            var result_MasterMovement = await Http.PostAsync($"api/SaleOrder/PostActions?userId={Useful.userId}", new StringContent($"[{strMasterSalesOrder}]", null, "application/json"));
-            if (result_MasterMovement.IsSuccessStatusCode)
+        {            
+            var strMasterSalesOrder = System.Text.Json.JsonSerializer.Serialize(MasterSalesOrder);
+            var result_MasterSalesOrder = await Http.PostAsync($"api/SaleOrder/PostSaleOrder?userId={Useful.userId}", new StringContent($"[{strMasterSalesOrder}]", null, "application/json"));         
+            if (result_MasterSalesOrder.IsSuccessStatusCode)
             {
-                var sucessContent = await result_MasterMovement.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
+                var sucessContent = await result_MasterSalesOrder.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
                 IsSuccess = (sucessContent?.data![0] is ({ insertedRows: 1 } or { updatedRows: 1 }));
-                if (IsSuccess)
-                {
-                    var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Generar", "OK", Color.Info, Icons.Material.Filled.Commit);
-                    if (!result!.Canceled)
-                        SalesOrderId = null;
-                }
             }
-            else if (result_MasterMovement.StatusCode == System.Net.HttpStatusCode.Conflict)
+            else if (result_MasterSalesOrder.StatusCode == System.Net.HttpStatusCode.Conflict)
             {
-                var conflictContent = await result_MasterMovement.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+                var conflictContent = await result_MasterSalesOrder.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
                 await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
             }
             else
             {
-                var errorMessage = await result_MasterMovement.Content.ReadAsStringAsync();
+                var errorMessage = await result_MasterSalesOrder.Content.ReadAsStringAsync();
                 throw new Exception(errorMessage);
             }
         }
@@ -307,7 +301,7 @@
 
 
         var strMovementActions = System.Text.Json.JsonSerializer.Serialize(SelectedActions);
-        var result_PostMovementActions = (SelectedActions is not null) ? await Http.PostAsync($"api/Movements/PostMovementActions?userId={SelectedActions.UserId}", new StringContent($"[{strMovementActions}]", null, "application/json")) : null;
+        var result_PostMovementActions = (SelectedActions is not null) ? await Http.PostAsync($"api/SaleOrder/PostActions?userId={Useful.userId}", new StringContent($"[{strMovementActions}]", null, "application/json")) : null;
         if ((result_PostMovementActions?.IsSuccessStatusCode ?? false))
         {
             var rest = result_PostMovementActions.Content.ReadAsStringAsync();

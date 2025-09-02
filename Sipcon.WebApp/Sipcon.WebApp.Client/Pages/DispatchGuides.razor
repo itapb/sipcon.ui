@@ -7,9 +7,9 @@
 else
 {
     <MudDataGrid @ref="GuidesMudDataGrid" T="Mobile.Models.Guide" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" FixedHeader Height="calc(100vh - 240px)" Loading="Loading" @bind-CurrentPage="ReceptionCurrentPage">
-        <ToolBarContent>
-            <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="ClickNewGuide"></MudIconButton>
+        <ToolBarContent>            
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+           
             <MudSpacer />
             <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshGuide"></MudIconButton>
             <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
@@ -34,6 +34,7 @@ else
             <PropertyColumn Property="x => x.ProviderName" Title="PROVEEDOR" />
             <PropertyColumn Property="x => x.Number" Title="NUMERO" />
             <PropertyColumn Property="x => x.StatusName" Title="STATUS" />
+            <PropertyColumn Property="x => x.Weith" Title="PESO" />
             <TemplateColumn StickyRight="true">
                 <CellTemplate>
                     <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditGuide(context.Item)" />
@@ -74,24 +75,7 @@ else
             await GuidesMudDataGrid!.ReloadServerData();
         }
     }
-    private async Task ClickRefreshGuide(MouseEventArgs args) => await GuidesMudDataGrid!.ReloadServerData();
-    private async Task ClickNewGuide(MouseEventArgs ev)
-    {
-        HttpResponseMessage response = await Http.GetAsync($"api/Movements/NewMovementWithContext?userId={Useful.userId}&supplierId={Useful.supplierId}&typeId=R");
-        if (response.IsSuccessStatusCode)
-        {
-            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterMovementDetails>>();
-            var data = content2!.data ?? new MasterMovementDetails();
-            GuideId = data.Movement?.Id;
-        }
-        else
-        {
-            var errorMessage = await response.Content.ReadAsStringAsync();
-            Logger.LogError(Useful.TemplateLog(MovementTitle, errorMessage));
-            await DialogService.ShowUnexpected();
-        }
-        await Task.CompletedTask;
-    }
+    private async Task ClickRefreshGuide(MouseEventArgs args) => await GuidesMudDataGrid!.ReloadServerData();    
     private async Task AfterAsyncAllCheck()
     {
         GuidesMudDataGrid?.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
@@ -126,7 +110,7 @@ else
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Mobile.Models.Guide> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/GetAllGuides?userId={Useful.userId}&supplierId={Useful.supplierId}&rowfrom={mOffset}&filter={searchString}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Guide/GetAllGuides?userId={Useful.userId}&supplierId={Useful.supplierId}&rowfrom={mOffset}&filter={searchString}");
 
         if (response.IsSuccessStatusCode)
         {
@@ -153,7 +137,7 @@ else
 
     private async Task ClickMenuGuides(string? actionName)
     {
-        var strDictionary = new Dictionary<string, string> { { "ASSIGN", "GENERADO" }, { "UNASSIGN", "ASIGNADO" }, { "GENERATE", "CREADO" }, { "DECLINE", "CREADO,GENERADO" } };
+        var strDictionary = new Dictionary<string, string> { { "RECEIVE", "ENVIADO" }};
         var mActions = GuidesMudDataGrid?.FilteredItems.Where(item => item.IsSelected && strDictionary[actionName!].Contains(item.StatusName!.ToUpper()))
                                                          .Select(item => new Client.Models.Action
                                                          {
@@ -170,17 +154,8 @@ else
             await DialogService.ShowDialog("Accion no permitada, Verificar datos seleccionado(s)", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
         }
         else if (mActions?.Count > 0)
-        {
-            if (actionName == "ASSIGN")
-            {
-                string ModuleName = "INVENTARIO-MOVIL-RECEPCION";
-                var dialogReference = await DialogService.ShowAsync<AssignUserToMovement>("", new DialogParameters { ["SelectedActions"] = mActions, ["moduleName"] = ModuleName }, options);
-                if (await Useful.AsyncDialogResultIsOk(dialogReference)) await GuidesMudDataGrid!.ReloadServerData();
-            }
-            else
-            {
-                await PostActionAndReload(mActions, $"api/Movements/PostMovementActions?userId={Useful.userId}");
-            }
+        {           
+            await PostActionAndReload(mActions, $"api/Guide/PostGuidesActions?userId={Useful.userId}");
         }
 
     }
