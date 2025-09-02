@@ -101,8 +101,8 @@ else
             var result_Post_Warehouse = await Http.PostAsync($"api/Warehouse/PostWarehouses?userId={Useful.userId}", new StringContent($"[{strJsonSelectedWarehouse}]", null, "application/json"));
             if (result_Post_Warehouse.IsSuccessStatusCode)
             {
-                var sucessContent = await result_Post_Warehouse.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
-                if ((sucessContent?.data![0].insertedRows == 1 || sucessContent?.data![0].updatedRows == 1))
+                var sucessContent = await result_Post_Warehouse.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
+                if ((sucessContent?.data?.insertedRows == 1 || sucessContent?.data?.updatedRows == 1))
                 {
                     var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Almacen", "OK", Color.Primary, Icons.Material.Filled.Commit);
                     if (!result!.Canceled)
