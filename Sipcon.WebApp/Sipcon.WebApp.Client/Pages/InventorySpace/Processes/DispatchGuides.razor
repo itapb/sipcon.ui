@@ -110,7 +110,7 @@ else
     };
 
     private async Task<GridData<Mobile.Models.Guide>> ServerReload(GridState<Mobile.Models.Guide> state)
-    {
+    {        
         IsAllCheckBoxSelected = false;
         Loading = true;
         var totalItems = 0;
@@ -188,11 +188,11 @@ else
     }
     private async Task ReloadDispatchGuidesGrid()
     {
-        if (GuidesMudDataGrid != null)        
+        if (GuidesMudDataGrid != null && GuideId == null)
             await GuidesMudDataGrid.ReloadServerData();        
     }
     public void Dispose()
-    {
+    {       
         hubEventsService.OnSupplierChanged -= ReloadDispatchGuidesGrid;
     }
 }

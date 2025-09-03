@@ -1,4 +1,7 @@
 ﻿@page "/salesorder"
+@inject HubEventsService hubEventsService
+@implements IDisposable
+
 <CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
 @if (SalesOrderId != null)
 {
@@ -88,7 +91,7 @@ else
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterSalesOrderDetails>>();
-            var data = content2!.data ?? new MasterSalesOrderDetails();
+            var data = content2!.data ?? new MasterSalesOrderDetails();            
             SalesOrderId = data.SaleOrder?.Id;
         }
         else
@@ -104,8 +107,15 @@ else
         SalesOrderMudDataGrid?.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
         await Task.CompletedTask;
     }
-    private async Task ClickEditSalesOrder(SaleOrder item) => await Task.FromResult(SalesOrderId = item.Id);
-    protected override async Task OnInitializedAsync() => await LoadDataAsync();
+    private async Task ClickEditSalesOrder(SaleOrder item) 
+    {        
+        await Task.FromResult(SalesOrderId = item.Id); 
+    }
+
+    protected override async Task OnInitializedAsync() {        
+        await LoadDataAsync();
+        hubEventsService.OnDealerChanged += ReloadSalesOrderGrid;
+    }
 
     private async Task LoadDataAsync()
     {
@@ -127,7 +137,7 @@ else
     };
 
     private async Task<GridData<SaleOrder>> ServerReload(GridState<SaleOrder> state)
-    {
+    {  
         IsAllCheckBoxSelected = false;
         Loading = true;
         var totalItems = 0;
@@ -202,5 +212,16 @@ else
             Logger.LogError(Useful.TemplateLog(RequisitionTitle, errorMessage));
             await DialogService.ShowUnexpected(); ;
         }
+    }
+    private async Task ReloadSalesOrderGrid()
+    {
+        if (SalesOrderMudDataGrid != null && SalesOrderId == null)
+        {
+            await SalesOrderMudDataGrid.ReloadServerData();
+        }
+    }
+    public void Dispose()
+    {       
+        hubEventsService.OnDealerChanged -= ReloadSalesOrderGrid;
     }
 }
