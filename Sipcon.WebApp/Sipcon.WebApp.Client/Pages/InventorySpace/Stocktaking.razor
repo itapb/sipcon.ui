@@ -1,4 +1,6 @@
 ﻿@page "/stocktaking"
+@inject HubEventsService hubEventsService
+@implements IDisposable
 
 <CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
     <MudDataGrid @ref="StocktakingMudDataGrid" T="Inventory" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 240px)" Loading="_loading" @bind-CurrentPage="LocationCurrentPage" Dense="true">
@@ -76,5 +78,21 @@
             searchString = text;
             await StocktakingMudDataGrid!.ReloadServerData();
         }
+    }
+    private async Task ReloadStocktakingGrid()
+    {
+        if (StocktakingMudDataGrid != null)
+        {
+            await StocktakingMudDataGrid.ReloadServerData();
+        }
+    }
+    public void Dispose()
+    {
+        hubEventsService.OnSupplierChanged -= ReloadStocktakingGrid;
+    }
+    protected override async Task OnInitializedAsync()
+    {       
+        hubEventsService.OnSupplierChanged += ReloadStocktakingGrid;
+        await Task.CompletedTask;
     }
 }
