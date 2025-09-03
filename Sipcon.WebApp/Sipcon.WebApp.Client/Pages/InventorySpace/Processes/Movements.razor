@@ -102,10 +102,12 @@ else
         MovementMudDataGrid?.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
         await Task.CompletedTask;
     }
+
     private async Task ClickEditMovement(Movement item) 
     {           
             await Task.FromResult(MovementId = item.Id); 
     }
+
     protected override async Task OnInitializedAsync()
     {
         await LoadDataAsync();
@@ -226,6 +228,7 @@ else
             await MovementMudDataGrid.ReloadServerData();
         }
     }
+          
     public void Dispose()
     {        
         hubEventsService.OnSupplierChanged -= ReloadMovementsGrid;
