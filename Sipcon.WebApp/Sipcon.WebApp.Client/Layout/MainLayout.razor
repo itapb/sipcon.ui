@@ -4,7 +4,7 @@
 @using Sipcon.WebApp.Client.Repository.Auth
 @using Sipcon.WebApp.Client.Enum
 @inject ILogger<MainLayout> Logger
-
+@inject HubEventsService hubEventsService
 <MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
 <MudDialogProvider />
@@ -308,6 +308,8 @@
         SelectedSupplierText = _UserSuppliers.FirstOrDefault(x => x.Id == SelectedSupplierValue)?.Name ?? "Planta";
         await AuthenticationStateProvider.SetValueSessionStorage<int>(SelectedSupplierValue, ValuesKey.SELECTEDSUPPLIER);
         _open = false;
+        Useful.supplierId = SelectedSupplierValue;
+        await hubEventsService.NotifySupplierChangedAsync();
         await Task.CompletedTask;
     }
 
@@ -317,6 +319,8 @@
         SelectedDealerText = _UserDealers.FirstOrDefault(x => x.Id == SelectedDealerValue)?.Name ?? "Concesionario";
         await AuthenticationStateProvider.SetValueSessionStorage<int>(SelectedDealerValue, ValuesKey.SELECTEDDEALER);
         _open = false;
+        Useful.dealerId = SelectedDealerValue;
+        await hubEventsService.NotifyDealerChangedAsync();
         await Task.CompletedTask;
     }
  

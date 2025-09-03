@@ -25,7 +25,7 @@ builder.Services.AddTransient<ISessionStorageService, SessionStorageRepository>(
 builder.Services.AddScoped<AuthenticationProviderJWT>();
 builder.Services.AddScoped<AuthenticationStateProvider,AuthenticationProviderJWT>(x=> x.GetRequiredService<AuthenticationProviderJWT>());
 builder.Services.AddScoped<IAuthorizeService, AuthenticationProviderJWT>(x => x.GetRequiredService<AuthenticationProviderJWT>());
-
+builder.Services.AddScoped<HubEventsService>();
 
 
 builder.Services.AddScoped<IModelService, ModelRepository>();

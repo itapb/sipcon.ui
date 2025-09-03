@@ -279,8 +279,8 @@
             var result_MasterSalesOrder = await Http.PostAsync($"api/SaleOrder/PostSaleOrder?userId={Useful.userId}", new StringContent($"[{strMasterSalesOrder}]", null, "application/json"));         
             if (result_MasterSalesOrder.IsSuccessStatusCode)
             {
-                var sucessContent = await result_MasterSalesOrder.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
-                IsSuccess = (sucessContent?.data![0] is ({ insertedRows: 1 } or { updatedRows: 1 }));
+                var sucessContent = await result_MasterSalesOrder.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
+                IsSuccess = (sucessContent?.data! is ({ insertedRows: 1 } or { updatedRows: 1 }));
             }
             else if (result_MasterSalesOrder.StatusCode == System.Net.HttpStatusCode.Conflict)
             {

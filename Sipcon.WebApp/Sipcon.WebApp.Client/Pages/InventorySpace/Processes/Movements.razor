@@ -1,4 +1,8 @@
-﻿<CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
+﻿@inject HubEventsService hubEventsService
+@implements IDisposable
+
+<CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
+
 @if (MovementId != null)
 {
     <MovementForm @bind-Value="MovementId" />
@@ -99,7 +103,12 @@ else
         await Task.CompletedTask;
     }
     private async Task ClickEditMovement(Movement item) => await Task.FromResult(MovementId = item.Id);
-    protected override async Task OnInitializedAsync() => await LoadDataAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+        hubEventsService.OnSupplierChanged += ReloadMovementsGrid;
+    }
+    
 
     private async Task LoadDataAsync()
     {      
@@ -206,5 +215,16 @@ else
             Logger.LogError(Useful.TemplateLog(MovementTitle, errorMessage));
             await DialogService.ShowUnexpected(); ;
         }
+    }
+    private async Task ReloadMovementsGrid()
+    {
+        if (MovementMudDataGrid != null)
+        {
+            await MovementMudDataGrid.ReloadServerData();
+        }
+    }
+    public void Dispose()
+    {
+        hubEventsService.OnSupplierChanged -= ReloadMovementsGrid;
     }
 }

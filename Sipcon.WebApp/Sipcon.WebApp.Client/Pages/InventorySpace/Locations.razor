@@ -1,4 +1,7 @@
 ﻿@page "/locations"
+@inject HubEventsService hubEventsService
+@implements IDisposable
+
 @* <MudBreadcrumbs Items="ItemsNavigate"></MudBreadcrumbs> *@
 <CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
 @* <MudText Typo="Typo.h5" GutterBottom="true">Ubicaciones</MudText> *@
@@ -74,6 +77,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-UBICACIONES&userId={Useful.userId}");
+        hubEventsService.OnSupplierChanged += ReloadLocationsGrid;
     }
     private async Task<GridData<Location>> ServerReload(GridState<Location> state)
     {
@@ -225,5 +229,16 @@ else
     private async Task ClickRefreshLocation(MouseEventArgs ev)
     {
         await LocationMudDataGrid!.ReloadServerData();
+    }
+    private async Task ReloadLocationsGrid()
+    {
+        if (LocationMudDataGrid != null)
+        {
+            await LocationMudDataGrid.ReloadServerData();
+        }
+    }
+    public void Dispose()
+    {
+        hubEventsService.OnSupplierChanged -= ReloadLocationsGrid;
     }
 }

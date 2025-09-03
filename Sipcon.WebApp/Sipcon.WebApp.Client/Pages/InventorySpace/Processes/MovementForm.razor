@@ -297,8 +297,8 @@
                 var result_MasterMovement = await Http.PostAsync($"api/Movements/PostMovements?userId={Useful.userId}", new StringContent($"[{strMasterMovement}]", null, "application/json"));
                 if (result_MasterMovement.IsSuccessStatusCode)
                 {
-                    var sucessContent = await result_MasterMovement.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
-                    IsSuccess = (sucessContent?.data![0] is ({ insertedRows: 1 } or { updatedRows: 1 }));
+                    var sucessContent = await result_MasterMovement.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
+                    IsSuccess = (sucessContent?.data! is ({ insertedRows: 1 } or { updatedRows: 1 }));
                 }
                 else if (result_MasterMovement.StatusCode == System.Net.HttpStatusCode.Conflict)
                 {

@@ -85,6 +85,9 @@ namespace Sipcon.WebApp.Client.Repository.Auth
             await _jsSessionStorage.SetValue<int>(ValuesKey.SELECTEDSUPPLIER, selectedSupplier);
             await _jsSessionStorage.SetValue<int>(ValuesKey.SELECTEDDEALER, selectedDealer);
 
+            Useful.userId = data.Users.Id;
+            Useful.supplierId = selectedSupplier;
+            Useful.dealerId = selectedDealer;
 
             var authState = BuildAuthenticationState(data.Token);
             NotifyAuthenticationStateChanged(Task.FromResult(authState));
