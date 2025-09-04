@@ -73,13 +73,13 @@
             throw new NotImplementedException("Method not implement");
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> CreateDealer(Dealer Dealer, int IdUser)
+        public async Task<ApiResponse<ActionResult>> CreateDealer(Dealer Dealer, int IdUser)
         {
             await Task.CompletedTask;
             throw new NotImplementedException("Method not implement");
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> UpdateDealer(Dealer Dealer, int IdUser)
+        public async Task<ApiResponse<ActionResult>> UpdateDealer(Dealer Dealer, int IdUser)
         {
             await Task.CompletedTask;
             throw new NotImplementedException("Method not implement");

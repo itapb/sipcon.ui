@@ -1,4 +1,6 @@
 ﻿@page "/parts"
+@inject HubEventsService hubEventsService
+@implements IDisposable
 
 @* <MudBreadcrumbs Items="ItemsNavigate"></MudBreadcrumbs> *@
 <CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
@@ -128,6 +130,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-REPUESTOS&userId={Useful.userId}");
+        hubEventsService.OnSupplierChanged += ReloadPartsGrid;
     }
     Func<Part, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
     {
@@ -145,7 +148,7 @@ else
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Part> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Part/GetAll?rowFrom={mOffset}&filter={searchString}&userId={Useful.userId}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Part/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&rowFrom={mOffset}&filter={searchString}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Part>>>();
@@ -228,5 +231,16 @@ else
     private async Task ClickRefreshPart(MouseEventArgs ev)
     {
         await PartMudDataGrid!.ReloadServerData();
+    }
+    private async Task ReloadPartsGrid()
+    {
+        if (PartMudDataGrid != null)
+        {
+            await PartMudDataGrid.ReloadServerData();
+        }
+    }
+    public void Dispose()
+    {
+        hubEventsService.OnSupplierChanged -= ReloadPartsGrid;
     }
 }

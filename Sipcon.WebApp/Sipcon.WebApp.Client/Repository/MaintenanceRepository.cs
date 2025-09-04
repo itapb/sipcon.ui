@@ -113,9 +113,9 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> CreateMaintenance(Maintenance Maintenance, int IdUser)
+        public async Task<ApiResponse<ActionResult>> CreateMaintenance(Maintenance Maintenance, int IdUser)
         {
-            ApiResponse<List<ActionResult>>? result;
+            ApiResponse<ActionResult>? result;
             try
             {
 
@@ -139,13 +139,13 @@
 
                 var response = await _http.PostAsJsonAsync($"api/Service/PostMaintenance?userId={IdUser}", _maintenance);
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new Exception($"Error al crear el Maintenance: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                }
+                //if (!response.IsSuccessStatusCode)
+                //{
+                //    throw new Exception($"Error al crear el Maintenance: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                //}
 
-                result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
-                result = (result is null) ? new ApiResponse<List<ActionResult>>()
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
@@ -153,7 +153,7 @@
             }
             catch (HttpRequestException httpEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
@@ -161,7 +161,7 @@
             }
             catch (NotSupportedException notSupportedEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
@@ -170,7 +170,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
@@ -180,9 +180,9 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> UpdateMaintenance(Maintenance Maintenance, int IdUser)
+        public async Task<ApiResponse<ActionResult>> UpdateMaintenance(Maintenance Maintenance, int IdUser)
         {
-            ApiResponse<List<ActionResult>>? result;
+            ApiResponse<ActionResult>? result;
 
             try
             {
@@ -207,13 +207,13 @@
 
                 var response = await _http.PostAsJsonAsync($"api/Service/PostMaintenance?userId={IdUser}", _maintenance);
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new Exception($"Error al crear el Maintenance: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                }
+                //if (!response.IsSuccessStatusCode)
+                //{
+                //    throw new Exception($"Error al crear el Maintenance: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                //}
 
-                result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
-                result = (result is null) ? new ApiResponse<List<ActionResult>>()
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
@@ -221,7 +221,7 @@
             }
             catch (HttpRequestException httpEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
@@ -229,7 +229,7 @@
             }
             catch (NotSupportedException notSupportedEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
@@ -238,7 +238,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
@@ -248,9 +248,9 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<ActionResult>>> ActionsMaintenance(List<PostAction> PostActions, int IdUser)
+        public async Task<ApiResponse<ActionResult>> ActionsMaintenance(List<PostAction> PostActions, int IdUser)
         {
-            ApiResponse<List<ActionResult>>? result;
+            ApiResponse<ActionResult>? result;
             List<PostAction> PostActionList = ([]);
             try
             {
@@ -258,13 +258,13 @@
 
                 var response = await _http.PostAsJsonAsync($"api/Service/PostActions?userId={IdUser}&serviceTypeId=1", PostActions);
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new Exception($"Error accion Maintenance: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                }
+                //if (!response.IsSuccessStatusCode)
+                //{
+                //    throw new Exception($"Error accion Maintenance: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
+                //}
 
-                result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
-                result = (result is null) ? new ApiResponse<List<ActionResult>>()
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
@@ -273,7 +273,7 @@
             }
             catch (HttpRequestException httpEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
@@ -281,7 +281,7 @@
             }
             catch (NotSupportedException notSupportedEx)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
@@ -290,7 +290,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<List<ActionResult>>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)

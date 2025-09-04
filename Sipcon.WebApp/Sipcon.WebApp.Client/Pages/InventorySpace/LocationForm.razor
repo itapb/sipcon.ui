@@ -96,8 +96,8 @@ else
             var result_Post_Location = await Http.PostAsync($"api/Location/PostLocations?userId={Useful.userId}", new StringContent($"[{strJsonSelectedLocation}]", null, "application/json"));
             if (result_Post_Location.IsSuccessStatusCode)
             {
-                var content2 = await result_Post_Location.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
-                if ((content2?.data![0].insertedRows == 1 || content2?.data![0].updatedRows == 1))
+                var content2 = await result_Post_Location.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
+                if ((content2?.data?.insertedRows == 1 || content2?.data?.updatedRows == 1))
                 {
                     var mdialog = await DialogService.ShowDialog(Useful.OkSavedMessage, "Ubicacion", "OK", Color.Info, Icons.Material.Filled.Commit);
                     if (!mdialog!.Canceled)

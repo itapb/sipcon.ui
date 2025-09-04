@@ -1,4 +1,7 @@
 ﻿@page "/zones"
+@inject HubEventsService hubEventsService
+@implements IDisposable
+
 <CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
 <InputFile OnChange="masterComp.OnInputFileChange" accept=".xlsx" style="display:none" />
 @if(ZoneId==null){
@@ -59,6 +62,7 @@ else{
     protected override async Task OnInitializedAsync()
     {          
         await masterComp.FillModules();
+        hubEventsService.OnSupplierChanged += ReloadZonesGrid;
     }
     private async Task<GridData<Zone>> ServerReload(GridState<Zone> state)
     {
@@ -67,7 +71,7 @@ else{
         var mOffset = state.Page * state.PageSize;
         var totalItems = 0;
         IEnumerable<Zone> data;
-        HttpResponseMessage response = await masterComp.Http.GetAsync($"api/Zone/GetAll?filter={masterComp.searchString}&rowFrom={mOffset}&userId={Useful.userId}");
+        HttpResponseMessage response = await masterComp.Http.GetAsync($"api/Zone/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&rowFrom={mOffset}&filter={masterComp.searchString}");
 
         if (response.IsSuccessStatusCode)
         {
@@ -84,7 +88,17 @@ else{
 
         return new GridData<Zone> { TotalItems = totalItems, Items = data };
     }
-
+    private async Task ReloadZonesGrid()
+    {
+        if (masterComp.EntityMudDataGrid != null)
+        {
+            await masterComp.EntityMudDataGrid.ReloadServerData();
+        }
+    }
+    public void Dispose()
+    {
+        hubEventsService.OnSupplierChanged -= ReloadZonesGrid;
+    }
 
     // private async Task ClickAddZone(MouseEventArgs ev)
     // {

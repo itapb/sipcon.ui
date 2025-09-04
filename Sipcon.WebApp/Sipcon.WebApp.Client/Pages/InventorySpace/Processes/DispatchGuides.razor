@@ -1,4 +1,7 @@
 ﻿@page "/dispatchguides"
+@inject HubEventsService hubEventsService
+@implements IDisposable
+
 <CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
 @if (GuideId != null)
 {
@@ -82,7 +85,10 @@ else
         await Task.CompletedTask;
     }
     private async Task ClickEditGuide(Mobile.Models.Guide item) => await Task.FromResult(GuideId = item.Id);
-    protected override async Task OnInitializedAsync() => await LoadDataAsync();
+    protected override async Task OnInitializedAsync() {     
+        await LoadDataAsync();
+        hubEventsService.OnSupplierChanged += ReloadDispatchGuidesGrid;
+    }
 
     private async Task LoadDataAsync()
     {
@@ -104,7 +110,7 @@ else
     };
 
     private async Task<GridData<Mobile.Models.Guide>> ServerReload(GridState<Mobile.Models.Guide> state)
-    {
+    {        
         IsAllCheckBoxSelected = false;
         Loading = true;
         var totalItems = 0;
@@ -180,4 +186,16 @@ else
             await DialogService.ShowUnexpected(); ;
         }
     }
+    private async Task ReloadDispatchGuidesGrid()
+    {
+        if (GuidesMudDataGrid != null && GuideId == null)
+            await GuidesMudDataGrid.ReloadServerData();        
+    }
+    public void Dispose()
+    {       
+
+        hubEventsService.OnSupplierChanged -= ReloadDispatchGuidesGrid;
+    }
 }
+
+

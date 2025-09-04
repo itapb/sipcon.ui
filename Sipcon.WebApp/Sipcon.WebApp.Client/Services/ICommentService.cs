@@ -5,7 +5,7 @@
     {
 
         public Task<ApiResponse<List<Comment>>> GetComments(int IdRecord, string ModuleName);
-        public Task<ApiResponse<List<ActionResult>>> CreateComment(Comment Comment, int IdUser);
+        public Task<ApiResponse<ActionResult>> CreateComment(Comment Comment, int IdUser);
 
 
     }

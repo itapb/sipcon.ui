@@ -1,4 +1,8 @@
-﻿<CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
+﻿@inject HubEventsService hubEventsService
+@implements IDisposable
+
+<CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
+
 @if (MovementId != null)
 {
     <MovementForm @bind-Value="MovementId" />
@@ -46,14 +50,14 @@ else
 }
 
 @code {
-    [Inject] private HttpClient Http { get; set; } = default!;
-    [Inject] private IDialogService DialogService { get; set; } = default!;
-    [Inject] private ILogger<Movements> Logger { get; set; } = default!;
-    List<BreadcrumbItem> ItemsNavigate = new();    
+        [Inject] private HttpClient Http { get; set; } = default!;
+        [Inject] private IDialogService DialogService { get; set; } = default!;
+        [Inject] private ILogger<Movements> Logger { get; set; } = default!;
+        List<BreadcrumbItem> ItemsNavigate = new();    
 
-    [Parameter]   
-    public string? TypeId { get; set; } 
-    private int? MovementId = null;    //4
+        [Parameter]   
+        public string? TypeId { get; set; } 
+        private int? MovementId = null;    //4
 
     private bool IsAllCheckBoxSelected = false;
     int ReceptionCurrentPage = 0;
@@ -82,7 +86,7 @@ else
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterMovementDetails>>();
-            var data = content2!.data ?? new MasterMovementDetails();
+            var data = content2!.data ?? new MasterMovementDetails();            
             MovementId = data.Movement?.Id;
         }
         else
@@ -98,8 +102,18 @@ else
         MovementMudDataGrid?.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
         await Task.CompletedTask;
     }
-    private async Task ClickEditMovement(Movement item) => await Task.FromResult(MovementId = item.Id);
-    protected override async Task OnInitializedAsync() => await LoadDataAsync();
+
+    private async Task ClickEditMovement(Movement item) 
+    {           
+            await Task.FromResult(MovementId = item.Id); 
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+        hubEventsService.OnSupplierChanged += ReloadMovementsGrid;
+    }
+    
 
     private async Task LoadDataAsync()
     {      
@@ -122,7 +136,7 @@ else
     };
 
     private async Task<GridData<Movement>> ServerReload(GridState<Movement> state)
-    {
+    { 
         IsAllCheckBoxSelected = false;
         Loading = true;
         var totalItems = 0;
@@ -206,5 +220,17 @@ else
             Logger.LogError(Useful.TemplateLog(MovementTitle, errorMessage));
             await DialogService.ShowUnexpected(); ;
         }
+    }
+    private async Task ReloadMovementsGrid()
+    {
+        if (MovementMudDataGrid != null && MovementId == null)
+        {
+            await MovementMudDataGrid.ReloadServerData();
+        }
+    }
+          
+    public void Dispose()
+    {        
+        hubEventsService.OnSupplierChanged -= ReloadMovementsGrid;
     }
 }

@@ -1,4 +1,7 @@
 ﻿@page "/backorders"
+@inject HubEventsService hubEventsService
+@implements IDisposable
+
 @using System.Collections.Generic
 @using MudBlazor.Utilities
 <CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
@@ -232,6 +235,7 @@
         string hrefMovement = "backorders";
         $"Home,Inventario,Procesos,BackOrders".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
         Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-BACKORDER&userId={Useful.userId}");
+        hubEventsService.OnSupplierChanged += ReloadBackOrderGrid;
     }
 
 
@@ -460,6 +464,18 @@
             var errorMessage = await result_Post_Actions!.Content.ReadAsStringAsync() ?? "";            
             await DialogService.ShowUnexpected(); ;
         }
+    }
+
+    private async Task ReloadBackOrderGrid()
+    {
+        if (BackOrderDataGrid != null)
+        {
+            await BackOrderDataGrid.ReloadServerData();
+        }
+    }
+    public void Dispose()
+    {
+        hubEventsService.OnSupplierChanged -= ReloadBackOrderGrid;
     }
 
 }
