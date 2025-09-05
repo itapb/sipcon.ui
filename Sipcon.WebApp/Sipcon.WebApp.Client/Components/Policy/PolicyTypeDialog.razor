@@ -1,8 +1,6 @@
-@using Sipcon.WebApp.Client.Services
+
 @using System.Text.RegularExpressions
 @using System.ComponentModel.DataAnnotations
-@using Sipcon.WebApp.Client.Utils
-@using Sipcon.WebApp.Client.Enum
 @using FluentValidation
 
 @inject IPolicyTypeService PolicyTypeService
@@ -283,20 +281,16 @@
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = default!;
 
-    [Parameter]
-    public int IdPolicyType { get; set; } 
-    [Parameter]
-    public ActionsEnum ActionsModal { get; set; }
+    [Parameter] public int IdPolicyType { get; set; } 
+    [Parameter] public ActionsEnum ActionsModal { get; set; }
 
-    private MudForm form;
+    private MudForm? form;
     private PolicyType _model { get; set; } = new PolicyType();
 
     private string _errorModalMessage = string.Empty;
     private bool _nestedModalVisible;
     bool _successModal = false;
 
-
-    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
 
     private IEnumerable<SelectOption> _supplierList { get; set; } = new List<SelectOption>();
     private IEnumerable<SelectOption> _brandList { get; set; } = new List<SelectOption>();
@@ -317,8 +311,8 @@
         {
             _model = new PolicyType();
 
-            // _supplierList = await ModuleActionsService.GetSupplierOption(_iduser);
-            _brandList = await ModuleActionsService.GetBrandOption(_iduser);
+            // _supplierList = await ModuleActionsService.GetSupplierOption(Useful.userId);
+            _brandList = await ModuleActionsService.GetBrandOption(Useful.userId);
 
             await Task.Delay(50);
         }
@@ -336,13 +330,13 @@
 
     private async Task GetPolicyType()
     {
-        var serviceResponse = await PolicyTypeService.GetPolicyType(IdPolicyType, _iduser);
+        var serviceResponse = await PolicyTypeService.GetPolicyType(IdPolicyType, Useful.userId);
         if (serviceResponse.Processed)
         {
             _model = serviceResponse.Data ?? new PolicyType();
 
-            _brandList = await ModuleActionsService.GetBrandOption(_iduser);
-            _supplierList = await ModuleActionsService.GetSupplierOption(_iduser, _model.BrandId ?? 0);
+            _brandList = await ModuleActionsService.GetBrandOption(Useful.userId);
+            _supplierList = await ModuleActionsService.GetSupplierOption(Useful.userId, _model.BrandId ?? 0);
 
             await Task.Delay(50);
             StateHasChanged();
@@ -363,7 +357,7 @@
     private async Task OnBrandValueChanged(int BrandId)
     {
         _model.BrandId = BrandId;
-        _supplierList = await ModuleActionsService.GetSupplierOption(_iduser, BrandId);
+        _supplierList = await ModuleActionsService.GetSupplierOption(Useful.userId, BrandId);
 
         await Task.Delay(50);
         _model.SupplierId = _supplierList.FirstOrDefault()?.Value;
@@ -381,7 +375,7 @@
         {
             _errorModalMessage = "";
 
-            var serviceResponse = await PolicyTypeService.UpdatePolicyType(_model, _iduser);
+            var serviceResponse = await PolicyTypeService.UpdatePolicyType(_model, Useful.userId);
             if (serviceResponse.Processed)
             {
                 if (ActionsModal == ActionsEnum.Create)

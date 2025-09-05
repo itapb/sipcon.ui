@@ -1,8 +1,6 @@
-﻿@using Sipcon.WebApp.Client.Services
+﻿
 @using System.Text.RegularExpressions
 @using System.ComponentModel.DataAnnotations
-@using Sipcon.WebApp.Client.Utils
-@using Sipcon.WebApp.Client.Enum
 @using FluentValidation
 
 @inject ILicenseService LicenseService
@@ -186,12 +184,9 @@
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = default!;
 
-    [Parameter]
-    public int IdLicense { get; set; } 
-    [Parameter]
-    public int IdSupplier { get; set; }
-    [Parameter]
-    public ActionsEnum ActionsModal { get; set; }
+    [Parameter] public int IdLicense { get; set; } 
+    [Parameter] public int IdSupplier { get; set; }
+    [Parameter] public ActionsEnum ActionsModal { get; set; }
 
     private MudForm? form;
     private License _model { get; set; } = new License();
@@ -199,8 +194,6 @@
     private string _errorModalMessage = string.Empty;
     private bool _nestedModalVisible;
     bool _successModal = false;
-
-    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
 
     private IEnumerable<SelectOption> _lisenceTypeList { get; set; } = new List<SelectOption>();
     
@@ -217,7 +210,7 @@
             _model = new License();
             _model.SupplierId = IdSupplier;
 
-            _lisenceTypeList = await ModuleActionsService.GetLicenseTypeOption(_iduser);
+            _lisenceTypeList = await ModuleActionsService.GetLicenseTypeOption(Useful.userId);
 
             await Task.Delay(50);
 
@@ -234,12 +227,12 @@
 
     private async Task GetLicense()
     {
-        var serviceResponse = await LicenseService.GetLicense(IdLicense, _iduser);
+        var serviceResponse = await LicenseService.GetLicense(IdLicense, Useful.userId);
         if (serviceResponse.Processed)
         {
             _model = serviceResponse.Data ?? new License();
 
-            _lisenceTypeList = await ModuleActionsService.GetLicenseTypeOption(_iduser);
+            _lisenceTypeList = await ModuleActionsService.GetLicenseTypeOption(Useful.userId);
 
             await Task.Delay(50);
             StateHasChanged();
@@ -273,7 +266,7 @@
         {
             _errorModalMessage = "";
 
-            var serviceResponse = await LicenseService.UpdateLicense(_model, _iduser);
+            var serviceResponse = await LicenseService.UpdateLicense(_model, Useful.userId);
             if (serviceResponse.Processed)
             {
                 if (ActionsModal == ActionsEnum.Create)

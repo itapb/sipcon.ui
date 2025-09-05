@@ -1,9 +1,6 @@
 
 @using System.Text.RegularExpressions
 @using System.ComponentModel.DataAnnotations
-@using Sipcon.WebApp.Client.Services
-@using Sipcon.WebApp.Client.Utils
-@using Sipcon.WebApp.Client.Enum
 @using Sipcon.WebApp.Client.Components.License
 @using FluentValidation
 @using System.Globalization
@@ -659,7 +656,6 @@
     bool _isReadOnly = false;
     string _searchVin = string.Empty;
 
-    private int _idDealer = 5103;
 
     FailReportValidator _modelValidator = new FailReportValidator();
 
@@ -699,7 +695,7 @@
     private async Task GetFailReport()
     {
 
-        var serviceResponse = await FailReportService.GetFailReport(Useful.userId, _idDealer, IdFailReport);
+        var serviceResponse = await FailReportService.GetFailReport(Useful.userId, Useful.dealerId, IdFailReport);
         if (serviceResponse.Processed)
         {
             _model = serviceResponse.Data ?? new FailReport();
@@ -734,7 +730,7 @@
             _errorSearchVehicle = MessageEnum.SearchVehicleNotOK.GetStringValue();
         }
 
-        _model.DealerId = _idDealer;
+        _model.DealerId = Useful.dealerId;
         _model.NumberPolicy = _modelVehicle.Number;
         _model.CustomerId = _modelVehicle.CustomerId;
         _model.VehicleId = _modelVehicle.Id;

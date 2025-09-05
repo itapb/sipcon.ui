@@ -1,18 +1,12 @@
 ﻿@page "/models"
 
-
-@using Sipcon.WebApp.Client.Models
-@using Sipcon.WebApp.Client.Services
-@using Sipcon.WebApp.Client.Utils
-@using Sipcon.WebApp.Client.Enum
 @using System.Text.Json
-
+@using Sipcon.WebApp.Client.Components.Model
 
 @inject IModelService ModelService
 @inject IDialogService DialogService
 @inject UtilModuleActions ModuleActionsService
 @inject IJSRuntime JSRuntime
-
 
 <PageTitle>Modelos</PageTitle>
 <CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
@@ -20,16 +14,17 @@
 <InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
 
 <MudDataGrid @ref="_mudDataGrid"
-            MultiSelection="true" 
-            SelectedItems="@_selectedModels"
-            SortMode="SortMode.Multiple"
-            Filterable="true"
-            FixedHeader Height="calc(92vh - 235px)"
-            Hideable="true"
-            Loading="_loading"
-            Bordered="false"
-            Dense="true"
-            ServerData="LoadGridData">
+             T="Model"
+             MultiSelection="true" 
+             SelectedItems="@_selectedModels"
+             SortMode="SortMode.Multiple"
+             Filterable="true"
+             FixedHeader Height="calc(92vh - 235px)"
+             Hideable="true"
+             Loading="_loading"
+             Bordered="false"
+             Dense="true"
+             ServerData="LoadGridData">
 
     <ToolBarContent>
         <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddModel()"></MudIconButton>
@@ -51,8 +46,8 @@
         </MudMenu>
     </ToolBarContent>
     <Columns>
-        <SelectColumn T="Model" />
-        <TemplateColumn T="Model" Title="MARCA">
+        <SelectColumn  />
+        <TemplateColumn  Title="MARCA">
             <CellTemplate>
                     
                 <div class="d-flex justify-center" style="height: 45px;">
@@ -66,7 +61,7 @@
         </TemplateColumn>
         <PropertyColumn Property="x => x.Name" Title="NOMBRE" Sortable="false" Filterable="false" />
         <PropertyColumn Property="x => x.PolicyTypeName" Title="POLIZA" Sortable="false" Filterable="false" />
-        <TemplateColumn T="Model" Title="ACTIVO">
+        <TemplateColumn  Title="ACTIVO">
                  
             <CellTemplate>
                 <div class="d-flex justify-center">
@@ -82,7 +77,7 @@
     </Columns>
         
     <PagerContent>
-        <MudDataGridPager T="Model" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        <MudDataGridPager  PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
     </PagerContent>
 </MudDataGrid>
 
@@ -116,7 +111,6 @@
     bool _success = false;
 
     private int _rowCount = 0;
-    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
     private int _rowsTotal = 0; 
 
     private string _searchString = string.Empty;
@@ -148,7 +142,7 @@
     private async Task GetModels()
     {
         _loading = true;
-        var serviceResponse = await ModelService.GetModels(_iduser, _rowCount, _searchString);
+        var serviceResponse = await ModelService.GetModels(Useful.userId, _rowCount, _searchString);
         if (serviceResponse.Processed)
         {
             _Models = serviceResponse.Data;
@@ -156,7 +150,7 @@
 
             if (_Models.Count() > 0)
             {
-                _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
+                _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
             }
             else { _itemsModules = new List<ModuleAction>([]); }
 
@@ -310,7 +304,7 @@
                 formData.Add(content, "file", file.Name);
 
 
-                var serviceResponse = await ModelService.ImportModels(_iduser, formData);
+                var serviceResponse = await ModelService.ImportModels(Useful.userId, formData);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -367,7 +361,7 @@
                 formData.Add(content, "file", file.Name);
 
 
-                var serviceResponse = await ModelService.ImportModels(_iduser, formData);
+                var serviceResponse = await ModelService.ImportModels(Useful.userId, formData);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -393,7 +387,7 @@
     
     private async Task ExportItemsAsync()
     {
-        var serviceResponse = await ModelService.ExportModels(_iduser, _searchString);
+        var serviceResponse = await ModelService.ExportModels(Useful.userId, _searchString);
         if (serviceResponse.Processed)
         {
             _success = true;
@@ -445,7 +439,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await ModelService.ActionsModel(ActionList, _iduser);
+                var serviceResponse = await ModelService.ActionsModel(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
 
@@ -504,7 +498,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await ModelService.ActionsModel(ActionList, _iduser);
+                var serviceResponse = await ModelService.ActionsModel(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;

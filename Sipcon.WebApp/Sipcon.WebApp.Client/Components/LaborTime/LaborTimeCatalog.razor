@@ -1,7 +1,4 @@
-﻿@using Sipcon.WebApp.Client.Models
-@using Sipcon.WebApp.Client.Enum
-@using Sipcon.WebApp.Client.Services
-
+﻿
 @inject ILaborTimeService LaborTimeService
 @inject IDialogService DialogService
 
@@ -21,26 +18,26 @@
     </MudItem>
 
     <MudItem xs="12">
-        <MudDataGrid @ref="LaborTimeGrid" 
-            T="LaborTime" 
-            ServerData="ServerReload" 
-            Striped="true" 
-            Hover="true" 
-            Filterable="false" 
-            FixedHeader Height="calc(100vh - 400px)" 
-            @bind-CurrentPage="_CurrentPage">
+        <MudDataGrid @ref="LaborTimeGrid"
+                     T="LaborTime"
+                     ServerData="ServerReload" 
+                     Striped="true" 
+                     Hover="true" 
+                     Filterable="false" 
+                     FixedHeader Height="calc(100vh - 400px)" 
+                     @bind-CurrentPage="_CurrentPage">
         <ToolBarContent>
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="_searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             <MudSpacer />
             <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshCatalog"></MudIconButton>
         </ToolBarContent>
         <Columns>
-                <TemplateColumn T="LaborTime" Title="MODELO">
+                <TemplateColumn  Title="MODELO">
                     <CellTemplate>
                         <MudText Typo="Typo.caption" Align="Align.Start"><b>@context.Item.ModelName.ToUpper()</b></MudText>
                     </CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn T="LaborTime" Title="REF.">
+                <TemplateColumn  Title="REF.">
                     <CellTemplate>
                         <MudText Typo="Typo.caption" Align="Align.Start">
                             @(context.Item.Reference.ToUpper())
@@ -48,7 +45,7 @@
                     </CellTemplate>
                 </TemplateColumn>
                 <PropertyColumn Property="x => x.Description" Title="DESCRIPCION" Sortable="false" Filterable="false" />
-                <TemplateColumn T="LaborTime" Title="HORAS">
+                <TemplateColumn  Title="HORAS">
                     <CellTemplate>
                         <div class="d-flex justify-end">
                             <MudText Typo="Typo.caption" Align="Align.End">
@@ -65,7 +62,7 @@
             </TemplateColumn>
         </Columns>
         <PagerContent>
-            <MudDataGridPager T="LaborTime" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+            <MudDataGridPager  PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
         </PagerContent>
     </MudDataGrid>
     </MudItem>
@@ -83,7 +80,6 @@
     string _searchString = "";
     private int _CurrentPage = 0;
     private int _rowCount = 0;
-    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
     private int _rowsTotal = 0;
 
     private async Task OnSearch(string text)

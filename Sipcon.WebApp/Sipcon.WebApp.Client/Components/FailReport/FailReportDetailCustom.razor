@@ -1,9 +1,4 @@
 ﻿
-@using Sipcon.WebApp.Client.Models
-@using Sipcon.WebApp.Client.Services
-@using Sipcon.WebApp.Client.Pages
-@using Sipcon.WebApp.Client.Utils
-@using Sipcon.WebApp.Client.Enum
 @using System.Text.Json
 
 
@@ -15,6 +10,7 @@
 
 
 <MudDataGrid @ref="_mudDataGrid"
+             T="FailReportDetail"
              MultiSelection="true" 
              SelectedItems="@_selectedFailReportDetail"
              SortMode="SortMode.Multiple"
@@ -55,15 +51,15 @@
         </MudMenu>
     </ToolBarContent>
     <Columns>
-        <SelectColumn T="FailReportDetail" />
-        <TemplateColumn T="FailReportDetail" Title="@(mDetailType.ToString() == "LaborTime" ? "MANO DE OBRA" : "REPUESTO")">
+        <SelectColumn  />
+        <TemplateColumn  Title="@(mDetailType.ToString() == "LaborTime" ? "MANO DE OBRA" : "REPUESTO")">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.Start">
                     @(context.Item.ItemName?.ToUpper())
                 </MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="FailReportDetail" Title="TIPO">
+        <TemplateColumn  Title="TIPO">
             <CellTemplate>
 
                 @if (context.Item.ItemId != 0)
@@ -88,7 +84,7 @@
                 
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="FailReportDetail" Title="@(mDetailType.ToString() == "LaborTime" ? "HORAS" : "CANTIDAD")">
+        <TemplateColumn  Title="@(mDetailType.ToString() == "LaborTime" ? "HORAS" : "CANTIDAD")">
             <CellTemplate>
                 <div class="d-flex justify-end">
                     <MudText Typo="Typo.caption" Align="Align.End">
@@ -97,7 +93,7 @@
                 </div>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="FailReportDetail" Title="PRECIO UNI.">
+        <TemplateColumn  Title="PRECIO UNI.">
             <CellTemplate>
                 <div class="d-flex justify-end">
                     <MudText Typo="Typo.caption" Align="Align.End">
@@ -106,7 +102,7 @@
                 </div>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="FailReportDetail" Title="ESTATUS">
+        <TemplateColumn  Title="ESTATUS">
             <CellTemplate>
                 <div class="d-flex justify-center">
                     @if (context.Item.EstatusName != null)
@@ -153,7 +149,7 @@
         </TemplateColumn>
     </Columns>
     <PagerContent>
-        <MudDataGridPager T="FailReportDetail" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        <MudDataGridPager  PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
     </PagerContent>
 </MudDataGrid>
 

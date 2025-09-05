@@ -1,10 +1,6 @@
 ﻿@page "/policytypes"
 
-
-@using Sipcon.WebApp.Client.Models
-@using Sipcon.WebApp.Client.Services
-@using Sipcon.WebApp.Client.Utils
-@using Sipcon.WebApp.Client.Enum
+@using Sipcon.WebApp.Client.Components.Policy
 @using System.Text.Json
 
 
@@ -20,16 +16,17 @@
 <InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
 
 <MudDataGrid @ref="_mudDataGrid"
-            MultiSelection="true" 
-            SelectedItems="@_selectedPolicyTypes"
-            SortMode="SortMode.Multiple"
-            Filterable="true"
-            FixedHeader Height="calc(92vh - 235px)"
-            Hideable="true"
-            Loading="_loading"
-            Bordered="false"
-            Dense="true"
-            ServerData="LoadGridData">
+             T="PolicyType"
+             MultiSelection="true" 
+             SelectedItems="@_selectedPolicyTypes"
+             SortMode="SortMode.Multiple"
+             Filterable="true"
+             FixedHeader Height="calc(92vh - 235px)"
+             Hideable="true"
+             Loading="_loading"
+             Bordered="false"
+             Dense="true"
+             ServerData="LoadGridData">
 
     <ToolBarContent>
         <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddPolicyType()"></MudIconButton>
@@ -52,8 +49,8 @@
         </MudMenu>
     </ToolBarContent>
     <Columns>
-        <SelectColumn T="PolicyType" />
-        <TemplateColumn T="PolicyType" Title="MARCA">
+        <SelectColumn  />
+        <TemplateColumn  Title="MARCA">
             <CellTemplate>
                     
                 <div class="d-flex justify-center" style="height: 45px;">
@@ -66,7 +63,7 @@
             </CellTemplate>
         </TemplateColumn>
         <PropertyColumn Property="x => x.Description" Title="DESCRIPCION" Sortable="false" Filterable="false" />
-        <TemplateColumn T="PolicyType" Title="KM">
+        <TemplateColumn  Title="KM">
             <CellTemplate>
                 <div class="d-flex justify-end">
                     <MudText Typo="Typo.caption" Align="Align.End">
@@ -76,7 +73,7 @@
             </CellTemplate>
         </TemplateColumn>
         <PropertyColumn Property="x => x.Months" Title="FRECUENCIA (MES)" Sortable="false" Filterable="false" />
-        <TemplateColumn T="PolicyType" Title="EXPIRACION (KM)">
+        <TemplateColumn  Title="EXPIRACION (KM)">
             <CellTemplate>
                 <div class="d-flex justify-end">
                     <MudText Typo="Typo.caption" Align="Align.End">
@@ -88,7 +85,7 @@
         <PropertyColumn Property="x => x.TopMonths" Title="EXPIRACION (MES)" Sortable="false" Filterable="false" />
 
 
-        <TemplateColumn T="PolicyType" Title="ACTIVO">
+        <TemplateColumn  Title="ACTIVO">
                  
             <CellTemplate>
                 <div class="d-flex justify-center">
@@ -104,7 +101,7 @@
     </Columns>
         
     <PagerContent>
-        <MudDataGridPager T="PolicyType" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        <MudDataGridPager  PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
     </PagerContent>
 </MudDataGrid>
 
@@ -138,7 +135,6 @@
     bool _success = false;
 
     private int _rowCount = 0;
-    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
     private int _rowsTotal = 0; 
 
     private string _searchString = string.Empty;
@@ -169,7 +165,7 @@
     private async Task GetPolicyTypes()
     {
         _loading = true;
-        var serviceResponse = await PolicyTypeService.GetPolicyTypes(_iduser, _rowCount, _searchString);
+        var serviceResponse = await PolicyTypeService.GetPolicyTypes(Useful.userId, _rowCount, _searchString);
         if (serviceResponse.Processed)
         {
             _PolicyTypes = serviceResponse.Data;
@@ -177,7 +173,7 @@
 
             if (_PolicyTypes.Count() > 0)
             {
-                _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
+                _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
             }
             else { _itemsModules = new List<ModuleAction>([]); }
 
@@ -333,7 +329,7 @@
                 formData.Add(content, "file", file.Name);
 
 
-                var serviceResponse = await PolicyTypeService.ImportPolicyTypes(_iduser, formData);
+                var serviceResponse = await PolicyTypeService.ImportPolicyTypes(Useful.userId, formData);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -390,7 +386,7 @@
                 formData.Add(content, "file", file.Name);
 
 
-                var serviceResponse = await PolicyTypeService.ImportPolicyTypes(_iduser, formData);
+                var serviceResponse = await PolicyTypeService.ImportPolicyTypes(Useful.userId, formData);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -416,7 +412,7 @@
     
     private async Task ExportItemsAsync()
     {
-        var serviceResponse = await PolicyTypeService.ExportPolicyTypes(_iduser, _searchString);
+        var serviceResponse = await PolicyTypeService.ExportPolicyTypes(Useful.userId, _searchString);
         if (serviceResponse.Processed)
         {
             _success = true;
@@ -469,7 +465,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await PolicyTypeService.ActionsPolicyType(ActionList, _iduser);
+                var serviceResponse = await PolicyTypeService.ActionsPolicyType(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
 
@@ -529,7 +525,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await PolicyTypeService.ActionsPolicyType(ActionList, _iduser);
+                var serviceResponse = await PolicyTypeService.ActionsPolicyType(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
