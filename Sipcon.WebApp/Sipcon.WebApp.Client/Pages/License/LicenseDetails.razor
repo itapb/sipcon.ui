@@ -2,10 +2,6 @@
 @page "/licensedetails/{strLicenseId}"
 
 
-@using Sipcon.WebApp.Client.Models
-@using Sipcon.WebApp.Client.Services
-@using Sipcon.WebApp.Client.Utils
-@using Sipcon.WebApp.Client.Enum
 @using System.Text.Json
 
 
@@ -99,6 +95,7 @@
 
         <MudItem xs="12" sm="12">
             <MudDataGrid @ref="_mudDataGrid"
+                         T="LicenseDetail"
                          MultiSelection="true"
                          SelectedItems="@selectedLicenseDetail"
                          SortMode="SortMode.Multiple"
@@ -132,18 +129,18 @@
                     </MudMenu>
                 </ToolBarContent>
                 <Columns>
-                    <SelectColumn T="LicenseDetail" />
-                    <TemplateColumn T="LicenseDetail" Title="VIN">
+                    <SelectColumn  />
+                    <TemplateColumn  Title="VIN">
                         <CellTemplate>
                             <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.VIN.ToUpper()</MudText>
                         </CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn T="LicenseDetail" Title="CLIENTE">
+                    <TemplateColumn  Title="CLIENTE">
                         <CellTemplate>
                             <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.CustomerName.ToUpper() + " " + context.Item.CustomerLastName.ToUpper()) </MudText>
                         </CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn T="LicenseDetail" Title="AÑO">
+                    <TemplateColumn  Title="AÑO">
                         <CellTemplate>
                             <div class="d-flex justify-end">
                                 <MudText Typo="Typo.caption" Align="Align.End">
@@ -152,7 +149,7 @@
                             </div>
                         </CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn T="LicenseDetail" Title="MODELO">
+                    <TemplateColumn  Title="MODELO">
                         <CellTemplate>
                             <MudText Typo="Typo.caption" Align="Align.Start">
                                 @(context.Item.Model.ToUpper())
@@ -160,7 +157,7 @@
                         </CellTemplate>
                     </TemplateColumn>
 
-                    <TemplateColumn T="LicenseDetail" Title="ESTATUS">
+                    <TemplateColumn  Title="ESTATUS">
                         <CellTemplate>
                             <div class="d-flex justify-center">
                                 @if (context.Item.EstatusDetail != null)
@@ -219,7 +216,7 @@
                 </Columns>
 
                 <PagerContent>
-                    <MudDataGridPager T="LicenseDetail" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+                    <MudDataGridPager  PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
                 </PagerContent>
             </MudDataGrid>
 
@@ -266,8 +263,6 @@
     bool _success = false;
 
     private int _rowCount = 0;
-    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
-    // private int _supplierId = 4069; 
     private int _rowsTotal = 0; 
 
     private string _searchString = string.Empty;
@@ -289,7 +284,7 @@
     private async Task GetLicense()
     {
 
-        var serviceResponse = await LicenseService.GetLicense(Convert.ToInt32(strLicenseId), _iduser);
+        var serviceResponse = await LicenseService.GetLicense(Convert.ToInt32(strLicenseId), Useful.userId);
         if (serviceResponse.Processed)
         {
             _model = serviceResponse.Data ?? new License();
@@ -323,7 +318,7 @@
     private async Task GetLicenseDetails()
     {
         _loading = true;
-        var serviceResponse = await LicenseService.GetLicenseDetails(_iduser, Convert.ToInt32(strLicenseId), _rowCount, _searchString);
+        var serviceResponse = await LicenseService.GetLicenseDetails(Useful.userId, Convert.ToInt32(strLicenseId), _rowCount, _searchString);
         if (serviceResponse.Processed)
         {
             _LicenseDetails = serviceResponse.Data;
@@ -337,7 +332,7 @@
             _itemsModules = new List<ModuleAction>([]);
         }
 
-        _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
+        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
 
         await Task.Delay(50);
         StateHasChanged();
@@ -400,7 +395,7 @@
                 VIN = _VIN
             };  
             
-            var serviceResponse = await LicenseService.CreateLicenseDetail(_Detail, _iduser);
+            var serviceResponse = await LicenseService.CreateLicenseDetail(_Detail, Useful.userId);
             if (serviceResponse.Processed)
             {
                 _success = true;
@@ -451,7 +446,7 @@
 
             ActionList.Add(_Action);
             
-            var serviceResponse = await LicenseService.DeleteLicenseDetail(ActionList, _iduser);
+            var serviceResponse = await LicenseService.DeleteLicenseDetail(ActionList, Useful.userId);
             if (serviceResponse.Processed)
             {
                 _success = true;
@@ -554,7 +549,7 @@
                 formData.Add(content, "file", file.Name);
 
 
-                var serviceResponse = await LicenseService.ImportLicenseDetails(_iduser, Convert.ToInt32(strLicenseId), formData);
+                var serviceResponse = await LicenseService.ImportLicenseDetails(Useful.userId, Convert.ToInt32(strLicenseId), formData);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -584,7 +579,7 @@
     private async Task ExportItemsAsync()
     {
 
-        var serviceResponse = await LicenseService.ExportLicenseDetails(_iduser, Convert.ToInt32(strLicenseId), _searchString);
+        var serviceResponse = await LicenseService.ExportLicenseDetails(Useful.userId, Convert.ToInt32(strLicenseId), _searchString);
         if (serviceResponse.Processed)
         {
             _success = true;
@@ -638,7 +633,7 @@
                     ActionList.Add(_action);
                 }
 
-                var serviceResponse = await LicenseService.ActionsLicenseDetail(ActionList, _iduser);
+                var serviceResponse = await LicenseService.ActionsLicenseDetail(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -698,7 +693,7 @@
                     ActionList.Add(_Action);
                 }
 
-                var serviceResponse = await LicenseService.ActionsLicenseDetail(ActionList, _iduser);
+                var serviceResponse = await LicenseService.ActionsLicenseDetail(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -756,7 +751,7 @@
                     ActionList.Add(_Action);
                 }
 
-                var serviceResponse = await LicenseService.ActionsLicenseDetail(ActionList, _iduser);
+                var serviceResponse = await LicenseService.ActionsLicenseDetail(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -814,7 +809,7 @@
                     ActionList.Add(_Action);
                 }
 
-                var serviceResponse = await LicenseService.ActionsLicenseDetail(ActionList, _iduser);
+                var serviceResponse = await LicenseService.ActionsLicenseDetail(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;

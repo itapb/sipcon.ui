@@ -1,7 +1,4 @@
-﻿@using Sipcon.WebApp.Client.Models
-@using Sipcon.WebApp.Client.Enum
-@using Sipcon.WebApp.Client.Services
-
+﻿
 @inject ILicenseService LicenseService
 @inject IDialogService DialogService
 
@@ -21,31 +18,31 @@
     </MudItem>
 
     <MudItem xs="12">
-        <MudDataGrid @ref="LicenseDetailGrid" 
-            T="LicenseDetail" 
-            ServerData="ServerReload" 
-            Striped="true" 
-            Hover="true" 
-            Filterable="false" 
-            FixedHeader Height="calc(100vh - 400px)" 
-            @bind-CurrentPage="_CurrentPage">
+        <MudDataGrid @ref="LicenseDetailGrid"
+                     T="LicenseDetail"
+                     ServerData="ServerReload" 
+                     Striped="true" 
+                     Hover="true" 
+                     Filterable="false" 
+                     FixedHeader Height="calc(100vh - 400px)" 
+                     @bind-CurrentPage="_CurrentPage">
         <ToolBarContent>
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="_searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             <MudSpacer />
             <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshCatalog"></MudIconButton>
         </ToolBarContent>
         <Columns>
-            <TemplateColumn T="LicenseDetail" Title="VIN">
+            <TemplateColumn  Title="VIN">
                 <CellTemplate>
                     <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.VIN.ToUpper()</MudText>
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn T="LicenseDetail" Title="LICENCIA">
+            <TemplateColumn  Title="LICENCIA">
                 <CellTemplate>
                     <MudText Typo="Typo.caption" Inline="true" Style="font-weight:bold;">@context.Item.LicenseName.ToUpper()</MudText>
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn T="LicenseDetail" Title="ESTATUS">
+            <TemplateColumn  Title="ESTATUS">
                 <CellTemplate>
                     <div class="d-flex justify-center">
                         @if (context.Item.EstatusDetail != null)
@@ -92,7 +89,7 @@
             </TemplateColumn>
         </Columns>
         <PagerContent>
-            <MudDataGridPager T="LicenseDetail" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+            <MudDataGridPager  PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
         </PagerContent>
     </MudDataGrid>
     </MudItem>
@@ -110,7 +107,6 @@
     private string _searchString = string.Empty;
     private int _CurrentPage = 0;
     private int _rowCount = 0;
-    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
     private int _rowsTotal = 0;
 
     private async Task OnSearch(string text)

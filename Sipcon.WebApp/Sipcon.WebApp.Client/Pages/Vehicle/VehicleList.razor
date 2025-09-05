@@ -1,12 +1,7 @@
 ﻿@page "/vehicles"
 
-
-@using Sipcon.WebApp.Client.Models
-@using Sipcon.WebApp.Client.Services
-@using Sipcon.WebApp.Client.Utils
-@using Sipcon.WebApp.Client.Enum
+@using Sipcon.WebApp.Client.Components.Vehicle
 @using System.Text.Json
-
 
 @inject IVehicleService VehicleService
 @inject IDialogService DialogService
@@ -20,6 +15,7 @@
 <InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
 
 <MudDataGrid @ref="_mudDataGrid"
+             T="Vehicle"
              MultiSelection="true" 
              SelectedItems="@_selectedVehicles"
              SortMode="SortMode.Multiple"
@@ -53,8 +49,8 @@
         </MudMenu>
     </ToolBarContent>
     <Columns>
-        <SelectColumn T="Vehicle" />
-        <TemplateColumn T="Vehicle" Title="MARCA">
+        <SelectColumn  />
+        <TemplateColumn  Title="MARCA">
             <CellTemplate>
 
                 <div class="d-flex justify-center" style="height: 45px;">
@@ -66,12 +62,12 @@
 
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="Vehicle" Title="VIN">
+        <TemplateColumn  Title="VIN">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Vin.ToUpper()</MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="Vehicle" Title="PLACA">
+        <TemplateColumn  Title="PLACA">
             <CellTemplate>
 
                 <MudStack Row="false">
@@ -80,7 +76,7 @@
 
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="Vehicle" Title="AÑO">
+        <TemplateColumn  Title="AÑO">
             <CellTemplate>
                 <div class="d-flex justify-end">
                     <MudText Typo="Typo.caption" Align="Align.End">
@@ -90,7 +86,7 @@
             </CellTemplate>
         </TemplateColumn>
         <PropertyColumn Property="x => x.ColorName" Title="COLOR" Sortable="false" Filterable="false" />
-        <TemplateColumn T="Vehicle" Title="MODELO">
+        <TemplateColumn  Title="MODELO">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.Start">
                     @(context.Item.ModelName.ToUpper())
@@ -98,7 +94,7 @@
             </CellTemplate>
         </TemplateColumn>
         <PropertyColumn Property="x => x.SupplierName" Title="PLANTA" Sortable="false" Filterable="false" />
-        <TemplateColumn T="Vehicle" Title="ESTATUS">
+        <TemplateColumn  Title="ESTATUS">
             <CellTemplate>
                 <div class="d-flex justify-center">
                     @if (context.Item.EstatusName != null)
@@ -138,7 +134,7 @@
                 </div>
             </CellTemplate>
         </TemplateColumn>
-       @*  <TemplateColumn T="Vehicle" Title="Activo">
+       @*  <TemplateColumn  Title="Activo">
             <CellTemplate>
                 <div class="d-flex justify-center">
                     <MudIcon Icon="@(context.Item.IsActive ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.IsActive ? Color.Success : Color.Error)" Size="Size.Medium" />
@@ -153,7 +149,7 @@
         </TemplateColumn>
     </Columns>
     <PagerContent>
-        <MudDataGridPager T="Vehicle" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        <MudDataGridPager  PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
     </PagerContent>
 </MudDataGrid>
 
@@ -186,7 +182,6 @@
     bool _success = false;
 
     private int _rowCount = 0;
-    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
     private int _rowsTotal = 0; 
 
     private string _searchString = string.Empty;
@@ -219,7 +214,7 @@
     private async Task GetVehicles()
     {
         _loading = true;
-        var serviceResponse = await VehicleService.GetVehicles(_iduser, _rowCount, _searchString);
+        var serviceResponse = await VehicleService.GetVehicles(Useful.userId, _rowCount, _searchString);
         if (serviceResponse.Processed)
         {
             _Vehicles = serviceResponse.Data;
@@ -227,7 +222,7 @@
 
             if (_Vehicles.Count() > 0)
             {
-                _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
+                _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
             }
             else { _itemsModules = new List<ModuleAction>([]); }
         }
@@ -396,7 +391,7 @@
                 formData.Add(content, "file", file.Name);
 
 
-                var serviceResponse = await VehicleService.ImportVehicles(_iduser, formData);
+                var serviceResponse = await VehicleService.ImportVehicles(Useful.userId, formData);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -456,7 +451,7 @@
                 formData.Add(content, "file", file.Name);
            
 
-                var serviceResponse = await VehicleService.ImportVehicles(_iduser, formData);
+                var serviceResponse = await VehicleService.ImportVehicles(Useful.userId, formData);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -482,7 +477,7 @@
     private async Task ExportItemsAsync()
     {
 
-        var serviceResponse = await VehicleService.ExportVehicles(_iduser, _searchString);
+        var serviceResponse = await VehicleService.ExportVehicles(Useful.userId, _searchString);
         if (serviceResponse.Processed)
         {
             _success = true;
@@ -535,7 +530,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, _iduser);
+                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -593,7 +588,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, _iduser);
+                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -625,7 +620,7 @@
         
         if (_selectedVehicles.Any())
         {
-            var _DealerList = await ModuleActionsService.GetDealerOption(_iduser, 4069); //cambiar para el idSupplier logueado
+            var _DealerList = await ModuleActionsService.GetDealerOption(Useful.userId, Useful.supplierId); //cambiar para el idSupplier logueado
 
             DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
             var parameters = new DialogParameters<SelectItemDialog> { { x => x.SelectList, _DealerList }, { x => x.Title, "Asignar Concesionario Vehiculo..." } };
@@ -651,7 +646,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, _iduser);
+                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -709,7 +704,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, _iduser);
+                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -769,7 +764,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, _iduser);
+                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -826,7 +821,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, _iduser);
+                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;

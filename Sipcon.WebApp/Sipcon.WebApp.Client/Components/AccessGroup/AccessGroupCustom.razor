@@ -1,8 +1,4 @@
 ﻿
-@using Sipcon.WebApp.Client.Models
-@using Sipcon.WebApp.Client.Enum
-@using Sipcon.WebApp.Client.Services
-
 @inject ISecurityService SecurityService
 
 
@@ -21,21 +17,21 @@
             <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshCatalog"></MudIconButton>
         </ToolBarContent>
         <Columns>
-        <TemplateColumn T="AccessUserDetail" Title="CODIGO">
+        <TemplateColumn  Title="CODIGO">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">
                     @("#" + context.Item.AccessGroupId.ToString().PadLeft(10, '0'))
                 </MudText>
             </CellTemplate>
         </TemplateColumn>
-            <TemplateColumn T="AccessUserDetail" Title="GRUPO">
+            <TemplateColumn  Title="GRUPO">
                 <CellTemplate>
                     <MudText Typo="Typo.caption" Inline="true" Style="font-weight:bold;font-style:italic">
                     @context.Item.AccessGroup.ToUpper()
                     </MudText>
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn T="AccessUserDetail" Title="">
+            <TemplateColumn  Title="">
                 <CellTemplate>
                     <div class="d-flex justify-center">
                         @if (context.Item.Assign)
@@ -75,7 +71,7 @@
             </TemplateColumn>
         </Columns>
         <PagerContent>
-            <MudDataGridPager T="AccessUserDetail" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+            <MudDataGridPager  PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
         </PagerContent>
     </MudDataGrid>
 

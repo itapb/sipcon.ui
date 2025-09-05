@@ -1,7 +1,4 @@
-﻿@using Sipcon.WebApp.Client.Models
-@using Sipcon.WebApp.Client.Services
-
-
+﻿
 @inject IVehicleService VehicleService
 @inject IDialogService DialogService
 
@@ -21,19 +18,27 @@
     </MudItem>
 
     <MudItem xs="12">
-        <MudDataGrid @ref="VehicleGrid" T="Vehicle" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" FixedHeader Height="calc(100vh - 400px)" @bind-CurrentPage="_CurrentPage">
+        <MudDataGrid @ref="VehicleGrid"
+                     T="Vehicle"
+                     ServerData="ServerReload" 
+                     Striped="true" 
+                     Hover="true" 
+                     Filterable="false" 
+                     FixedHeader 
+                     Height="calc(100vh - 400px)" 
+                     @bind-CurrentPage="_CurrentPage">
         <ToolBarContent>
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="_searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             <MudSpacer />
             <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshCatalog"></MudIconButton>
         </ToolBarContent>
         <Columns>
-                <TemplateColumn T="Vehicle" Title="VIN">
+                <TemplateColumn  Title="VIN">
                     <CellTemplate>
                         <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Vin.ToUpper()</MudText>
                     </CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn T="Vehicle" Title="PLACA">
+                <TemplateColumn  Title="PLACA">
                     <CellTemplate>
 
                         <MudStack Row="false">
@@ -42,7 +47,7 @@
 
                     </CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn T="Vehicle" Title="ESTATUS">
+                <TemplateColumn  Title="ESTATUS">
                     <CellTemplate>
                         <div class="d-flex justify-center">
                             @if (context.Item.EstatusName != null)
@@ -89,7 +94,7 @@
             </TemplateColumn>
         </Columns>
         <PagerContent>
-            <MudDataGridPager T="Vehicle" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+            <MudDataGridPager  PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
         </PagerContent>
     </MudDataGrid>
     </MudItem>
@@ -108,7 +113,6 @@
     string _searchString = "";
     private int _CurrentPage = 0;
     private int _rowCount = 0;
-    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
     private int _rowsTotal = 0;
 
     private async Task OnSearch(string text)
@@ -132,7 +136,7 @@
     {
         _rowCount = state.Page * state.PageSize;
         IEnumerable<Vehicle> _Vehicles = new List<Vehicle>();
-        var serviceResponse = await VehicleService.GetVehiclesAvailables(_iduser, _rowCount, _searchString);
+        var serviceResponse = await VehicleService.GetVehiclesAvailables(Useful.userId, _rowCount, _searchString);
         if (serviceResponse.Processed)
         {
             _Vehicles = serviceResponse.Data;

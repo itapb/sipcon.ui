@@ -1,10 +1,6 @@
 ﻿@page "/accessgroup"
 
 
-@using Sipcon.WebApp.Client.Models
-@using Sipcon.WebApp.Client.Services
-@using Sipcon.WebApp.Client.Utils
-@using Sipcon.WebApp.Client.Enum
 @using Sipcon.WebApp.Client.Components.AccessGroup
 @using Sipcon.WebApp.Client.Components.License
 @using System.Text.Json
@@ -19,16 +15,17 @@
 <CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
 
 <MudDataGrid @ref="_mudDataGrid"
-MultiSelection="true" 
-SelectedItems="@selectedAccessGroup"
-SortMode="SortMode.Multiple"
-Filterable="true"
-FixedHeader Height="calc(98vh - 235px)"
-Hideable="true"
-Loading="_loading"
-Bordered="false"
-Dense="true"
-ServerData="LoadGridData">
+             T="AccessGroup"
+             MultiSelection="true" 
+             SelectedItems="@selectedAccessGroup"
+             SortMode="SortMode.Multiple"
+             Filterable="true"
+             FixedHeader Height="calc(98vh - 235px)"
+             Hideable="true"
+             Loading="_loading"
+             Bordered="false"
+             Dense="true"
+             ServerData="LoadGridData">
 
     <ToolBarContent>
         <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddAccessGroup()"></MudIconButton>
@@ -51,20 +48,20 @@ ServerData="LoadGridData">
         </MudMenu>
     </ToolBarContent>
     <Columns>
-        <SelectColumn T="AccessGroup" />
-        <TemplateColumn T="AccessGroup" Title="ROL">
+        <SelectColumn  />
+        <TemplateColumn  Title="ROL">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Inline="true" Style="font-weight:bold;">@context.Item.Name.ToUpper()</MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="AccessGroup" Title="CODIGO">
+        <TemplateColumn  Title="CODIGO">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">
                     @("#" + context.Item.Id.ToString().PadLeft(10, '0'))
                 </MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="AccessGroup" Title="ACTIVO">
+        <TemplateColumn  Title="ACTIVO">
 
             <CellTemplate>
                 <div class="d-flex justify-center">
@@ -83,7 +80,7 @@ ServerData="LoadGridData">
     </Columns>
 
     <PagerContent>
-        <MudDataGridPager T="AccessGroup" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        <MudDataGridPager  PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
     </PagerContent>
 </MudDataGrid>
 
@@ -117,7 +114,6 @@ ServerData="LoadGridData">
     bool _success = false;
 
     private int _rowCount = 0;
-    private int _supplierId = 4069; 
     private int _rowsTotal = 0; 
 
     private string _searchString = string.Empty;
@@ -134,7 +130,6 @@ ServerData="LoadGridData">
         new("Seguridad", href: "#", icon: Icons.Material.Filled.Security, disabled:true),
         new("Roles",  href: "AccessGroup", icon: Icons.Material.Filled.VerifiedUser, disabled: true),
     ];
-
 
 
 

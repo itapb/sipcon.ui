@@ -1,10 +1,6 @@
 ﻿@page "/policy"
 
-
-@using Sipcon.WebApp.Client.Models
-@using Sipcon.WebApp.Client.Services
-@using Sipcon.WebApp.Client.Utils
-@using Sipcon.WebApp.Client.Enum
+@using Sipcon.WebApp.Client.Components.Policy
 @using System.Text.Json
 
 
@@ -15,20 +11,20 @@
 
 
 <PageTitle>Poliza</PageTitle>
-@* <MudBreadcrumbs Items="_itemsNavigate"></MudBreadcrumbs> *@
 <CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
 
 <MudDataGrid @ref="_mudDataGrid"
-MultiSelection="true" 
-SelectedItems="@selectedPolicy"
-SortMode="SortMode.Multiple"
-Filterable="true"
-FixedHeader Height="calc(92vh - 235px)"
-Hideable="true"
-Loading="_loading"
-Bordered="false"
-Dense="true"
-ServerData="LoadGridData">
+             T="Policy"
+             MultiSelection="true" 
+             SelectedItems="@selectedPolicy"
+             SortMode="SortMode.Multiple"
+             Filterable="true"
+             FixedHeader Height="calc(92vh - 235px)"
+             Hideable="true"
+             Loading="_loading"
+             Bordered="false"
+             Dense="true"
+             ServerData="LoadGridData">
 
     <ToolBarContent>
         <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddPolicy()"></MudIconButton>
@@ -51,43 +47,33 @@ ServerData="LoadGridData">
         </MudMenu>
     </ToolBarContent>
     <Columns>
-        <SelectColumn T="Policy" />
-        <TemplateColumn T="Policy" Title="POLIZA">
+        <SelectColumn  />
+        <TemplateColumn  Title="POLIZA">
             <CellTemplate>
-
                 <MudText Typo="Typo.caption" Align="Align.End">@context.Item.Number</MudText>
-
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="Policy" Title="VIN">
+        <TemplateColumn  Title="VIN">
             <CellTemplate>
-
                 <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Vin.ToUpper()</MudText>
-
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="Policy" Title="PLACA">
+        <TemplateColumn  Title="PLACA">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.Start"><b>@context.Item.Plate.ToUpper()</b></MudText>
             </CellTemplate>
         </TemplateColumn>
-        @* <PropertyColumn Property="x => x.Vat" Title="RIF" Sortable="false" Filterable="false" /> *@
-        <TemplateColumn T="Policy" Title="CLIENTE">
+        <TemplateColumn  Title="CLIENTE">
             <CellTemplate>
-
                 <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.FirstName.ToUpper() + " " + context.Item.LastName.ToUpper()) </MudText>
-
-
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="Policy" Title="CONCESIONARIO">
+        <TemplateColumn  Title="CONCESIONARIO">
             <CellTemplate>
-
                 <MudText Typo="Typo.caption" Align="Align.Start">@context.Item.DealerCod.ToUpper()</MudText>
-
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="Policy" Title="ESTATUS" >
+        <TemplateColumn  Title="ESTATUS" >
             <CellTemplate>
                 <div class="d-flex justify-center" >
                     @if (context.Item.ExpirationDate is not null)
@@ -136,15 +122,6 @@ ServerData="LoadGridData">
 
             </CellTemplate>
         </TemplateColumn>
-
-        @*  <TemplateColumn T="Policy" Title="FECHA EXP.">
-
-            <CellTemplate>
-                <div class="d-flex justify-center">
-                    <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.ExpirationDate is null ? "" : context.Item.ExpirationDate.Value.ToString("dd-MMM-yyyy")) </MudText>
-                </div>
-            </CellTemplate>
-        </TemplateColumn> *@
         <TemplateColumn >
             <CellTemplate>
                 <MudStack Row="true">
@@ -163,7 +140,7 @@ ServerData="LoadGridData">
     </Columns>
 
     <PagerContent>
-        <MudDataGridPager T="Policy" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        <MudDataGridPager  PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
     </PagerContent>
 </MudDataGrid>
 
@@ -197,7 +174,6 @@ ServerData="LoadGridData">
     bool _success = false;
 
     private int _rowCount = 0;
-    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
     private int _rowsTotal = 0; 
 
     private string _searchString = string.Empty;
@@ -228,7 +204,7 @@ ServerData="LoadGridData">
     private async Task GetPolicys()
     {
         _loading = true;
-        var serviceResponse = await PolicyService.GetPolicys(_iduser, _rowCount, _searchString);
+        var serviceResponse = await PolicyService.GetPolicys(Useful.userId, _rowCount, _searchString);
         if (serviceResponse.Processed)
         {
             _Policys = serviceResponse.Data;
@@ -236,7 +212,7 @@ ServerData="LoadGridData">
 
             if (_Policys.Count() > 0)
             {
-                _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
+                _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
             }
             else { _itemsModules = new List<ModuleAction>([]); }
 
@@ -304,7 +280,7 @@ ServerData="LoadGridData">
 
     private async Task ClickExportPdf(Policy item)
     {
-        var serviceResponse = await PolicyService.ExportPdfPolicy(_iduser, item.Id);
+        var serviceResponse = await PolicyService.ExportPdfPolicy(Useful.userId, item.Id);
         if (serviceResponse.Processed)
         {
             _success = true;
@@ -377,7 +353,7 @@ ServerData="LoadGridData">
 
     private async Task ExportItemsAsync()
     {
-        var serviceResponse = await PolicyService.ExportPolicys(_iduser, _searchString);
+        var serviceResponse = await PolicyService.ExportPolicys(Useful.userId, _searchString);
         if (serviceResponse.Processed)
         {
             _success = true;
@@ -397,29 +373,6 @@ ServerData="LoadGridData">
 
         }
     }
-
-    // private async Task ExportPdfAsync()
-    // {
-    //     var serviceResponse = await PolicyService.ExportPdfPolicy(_iduser, _iduser);
-    //     if (serviceResponse.Processed)
-    //     {
-    //         _success = true;
-    //         _nestedErrorMessage = "";
-
-    //         var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
-    //         var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
-    //         await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Poliza.xlsx");
-
-    //     }
-    //     else
-    //     {
-    //         _success = false;
-    //         _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue();
-    //         Console.WriteLine(serviceResponse.Message);
-    //         OpenNested();
-
-    //     }
-    // }
 
     private async Task ActivateItemsAsync(int moduleId, string moduleActionName)
     {
@@ -453,7 +406,7 @@ ServerData="LoadGridData">
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await PolicyService.ActionsPolicy(ActionList, _iduser);
+                var serviceResponse = await PolicyService.ActionsPolicy(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
 
@@ -512,7 +465,7 @@ ServerData="LoadGridData">
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await PolicyService.ActionsPolicy(ActionList, _iduser);
+                var serviceResponse = await PolicyService.ActionsPolicy(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -571,7 +524,7 @@ ServerData="LoadGridData">
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await PolicyService.ActionsPolicy(ActionList, _iduser);
+                var serviceResponse = await PolicyService.ActionsPolicy(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
 
@@ -630,7 +583,7 @@ ServerData="LoadGridData">
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await PolicyService.ActionsPolicy(ActionList, _iduser);
+                var serviceResponse = await PolicyService.ActionsPolicy(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;

@@ -1,10 +1,5 @@
 ﻿@page "/accessuser"
 
-
-@using Sipcon.WebApp.Client.Models
-@using Sipcon.WebApp.Client.Services
-@using Sipcon.WebApp.Client.Utils
-@using Sipcon.WebApp.Client.Enum
 @using Sipcon.WebApp.Client.Components.AccessUser
 @using System.Text.Json
 
@@ -18,16 +13,17 @@
 <CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
 
 <MudDataGrid @ref="_mudDataGrid"
-MultiSelection="true" 
-SelectedItems="@selectedAccessGroup"
-SortMode="SortMode.Multiple"
-Filterable="true"
-FixedHeader Height="calc(98vh - 235px)"
-Hideable="true"
-Loading="_loading"
-Bordered="false"
-Dense="true"
-ServerData="LoadGridData">
+             T="AccessUserDetail"
+             MultiSelection="true" 
+             SelectedItems="@selectedAccessGroup"
+             SortMode="SortMode.Multiple"
+             Filterable="true"
+             FixedHeader Height="calc(98vh - 235px)"
+             Hideable="true"
+             Loading="_loading"
+             Bordered="false"
+             Dense="true"
+             ServerData="LoadGridData">
 
     <ToolBarContent>
         <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddUserAsync()"></MudIconButton>
@@ -50,8 +46,8 @@ ServerData="LoadGridData">
         </MudMenu>
     </ToolBarContent>
     <Columns>
-        <SelectColumn T="AccessUserDetail" />
-        <TemplateColumn T="AccessUserDetail" Title="USUARIO">
+        <SelectColumn  />
+        <TemplateColumn  Title="USUARIO">
             <CellTemplate>
                 <MudStack Row="true">
                     <MudAvatar Color="Color.Dark">@(string.IsNullOrEmpty(context.Item.Login) ? "U" : context.Item.Login.ToUpper().Substring(0, 1))</MudAvatar>
@@ -60,12 +56,12 @@ ServerData="LoadGridData">
 
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="AccessUserDetail" Title="NOMBRES Y APELLIDOS">
+        <TemplateColumn  Title="NOMBRES Y APELLIDOS">
             <CellTemplate>
                 <MudChatBubble Style="min-width: 250px;">@(context.Item.UserName.ToUpper() + " " + context.Item.UserLastName.ToUpper())</MudChatBubble>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="AccessUserDetail" Title="CODIGO">
+        <TemplateColumn  Title="CODIGO">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">
                     @("#" + context.Item.UserId.ToString().PadLeft(10, '0'))
@@ -89,7 +85,7 @@ ServerData="LoadGridData">
     </Columns>
 
     <PagerContent>
-        <MudDataGridPager T="AccessUserDetail" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        <MudDataGridPager  PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
     </PagerContent>
 </MudDataGrid>
 
@@ -141,8 +137,6 @@ ServerData="LoadGridData">
         new("Seguridad", href: "#", icon: Icons.Material.Filled.Security, disabled:true),
         new("Usuarios",  href: "accessuser", icon: Icons.Material.Filled.VerifiedUser, disabled: true),
     ];
-
-
 
 
     private async Task<GridData<AccessUserDetail>> LoadGridData(GridState<AccessUserDetail> state)

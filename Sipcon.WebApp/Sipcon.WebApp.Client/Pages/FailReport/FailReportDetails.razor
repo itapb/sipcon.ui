@@ -2,13 +2,10 @@
 @page "/failreportdetail/{IdFailReport}"
 
 
-@using Sipcon.WebApp.Client.Services
+
 @using System.Text.RegularExpressions
 @using System.ComponentModel.DataAnnotations
-@using Sipcon.WebApp.Client.Utils
-@using Sipcon.WebApp.Client.Enum
 @using Sipcon.WebApp.Client.Components.FailReport
-
 @using FluentValidation
 @using System.Globalization
 
@@ -706,7 +703,6 @@
     private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
 
     private string _moduleName = "SERVICIOS-REPORTE FALLA";
-    private int _idDealer = 5103;
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
     
@@ -785,7 +781,7 @@
     private async Task GetFailReport()
     {
         _itemsModules = new List<ModuleAction>([]);
-        var serviceResponse = await FailReportService.GetFailReport(Useful.userId, _idDealer, Convert.ToInt32(IdFailReport));
+        var serviceResponse = await FailReportService.GetFailReport(Useful.userId, Useful.dealerId, Convert.ToInt32(IdFailReport));
         if (serviceResponse.Processed)
         {
             _model = serviceResponse.Data ?? new FailReport();
@@ -1079,7 +1075,7 @@
 
     private async Task ExportItemsAsync()
     {
-        var serviceResponse = await FailReportService.ExportFailReports(Useful.userId, _model.DealerId ?? 0, _model.VIN);
+        var serviceResponse = await FailReportService.ExportFailReports(Useful.userId, _model.DealerId ?? Useful.dealerId, _model.VIN);
         if (serviceResponse.Processed)
         {
             _success = true;

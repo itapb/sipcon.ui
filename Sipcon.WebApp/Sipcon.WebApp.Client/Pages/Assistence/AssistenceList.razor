@@ -1,10 +1,7 @@
 ﻿@page "/assistence"
 
 
-@using Sipcon.WebApp.Client.Models
-@using Sipcon.WebApp.Client.Services
-@using Sipcon.WebApp.Client.Utils
-@using Sipcon.WebApp.Client.Enum
+@using Sipcon.WebApp.Client.Components.Assistence
 @using System.Text.Json
 
 
@@ -13,22 +10,25 @@
 @inject UtilModuleActions ModuleActionsService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager UriHelper
+@inject HubEventsService hubEventsService
+@implements IDisposable
 
 
 <PageTitle>Asistencia</PageTitle>
 <CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
 
 <MudDataGrid @ref="_mudDataGrid"
-MultiSelection="true" 
-SelectedItems="@selectedAssistence"
-SortMode="SortMode.Multiple"
-Filterable="true"
-FixedHeader Height="calc(92vh - 235px)"
-Hideable="true"
-Loading="_loading"
-Bordered="false"
-Dense="true"
-ServerData="LoadGridData">
+             T="Assistence"
+             MultiSelection="true" 
+             SelectedItems="@selectedAssistence"
+             SortMode="SortMode.Multiple"
+             Filterable="true"
+             FixedHeader Height="calc(92vh - 235px)"
+             Hideable="true"
+             Loading="_loading"
+             Bordered="false"
+             Dense="true"
+             ServerData="LoadGridData">
 
     <ToolBarContent>
         <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddAssistence()"></MudIconButton>
@@ -51,23 +51,23 @@ ServerData="LoadGridData">
         </MudMenu>
     </ToolBarContent>
     <Columns>
-        <SelectColumn T="Assistence" />
-        <TemplateColumn T="Assistence" Title="ORDEN">
+        <SelectColumn  />
+        <TemplateColumn  Title="ORDEN">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.End">@context.Item.OrderNumber</MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="Assistence" Title="VIN">
+        <TemplateColumn  Title="VIN">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Vin.ToUpper()</MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="Assistence" Title="PLACA">
+        <TemplateColumn  Title="PLACA">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.Start"><b>@context.Item.Plate.ToUpper()</b></MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="Assistence" Title="KM" >
+        <TemplateColumn  Title="KM" >
             <CellTemplate>
                 <div class="d-flex justify-end">
                     <MudText Typo="Typo.caption" Align="Align.End">
@@ -76,24 +76,17 @@ ServerData="LoadGridData">
                 </div>
             </CellTemplate>
         </TemplateColumn>
-        @* <PropertyColumn Property="x => x.Vat" Title="RIF" Sortable="false" Filterable="false" /> *@
-       @*  <TemplateColumn T="Assistence" Title="CLIENTE">
-            <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.CustomerName.ToUpper() + " " + context.Item.CustomerLastName.ToUpper()) </MudText>
-            </CellTemplate>
-        </TemplateColumn> *@
-        <TemplateColumn T="Assistence" Title="COD. CONC.">
+        <TemplateColumn  Title="COD. CONC.">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.DealerServiceCod.ToUpper())</MudText>
             </CellTemplate>
         </TemplateColumn>
-        @* <PropertyColumn Property="x => x.ServiceTypeName" Title="SERVICIO" Sortable="false" Filterable="false" /> *@
-        <TemplateColumn T="Assistence" Title="FECHA">
+        <TemplateColumn  Title="FECHA">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.ServiceDate?.ToString("dd MMM yyyy"))</MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="Assistence" Title="ESTATUS">
+        <TemplateColumn  Title="ESTATUS">
             <CellTemplate>
                 <div class="d-flex justify-center">
                     @if (context.Item.EstatusName != null)
@@ -136,8 +129,6 @@ ServerData="LoadGridData">
         <TemplateColumn >
             <CellTemplate>
                 <MudStack Row="true">
-                    
-                    @* OnClick="() => ClickEditAssistence(context.Item)" *@
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" Href="@(" assistencedetail/" + context.Item.Id)" />
                 </MudStack>
 
@@ -146,7 +137,7 @@ ServerData="LoadGridData">
     </Columns>
 
     <PagerContent>
-        <MudDataGridPager T="Assistence" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        <MudDataGridPager  PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
     </PagerContent>
 </MudDataGrid>
 
@@ -180,8 +171,6 @@ ServerData="LoadGridData">
     bool _success = false;
 
     private int _rowCount = 0;
-    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
-    private int _iddealer = 5103; // Cambia esto por el ID del usuario que estás utilizando
     private int _rowsTotal = 0; 
 
     private string _searchString = string.Empty;
@@ -199,6 +188,25 @@ ServerData="LoadGridData">
     ];
 
 
+    protected override async Task OnInitializedAsync()
+    {
+        hubEventsService.OnDealerChanged += ReloadServerData;
+        await Task.CompletedTask;
+    }
+
+    private async Task ReloadServerData()
+    {
+        if (_mudDataGrid != null)
+        {
+            await _mudDataGrid!.ReloadServerData();
+        }
+    }
+
+    public void Dispose()
+    {
+        hubEventsService.OnDealerChanged -= ReloadServerData;
+    }
+
     private async Task<GridData<Assistence>> LoadGridData(GridState<Assistence> state)
     {
 
@@ -212,7 +220,7 @@ ServerData="LoadGridData">
     private async Task GetAssistences()
     {
         _loading = true;
-        var serviceResponse = await AssistenceService.GetAssistences(_iduser, _iddealer, _rowCount, _searchString);
+        var serviceResponse = await AssistenceService.GetAssistences(Useful.userId, Useful.dealerId, _rowCount, _searchString);
         if (serviceResponse.Processed)
         {
             _Assistences = serviceResponse.Data;
@@ -220,7 +228,7 @@ ServerData="LoadGridData">
 
             if (_Assistences.Count() > 0)
             {
-                _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
+                _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
             }
             else { _itemsModules = new List<ModuleAction>([]); }
 
@@ -327,7 +335,7 @@ ServerData="LoadGridData">
 
     private async Task ExportItemsAsync()
     {
-        var serviceResponse = await AssistenceService.ExportAssistences(_iduser, _iddealer, _searchString);
+        var serviceResponse = await AssistenceService.ExportAssistences(Useful.userId, Useful.dealerId, _searchString);
         if (serviceResponse.Processed)
         {
             _success = true;
@@ -381,7 +389,7 @@ ServerData="LoadGridData">
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, _iduser);
+                var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
 
@@ -442,7 +450,7 @@ ServerData="LoadGridData">
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, _iduser);
+                var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
 
@@ -515,7 +523,7 @@ ServerData="LoadGridData">
                         ActionList.Add(VehicleAction);
                     }
 
-                    var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, _iduser);
+                    var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, Useful.userId);
                     if (serviceResponse.Processed)
                     {
 
@@ -589,7 +597,7 @@ ServerData="LoadGridData">
                         ActionList.Add(Action);
                     }
 
-                    var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, _iduser);
+                    var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, Useful.userId);
                     if (serviceResponse.Processed)
                     {
 

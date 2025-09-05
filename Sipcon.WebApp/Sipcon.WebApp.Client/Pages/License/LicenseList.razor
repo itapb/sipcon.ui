@@ -1,10 +1,6 @@
 ﻿@page "/license"
 
 
-@using Sipcon.WebApp.Client.Models
-@using Sipcon.WebApp.Client.Services
-@using Sipcon.WebApp.Client.Utils
-@using Sipcon.WebApp.Client.Enum
 @using Sipcon.WebApp.Client.Components.License
 @using System.Text.Json
 
@@ -13,21 +9,24 @@
 @inject IDialogService DialogService
 @inject UtilModuleActions ModuleActionsService
 @inject IJSRuntime JSRuntime
+@inject HubEventsService hubEventsService
+@implements IDisposable
 
 <PageTitle>Licencia</PageTitle>
 <CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
 
 <MudDataGrid @ref="_mudDataGrid"
-MultiSelection="true" 
-SelectedItems="@selectedLicense"
-SortMode="SortMode.Multiple"
-Filterable="true"
-FixedHeader Height="calc(92vh - 235px)"
-Hideable="true"
-Loading="_loading"
-Bordered="false"
-Dense="true"
-ServerData="LoadGridData">
+             T="License"
+             MultiSelection="true" 
+             SelectedItems="@selectedLicense"
+             SortMode="SortMode.Multiple"
+             Filterable="true"
+             FixedHeader Height="calc(92vh - 235px)"
+             Hideable="true"
+             Loading="_loading"
+             Bordered="false"
+             Dense="true"
+             ServerData="LoadGridData">
 
     <ToolBarContent>
         <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddLicense()"></MudIconButton>
@@ -50,28 +49,28 @@ ServerData="LoadGridData">
         </MudMenu>
     </ToolBarContent>
     <Columns>
-        <SelectColumn T="License" />
-        <TemplateColumn T="License" Title="NRO.">
+        <SelectColumn  />
+        <TemplateColumn  Title="NRO.">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@("#" + context.Item.Id.ToString())</MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="License" Title="DESCRIP.">
+        <TemplateColumn  Title="DESCRIP.">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Inline="true" Style="font-weight:bold;">@context.Item.Description.ToUpper()</MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="License" Title="TIPO">
+        <TemplateColumn  Title="TIPO">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.Start"><b>@context.Item.Type.ToUpper()</b></MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="License" Title="EXPIRACION">
+        <TemplateColumn  Title="EXPIRACION">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.ExpirationDate?.ToString("dd MMM yyyy"))</MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="License" Title="ESTATUS">
+        <TemplateColumn  Title="ESTATUS">
             <CellTemplate>
                 <div class="d-flex justify-center">
                     @if (context.Item.EstatusName != null)
@@ -122,7 +121,7 @@ ServerData="LoadGridData">
     </Columns>
 
     <PagerContent>
-        <MudDataGridPager T="License" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        <MudDataGridPager  PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
     </PagerContent>
 </MudDataGrid>
 
@@ -156,8 +155,6 @@ ServerData="LoadGridData">
     bool _success = false;
 
     private int _rowCount = 0;
-    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
-    private int _supplierId = 4069; 
     private int _rowsTotal = 0; 
 
     private string _searchString = string.Empty;
@@ -174,6 +171,24 @@ ServerData="LoadGridData">
         new("Licencia",  href: "license", disabled: false, icon: Icons.Material.Filled.CarCrash),
     ];
 
+    protected override async Task OnInitializedAsync()
+    {
+        hubEventsService.OnSupplierChanged += ReloadServerData;
+        await Task.CompletedTask;
+    }
+
+    private async Task ReloadServerData()
+    {
+        if (_mudDataGrid != null)
+        {
+            await _mudDataGrid!.ReloadServerData();
+        }
+    }
+
+    public void Dispose()
+    {
+        hubEventsService.OnSupplierChanged -= ReloadServerData;
+    }
 
     private async Task<GridData<License>> LoadGridData(GridState<License> state)
     {
@@ -188,7 +203,7 @@ ServerData="LoadGridData">
     private async Task GetLicenses()
     {
         _loading = true;
-        var serviceResponse = await LicenseService.GetLicenses(_iduser, _supplierId, _rowCount, _searchString);
+        var serviceResponse = await LicenseService.GetLicenses(Useful.userId, Useful.supplierId, _rowCount, _searchString);
         if (serviceResponse.Processed)
         {
             _Licenses = serviceResponse.Data;
@@ -196,7 +211,7 @@ ServerData="LoadGridData">
 
             if (_Licenses.Count() > 0)
             {
-                _itemsModules = await ModuleActionsService.GetModuleActions(_iduser, _moduleName);
+                _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
             }
             else { _itemsModules = new List<ModuleAction>([]); }
 
@@ -249,7 +264,7 @@ ServerData="LoadGridData">
     {
         DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
 
-        var parameters = new DialogParameters<LicenseDialog> { { x => x.IdLicense, 0 }, { x => x.IdSupplier, _supplierId }, { x => x.ActionsModal, ActionsEnum.Create } };
+        var parameters = new DialogParameters<LicenseDialog> { { x => x.IdLicense, 0 }, { x => x.IdSupplier, Useful.supplierId }, { x => x.ActionsModal, ActionsEnum.Create } };
         var dialog = await DialogService.ShowAsync<LicenseDialog>("License", parameters, options);
         var result = await dialog.Result;
         if (!result!.Canceled)
@@ -315,7 +330,7 @@ ServerData="LoadGridData">
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await LicenseService.ActionsLicense(ActionList, _iduser);
+                var serviceResponse = await LicenseService.ActionsLicense(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -374,7 +389,7 @@ ServerData="LoadGridData">
                     ActionList.Add(_action);
                 }
 
-                var serviceResponse = await LicenseService.ActionsLicense(ActionList, _iduser);
+                var serviceResponse = await LicenseService.ActionsLicense(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;

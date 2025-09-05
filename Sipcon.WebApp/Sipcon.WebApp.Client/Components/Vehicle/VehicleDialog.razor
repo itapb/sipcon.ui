@@ -1,7 +1,4 @@
-﻿@using Sipcon.WebApp.Client.Models
-@using Sipcon.WebApp.Client.Services
-@using Sipcon.WebApp.Client.Utils
-@using Sipcon.WebApp.Client.Enum
+﻿
 @using FluentValidation
 
 
@@ -365,7 +362,6 @@
     private string _errorModalMessage = string.Empty;
     private bool _nestedModalVisible;
     bool _successModal = false;
-    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
 
     private IEnumerable<SelectOption> _ColorList { get; set; } = new List<SelectOption>();
     private IEnumerable<SelectOption> _ModelList { get; set; } = new List<SelectOption>();
@@ -386,12 +382,12 @@
         {
             _model = new Vehicle();
 
-            _ColorList = await ModuleActionsService.GetColorOption(_iduser);
+            _ColorList = await ModuleActionsService.GetColorOption(Useful.userId);
             
-            _brandList = await ModuleActionsService.GetBrandOption(_iduser);
-            // _SupplierList = await ModuleActionsService.GetSupplierOption(_iduser);
-            // _ModelList = await ModuleActionsService.GetModelOption(_iduser);
-            // _DealerList = await ModuleActionsService.GetDealerOption(_iduser);
+            _brandList = await ModuleActionsService.GetBrandOption(Useful.userId);
+            // _SupplierList = await ModuleActionsService.GetSupplierOption(Useful.userId);
+            // _ModelList = await ModuleActionsService.GetModelOption(Useful.userId);
+            // _DealerList = await ModuleActionsService.GetDealerOption(Useful.userId);
 
             await Task.Delay(100);
            
@@ -406,17 +402,17 @@
 
     private async Task GetVehicle()
     {
-        var serviceResponse = await VehicleService.GetVehicle(IdVehicle, _iduser);
+        var serviceResponse = await VehicleService.GetVehicle(IdVehicle, Useful.userId);
         if (serviceResponse.Processed)
         {
             _model = serviceResponse.Data ?? new Vehicle();
 
-            _ColorList = await ModuleActionsService.GetColorOption(_iduser);
-            _brandList = await ModuleActionsService.GetBrandOption(_iduser);
-            _supplierList = await ModuleActionsService.GetSupplierOption(_iduser, _model.BrandId ?? 0);
-            _ModelList = await ModuleActionsService.GetModelOption(_iduser, _model.BrandId ?? 0);
+            _ColorList = await ModuleActionsService.GetColorOption(Useful.userId);
+            _brandList = await ModuleActionsService.GetBrandOption(Useful.userId);
+            _supplierList = await ModuleActionsService.GetSupplierOption(Useful.userId, _model.BrandId ?? 0);
+            _ModelList = await ModuleActionsService.GetModelOption(Useful.userId, _model.BrandId ?? 0);
 
-            _DealerList = await ModuleActionsService.GetDealerOption(_iduser, _model.SupplierId ?? 0);
+            _DealerList = await ModuleActionsService.GetDealerOption(Useful.userId, _model.SupplierId ?? 0);
 
 
             await Task.Delay(100);
@@ -441,8 +437,8 @@
         
         _model.BrandId = BrandId;
         _model.ModelId = null;
-        _supplierList = await ModuleActionsService.GetSupplierOption(_iduser, BrandId);
-        _ModelList = await ModuleActionsService.GetModelOption(_iduser, BrandId);
+        _supplierList = await ModuleActionsService.GetSupplierOption(Useful.userId, BrandId);
+        _ModelList = await ModuleActionsService.GetModelOption(Useful.userId, BrandId);
         
         await Task.Delay(50);
         
@@ -470,7 +466,7 @@
         {
             _errorModalMessage = "";
 
-            var serviceResponse = await VehicleService.UpdateVehicle(_model, _iduser);
+            var serviceResponse = await VehicleService.UpdateVehicle(_model, Useful.userId);
             if (serviceResponse.Processed)
             {
                 if (ActionsModal == ActionsEnum.Create)
