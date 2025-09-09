@@ -1,8 +1,7 @@
-@using Sipcon.WebApp.Client.Services
+@using Sipcon.WebApp.Client.Pages
+@using Sipcon.WebApp.Client.Components.Vehicle
 @using System.Text.RegularExpressions
 @using System.ComponentModel.DataAnnotations
-@using Sipcon.WebApp.Client.Utils
-@using Sipcon.WebApp.Client.Enum
 @using FluentValidation
 @using System.Globalization
 
@@ -216,20 +215,6 @@
 												  ReadOnly="@(!_model.IsActive || _isReadOnly || ActionsModal != ActionsEnum.Create)"
 												  Disabled="@(!_model.IsActive || _isReadOnly || ActionsModal != ActionsEnum.Create)" />
 
-
-									@* <MudTextField Typo="Typo.caption" @bind-Value="_searchVin"
-													  Placeholder="Buscar"
-													  OnKeyUp="HandleKeyDownSearchVehicle"
-													  OnAdornmentClick="() => ClicSearchVehicle()"
-													  Adornment="Adornment.End"
-													  AdornmentIcon="@Icons.Material.Filled.Search"
-													  IconSize="Size.Medium"
-													  MaxLength="20"
-													  Margin="Margin.Dense"
-													  ReadOnly="@(!_model.IsActive || _isReadOnly)"
-													  Disabled="@(!_model.IsActive || _isReadOnly)" /> *@
-
-
 									<MudStack Row="true">
 
 										<MudTextField Typo="Typo.caption" @bind-Value="@_model.Plate"
@@ -254,19 +239,7 @@
 
 
 									<MudStack Row="true">
-
-										@* <MudTextField Typo="Typo.caption" @bind-Value="@_model.DealerName"
-													  Label="Concesionario"
-													  Variant="Variant.Text"
-													  Margin="Margin.Dense"
-													  ReadOnly="true" />
-
-										<MudTextField Typo="Typo.caption" @bind-Value="@_model.SupplierName"
-													  Label="Planta"
-													  Variant="Variant.Text"
-													  Margin="Margin.Dense"
-													  ReadOnly="true" /> *@
-
+										
 										<MudTextField Typo="Typo.caption" @bind-Value="@_model.BrandName"
 													  Label="Marca"
 													  Variant="Variant.Text"
@@ -327,18 +300,6 @@
 								<MudCardContent Style="padding-top: 0px;">
 									<MudHidden @bind-Value="_model.CustomerId" />
 									<MudText Class="nested" Color="Color.Error" Style="font-weight:bold;font-style:italic;"><p>@_errorSearchContact</p> </MudText>
-
-									@* <MudTextField Typo="Typo.caption" @bind-Value="@_searchVat"
-												  Placeholder="Buscar"
-												  OnKeyUp="HandleKeyDownSearchContact"
-												  OnAdornmentClick="() => ClicSearchContact()"
-												  Adornment="Adornment.End"
-												  AdornmentIcon="@Icons.Material.Filled.Search"
-												  IconSize="Size.Medium"
-												  MaxLength="12"
-												  Margin="Margin.Dense"
-												  ReadOnly="@(!_model.IsActive || _isReadOnly)"
-												  Disabled="@(!_model.IsActive || _isReadOnly)" /> *@
 
 									<MudTextField Typo="Typo.caption" @bind-Value="_model.Vat"
 												  Label="RIF"
@@ -539,8 +500,6 @@
 
 	bool _isReadOnly = false;
 
-	private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
-
 	private IEnumerable<SelectOption> _PayMethodList { get; set; } = new List<SelectOption>();
 
 
@@ -557,7 +516,7 @@
 			_model = new Policy();
 			_isReadOnly = false;
 
-			_PayMethodList = await ModuleActionsService.GetPayMethodOption(_iduser);
+			_PayMethodList = await ModuleActionsService.GetPayMethodOption(Useful.userId);
 
 			await Task.Delay(100);
 		}
@@ -575,12 +534,12 @@
 
 	private async Task GetPolicy()
 	{
-		var serviceResponse = await PolicyService.GetPolicy(IdPolicy, _iduser);
+		var serviceResponse = await PolicyService.GetPolicy(IdPolicy, Useful.userId);
 		if (serviceResponse.Processed)
 		{
 			_model = serviceResponse.Data ?? new Policy();
 			_isReadOnly = _model.EstatusName.ToUpper() == "CREADO" || _model.EstatusName.Trim() == string.Empty ? false : true;
-			_PayMethodList = await ModuleActionsService.GetPayMethodOption(_iduser);
+			_PayMethodList = await ModuleActionsService.GetPayMethodOption(Useful.userId);
 
 
 			await Task.Delay(100);
@@ -602,7 +561,7 @@
 	{
 		var _vehicle = new Vehicle();
 		form!.ResetValidation();
-		var serviceResponse = await VehicleService.GetVehicleAvailable(_model.Vin, _iduser);
+		var serviceResponse = await VehicleService.GetVehicleAvailable(_model.Vin, Useful.userId);
 		if (serviceResponse.Processed)
 		{
 			_vehicle = serviceResponse.Data ?? new Vehicle();
@@ -809,7 +768,7 @@
 
 	private async Task ClickExportPdf()
 	{
-		var serviceResponse = await PolicyService.ExportPdfPolicy(_iduser, _model.Id);
+		var serviceResponse = await PolicyService.ExportPdfPolicy(Useful.userId, _model.Id);
 		if (serviceResponse.Processed)
 		{
 			_successModal = true;
@@ -856,7 +815,7 @@
 			}
 			
 
-			var serviceResponse = await PolicyService.UpdatePolicy(_model, _iduser);
+			var serviceResponse = await PolicyService.UpdatePolicy(_model, Useful.userId);
 			if (serviceResponse.Processed)
 			{
 				if (ActionsModal == ActionsEnum.Create)

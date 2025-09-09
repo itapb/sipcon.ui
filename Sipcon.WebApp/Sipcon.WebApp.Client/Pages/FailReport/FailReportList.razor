@@ -1,10 +1,5 @@
 ﻿@page "/failreport"
 
-
-@using Sipcon.WebApp.Client.Models
-@using Sipcon.WebApp.Client.Services
-@using Sipcon.WebApp.Client.Utils
-@using Sipcon.WebApp.Client.Enum
 @using Sipcon.WebApp.Client.Components.FailReport
 @using System.Text.Json
 
@@ -14,22 +9,25 @@
 @inject UtilModuleActions ModuleActionsService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager UriHelper
+@inject HubEventsService hubEventsService
+@implements IDisposable
 
 
 <PageTitle>Reporte de Falla</PageTitle>
 <CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
 
 <MudDataGrid @ref="_mudDataGrid"
-MultiSelection="true" 
-SelectedItems="@selectedFailReport"
-SortMode="SortMode.Multiple"
-Filterable="true"
-FixedHeader Height="calc(92vh - 235px)"
-Hideable="true"
-Loading="_loading"
-Bordered="false"
-Dense="true"
-ServerData="LoadGridData">
+             T="FailReport"
+             MultiSelection="true" 
+             SelectedItems="@selectedFailReport"
+             SortMode="SortMode.Multiple"
+             Filterable="true"
+             FixedHeader Height="calc(92vh - 235px)"
+             Hideable="true"
+             Loading="_loading"
+             Bordered="false"
+             Dense="true"
+             ServerData="LoadGridData">
 
     <ToolBarContent>
         <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddFailReport()"></MudIconButton>
@@ -52,28 +50,23 @@ ServerData="LoadGridData">
         </MudMenu>
     </ToolBarContent>
     <Columns>
-        <SelectColumn T="FailReport" />
-        <TemplateColumn T="FailReport" Title="ORDEN">
+        <SelectColumn  />
+        <TemplateColumn  Title="ORDEN">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.End">@context.Item.OrderNumber</MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="FailReport" Title="VIN">
+        <TemplateColumn  Title="VIN">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.VIN.ToUpper()</MudText>
             </CellTemplate>
         </TemplateColumn>
-        @* <TemplateColumn T="FailReport" Title="RIF">
-            <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Start"><b>@context.Item.VAT.ToUpper()</b></MudText>
-            </CellTemplate>
-        </TemplateColumn> *@
-        <TemplateColumn T="FailReport" Title="CLIENTE">
+        <TemplateColumn  Title="CLIENTE">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.CustomerName.ToUpper() + " " + context.Item.CustomerLastName.ToUpper()) </MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="FailReport" Title="TIPO" >
+        <TemplateColumn  Title="TIPO" >
             <CellTemplate>
                 <div class="d-flex justify-start">
                     <MudText Typo="Typo.caption" Align="Align.Start">
@@ -82,18 +75,17 @@ ServerData="LoadGridData">
                 </div>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="FailReport" Title="CONC.">
+        <TemplateColumn  Title="CONC.">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.DealerServiceCod.ToUpper())</MudText>
             </CellTemplate>
         </TemplateColumn>
-        @* <PropertyColumn Property="x => x.ServiceTypeName" Title="SERVICIO" Sortable="false" Filterable="false" /> *@
-        <TemplateColumn T="FailReport" Title="FECHA">
+        <TemplateColumn  Title="FECHA">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.ServiceDate?.ToString("dd MMM yyyy"))</MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn T="FailReport" Title="ESTATUS">
+        <TemplateColumn  Title="ESTATUS">
             <CellTemplate>
                 <div class="d-flex justify-center">
                     @if (context.Item.EstatusName != null)
@@ -130,8 +122,6 @@ ServerData="LoadGridData">
         <TemplateColumn >
             <CellTemplate>
                 <MudStack Row="true">
-                    
-                    @* OnClick="() => ClickEditFailReport(context.Item)" *@
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" Href="@(" FailReportdetail/" + context.Item.Id)" />
                 </MudStack>
 
@@ -140,7 +130,7 @@ ServerData="LoadGridData">
     </Columns>
 
     <PagerContent>
-        <MudDataGridPager T="FailReport" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        <MudDataGridPager  PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
     </PagerContent>
 </MudDataGrid>
 
@@ -174,8 +164,6 @@ ServerData="LoadGridData">
     bool _success = false;
 
     private int _rowCount = 0;
-    
-    private int _iddealer = 5103; // Cambia esto por el ID del usuario que estás utilizando
     private int _rowsTotal = 0; 
 
     private string _searchString = string.Empty;
@@ -193,6 +181,28 @@ ServerData="LoadGridData">
     ];
 
 
+    protected override async Task OnInitializedAsync()
+    {
+        hubEventsService.OnSupplierChanged += ReloadServerData;
+        hubEventsService.OnDealerChanged += ReloadServerData;
+        await Task.CompletedTask;
+    }
+
+    private async Task ReloadServerData()
+    {
+        if (_mudDataGrid != null)
+        {
+            await _mudDataGrid!.ReloadServerData();
+        }
+    }
+
+    public void Dispose()
+    {
+        hubEventsService.OnDealerChanged -= ReloadServerData;
+        hubEventsService.OnSupplierChanged -= ReloadServerData;
+    }
+
+
     private async Task<GridData<FailReport>> LoadGridData(GridState<FailReport> state)
     {
 
@@ -208,7 +218,7 @@ ServerData="LoadGridData">
         _loading = true;
          _itemsModules = new List<ModuleAction>([]);
 
-        var serviceResponse = await FailReportService.GetFailReports(Useful.userId, _iddealer, _rowCount, _searchString);
+        var serviceResponse = await FailReportService.GetFailReports(Useful.userId, Useful.dealerId, _rowCount, _searchString);
         if (serviceResponse.Processed)
         {
             _FailReports = serviceResponse.Data;
@@ -325,7 +335,7 @@ ServerData="LoadGridData">
 
     private async Task ExportItemsAsync()
     {
-        var serviceResponse = await FailReportService.ExportFailReports(Useful.userId, _iddealer, _searchString);
+        var serviceResponse = await FailReportService.ExportFailReports(Useful.userId, Useful.dealerId, _searchString);
         if (serviceResponse.Processed)
         {
             _success = true;

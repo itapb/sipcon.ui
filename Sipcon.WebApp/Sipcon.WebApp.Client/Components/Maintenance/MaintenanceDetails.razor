@@ -1,12 +1,8 @@
 ﻿@page "/maintenancedetail"
 @page "/maintenancedetail/{IdMaintenance}"
 
-
-@using Sipcon.WebApp.Client.Services
 @using System.Text.RegularExpressions
 @using System.ComponentModel.DataAnnotations
-@using Sipcon.WebApp.Client.Utils
-@using Sipcon.WebApp.Client.Enum
 @using FluentValidation
 @using System.Globalization
 
@@ -599,14 +595,13 @@
 
     private Maintenance _model { get; set; } = new Maintenance();
 
-    private Policy _modelPolicy { get; set; } = new Policy();
+    private Models.Policy _modelPolicy { get; set; } = new Models.Policy();
     private List<PolicyDetail> _policyDetail { get; set; } = new List<PolicyDetail>();
     private List<Attachment> _attachment { get; set; } = new List<Attachment>();
     private List<Comment> _comment { get; set; } = new List<Comment>();
 
     private string _moduleName = "SERVICIOS-MANTENIMIENTO";
-    private int _iduser = 1; // Cambia esto por el ID del usuario que estás utilizando
-    private int _idDealer = 5103;
+    
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
     string _strComment = string.Empty;
@@ -642,8 +637,6 @@
 
         await GetMaintenance();
 
-        await Task.Delay(100);
-
         StateHasChanged();
         await Task.CompletedTask;
 
@@ -653,7 +646,7 @@
     private async Task GetMaintenance()
     {
 
-        var serviceResponse = await MaintenanceService.GetMaintenance(_iduser, _idDealer, Convert.ToInt32(IdMaintenance));
+        var serviceResponse = await MaintenanceService.GetMaintenance(Useful.userId, Useful.dealerId, Convert.ToInt32(IdMaintenance));
         if (serviceResponse.Processed)
         {
             _model = serviceResponse.Data ?? new Maintenance();
@@ -677,12 +670,12 @@
     private async Task GetPolicyBy()
     {
 
-        _modelPolicy = new Policy();
+        _modelPolicy = new Models.Policy();
         _policyDetail = new List<PolicyDetail>();
-        var serviceResponse = await PolicyService.GetPolicyBy(_model.Vin, _iduser, SearchByEnum.VIN);
+        var serviceResponse = await PolicyService.GetPolicyBy(_model.Vin, Useful.userId, SearchByEnum.VIN);
         if (serviceResponse.Processed)
         {
-            _modelPolicy = serviceResponse.Data ?? new Policy();
+            _modelPolicy = serviceResponse.Data ?? new Models.Policy();
 
 
             var serviceResponseDetail = await PolicyService.GetLogPolicyDetails(_modelPolicy.Id);
@@ -745,7 +738,7 @@
         if (result == true)
         {
 
-            var serviceResponse = await AttachmentService.DeleteAttachment(IdAttachment, _iduser);
+            var serviceResponse = await AttachmentService.DeleteAttachment(IdAttachment, Useful.userId);
             if (serviceResponse.Processed)
             {
                 await GetAttachments();
@@ -760,7 +753,7 @@
 
     private async Task ClickExportAttachment(int IdAttachment, string FileName)
     {
-        var serviceResponse = await AttachmentService.GetAttachment(IdAttachment, _iduser);
+        var serviceResponse = await AttachmentService.GetAttachment(IdAttachment, Useful.userId);
         if (serviceResponse.Processed)
         {
             _success = true;
@@ -841,7 +834,7 @@
                 formData.Add(content, "file", file.Name);
 
 
-                var serviceResponse = await AttachmentService.CreateAttachment(_model.Id, _moduleName, _iduser, formData);
+                var serviceResponse = await AttachmentService.CreateAttachment(_model.Id, _moduleName, Useful.userId, formData);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -891,7 +884,7 @@
             RecordId = _model.Id,
             ModuleName = _moduleName, // Cambia esto por el nombre Modulo
         };
-        var serviceResponse = await CommentService.CreateComment(_mensaje, _iduser);
+        var serviceResponse = await CommentService.CreateComment(_mensaje, Useful.userId);
         if (serviceResponse.Processed)
         {
             _success = true;
