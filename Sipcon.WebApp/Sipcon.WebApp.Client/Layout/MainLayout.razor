@@ -209,6 +209,7 @@
 
     private void OpenDrawer()
     {
+        if (!Useful.IsNewOrEdit)
         _open = !_open;
     }
 
@@ -271,7 +272,7 @@
     protected override async Task OnInitializedAsync()
     {
         base.OnInitialized();
-
+        Useful.IsNewOrEdit = false;
         await AuthenticationStateProvider.SetTimerInactivo(DotNetObjectReference.Create(this));
 
        _theme = new()

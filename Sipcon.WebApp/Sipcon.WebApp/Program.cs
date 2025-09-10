@@ -20,7 +20,7 @@ builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().Cre
 // Add MudBlazor services
 builder.Services.AddMudServices();
 builder.Services.AddAuthorizationCore();
-builder.Services.AddTransient<ILocalStorageService, LocalStorageRepository>();
+
 builder.Services.AddTransient<ISessionStorageService, SessionStorageRepository>();
 builder.Services.AddScoped<AuthenticationProviderJWT>();
 builder.Services.AddScoped<AuthenticationStateProvider,AuthenticationProviderJWT>(x=> x.GetRequiredService<AuthenticationProviderJWT>());

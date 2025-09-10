@@ -11,11 +11,11 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
 //builder.Services.AddScoped<TokenHandler>();
 var backEndUrl = builder.Configuration.GetValue<string>("BackEndUrl")!;
-builder.Services.AddHttpClient("ServerAPI", client => client.BaseAddress = new Uri(backEndUrl)); //.AddHttpMessageHandler<TokenHandler>();
+builder.Services.AddHttpClient("ServerAPI", client => client.BaseAddress = new Uri(backEndUrl)); 
 builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("ServerAPI"));
 builder.Services.AddMudServices();
 builder.Services.AddAuthorizationCore();
-builder.Services.AddTransient<ILocalStorageService, LocalStorageRepository>();
+
 builder.Services.AddTransient<ISessionStorageService, SessionStorageRepository>();
 builder.Services.AddScoped<AuthenticationProviderJWT>();
 builder.Services.AddScoped<AuthenticationStateProvider, AuthenticationProviderJWT>(x => x.GetRequiredService<AuthenticationProviderJWT>());
