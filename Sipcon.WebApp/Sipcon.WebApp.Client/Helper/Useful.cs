@@ -5,9 +5,9 @@ namespace Sipcon.WebApp.Client.Helper
 {
     internal static class Useful
     { 
-        internal static int userId = 1;
-        internal static int supplierId = 4069;
-        internal static int dealerId = 5103;
+        internal static int userId = 0;
+        internal static int supplierId = 0;
+        internal static int dealerId = 0;
         internal static int customerId = 0;
         internal static string customerName = "";
         internal static bool IsNewOrEdit = false;
