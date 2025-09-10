@@ -10,6 +10,7 @@ namespace Sipcon.WebApp.Client.Services
         Task SetValue<T>(ValuesKey key,  T value);
 
         Task RemoveValue(ValuesKey key);
+        Task SetTimerInactivo<T>(T value);
 
         Task ClearAll();
 

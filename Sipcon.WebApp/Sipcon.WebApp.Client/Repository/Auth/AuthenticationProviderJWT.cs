@@ -12,18 +12,17 @@ using System.Text.Json;
 
 namespace Sipcon.WebApp.Client.Repository.Auth
 {
-    public class AuthenticationProviderJWT(ILocalStorageService jsLocalStorageService, 
-            ISessionStorageService jsSessionStorageService, HttpClient httpClient) : AuthenticationStateProvider, IAuthorizeService
+    public class AuthenticationProviderJWT(ISessionStorageService jsSessionStorageService, HttpClient httpClient) : AuthenticationStateProvider, IAuthorizeService
     {
        
         private readonly HttpClient _http = httpClient;
-        private readonly ILocalStorageService _jsLocalStorage = jsLocalStorageService;
+        
         private readonly ISessionStorageService _jsSessionStorage = jsSessionStorageService;
         //public static readonly string TokenKey = "TOKENKEY";
         private static AuthenticationState Anonimo => new(new ClaimsPrincipal(new ClaimsIdentity()));
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
-            var token = await _jsLocalStorage.GetValue<string>(ValuesKey.TOKENKEY);
+            var token = await _jsSessionStorage.GetValue<string>(ValuesKey.TOKENKEY);
             await Task.CompletedTask;
             
             if (string.IsNullOrEmpty(token))
@@ -75,7 +74,7 @@ namespace Sipcon.WebApp.Client.Repository.Auth
 
         public async Task Login(LoginResponse data)
         {
-            await _jsLocalStorage.SetValue<string>(ValuesKey.TOKENKEY, data.Token);
+            await _jsSessionStorage.SetValue<string>(ValuesKey.TOKENKEY, data.Token);
             await _jsSessionStorage.SetValue<User>(ValuesKey.USER, data.Users);
             await _jsSessionStorage.SetValue<List<UserType>>(ValuesKey.SUPPLIERS, data.Suppliers);
             await _jsSessionStorage.SetValue<List<UserType>>(ValuesKey.DEALERS, data.Dealers);
@@ -96,7 +95,7 @@ namespace Sipcon.WebApp.Client.Repository.Auth
         public async Task Logout()
         {
             _http.DefaultRequestHeaders.Authorization = null;
-            await _jsLocalStorage.RemoveValue(ValuesKey.TOKENKEY);
+            
             await _jsSessionStorage.ClearAll();
 
             await Task.CompletedTask;
@@ -160,7 +159,7 @@ namespace Sipcon.WebApp.Client.Repository.Auth
 
         public async Task SetTimerInactivo<T>(DotNetObjectReference<T> data) where T : class
         {
-            await _jsLocalStorage.SetTimerInactivo<DotNetObjectReference<T>>(data);
+            await _jsSessionStorage.SetTimerInactivo<DotNetObjectReference<T>>(data);
 
         }
 

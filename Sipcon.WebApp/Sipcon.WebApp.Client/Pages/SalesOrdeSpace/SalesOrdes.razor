@@ -108,7 +108,8 @@ else
         await Task.CompletedTask;
     }
     private async Task ClickEditSalesOrder(SaleOrder item) 
-    {        
+    {
+        Useful.IsNewOrEdit = true;
         await Task.FromResult(SalesOrderId = item.Id); 
     }
 
@@ -138,6 +139,7 @@ else
 
     private async Task<GridData<SaleOrder>> ServerReload(GridState<SaleOrder> state)
     {  
+        Useful.IsNewOrEdit = false;
         IsAllCheckBoxSelected = false;
         Loading = true;
         var totalItems = 0;
@@ -221,7 +223,8 @@ else
         }
     }
     public void Dispose()
-    {       
+    {
+        Useful.IsNewOrEdit = false;
         hubEventsService.OnDealerChanged -= ReloadSalesOrderGrid;
     }
 }

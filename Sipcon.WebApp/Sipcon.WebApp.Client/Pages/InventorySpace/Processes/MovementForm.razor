@@ -103,6 +103,8 @@
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
     [Parameter] public int? Value { get; set; }
     [Parameter] public EventCallback<int?> ValueChanged { get; set; }
+    [Parameter] public int? ModuleId { get; set; }
+
     DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
 
     string TempReference = "";
@@ -274,7 +276,7 @@
                               new Client.Models.Action{
                                   UserId = Useful.userId,
                                   RecordId = MovementId,
-                                  ModuleId = 15,
+                                  ModuleId = ModuleId ?? 0,
                                   actionName = "GENERATE",
                                   ActionComment = "",
                                   RelatedId = 0
