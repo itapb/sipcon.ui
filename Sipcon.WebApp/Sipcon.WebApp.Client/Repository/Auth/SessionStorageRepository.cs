@@ -34,5 +34,9 @@ namespace Sipcon.WebApp.Client.Repository.Auth
         {
             await _js.InvokeVoidAsync($"{_tipoAlmacenamiento}clear").ConfigureAwait(false);
         }
+        public async Task SetTimerInactivo<T>(T value)
+        {
+            await _js.InvokeVoidAsync($"timerInactivo", value).ConfigureAwait(false);
+        }
     }
 }

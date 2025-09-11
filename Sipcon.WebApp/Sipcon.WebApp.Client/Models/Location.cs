@@ -6,6 +6,7 @@ namespace Sipcon.WebApp.Client.Models
     {
 
         [Required(ErrorMessage = "Campo requerido.")]
+        [StringLength(10, MinimumLength = 8, ErrorMessage = "La longitud debe ser entre 8 y 10 caracteres.")]
         public string? Name { get; set; }
 
         [Required]

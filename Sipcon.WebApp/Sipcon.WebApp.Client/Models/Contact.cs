@@ -56,5 +56,7 @@ namespace Sipcon.WebApp.Client.Models
         [Required]
         public bool? Blocked { get; set; } = false;
 
+        public string? FiscalName { get; set; }
+
     }
 }
