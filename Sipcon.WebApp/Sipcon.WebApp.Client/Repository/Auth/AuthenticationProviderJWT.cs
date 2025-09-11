@@ -169,5 +169,21 @@ namespace Sipcon.WebApp.Client.Repository.Auth
             return value == null ? new T() : value;
         }
 
+        public async Task RefreshStaticVariables()
+        {
+            Useful.IsNewOrEdit = false;
+
+            if (Useful.IsFirstTime)
+            {
+                int selectedDealer = await GetSelectedDealerAsync();
+                int selectedSupplier = await GetSelectedSupplierAsync();
+                var _userActive = await GetUserAsync();
+                Useful.supplierId = selectedSupplier;
+                Useful.dealerId = selectedDealer;
+                Useful.userId = _userActive.Id;
+                Useful.IsFirstTime = false;
+            }
+  
+        }
     }
 }

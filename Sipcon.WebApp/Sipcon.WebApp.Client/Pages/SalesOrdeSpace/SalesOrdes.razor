@@ -49,6 +49,7 @@ else
 }
 
 @code {
+    [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [Inject] private ILogger<SalesOrdes> Logger { get; set; } = default!;
@@ -113,7 +114,9 @@ else
         await Task.FromResult(SalesOrderId = item.Id); 
     }
 
-    protected override async Task OnInitializedAsync() {        
+    protected override async Task OnInitializedAsync()    
+    {
+        await AuthenticationStateProvider.RefreshStaticVariables();
         await LoadDataAsync();
         hubEventsService.OnDealerChanged += ReloadSalesOrderGrid;
     }
@@ -139,6 +142,7 @@ else
 
     private async Task<GridData<SaleOrder>> ServerReload(GridState<SaleOrder> state)
     {  
+        await AuthenticationStateProvider.RefreshStaticVariables();
         Useful.IsNewOrEdit = false;
         IsAllCheckBoxSelected = false;
         Loading = true;

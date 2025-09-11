@@ -168,6 +168,7 @@
 </div>
 
 @code {
+    [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     string SelectedmGroup = "NRO ORDEN";
@@ -232,6 +233,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+
         string hrefMovement = "backorders";
         $"Home,Inventario,Procesos,BackOrders".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
         Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-BACKORDER&userId={Useful.userId}");
@@ -258,6 +261,8 @@
     bool IsAllCheckBoxSelected = false;
     private async Task<GridData<BackOrder>> ServerReload(GridState<BackOrder> state)
     {
+         await AuthenticationStateProvider.RefreshStaticVariables();
+
         IsAllCheckBoxSelected = false;
         _loading = true;
         var mOffset = state.Page * state.PageSize;

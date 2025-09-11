@@ -24,15 +24,15 @@
                     <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
                         <MudGrid Spacing="2">
                             <MudItem xs="12"><MudText Typo="Typo.h6" GutterBottom="true">@GetTitle</MudText></MudItem>
-                            <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Description" Label="Descripcion" Variant="Variant.Text" Required="true" RequiredError="Campo requerido."></MudTextField></MudItem>
-                            <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.AlterDescription" Label="Descripcion Alterna" Variant="Variant.Text" Required="true" RequiredError="Campo requerido." MaxLength="40"></MudTextField></MudItem>
-                            <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.InnerCode" Label="Codigo Parte" Variant="Variant.Text" Required="true" RequiredError="Campo requerido."></MudTextField></MudItem>
-                            <MudItem xs="6"><MudTextField @bind-Value="SelectedPart.MasterCode" Label="Codigo Fabrica" Variant="Variant.Text" Required="true" RequiredError="Campo requerido."></MudTextField></MudItem>
-                            <MudItem xs="6"><MudTextField @bind-Value="SelectedPart.AlterCode" Label="Codigo Alterno" Variant="Variant.Text"></MudTextField></MudItem>
-                            <MudItem xs="6"><MudTextField @bind-Value="SelectedPart.ReplacementCode" Label="Codigo Remplazo" Variant="Variant.Text"></MudTextField></MudItem>
-                            <MudItem xs="6"><MudTextField @bind-Value="SelectedPart.BarCode" Label="Codigo Barra" Variant="Variant.Text"></MudTextField></MudItem>
+                            <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Description" Label="Descripcion" Variant="Variant.Text" Required="true" RequiredError="Campo requerido." Disabled ="@(!SelectedPart.IsActive ?? false)"></MudTextField></MudItem>
+                            <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.AlterDescription" Label="Descripcion Alterna" Variant="Variant.Text" Required="true" RequiredError="Campo requerido." MaxLength="40" Disabled ="@(!SelectedPart.IsActive ?? false)"></MudTextField></MudItem>
+                            <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.InnerCode" Label="Codigo Parte" Variant="Variant.Text" Required="true" RequiredError="Campo requerido." Disabled ="@(!SelectedPart.IsActive ?? false)"></MudTextField></MudItem>
+                            <MudItem xs="6"><MudTextField @bind-Value="SelectedPart.MasterCode" Label="Codigo Fabrica" Variant="Variant.Text" Required="true" RequiredError="Campo requerido." Disabled ="@(!SelectedPart.IsActive ?? false)"></MudTextField></MudItem>
+                            <MudItem xs="6"><MudTextField @bind-Value="SelectedPart.AlterCode" Label="Codigo Alterno" Variant="Variant.Text" Disabled ="@(!SelectedPart.IsActive ?? false)"></MudTextField></MudItem>
+                            <MudItem xs="6"><MudTextField @bind-Value="SelectedPart.ReplacementCode" Label="Codigo Remplazo" Variant="Variant.Text" Disabled ="@(!SelectedPart.IsActive ?? false)"></MudTextField></MudItem>
+                            <MudItem xs="6"><MudTextField @bind-Value="SelectedPart.BarCode" Label="Codigo Barra" Variant="Variant.Text" Disabled ="@(!SelectedPart.IsActive ?? false)"></MudTextField></MudItem>
                             <MudItem xs="12">
-                                <MudSelect T="PartType" Label="Tipo" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertPartTypeFunc" Value="PartTypeSelected" ValueChanged="OnPartTypeValueChanged" Required="true" RequiredError="Campo requerido.">
+                                <MudSelect T="PartType" Label="Tipo" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertPartTypeFunc" Value="PartTypeSelected" ValueChanged="OnPartTypeValueChanged" Required="true" RequiredError="Campo requerido." Disabled ="@(!SelectedPart.IsActive ?? false)" >
                                     @foreach (var parttype in PartTypes!)
                                     {
                                         <MudSelectItem Value="@parttype" />
@@ -40,7 +40,7 @@
                                 </MudSelect>
                             </MudItem>
                             <MudItem xs="6">
-                                <MudSelect T="Family" Label="Familia" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertFamilyFunc" Value="FamilySelected" ValueChanged="OnFamilyValueChanged" Required="true" RequiredError="Campo requerido.">
+                                <MudSelect T="Family" Label="Familia" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertFamilyFunc" Value="FamilySelected" ValueChanged="OnFamilyValueChanged" Required="true" RequiredError="Campo requerido." Disabled ="@(!SelectedPart.IsActive ?? false)" >
                                     @foreach (var family in FilteredFamilies ?? Enumerable.Empty<Family>())
                                     {
                                         <MudSelectItem Value="@family" />
@@ -48,7 +48,7 @@
                                 </MudSelect>
                             </MudItem>
                             <MudItem xs="6">
-                                <MudSelect T="SubFamily" Label="Sub Familia" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertSubFamilyFunc" Value="SubFamilySelected" ValueChanged="OnSubFamilyValueChanged" Required="true" RequiredError="Campo requerido.">
+                                <MudSelect T="SubFamily" Label="Sub Familia" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertSubFamilyFunc" Value="SubFamilySelected" ValueChanged="OnSubFamilyValueChanged" Required="true" RequiredError="Campo requerido." Disabled ="@(!SelectedPart.IsActive ?? false)">
                                     @foreach (var subfamily in FilteredSubFamilies ?? Enumerable.Empty<SubFamily>())
                                     {
                                         <MudSelectItem Value="@subfamily" />
@@ -56,7 +56,7 @@
                                 </MudSelect>
                             </MudItem>
                             <MudItem xs="12">
-                                <MudSelect T="Contact" Label="Planta" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertSupplierFunc" Value="SupplierSelected" ValueChanged="OnSupplierValueChanged" Required="true" RequiredError="Campo requerido.">
+                                <MudSelect T="Contact" Label="Planta" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertSupplierFunc" Value="SupplierSelected" ValueChanged="OnSupplierValueChanged" Required="true" RequiredError="Campo requerido." Disabled ="@(!SelectedPart.IsActive ?? false)">
                                     @foreach (var supplier in Suppliers!)
                                     {
                                         <MudSelectItem Value="@supplier" />
@@ -64,7 +64,7 @@
                                 </MudSelect>
                             </MudItem>
                             <MudItem xs="12">
-                                <MudSelect T="Brand" Label="Marca" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertBrandFunc" Value="BrandSelected" ValueChanged="OnBrandValueChanged" Required="true" RequiredError="Campo requerido.">
+                                <MudSelect T="Brand" Label="Marca" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertBrandFunc" Value="BrandSelected" ValueChanged="OnBrandValueChanged" Required="true" RequiredError="Campo requerido." Disabled ="@(!SelectedPart.IsActive ?? false)">
                                     @foreach (var brand in Brands!)
                                     {
                                         <MudSelectItem Value="@brand" />
@@ -72,7 +72,7 @@
                                 </MudSelect>
                             </MudItem>
                             <MudItem xs="12">
-                                <MudSelect T="RelatedModel" Label="Modelos" MultiSelection="true" SelectAll="true" FullWidth="true" SelectedValues="SelectedRelatedModels" SelectedValuesChanged="OnSelectedRelatedModels" Required="true" RequiredError="Campo requerido." MultiSelectionTextFunc="@(new Func<List<string>, string>(GetModelMultiSelectionText))">
+                                <MudSelect T="RelatedModel" Label="Modelos" MultiSelection="true" SelectAll="true" FullWidth="true" SelectedValues="SelectedRelatedModels" SelectedValuesChanged="OnSelectedRelatedModels" Required="true" RequiredError="Campo requerido." MultiSelectionTextFunc="@(new Func<List<string>, string>(GetModelMultiSelectionText))" Disabled ="@(!SelectedPart.IsActive ?? false)">
                                     @foreach (var relatedmodel in FilteredRelatedModels ?? Enumerable.Empty<RelatedModel>())
                                     {
                                         <MudSelectItem T="RelatedModel" Value="@relatedmodel">@relatedmodel</MudSelectItem>
@@ -80,7 +80,7 @@
                                 </MudSelect>
                             </MudItem>
                             <MudItem xs="6">
-                                <MudSelect T="Um" Label="Unidad Medida" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertUmFunc" Value="UmSelected" ValueChanged="OnUmValueChanged" Required="true" RequiredError="Campo requerido.">
+                                <MudSelect T="Um" Label="Unidad Medida" Immediate="true" FitContent="true" FullWidth="true" ToStringFunc="@ConvertUmFunc" Value="UmSelected" ValueChanged="OnUmValueChanged" Required="true" RequiredError="Campo requerido." Disabled ="@(!SelectedPart.IsActive ?? false)">
                                     @foreach (var um in Ums ?? Enumerable.Empty<Um>())
                                     {
                                         <MudSelectItem Value="@um"></MudSelectItem>
@@ -88,23 +88,24 @@
                                 </MudSelect>
                             </MudItem>
                             <MudItem xs="6">
-                                <MudSelect T="string" @bind-Value="SelectedPart.Size" Label="Tamaño" Immediate="true" FitContent="true" FullWidth="true" Required="true" RequiredError="Campo requerido.">
+                                <MudSelect T="string" @bind-Value="SelectedPart.Size" Label="Tamaño" Immediate="true" FitContent="true" FullWidth="true" Required="true" RequiredError="Campo requerido." Disabled ="@(!SelectedPart.IsActive ?? false)">
                                     @foreach (var msize in Sizes)
                                     {
                                         <MudSelectItem T="string" Value="@msize">@msize</MudSelectItem>
                                     }
                                 </MudSelect>
                             </MudItem>
-                            <MudItem xs="12">
-                                <MudSelect T="string" @bind-Value="SelectedPart.Rating" Label="Clasificacion" Immediate="true" FitContent="true" FullWidth="true" Required="true" RequiredError="Campo requerido.">
+                            <MudItem xs="6">
+                                <MudSelect T="string" @bind-Value="SelectedPart.Rating" Label="Clasificacion" Immediate="true" FitContent="true" FullWidth="true" Required="true" RequiredError="Campo requerido." Disabled ="@(!SelectedPart.IsActive ?? false)">
                                     @foreach (var rating in Ratings)
                                     {
                                         <MudSelectItem T="string" Value="@rating">@rating</MudSelectItem>
                                     }
                                 </MudSelect>
                             </MudItem>
-                            <MudItem xs="6"> <MudTextField @bind-Value="SelectedPart.Packing" Label="Empaque" Variant="Variant.Text" Required="true" RequiredError="Campo requerido."></MudTextField></MudItem>
-                            <MudItem xs="6"> <MudTextField @bind-Value="SelectedPart.MinSale" Label="Mini Venta" Variant="Variant.Text" Required="true" RequiredError="Campo requerido."></MudTextField></MudItem>
+                            <MudItem xs="6"><MudTextField @bind-Value="SelectedPart.UseQty" Label=" Uso por Unidad" Variant="Variant.Text" Required="true" RequiredError="Campo requerido." Disabled ="@(!SelectedPart.IsActive ?? false)"></MudTextField></MudItem>
+                            <MudItem xs="6"> <MudTextField @bind-Value="SelectedPart.Packing" Label="Empaque" Variant="Variant.Text" Required="true" RequiredError="Campo requerido." Disabled ="@(!SelectedPart.IsActive ?? false)"></MudTextField></MudItem>
+                            <MudItem xs="6"> <MudTextField @bind-Value="SelectedPart.MinSale" Label="Minimo Venta" Variant="Variant.Text" Required="true" RequiredError="Campo requerido." Disabled ="@(!SelectedPart.IsActive ?? false)"></MudTextField></MudItem>
                         </MudGrid>
                     </MudPaper>
                 </MudItem>
@@ -113,17 +114,17 @@
                         <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
                             <MudGrid Spacing="2">
                                 <MudItem xs="12"><MudText Typo="Typo.h6" GutterBottom="true">Precios</MudText></MudItem>                                
-                                <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Price" Label="Precio" Variant="Variant.Text" Required="true" RequiredError="Campo requerido."></MudTextField></MudItem>
-                                <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Discount" Label="Dcto" Variant="Variant.Text" Required="true" RequiredError="Campo requerido."></MudTextField></MudItem>
+                                <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Price" Label="Precio $" Variant="Variant.Text" Required="true" RequiredError="Campo requerido." Disabled ="@(!SelectedPart.IsActive ?? false)"></MudTextField></MudItem>
+                                <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Discount" Label="Dcto" Variant="Variant.Text" Required="true" RequiredError="Campo requerido." Disabled ="@(!SelectedPart.IsActive ?? false)"></MudTextField></MudItem>
                                 <MudItem xs="12">
-                                    <MudSelect T="Tax" Label="Impuesto" Immediate="true" FitContent="true" ToStringFunc="@ConvertTaxFunc" Value="TaxSelected" ValueChanged="OnTaxValueChanged" Required="true" RequiredError="Campo requerido." FullWidth="true">
+                                    <MudSelect T="Tax" Label="Impuesto" Immediate="true" FitContent="true" ToStringFunc="@ConvertTaxFunc" Value="TaxSelected" ValueChanged="OnTaxValueChanged" Required="true" RequiredError="Campo requerido." FullWidth="true" Disabled ="@(!SelectedPart.IsActive ?? false)">
                                         @foreach (var tax in Taxes!)
                                         {
                                             <MudSelectItem Value="@tax" />
                                         }
                                     </MudSelect>
                                 </MudItem>
-                                <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Cost" Label="Costo" Variant="Variant.Text" Required="true" RequiredError="Campo requerido."></MudTextField></MudItem>
+                                <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Cost" Label="Costo $" Variant="Variant.Text" Required="true" RequiredError="Campo requerido." Disabled ="@(!SelectedPart.IsActive ?? false)"></MudTextField></MudItem>
                             </MudGrid>
                         </MudPaper>
                         <MudPaper Elevation="2" Class="pa-2 mud-text-align-center flex-grow-1" Style="flex: 1 1 auto; min-height: 0;">
@@ -132,12 +133,12 @@
                                 {
                                     <MudText Typo="Typo.caption" Color="Color.Error">Algunos requeridos</MudText>
                                 }
-                                <MudSwitch @bind-Value="SelectedPart.Sell" Label="Venta" Color="Color.Success" />
-                                <MudSwitch @bind-Value="SelectedPart.Purchase" Label="Compra" Color="Color.Success" />
-                                <MudSwitch @bind-Value="SelectedPart.Warranty" Label="Garantia" Color="Color.Success" />
-                                <MudSwitch @bind-Value="SelectedPart.License" Label="Licencia" Color="Color.Success" />
-                                <MudSwitch @bind-Value="SelectedPart.Original" Label="Original" Color="Color.Success" />
-                                <MudSwitch @bind-Value="SelectedPart.Serializable" Label="Serializable" Color="Color.Success" />
+                                <MudSwitch @bind-Value="SelectedPart.Sell" Label="Venta" Color="Color.Success" Disabled ="@(!SelectedPart.IsActive ?? false)"/>
+                                <MudSwitch @bind-Value="SelectedPart.Purchase" Label="Compra" Color="Color.Success" Disabled ="@(!SelectedPart.IsActive ?? false)"/>
+                                <MudSwitch @bind-Value="SelectedPart.Warranty" Label="Garantia" Color="Color.Success" Disabled ="@(!SelectedPart.IsActive ?? false)"/>
+                                <MudSwitch @bind-Value="SelectedPart.License" Label="Permisologia" Color="Color.Success" Disabled ="@(!SelectedPart.IsActive ?? false)"/>
+                                <MudSwitch @bind-Value="SelectedPart.Original" Label="Original" Color="Color.Success" Disabled ="@(!SelectedPart.IsActive ?? false)"/>
+                                <MudSwitch @bind-Value="SelectedPart.Serializable" Label="Serializable" Color="Color.Success" Disabled ="@(!SelectedPart.IsActive ?? false)"/>
                             </MudStack>
                         </MudPaper>
                     </MudStack>
@@ -161,6 +162,7 @@ else
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public int? Value { get; set; }
     [Parameter] public EventCallback<int?> ValueChanged { get; set; }
+    int? Test { get; set; } = 1;
     private string GetTitle => PartId switch { null => "Respuestos", 0 => "Agregar Respuesto", _ => "Editar Respuesto" };
     private int? PartId
     {
@@ -174,8 +176,9 @@ else
             }
         }
     }
+  
     string[] Sizes = ["S", "M", "L"];
-    string[] Ratings = ["A", "B", "C", "D", "E", "F"];
+    string[] Ratings = ["A", "B", "C", "I", "N", "X"];
     //string mMessage = "Respuestos";
     bool AnySelectedCheckbox = false;
     private List<RelatedModel>? RelatedModels;
@@ -227,7 +230,7 @@ else
         var response = await Http.GetAsync($"api/Part/GetOneWithContext?partId={partId}&userId={Useful.userId}");
         if (response.IsSuccessStatusCode && (await response.Content.ReadFromJsonAsync<WebApiResponse<PartDetails>>() is WebApiResponse<PartDetails> content))
         {
-            Suppliers = content.data?.Suppliers;
+            Suppliers = content.data?.Suppliers?.Where(r => r.Id == Useful.supplierId).ToList();
             PartTypes = content.data?.Types;
             RelatedModels = content.data?.Models;
             SubFamilies = content.data?.Subfamilies;

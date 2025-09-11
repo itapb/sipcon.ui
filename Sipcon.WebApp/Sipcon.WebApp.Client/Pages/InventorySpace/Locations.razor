@@ -1,4 +1,5 @@
 ﻿@page "/locations"
+@using Sipcon.WebApp.Client.Repository.Auth
 @inject HubEventsService hubEventsService
 @implements IDisposable
 
@@ -60,6 +61,8 @@ else
 }
 
 @code {
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
+
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
@@ -76,11 +79,14 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        await AuthenticationStateProvider.RefreshStaticVariables();
         Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-UBICACIONES&userId={Useful.userId}");
         hubEventsService.OnSupplierChanged += ReloadLocationsGrid;
     }
     private async Task<GridData<Location>> ServerReload(GridState<Location> state)
     {
+         await AuthenticationStateProvider.RefreshStaticVariables();
+
         IsAllCheckBoxSelected = false;
         _loading = true;
         var mOffset = state.Page * state.PageSize;
@@ -129,7 +135,7 @@ else
                             (LocationMudDataGrid.FilteredItems.Where(item => item.IsSelected)
                                                              .Select(item => new Client.Models.Action
                                                              {
-                                                                 UserId = 1,
+                                                                 UserId = Useful.userId,
                                                                  RecordId = item.Id,
                                                                  ModuleId = Modules!.FirstOrDefault()?.Id,
                                                                  actionName = actionName,
@@ -239,6 +245,7 @@ else
     }
     public void Dispose()
     {
+        Useful.IsNewOrEdit = false;
         hubEventsService.OnSupplierChanged -= ReloadLocationsGrid;
     }
 }
