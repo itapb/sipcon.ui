@@ -130,7 +130,7 @@
         if (actionName == "EXPORT")
         {
             _loading = true;
-            var ResultZonas = await Http.GetAsync($"api/Contact/GetExport?_filter={searchString}&userId=1");
+            var ResultZonas = await Http.GetAsync($"api/Contact/GetExport?_filter={searchString}&userId={Useful.userId}");
             if (ResultZonas.IsSuccessStatusCode)
             {
                 var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
