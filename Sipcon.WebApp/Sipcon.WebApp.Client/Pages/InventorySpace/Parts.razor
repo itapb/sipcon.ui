@@ -82,7 +82,7 @@ else
         if (actionName == "EXPORT")
         {
             _loading = true;          
-            if ((await Http.GetAsync($"api/Part/Export?filter={searchString}&userId={Useful.userId}") is HttpResponseMessage ResultZonas) && ResultZonas.IsSuccessStatusCode)
+            if ((await Http.GetAsync($"api/Part/Export?filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}") is HttpResponseMessage ResultZonas) && ResultZonas.IsSuccessStatusCode)
             {
                 var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
                 var base64File = Convert.ToBase64String(fileContent);
@@ -209,7 +209,7 @@ else
                 formData.Add(content, "file", file.Name);
                 _loading = true;
 
-                var response = await Http.PostAsync($"api/Part/Import?userId={Useful.userId}", formData);
+                var response = await Http.PostAsync($"api/Part/Import?userId={Useful.userId}&supplierId={Useful.supplierId}", formData);
                 if (response.IsSuccessStatusCode)
                 {
                     await DialogService.ShowDialog("Archivo cargado con exito!.", "Resouestos", "OK", Color.Info, Icons.Material.Filled.Commit);

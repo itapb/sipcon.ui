@@ -115,7 +115,7 @@ else
         if (actionName == "EXPORT")
         {
             _loading = true;
-            var ResultZonas = await Http.GetAsync($"api/Location/Export?filter={searchString}&userId={Useful.userId}");
+            var ResultZonas = await Http.GetAsync($"api/Location/Export?filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}");
             if (ResultZonas.IsSuccessStatusCode)
             {
                 var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
@@ -203,7 +203,7 @@ else
                 formData.Add(content, "file", file.Name);
                 _loading = true;
 
-                var response = await Http.PostAsync($"api/Location/Import?userId={Useful.userId}", formData);
+                var response = await Http.PostAsync($"api/Location/Import?userId={Useful.userId}&supplierId={Useful.supplierId}", formData);
                 if (response.IsSuccessStatusCode)
                 {
                     await DialogService.ShowDialog("Archivo cargado con exito!.", "Ubicaciones", "OK", Color.Info, Icons.Material.Filled.Commit);
