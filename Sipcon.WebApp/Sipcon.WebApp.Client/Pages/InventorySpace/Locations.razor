@@ -209,6 +209,12 @@ else
                     await DialogService.ShowDialog("Archivo cargado con exito!.", "Ubicaciones", "OK", Color.Info, Icons.Material.Filled.Commit);
                     await LocationMudDataGrid!.ReloadServerData();
                 }
+                else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    var conflictContent = await response.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+                    await DialogService.ShowDialog(conflictContent?.message!, "Error al cargar", "OK", Color.Error, Icons.Material.Filled.Error);
+                    _loading = false;
+                }
                 else
                 {
                     await DialogService.ShowDialog("Carga de archivo fallo!", "Error al cargar", "OK", Color.Error, Icons.Material.Filled.Error);
