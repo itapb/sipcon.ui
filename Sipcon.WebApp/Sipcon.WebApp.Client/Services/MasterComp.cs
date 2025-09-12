@@ -129,8 +129,8 @@ namespace Sipcon.WebApp.Client.Services
             var result_Post_Actions = (SelectedActions is not null && SelectedActions.Count > 0) ? await Http.PostAsync($"api/{clsModelName}/PostActions?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
             if (result_Post_Actions is not null && result_Post_Actions.IsSuccessStatusCode)
             {
-                var resultAction = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
-                if (resultAction?.data![0].updatedRows > 0)
+                var resultAction = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
+                if (resultAction?.data!.updatedRows > 0)
                 {
                     var result = await DialogService.ShowDialog("Registro(s) Actualizados!", clsModelName.GetTitle(), "OK", Color.Info, Icons.Material.Filled.Commit);
                     await EntityMudDataGrid!.ReloadServerData();
