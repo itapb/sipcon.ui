@@ -1,4 +1,6 @@
 ﻿@using Sipcon.WebApp.Client.Pages
+@using Sipcon.WebApp.Client.Repository.Auth
+
 <MudDataGrid @ref="ContactMudDataGrid" T="Contact" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 260px)" Loading="_loading" @bind-CurrentPage="ContactCurrentPage">
     <ToolBarContent>
         <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddContact" Color="Color.Info"></MudIconButton>
@@ -50,6 +52,7 @@
 
 
 @code {
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
@@ -62,19 +65,22 @@
     string searchString = "";
     private int ContactCurrentPage = 0;
     private List<Module>? Modules;
-    private MudDataGrid<Contact>? ContactMudDataGrid;  
-    
-    
-
+    private MudDataGrid<Contact>? ContactMudDataGrid;    
     private async Task AfterAsyncAllCheck()
     {
         if (ContactMudDataGrid != null)
             ContactMudDataGrid.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
         await Task.CompletedTask;
     }
-
+    protected override async Task OnInitializedAsync()
+    { 
+        await AuthenticationStateProvider.RefreshStaticVariables();
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName={Modulo}&userId={Useful.userId}");
+    }
     private async Task<GridData<Contact>> ServerReload(GridState<Contact> state)
-    {       
+    { 
+        await AuthenticationStateProvider.RefreshStaticVariables();
+
         IsAllCheckBoxSelected = false;
         _loading = true;
         var mOffset = state.Page * state.PageSize;       

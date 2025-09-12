@@ -1,4 +1,5 @@
 ﻿@page "/parts"
+@using Sipcon.WebApp.Client.Repository.Auth
 @inject HubEventsService hubEventsService
 @implements IDisposable
 
@@ -60,6 +61,8 @@ else
 }
 
 @code {
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
+
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
@@ -71,6 +74,7 @@ else
     string searchString = "";
     private MudDataGrid<Part>? PartMudDataGrid;
     private List<Module>? Modules;
+    
 
     private async Task ClickMenuPart(string? actionName)
     {
@@ -97,7 +101,7 @@ else
                             (PartMudDataGrid.FilteredItems.Where(item => item.IsSelected)
                                                              .Select(item => new Client.Models.Action
                                                              {
-                                                                 UserId = 1,
+                                                                 UserId =  Useful.userId ,
                                                                  RecordId = item.Id,
                                                                  ModuleId = Modules!.FirstOrDefault()?.Id,
                                                                  actionName = actionName,
@@ -106,7 +110,7 @@ else
                                                              }).ToList()
                              ) : null;
 
-        var result_Post_Actions = (SelectedActions is not null && SelectedActions.Count > 0) ? await Http.PostAsync("api/Part/PostActions?userId=1", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
+        var result_Post_Actions = (SelectedActions is not null && SelectedActions.Count > 0) ? await Http.PostAsync($"api/Part/PostActions?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
         if (result_Post_Actions is not null && result_Post_Actions.IsSuccessStatusCode)
         {
             var resultAction = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
@@ -127,8 +131,10 @@ else
             await PartMudDataGrid!.ReloadServerData();
         }
     }
+
     protected override async Task OnInitializedAsync()
     {
+        await AuthenticationStateProvider.RefreshStaticVariables();
         Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-REPUESTOS&userId={Useful.userId}");
         hubEventsService.OnSupplierChanged += ReloadPartsGrid;
     }
@@ -141,8 +147,11 @@ else
         nameof(Part.Stock) => o => o.Stock ?? 0m,       
         _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto
     };
+
     private async Task<GridData<Part>> ServerReload(GridState<Part> state)
     {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+
         IsAllCheckBoxSelected = false;
         _loading = true;
         var totalItems = 0;
@@ -241,6 +250,7 @@ else
     }
     public void Dispose()
     {
+        Useful.IsNewOrEdit = false;
         hubEventsService.OnSupplierChanged -= ReloadPartsGrid;
     }
 }

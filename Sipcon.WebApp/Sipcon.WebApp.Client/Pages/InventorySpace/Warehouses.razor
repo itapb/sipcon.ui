@@ -1,4 +1,5 @@
 ﻿@page "/warehouses"
+@using Sipcon.WebApp.Client.Repository.Auth
 @inject HubEventsService hubEventsService
 @implements IDisposable
 
@@ -56,6 +57,7 @@ else
 }
 
 @code {
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private MasterComp<Warehouse, WarehouseForm> masterComp { get; set; } = default!;
     private int? WarehouseId;
     List<BreadcrumbItem> ItemsNavigate = [new("Home", href: "", icon: Icons.Material.Filled.Home), new("Inventario", href: "warehouses", icon: Icons.Material.Filled.Inventory), new("Almacen", href: "warehouses", icon: Icons.Material.Filled.Warehouse)];
@@ -63,11 +65,14 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        await AuthenticationStateProvider.RefreshStaticVariables();
        await masterComp.FillModules();
         hubEventsService.OnSupplierChanged += ReloadWarehousesGrid;
     }
     private async Task<GridData<Warehouse>> ServerReload(GridState<Warehouse> state)
     {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+
         masterComp.IsAllCheckBoxSelected = false;
         masterComp.loading = true;
         var mOffset = state.Page * state.PageSize;
@@ -99,6 +104,7 @@ else
     }
     public void Dispose()
     {
+        Useful.IsNewOrEdit = false;
         hubEventsService.OnSupplierChanged -= ReloadWarehousesGrid;
     }
    

@@ -117,7 +117,7 @@ namespace Sipcon.WebApp.Client.Services
                                 (EntityMudDataGrid.FilteredItems.Where(item => item.IsSelected)
                                                                  .Select(item => new Client.Models.Action
                                                                  {
-                                                                     UserId = 1,
+                                                                     UserId = Useful.userId,
                                                                      RecordId = item.Id,
                                                                      ModuleId = Modules!.FirstOrDefault()?.Id,
                                                                      actionName = actionName,

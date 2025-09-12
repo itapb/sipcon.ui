@@ -50,6 +50,7 @@ else
 }
 
 @code {
+        [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
         [Inject] private HttpClient Http { get; set; } = default!;
         [Inject] private IDialogService DialogService { get; set; } = default!;
         [Inject] private ILogger<Movements> Logger { get; set; } = default!;
@@ -86,7 +87,8 @@ else
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterMovementDetails>>();
-            var data = content2!.data ?? new MasterMovementDetails();            
+            var data = content2!.data ?? new MasterMovementDetails(); 
+            Useful.IsNewOrEdit = true;
             MovementId = data.Movement?.Id;
         }
         else
@@ -105,11 +107,13 @@ else
 
     private async Task ClickEditMovement(Movement item) 
     {           
-            await Task.FromResult(MovementId = item.Id); 
+        Useful.IsNewOrEdit = true;
+        await Task.FromResult(MovementId = item.Id); 
     }
 
     protected override async Task OnInitializedAsync()
     {
+        await AuthenticationStateProvider.RefreshStaticVariables();
         await LoadDataAsync();
         hubEventsService.OnSupplierChanged += ReloadMovementsGrid;
     }
@@ -137,6 +141,7 @@ else
 
     private async Task<GridData<Movement>> ServerReload(GridState<Movement> state)
     { 
+        await AuthenticationStateProvider.RefreshStaticVariables();
         IsAllCheckBoxSelected = false;
         Loading = true;
         var totalItems = 0;
@@ -230,7 +235,8 @@ else
     }
           
     public void Dispose()
-    {        
+    { 
+        Useful.IsNewOrEdit = false;
         hubEventsService.OnSupplierChanged -= ReloadMovementsGrid;
     }
 }

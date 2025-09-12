@@ -5,12 +5,13 @@ namespace Sipcon.WebApp.Client.Helper
 {
     internal static class Useful
     { 
-        internal static int userId = 0;
-        internal static int supplierId = 0;
-        internal static int dealerId = 0;
+        internal static int userId = 0; //1
+        internal static int supplierId = 0; //4069
+        internal static int dealerId = 0; //5103
         internal static int customerId = 0;
         internal static string customerName = "";
         internal static bool IsNewOrEdit = false;
+        internal static bool IsFirstTime = true;
         public static User UserActive { get; set; } = new User();
         public static List<UserType> UserDealer { get; set; } = new List<UserType>();
         public static List<UserType> UserSuppliers { get; set; } = new List<UserType>();
@@ -89,7 +90,7 @@ namespace Sipcon.WebApp.Client.Helper
             };
         }
         internal static async Task OpenForm<TComponent, TModel>(this IDialogService dialogService, int? Id, MudDataGrid<TModel>? MyMudDataGrid) where TComponent : class, Microsoft.AspNetCore.Components.IComponent
-        {
+        {            
             var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
             var dialogReference = await dialogService.ShowAsync<TComponent>("", new DialogParameters { ["Value"] = Id }, options);
             var dialogResult = await dialogReference.Result;
