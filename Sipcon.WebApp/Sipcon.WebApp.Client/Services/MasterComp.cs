@@ -55,7 +55,7 @@ namespace Sipcon.WebApp.Client.Services
                     formData.Add(content, "file", file.Name);
                     loading = true;
 
-                    var response = await Http.PostAsync($"api/{clsModelName}/Import?userId={Useful.userId}", formData);
+                    var response = await Http.PostAsync($"api/{clsModelName}/Import?userId={Useful.userId}&supplierId={Useful.supplierId}", formData);
                     if (response.IsSuccessStatusCode)
                     {
                         await DialogService.ShowDialog("Archivo cargado con exito!.", "Importar", "OK", Color.Info, Icons.Material.Filled.Commit);
@@ -97,7 +97,7 @@ namespace Sipcon.WebApp.Client.Services
             if (actionName == "EXPORT")
             {
                 loading = true;
-                var ResultZonas = await Http.GetAsync($"api/{clsModelName}/Export?filter={searchString}&userId={Useful.userId}");
+                var ResultZonas = await Http.GetAsync($"api/{clsModelName}/Export?filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}");
                 if (ResultZonas.IsSuccessStatusCode)
                 {
                     var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
