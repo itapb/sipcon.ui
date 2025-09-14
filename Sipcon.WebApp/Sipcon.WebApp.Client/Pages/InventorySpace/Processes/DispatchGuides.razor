@@ -51,6 +51,7 @@ else
 }
 
 @code {
+    [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [Inject] private ILogger<DispatchGuides> Logger { get; set; } = default!;
@@ -84,8 +85,14 @@ else
         GuidesMudDataGrid?.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
         await Task.CompletedTask;
     }
-    private async Task ClickEditGuide(Mobile.Models.Guide item) => await Task.FromResult(GuideId = item.Id);
-    protected override async Task OnInitializedAsync() {     
+    private async Task ClickEditGuide(Mobile.Models.Guide item) 
+    {
+        Useful.IsNewOrEdit = true;
+        await Task.FromResult(GuideId = item.Id); 
+    }
+    protected override async Task OnInitializedAsync()   
+    {
+        await AuthenticationStateProvider.RefreshStaticVariables();
         await LoadDataAsync();
         hubEventsService.OnSupplierChanged += ReloadDispatchGuidesGrid;
     }
@@ -110,8 +117,9 @@ else
     };
 
     private async Task<GridData<Mobile.Models.Guide>> ServerReload(GridState<Mobile.Models.Guide> state)
-    {        
-        IsAllCheckBoxSelected = false;
+    { 
+        await AuthenticationStateProvider.RefreshStaticVariables();
+
         Loading = true;
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
@@ -193,7 +201,7 @@ else
     }
     public void Dispose()
     {       
-
+        Useful.IsNewOrEdit = false;
         hubEventsService.OnSupplierChanged -= ReloadDispatchGuidesGrid;
     }
 }

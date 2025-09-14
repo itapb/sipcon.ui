@@ -27,6 +27,8 @@
 
 
 @code {
+    [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
+
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
@@ -42,7 +44,8 @@
 
 
     private async Task<GridData<Inventory>> ServerReload(GridState<Inventory> state)
-    {        
+    {   
+        await AuthenticationStateProvider.RefreshStaticVariables();
         _loading = true;
         var mOffset = state.Page * state.PageSize;
         var totalItems = 0;
@@ -88,6 +91,7 @@
     }
     public void Dispose()
     {
+        Useful.IsNewOrEdit = false;
         hubEventsService.OnSupplierChanged -= ReloadStocktakingGrid;
     }
     protected override async Task OnInitializedAsync()

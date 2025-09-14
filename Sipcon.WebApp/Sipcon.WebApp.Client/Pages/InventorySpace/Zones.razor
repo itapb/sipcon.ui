@@ -1,4 +1,5 @@
 ﻿@page "/zones"
+@using Sipcon.WebApp.Client.Repository.Auth
 @inject HubEventsService hubEventsService
 @implements IDisposable
 
@@ -53,6 +54,7 @@ else{
     <ZoneForm @bind-Value="ZoneId" />
 }
 @code {    
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private MasterComp<Zone, ZoneForm> masterComp { get; set; } = default!;
     private int? ZoneId;
     List<BreadcrumbItem> ItemsNavigate = [new("Home", href: "", icon: Icons.Material.Filled.Home), new("Inventario", href: "zones", icon: Icons.Material.Filled.Inventory), new("Zona", href: "zones", icon: Icons.Material.Filled.Map)];
@@ -60,12 +62,15 @@ else{
 
 
     protected override async Task OnInitializedAsync()
-    {          
+    { 
+        await AuthenticationStateProvider.RefreshStaticVariables();
         await masterComp.FillModules();
         hubEventsService.OnSupplierChanged += ReloadZonesGrid;
     }
     private async Task<GridData<Zone>> ServerReload(GridState<Zone> state)
     {
+         await AuthenticationStateProvider.RefreshStaticVariables();
+
         masterComp.IsAllCheckBoxSelected = false;
         masterComp.loading = true;
         var mOffset = state.Page * state.PageSize;
@@ -97,6 +102,7 @@ else{
     }
     public void Dispose()
     {
+        Useful.IsNewOrEdit = false;
         hubEventsService.OnSupplierChanged -= ReloadZonesGrid;
     }
 

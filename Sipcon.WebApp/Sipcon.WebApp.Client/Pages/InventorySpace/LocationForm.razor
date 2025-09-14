@@ -20,20 +20,20 @@
                 <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
                     <MudStack Row="false">
                         <MudText Typo="Typo.h6" GutterBottom="true">@GetTitle</MudText>
-                        <MudTextField T="string" @bind-Value="SelectedLocation.Name" Label="Ubicacion" For="@(() => SelectedLocation.Name)" MaxLength="10" />
-                        <MudSelect T="Zone" Label="Zona" ToStringFunc="@ConvertZoneFunc" Required="true" ValueChanged="OnZoneValueChanged" RequiredError="campo requerido" Value="ZoneSelected">
+                        <MudTextField T="string" @bind-Value="SelectedLocation.Name" Label="Ubicacion" For="@(() => SelectedLocation.Name)" MaxLength="10" Disabled ="@(!SelectedLocation.IsActive ?? false)"/>
+                        <MudSelect T="Zone" Label="Zona" ToStringFunc="@ConvertZoneFunc" Required="true" ValueChanged="OnZoneValueChanged" RequiredError="campo requerido" Value="ZoneSelected" Disabled ="@(!SelectedLocation.IsActive ?? false)">
                             @foreach (var zone in Zones!)
                             {
                                 <MudSelectItem Value="zone" />
                             }
                         </MudSelect>
-                        <MudSelect T="LocationType" Label="Tipo Ubicacion" ToStringFunc="@ConvertLocationTypeFunc" Value="LocationTypeSelected" ValueChanged="OnLocationTypeValueChanged" RequiredError="Campo requerido." Required="true">
+                        <MudSelect T="LocationType" Label="Tipo Ubicacion" ToStringFunc="@ConvertLocationTypeFunc" Value="LocationTypeSelected" ValueChanged="OnLocationTypeValueChanged" RequiredError="Campo requerido." Required="true" Disabled ="@(!SelectedLocation.IsActive ?? false)">
                             @foreach (var locationtype in LocationTypes!)
                             {
                                 <MudSelectItem Value="locationtype" />
                             }
                         </MudSelect>
-                        <MudTextField T="int?" @bind-Value="SelectedLocation.Mapping" Label="Mapeo" For="@(() => SelectedLocation.Mapping)" RequiredError="campo requerido" Required="true" Mask="@(new PatternMask("0000000000"))"/>
+                        <MudTextField T="int?" @bind-Value="SelectedLocation.Mapping" Label="Mapeo" For="@(() => SelectedLocation.Mapping)" RequiredError="campo requerido" Required="true" Mask="@(new PatternMask("0000000000"))" Disabled ="@(!SelectedLocation.IsActive ?? false)"/>
                     </MudStack>
                 </MudPaper></MudPaper>
             </MudItem>
@@ -126,7 +126,7 @@ else
     }
     private async Task LoadLocation(int locationId)
     {
-        var request1 = Http.GetAsync($"api/Zone/GetAll?rowFrom=0&userId={Useful.userId}");
+        var request1 = Http.GetAsync($"api/Zone/GetAll?rowFrom=0&userId={Useful.userId}&supplierId={Useful.supplierId}");
         var request2 = Http.GetAsync($"api/Location/GetOne?locationId={locationId}&userId={Useful.userId}");
         await Task.WhenAll(request1, request2);
         HttpResponseMessage response1 = request1.Result;

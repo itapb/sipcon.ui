@@ -55,7 +55,7 @@ namespace Sipcon.WebApp.Client.Services
                     formData.Add(content, "file", file.Name);
                     loading = true;
 
-                    var response = await Http.PostAsync($"api/{clsModelName}/Import?userId={Useful.userId}", formData);
+                    var response = await Http.PostAsync($"api/{clsModelName}/Import?userId={Useful.userId}&supplierId={Useful.supplierId}", formData);
                     if (response.IsSuccessStatusCode)
                     {
                         await DialogService.ShowDialog("Archivo cargado con exito!.", "Importar", "OK", Color.Info, Icons.Material.Filled.Commit);
@@ -97,7 +97,7 @@ namespace Sipcon.WebApp.Client.Services
             if (actionName == "EXPORT")
             {
                 loading = true;
-                var ResultZonas = await Http.GetAsync($"api/{clsModelName}/Export?filter={searchString}&userId={Useful.userId}");
+                var ResultZonas = await Http.GetAsync($"api/{clsModelName}/Export?filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}");
                 if (ResultZonas.IsSuccessStatusCode)
                 {
                     var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
@@ -117,7 +117,7 @@ namespace Sipcon.WebApp.Client.Services
                                 (EntityMudDataGrid.FilteredItems.Where(item => item.IsSelected)
                                                                  .Select(item => new Client.Models.Action
                                                                  {
-                                                                     UserId = 1,
+                                                                     UserId = Useful.userId,
                                                                      RecordId = item.Id,
                                                                      ModuleId = Modules!.FirstOrDefault()?.Id,
                                                                      actionName = actionName,
@@ -129,8 +129,8 @@ namespace Sipcon.WebApp.Client.Services
             var result_Post_Actions = (SelectedActions is not null && SelectedActions.Count > 0) ? await Http.PostAsync($"api/{clsModelName}/PostActions?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
             if (result_Post_Actions is not null && result_Post_Actions.IsSuccessStatusCode)
             {
-                var resultAction = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
-                if (resultAction?.data![0].updatedRows > 0)
+                var resultAction = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
+                if (resultAction?.data!.updatedRows > 0)
                 {
                     var result = await DialogService.ShowDialog("Registro(s) Actualizados!", clsModelName.GetTitle(), "OK", Color.Info, Icons.Material.Filled.Commit);
                     await EntityMudDataGrid!.ReloadServerData();
