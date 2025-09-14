@@ -8,23 +8,15 @@
 
 <MudForm Model="@_model" @ref="@form" Validation="@(_modelValidator.ValidateValue)" ValidationDelay="0">
     <MudDialog Class="blur dialog-background " ActionsClass="dialog-background-surface">
-
         <DialogContent >
-
             <MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
-
                 <MudCard>
-
                     <MudCardHeader>
                         <CardHeaderContent>
-
                             <MudGrid Spacing="0" Justify="Justify.Center">
-
                                 <MudItem xs="12" sm="4">
                                     <div class="d-flex justify-left">
-
-                                       @*  <MudSwitch @bind-Value="_model.IsActive" Label="Activo" LabelPlacement="Placement.End" Color="Color.Success" Disabled="@(ActionsModal == ActionsEnum.Create ? true : false)" /> *@
-                                        <MudHidden @bind-value="IdVehicle" />
+                                        
                                     </div>
                                 </MudItem>
 
@@ -33,43 +25,29 @@
                                 </MudItem>
                                 <MudItem xs="12" sm="6">
                                     <div class="d-flex justify-right" style="justify-content: end;">
-
                                         <MudButton OnClick="Cancel">Cancelar</MudButton>
                                         <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Aceptar" OnClick="@(async () => await OnValidSubmit())" Color="Color.Info" Size="Size.Small" />
-
                                     </div>
                                 </MudItem>
                             </MudGrid>
-
-
-
                         </CardHeaderContent>
-
                     </MudCardHeader>
-
                 </MudCard>
-
             </MudContainer>
 
 
             <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
-
-
                 <MudGrid Spacing="1" Justify="Justify.Center">
 
                     @* Image Vehicle *@
                     <MudItem xs="12" sm="4">
                         <MudCard>
-
                             <MudCardContent Style="padding-top: 0px;">
                                 <div class="d-flex justify-center">
-
                                     <MudTooltip Text="Imagen Veiculo">
                                         <MudImage ObjectFit="ObjectFit.Cover" Width="172" Height="157" Src="images/changan_rojo_1.png" Alt="Model Card" Elevation="25" Class="" />
                                     </MudTooltip>
                                 </div>
-
-
                                 <MudSelect Typo="Typo.caption" @bind-Value="@_model.ColorId" 
                                            Label="Color" 
                                            AdornmentColor="Color.Default" 
@@ -86,11 +64,9 @@
                                 @if (ActionsModal != ActionsEnum.Create)
                                 {
                                     <div class="d-flex justify-start">
-
                                         <MudStack Row="true">
                                             <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
                                             <MudText Typo="Typo.subtitle2">Concesionario</MudText>
-
                                         </MudStack>
                                     </div>
                                     <MudStack Row="true">
@@ -109,8 +85,6 @@
                                         </MudSelect>
                                     </MudStack>
                                 }
-                               
-
                             </MudCardContent>
                         </MudCard>
                     </MudItem>
@@ -120,30 +94,13 @@
                         <MudCard>
                             <MudCardHeader>
                                 <CardHeaderContent>
+                                    <div class="d-flex justify-left">
+                                        <MudStack Row="true">
+                                            <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
+                                            <MudText Typo="Typo.h6">Datos del Vehiculo</MudText>
 
-                                    <MudGrid Spacing="0" Justify="Justify.Center">
-                                        <MudItem xs="12" sm="8">
-
-
-                                            <div class="d-flex justify-left">
-
-
-                                                <MudStack Row="true">
-                                                    <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
-                                                    <MudText Typo="Typo.h6">Datos del Vehiculo</MudText>
-
-                                                </MudStack>
-                                            </div>
-                                        </MudItem>
-
-                                        <MudItem xs="12" sm="4">
-
-                                         
-
-                                        </MudItem>
-                                    </MudGrid>
-
-
+                                        </MudStack>
+                                    </div>
                                 </CardHeaderContent>
                                 <CardHeaderActions>
                                     @if (_model.Id != 0)
@@ -225,19 +182,20 @@
                                 </MudStack>
 
                                 <MudStack Row="true">
-
-                                    <MudSelect T="int?" Value="@_model.BrandId" 
+                                    @* T="int?" Value="@_model.BrandId" *@
+                                    @* ValueChanged="@((int? brandId) => OnBrandValueChanged(brandId ?? 0))" *@
+                                    <MudSelect @bind-Value="@_model.BrandId" 
                                                Label="Marca"
                                                Typo="Typo.caption"
+                                               Variant="Variant.Filled"
                                                AdornmentColor="Color.Default"
                                                Margin="Margin.Dense"
-                                               ValueChanged="@((int? brandId) => OnBrandValueChanged(brandId ?? 0))"
                                                Validation="@(new Func<int?, IEnumerable<string>>(OnValidBrand))"
                                                Immediate="true"
-                                               Disabled="@(!_model.IsActive)">
+                                               Disabled="true">
                                         @foreach (var item in _brandList)
                                         {
-                                            <MudSelectItem Value="@item.Value" >@item.Text</MudSelectItem>
+                                            <MudSelectItem Value="@item.Value"  >@item.Text</MudSelectItem>
                                         }
                                     </MudSelect>
 
@@ -292,10 +250,7 @@
 
                                 }
 
-
-
                             </MudCardContent>
-
                         </MudCard>
                     </MudItem>
 
@@ -384,12 +339,16 @@
 
             _ColorList = await ModuleActionsService.GetColorOption(Useful.userId);
             
-            _brandList = await ModuleActionsService.GetBrandOption(Useful.userId);
-            // _SupplierList = await ModuleActionsService.GetSupplierOption(Useful.userId);
-            // _ModelList = await ModuleActionsService.GetModelOption(Useful.userId);
-            // _DealerList = await ModuleActionsService.GetDealerOption(Useful.userId);
+            _brandList = await ModuleActionsService.GetBrandOption(Useful.supplierId);
+            _model.BrandId = _model.BrandId ?? _brandList.FirstOrDefault()?.Value ?? 0;
 
-            await Task.Delay(100);
+            _model.ModelId = null;
+            _supplierList = await ModuleActionsService.GetSupplierOption(Useful.userId, _model.BrandId ?? 0);
+            _ModelList = await ModuleActionsService.GetModelOption(Useful.supplierId, Useful.userId, _model.BrandId ?? 0);
+            _model.SupplierId = _supplierList.FirstOrDefault()?.Value ?? null;
+
+            await Task.Delay(50);
+            StateHasChanged();
            
         }
         else
@@ -408,14 +367,15 @@
             _model = serviceResponse.Data ?? new Vehicle();
 
             _ColorList = await ModuleActionsService.GetColorOption(Useful.userId);
-            _brandList = await ModuleActionsService.GetBrandOption(Useful.userId);
+            _brandList = await ModuleActionsService.GetBrandOption(Useful.supplierId);
+            _model.BrandId = _model.BrandId ?? _brandList.FirstOrDefault()?.Value ?? 0;
             _supplierList = await ModuleActionsService.GetSupplierOption(Useful.userId, _model.BrandId ?? 0);
-            _ModelList = await ModuleActionsService.GetModelOption(Useful.userId, _model.BrandId ?? 0);
+            _ModelList = await ModuleActionsService.GetModelOption(Useful.supplierId, Useful.userId, _model.BrandId ?? 0);
 
             _DealerList = await ModuleActionsService.GetDealerOption(Useful.userId, _model.SupplierId ?? 0);
 
 
-            await Task.Delay(100);
+            await Task.Delay(50);
             StateHasChanged();
         }
         else
@@ -432,22 +392,21 @@
 
     }
 
-    private async Task OnBrandValueChanged(int BrandId)
-    {
+    // private async Task OnBrandValueChanged(int BrandId)
+    // {
         
-        _model.BrandId = BrandId;
-        _model.ModelId = null;
-        _supplierList = await ModuleActionsService.GetSupplierOption(Useful.userId, BrandId);
-        _ModelList = await ModuleActionsService.GetModelOption(Useful.userId, BrandId);
-        
-        await Task.Delay(50);
-        
-        _model.SupplierId = _supplierList.FirstOrDefault()?.Value ?? null;
+    //     _model.BrandId = BrandId;
+    //     _model.ModelId = null;
+    //     _supplierList = await ModuleActionsService.GetSupplierOption(Useful.userId, BrandId);
+    //     _ModelList = await ModuleActionsService.GetModelOption(Useful.supplierId, Useful.userId, BrandId);
+    //     _model.SupplierId = _supplierList.FirstOrDefault()?.Value ?? null;
 
-        StateHasChanged();
-        form?.ResetValidation();
-        await Task.CompletedTask;
-    }
+    //     await Task.Delay(50);
+
+    //     StateHasChanged();
+    //     form?.ResetValidation();
+    //     await Task.CompletedTask;
+    // }
 
     // private async Task OnSwitchValueChanged(bool newValue)
     // {

@@ -7,12 +7,13 @@
 @inject IDialogService DialogService
 @inject UtilModuleActions ModuleActionsService
 @inject IJSRuntime JSRuntime
-
+@inject HubEventsService hubEventsService
+@implements IDisposable
 
 <PageTitle>Vehiculos</PageTitle>
 <CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
 
-<InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
+@* <InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" /> *@
 
 <MudDataGrid @ref="_mudDataGrid"
              T="Vehicle"
@@ -48,55 +49,50 @@
             }
         </MudMenu>
     </ToolBarContent>
-    <Columns>
+    <Columns >
         <SelectColumn  />
-        <TemplateColumn  Title="MARCA">
+        
+        <TemplateColumn Title="MODELO">
             <CellTemplate>
+                <div class="d-flex justify-start" style="height: 45px;">
+                    <MudStack Row="true">
 
-                <div class="d-flex justify-center" style="height: 45px;">
-                    <MudTooltip Text="@context.Item.BrandName">
-                        <MudImage Src="@(context.Item.BrandName.ToUpper() == "CHANGAN" ? "Images/changan_marca.jpeg" : "Images/foton_marca.jpeg")" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg "
-                        FallbackSrc="@(context.Item.BrandName.ToUpper() == "CHANGAN" ? "Images/changan_emblema.png": "Images/foton_emblema.jpeg")" Height="45" Width="55"></MudImage>
-                    </MudTooltip>
-                </div>
-
-            </CellTemplate>
-        </TemplateColumn>
-        <TemplateColumn  Title="VIN">
-            <CellTemplate>
-                <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Vin.ToUpper()</MudText>
-            </CellTemplate>
-        </TemplateColumn>
-        <TemplateColumn  Title="PLACA">
-            <CellTemplate>
-
-                <MudStack Row="false">
-                    <MudText Typo="Typo.caption" Align="Align.Start"><b>@context.Item.Plate.ToUpper()</b></MudText>
-                </MudStack>
-
-            </CellTemplate>
-        </TemplateColumn>
-        <TemplateColumn  Title="AÑO">
-            <CellTemplate>
-                <div class="d-flex justify-end">
-                    <MudText Typo="Typo.caption" Align="Align.End">
-                        @(context.Item.Year?.ToString("N0"))
-                    </MudText>
+                        <MudTooltip Text="@context.Item.BrandName">
+                            <MudImage Src="@(context.Item.BrandName.ToUpper() == "CHANGAN" ? "Images/changan_marca.jpeg" : "Images/foton_marca.jpeg")" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg "
+                                      FallbackSrc="@(context.Item.BrandName.ToUpper() == "CHANGAN" ? "Images/changan_emblema.png": "Images/foton_emblema.jpeg")" Height="45" Width="55"></MudImage>
+                        </MudTooltip>
+                        <MudText Typo="Typo.caption" Align="Align.Left" Class="mt-2 ml-2">
+                            @(context.Item.ModelName.ToUpper())
+                        </MudText>
+                    </MudStack>
                 </div>
             </CellTemplate>
         </TemplateColumn>
-        <PropertyColumn Property="x => x.ColorName" Title="COLOR" Sortable="false" Filterable="false" />
-        <TemplateColumn  Title="MODELO">
+        <TemplateColumn Title="VIN" >
             <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Start">
-                    @(context.Item.ModelName.ToUpper())
+                <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Align="Align.Left" Style="font-weight:bold;">
+                    @context.Item.Vin.ToUpper()
                 </MudText>
             </CellTemplate>
         </TemplateColumn>
-        <PropertyColumn Property="x => x.SupplierName" Title="PLANTA" Sortable="false" Filterable="false" />
-        <TemplateColumn  Title="ESTATUS">
+        <TemplateColumn Title="PLACA">
             <CellTemplate>
-                <div class="d-flex justify-center">
+                <MudText Typo="Typo.caption" Align="Align.Left"><b>@context.Item.Plate.ToUpper()</b></MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="AÑO">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left">
+                    @(context.Item.Year?.ToString())
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.ColorName" Title="COLOR" Sortable="false" Filterable="false" HeaderClass="center-header" HeaderStyle="" />
+       
+        <PropertyColumn Property="x => x.SupplierName" Title="PLANTA" Sortable="false" Filterable="false" HeaderClass="center-header" HeaderStyle="" />
+        <TemplateColumn Title="ESTATUS" >
+            <CellTemplate>
+                <div class="d-flex justify-start">
                     @if (context.Item.EstatusName != null)
                     {
                         string style = "";
@@ -134,15 +130,7 @@
                 </div>
             </CellTemplate>
         </TemplateColumn>
-       @*  <TemplateColumn  Title="Activo">
-            <CellTemplate>
-                <div class="d-flex justify-center">
-                    <MudIcon Icon="@(context.Item.IsActive ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.IsActive ? Color.Success : Color.Error)" Size="Size.Medium" />
-                </div>
-
-            </CellTemplate>
-        </TemplateColumn> *@
-        <TemplateColumn >
+        <TemplateColumn>
             <CellTemplate>
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditVehicle(context.Item)" />
             </CellTemplate>
@@ -153,32 +141,36 @@
     </PagerContent>
 </MudDataGrid>
 
-<MudDialog @bind-Visible="_nestedVisible">
-    <TitleContent>
-        <MudStack Row="true">
-            <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="@(_success ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
-            <MudText Typo="Typo.h6">Vehiculo</MudText>
-        </MudStack>
-    </TitleContent>
-    <DialogContent>
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Vehiculos")" />
 
-        <MudStack Row="true">
-            <MudText Class="nested"><p>@_nestedErrorMessage!</p> </MudText>
-        </MudStack>
+<style>
+    .nested {
+        font-size: 1rem;
+        font-weight: 500;
+        color: #424242;
+        text-align: center;
+    }
 
-    </DialogContent>
-    <DialogActions>
+    .center-header {
+        text-align: center;
+        
+    }
 
-        <MudButton Color="Color.Info" OnClick="CloseNested" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
+    .column-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
-    </DialogActions>
-</MudDialog>
+
+   
+</style>
 
 
 @code {
     private IEnumerable<Vehicle> _Vehicles = new List<Vehicle>();
     private string _nestedErrorMessage = string.Empty;
-    private bool _nestedVisible;
+    private bool _nestedVisible = false;
     bool _success = false;
 
     private int _rowCount = 0;
@@ -199,7 +191,26 @@
         new("Vehiculos",  href: "vehicles", disabled: false, icon: Icons.Material.Filled.CardTravel),
     ];
 
+    protected override async Task OnInitializedAsync()
+    {
+        hubEventsService.OnSupplierChanged += ReloadServerData;
+        hubEventsService.OnDealerChanged += ReloadServerData;
+        await Task.CompletedTask;
+    }
 
+    private async Task ReloadServerData()
+    {
+        if (_mudDataGrid != null)
+        {
+            await _mudDataGrid!.ReloadServerData();
+        }
+    }
+
+    public void Dispose()
+    {
+        hubEventsService.OnSupplierChanged -= ReloadServerData;
+        hubEventsService.OnDealerChanged -= ReloadServerData;
+    }
 
     private async Task<GridData<Vehicle>> LoadGridData(GridState<Vehicle> state)
     {
@@ -214,7 +225,7 @@
     private async Task GetVehicles()
     {
         _loading = true;
-        var serviceResponse = await VehicleService.GetVehicles(Useful.userId, _rowCount, _searchString);
+        var serviceResponse = await VehicleService.GetVehicles(Useful.supplierId, Useful.userId, _rowCount, _searchString, Useful.dealerId);
         if (serviceResponse.Processed)
         {
             _Vehicles = serviceResponse.Data;
@@ -309,10 +320,6 @@
 
     private void OpenNested() => _nestedVisible = true;
 
-    private void CloseNested() => _nestedVisible = false;
-
-
-
     private async Task HandleMenuClick(ModuleAction module)
     {
         switch (module.ActionName)
@@ -347,12 +354,6 @@
         }
     }
 
-    // private async Task ImportItemsAsync()
-    // {
-
-    //     await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('[type=file]').click()");
-    //     return;
-    // }
 
     private async Task ImportItemsAsync()
     {
@@ -391,7 +392,7 @@
                 formData.Add(content, "file", file.Name);
 
 
-                var serviceResponse = await VehicleService.ImportVehicles(Useful.userId, formData);
+                var serviceResponse = await VehicleService.ImportVehicles(Useful.supplierId, Useful.userId, formData);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -421,63 +422,63 @@
     }
 
 
-    private async Task OnInputFileChange(InputFileChangeEventArgs e)
-    {
-        if (e.FileCount == 1)
-        {
-            var file = e.File;
-            const long maxAllowedSize = 10 * 1024 * 1024; // 10MB
-            if (file.Size == 0)
-            {
-                _success = false;
-                _nestedErrorMessage = MessageEnum.ImportError.GetStringValue();
-                OpenNested();
-            }
-            else if (file.Size > maxAllowedSize)
-            {
-                _success = false;
-                _nestedErrorMessage = MessageEnum.ImportErrorMaxByte.GetStringValue();
-                OpenNested();
-            }
-            else
-            {
-                using var stream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
+    // private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    // {
+    //     if (e.FileCount == 1)
+    //     {
+    //         var file = e.File;
+    //         const long maxAllowedSize = 10 * 1024 * 1024; // 10MB
+    //         if (file.Size == 0)
+    //         {
+    //             _success = false;
+    //             _nestedErrorMessage = MessageEnum.ImportError.GetStringValue();
+    //             OpenNested();
+    //         }
+    //         else if (file.Size > maxAllowedSize)
+    //         {
+    //             _success = false;
+    //             _nestedErrorMessage = MessageEnum.ImportErrorMaxByte.GetStringValue();
+    //             OpenNested();
+    //         }
+    //         else
+    //         {
+    //             using var stream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
 
-                var content = new StreamContent(stream);
-                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+    //             var content = new StreamContent(stream);
+    //             content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
 
-                // Create a multipart form data content
-                var formData = new MultipartFormDataContent();
-                formData.Add(content, "file", file.Name);
+    //             // Create a multipart form data content
+    //             var formData = new MultipartFormDataContent();
+    //             formData.Add(content, "file", file.Name);
            
 
-                var serviceResponse = await VehicleService.ImportVehicles(Useful.userId, formData);
-                if (serviceResponse.Processed)
-                {
-                    _success = true;
-                    _nestedErrorMessage = MessageEnum.ImportOK.GetStringValue();
+    //             var serviceResponse = await VehicleService.ImportVehicles(Useful.userId, formData);
+    //             if (serviceResponse.Processed)
+    //             {
+    //                 _success = true;
+    //                 _nestedErrorMessage = MessageEnum.ImportOK.GetStringValue();
 
-                    OpenNested();
-                    await _mudDataGrid!.ReloadServerData();
-                    StateHasChanged();
+    //                 OpenNested();
+    //                 await _mudDataGrid!.ReloadServerData();
+    //                 StateHasChanged();
 
-                }
-                else
-                {
-                    _success = false;
-                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ImportNotOK.GetStringValue();
-                    OpenNested();
+    //             }
+    //             else
+    //             {
+    //                 _success = false;
+    //                 _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ImportNotOK.GetStringValue();
+    //                 OpenNested();
 
-                }
-            }
-        }
-        await Task.CompletedTask;
-    }
+    //             }
+    //         }
+    //     }
+    //     await Task.CompletedTask;
+    // }
 
     private async Task ExportItemsAsync()
     {
 
-        var serviceResponse = await VehicleService.ExportVehicles(Useful.userId, _searchString);
+        var serviceResponse = await VehicleService.ExportVehicles(Useful.supplierId, Useful.userId, _searchString);
         if (serviceResponse.Processed)
         {
             _success = true;

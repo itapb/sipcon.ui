@@ -12,13 +12,17 @@
         private readonly HttpClient _http = http;
 
 
-        public async Task<ApiResponse<List<PolicyType>>> GetPolicyTypes(int IdUser, int RowFrom = 0, string Filter = "")
+        public async Task<ApiResponse<List<PolicyType>>> GetPolicyTypes(int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "", int? Idbrand = null)
         {
             ApiResponse<List<PolicyType>>? result;
 
             try
             {
-                result = await _http.GetFromJsonAsync<ApiResponse<List<PolicyType>>>($"api/PolicyType/GetAll?filter={Filter}&rowFrom={RowFrom}&userId={IdUser}");
+                var url = $"api/PolicyType/GetAll?supplierId={IdSupplier}&userId={IdUser}&rowFrom={RowFrom}";
+                url = (Idbrand.HasValue && Idbrand.Value > 0) ? $"{url}&brandId={Idbrand}" : url;
+                url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
+
+                result = await _http.GetFromJsonAsync<ApiResponse<List<PolicyType>>>(url);
 
 
                 result = result is null ? new ApiResponse<List<PolicyType>>()
@@ -116,11 +120,6 @@
 
                 var response = await _http.PostAsJsonAsync($"api/PolicyType/PostPolicyType?userId={IdUser}", policyType);
 
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    throw new Exception($"Error al crear el PolicyType: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                //}
-
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
                 {
@@ -167,11 +166,6 @@
                 policyType.Add(PolicyType);
 
                 var response = await _http.PostAsJsonAsync($"api/PolicyType/PostPolicyType?userId={IdUser}", policyType);
-
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    throw new Exception($"Error al crear el PolicyType: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                //}
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
@@ -223,14 +217,8 @@
                     WriteIndented = true
                 };
 
-
                 var response = await _http.PostAsJsonAsync($"api/PolicyType/PostActions?userId={IdUser}", PostActions, options);
-
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    throw new Exception($"Error accion Tipo Poliza: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                //}
-
+                
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
                 {
@@ -269,13 +257,16 @@
 
         }
 
-        public async Task<ApiResponse<List<byte>>> ExportPolicyTypes(int IdUser, string Filter = "")
+        public async Task<ApiResponse<List<byte>>> ExportPolicyTypes(int IdSupplier, int IdUser, string Filter = "")
         {
             ApiResponse<List<byte>> result;
             string fileUrl = string.Empty;
             try
             {
-                var response = await _http.GetAsync($"api/PolicyType/Export?filter={Filter}&userId={IdUser}");
+                var url = $"api/PolicyType/Export?supplierId={IdSupplier}&userId={IdUser}";
+                url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
+
+                var response = await _http.GetAsync(url);
                 if (!response.IsSuccessStatusCode)
                 {
                     throw new Exception($"Error Export Tipo Polizas: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
@@ -320,13 +311,15 @@
             return result;
         }
 
-        public async Task<ApiResponse<bool>> ImportPolicyTypes(int IdUser, MultipartFormDataContent FormData)
+        public async Task<ApiResponse<bool>> ImportPolicyTypes(int IdSupplier, int IdUser, MultipartFormDataContent FormData)
         {
             ApiResponse<bool> result;
 
             try
             {
-                var response = await _http.PostAsync($"api/PolicyType/Import?userId={IdUser}", FormData);
+                var url = $"api/PolicyType/Import?supplierId={IdSupplier}&userId={IdUser}";
+
+                var response = await _http.PostAsync(url, FormData);
                 if (!response.IsSuccessStatusCode)
                 {
                     throw new Exception($"Error Importar Tipo Polizas: {response.StatusCode.ToString()} - {response.ReasonPhrase}");

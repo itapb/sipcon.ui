@@ -243,27 +243,33 @@
     {
         errorBoundary?.Recover();
 
+        
         _isAthenticate = await AuthenticationStateProvider.IsUserAuthenticated();
-
-
         _drawerOpen = _isAthenticate ? _isAthenticate : false;
-
 
         if (_isAthenticate)
         {
             _UserSuppliers = await AuthenticationStateProvider.GetUserSupplierAsync();
-            _UserDealers = await AuthenticationStateProvider.GetUserDealerAsync();
+            SelectedSupplierValue = await AuthenticationStateProvider.GetSelectedSupplierAsync();
+            SelectedDealerValue = await AuthenticationStateProvider.GetSelectedDealerAsync();
+            var userActive = await AuthenticationStateProvider.GetUserAsync();
+
+            var userDealers = await AuthenticationStateProvider.GetUserDealerAsync();
+            _UserDealers = userDealers.Where(s => s.SupplierId == SelectedSupplierValue.ToString()).ToList();
             _UserModules = await AuthenticationStateProvider.GetUserRoleAsync();
             _userActive = await AuthenticationStateProvider.GetUserAsync();
 
-            int selectedDealer = await AuthenticationStateProvider.GetSelectedDealerAsync();
-            int selectedSupplier = await AuthenticationStateProvider.GetSelectedSupplierAsync();
 
             // Console.WriteLine("User Modules: " + string.Join(", ", _UserModules.Select(m => m.Name)));
-            SelectedSupplierText = _UserSuppliers.Count > 0 ? _UserSuppliers.First(s => s.Id == selectedSupplier).Name : "Planta";
-            SelectedDealerText = _UserDealers.Count > 0 ? _UserDealers.First(s => s.Id == selectedDealer).Name : "Concesionario";
+            SelectedSupplierText = _UserSuppliers.Count > 0 ? _UserSuppliers.First(s => s.Id == SelectedSupplierValue).Name : "Planta";
+            SelectedDealerText = _UserDealers.Count > 0 ? _UserDealers.First(s => s.Id == SelectedDealerValue).Name : "Concesionario";
+
+            Useful.supplierId = SelectedSupplierValue;
+            Useful.dealerId = SelectedDealerValue;
+            Useful.userId = userActive.Id;
         }
 
+       
         await Task.CompletedTask;
         StateHasChanged();
 
@@ -274,6 +280,31 @@
         base.OnInitialized();
         Useful.IsNewOrEdit = false;
         await AuthenticationStateProvider.SetTimerInactivo(DotNetObjectReference.Create(this));
+
+        _isAthenticate = await AuthenticationStateProvider.IsUserAuthenticated();
+
+        if (_isAthenticate)
+        {
+            _UserSuppliers = await AuthenticationStateProvider.GetUserSupplierAsync();
+            SelectedSupplierValue = await AuthenticationStateProvider.GetSelectedSupplierAsync();
+            SelectedDealerValue = await AuthenticationStateProvider.GetSelectedDealerAsync();
+            var userActive = await AuthenticationStateProvider.GetUserAsync();
+
+            var userDealers = await AuthenticationStateProvider.GetUserDealerAsync();
+            _UserDealers = userDealers.Where(s => s.SupplierId == SelectedSupplierValue.ToString()).ToList();
+            _UserModules = await AuthenticationStateProvider.GetUserRoleAsync();
+            _userActive = await AuthenticationStateProvider.GetUserAsync();
+
+
+            // Console.WriteLine("User Modules: " + string.Join(", ", _UserModules.Select(m => m.Name)));
+            SelectedSupplierText = _UserSuppliers.Count > 0 ? _UserSuppliers.First(s => s.Id == SelectedSupplierValue).Name : "Planta";
+            SelectedDealerText = _UserDealers.Count > 0 ? _UserDealers.First(s => s.Id == SelectedDealerValue).Name : "Concesionario";
+
+            Useful.supplierId = SelectedSupplierValue;
+            Useful.dealerId = SelectedDealerValue;
+            Useful.userId = userActive.Id;
+        }
+
 
        _theme = new()
        {
@@ -308,8 +339,18 @@
         _expandedSupplier = !_expandedSupplier;
         SelectedSupplierText = _UserSuppliers.FirstOrDefault(x => x.Id == SelectedSupplierValue)?.Name ?? "Planta";
         await AuthenticationStateProvider.SetValueSessionStorage<int>(SelectedSupplierValue, ValuesKey.SELECTEDSUPPLIER);
-        _open = false;
         Useful.supplierId = SelectedSupplierValue;
+
+        _open = false;
+
+        var userDealers = await AuthenticationStateProvider.GetUserDealerAsync();
+        _UserDealers = userDealers.Where(s => s.SupplierId == SelectedSupplierValue.ToString()).ToList();
+        
+        SelectedDealerValue = _UserDealers.Count > 0 ? _UserDealers.FirstOrDefault()!.Id : 0;
+        SelectedDealerText = _UserDealers.FirstOrDefault(x => x.Id == SelectedDealerValue)?.Name ?? "Concesionario";
+        await AuthenticationStateProvider.SetValueSessionStorage<int>(SelectedDealerValue, ValuesKey.SELECTEDDEALER);
+        Useful.dealerId = SelectedDealerValue;
+       
         await hubEventsService.NotifySupplierChangedAsync();
         await Task.CompletedTask;
     }
@@ -319,8 +360,10 @@
         _expandedDealer = !_expandedDealer;
         SelectedDealerText = _UserDealers.FirstOrDefault(x => x.Id == SelectedDealerValue)?.Name ?? "Concesionario";
         await AuthenticationStateProvider.SetValueSessionStorage<int>(SelectedDealerValue, ValuesKey.SELECTEDDEALER);
-        _open = false;
         Useful.dealerId = SelectedDealerValue;
+
+        _open = false;
+        
         await hubEventsService.NotifyDealerChangedAsync();
         await Task.CompletedTask;
     }

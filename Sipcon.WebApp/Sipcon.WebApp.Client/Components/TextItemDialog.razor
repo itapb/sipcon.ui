@@ -67,16 +67,31 @@
                         </MudCardHeader>
                         <MudCardContent Style="padding-top: 3px;">
                             <MudStack Row="true">
-
-                                    <MudTextField Typo="Typo.caption" @bind-Value="_returnValue" 
-                                                  Label="@(string.IsNullOrEmpty(Label) ? "Observaciòn" : Label)"
-                                                  Margin="Margin.Dense" 
-                                                  Counter="500"
-                                                  MaxLength="500"
-                                                  HelperText="Minimo 10 car&aacute;cteres"
-                                                  Validation="@_SelectValidator.Validation" 
-                                                  Immediate="true" 
-                                                  Disabled="false" />
+                                    @if (Module == "SEGURIDAD-USUARIOS")
+                                    {
+                                        <MudTextField Typo="Typo.caption" @bind-Value="_returnValue"
+                                                      Label="@(string.IsNullOrEmpty(Label) ? "Usuario" : Label)"
+                                                      Margin="Margin.Dense"
+                                                      Counter="15"
+                                                      MaxLength="15"
+                                                      HelperText="Minimo 5 car&aacute;cteres"
+                                                      Validation="@_SelectValidatorLogin.Validation"
+                                                      Immediate="true"
+                                                      Disabled="false" />
+                                    }
+                                    else
+                                    {
+                                        <MudTextField Typo="Typo.caption" @bind-Value="_returnValue"
+                                                      Label="@(string.IsNullOrEmpty(Label) ? "Observaciòn" : Label)"
+                                                      Margin="Margin.Dense"
+                                                      Counter="500"
+                                                      MaxLength="500"
+                                                      HelperText="Minimo 10 car&aacute;cteres"
+                                                      Validation="@_SelectValidator.Validation"
+                                                      Immediate="true"
+                                                      Disabled="false" />
+                                    }
+                                   
                             </MudStack>
 
 
@@ -119,10 +134,9 @@
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = default!;
 
-    [Parameter]
-    public string Title { get; set; } = string.Empty;
-    [Parameter]
-    public string? Label { get; set; } = string.Empty;
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Label { get; set; } = string.Empty;
+    [Parameter] public string? Module { get; set; } = string.Empty;
 
 
     private MudForm? form;
@@ -134,6 +148,11 @@
         .NotNull().WithMessage("Campo requerido")
         .NotEmpty().WithMessage("Campo requerido")
         .Length(10, 500).WithMessage("Campo requerido entre 10-500 carácteres"));
+
+    SelectValidator<string> _SelectValidatorLogin = new SelectValidator<string>(x => x
+        .NotNull().WithMessage("Campo requerido")
+        .NotEmpty().WithMessage("Campo requerido")
+        .Length(5, 15).WithMessage("Campo requerido entre 5-15 carácteres"));
 
     private IEnumerable<string> MaxCharacters(string ch)
     {

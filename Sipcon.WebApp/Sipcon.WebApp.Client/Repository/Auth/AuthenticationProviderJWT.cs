@@ -79,8 +79,9 @@ namespace Sipcon.WebApp.Client.Repository.Auth
             await _jsSessionStorage.SetValue<List<UserType>>(ValuesKey.SUPPLIERS, data.Suppliers);
             await _jsSessionStorage.SetValue<List<UserType>>(ValuesKey.DEALERS, data.Dealers);
             await _jsSessionStorage.SetValue<List<UserModule>>(ValuesKey.MODULES, data.Modules);
-            var selectedDealer = data.Dealers.FirstOrDefault() != null ? data.Dealers.FirstOrDefault()!.Id : 0;
             var selectedSupplier = data.Suppliers.FirstOrDefault() != null ? data.Suppliers.FirstOrDefault()!.Id : 0;
+            var selectedDealer = data.Dealers.Count > 0 ? data.Dealers.Where(s => s.SupplierId == selectedSupplier.ToString()).FirstOrDefault()!.Id : 0;
+           
             await _jsSessionStorage.SetValue<int>(ValuesKey.SELECTEDSUPPLIER, selectedSupplier);
             await _jsSessionStorage.SetValue<int>(ValuesKey.SELECTEDDEALER, selectedDealer);
 

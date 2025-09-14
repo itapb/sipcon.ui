@@ -7,11 +7,11 @@
 @inject IDialogService DialogService
 @inject UtilModuleActions ModuleActionsService
 @inject IJSRuntime JSRuntime
+@inject HubEventsService hubEventsService
+@implements IDisposable
 
 <PageTitle>Modelos</PageTitle>
 <CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
-
-<InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
 
 <MudDataGrid @ref="_mudDataGrid"
              T="Model"
@@ -46,30 +46,32 @@
         </MudMenu>
     </ToolBarContent>
     <Columns>
-        <SelectColumn  />
-        <TemplateColumn  Title="MARCA">
+        <SelectColumn />
+      @* <PropertyColumn Property="x => x.Name" Title="NOMBRE" Sortable="false" Filterable="false" HeaderStyle="" /> *@
+        <TemplateColumn Title="MODELO">
             <CellTemplate>
-                    
-                <div class="d-flex justify-center" style="height: 45px;">
-                    <MudTooltip Text="@context.Item.BrandName">
-                        <MudImage Src="@(context.Item.BrandName.ToUpper() == "CHANGAN" ? "Images/changan_marca.jpeg" : "Images/foton_marca.jpeg")" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg "
-                                    FallbackSrc="@(context.Item.BrandName.ToUpper() == "CHANGAN" ? "Images/changan_emblema.png": "Images/foton_emblema.jpeg")" Height="45" Width="55"></MudImage>
-                    </MudTooltip>
+                <div class="d-flex justify-start" style="height: 45px;">
+                    <MudStack Row="true">
+                        <MudTooltip Text="@context.Item.BrandName">
+                            <MudImage Src="@(context.Item.BrandName.ToUpper() == "CHANGAN" ? "Images/changan_marca.jpeg" : "Images/foton_marca.jpeg")" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg "
+                                      FallbackSrc="@(context.Item.BrandName.ToUpper() == "CHANGAN" ? "Images/changan_emblema.png": "Images/foton_emblema.jpeg")" Height="45" Width="55"></MudImage>
+                        </MudTooltip>
+                        <MudText Typo="Typo.caption" Align="Align.Left" Class="mt-2 ml-2">
+                            @context.Item.Name
+                        </MudText>
+                    </MudStack>
                 </div>
-                   
             </CellTemplate>
         </TemplateColumn>
-        <PropertyColumn Property="x => x.Name" Title="NOMBRE" Sortable="false" Filterable="false" />
-        <PropertyColumn Property="x => x.PolicyTypeName" Title="POLIZA" Sortable="false" Filterable="false" />
-        <TemplateColumn  Title="ACTIVO">
-                 
+        <PropertyColumn Property="x => x.PolicyTypeName" Title="POLIZA" Sortable="false" Filterable="false" HeaderStyle="" />
+        <TemplateColumn Title="ACTIVO" HeaderStyle="">
             <CellTemplate>
-                <div class="d-flex justify-center">
+                <div class="d-flex justify-start">
                     <MudIcon Icon="@(context.Item.IsActive ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.IsActive ? Color.Success : Color.Error)" Size="Size.Medium" />
                 </div>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn >
+        <TemplateColumn HeaderStyle="">
             <CellTemplate>
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditModel(context.Item)" />
             </CellTemplate>
@@ -81,26 +83,7 @@
     </PagerContent>
 </MudDataGrid>
 
-<MudDialog @bind-Visible="_nestedVisible">
-    <TitleContent>
-        <MudStack Row="true">
-            <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="@(_success ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
-            <MudText Typo="Typo.h6">Modelo</MudText>
-        </MudStack>
-    </TitleContent>
-    <DialogContent>
-
-        <MudStack Row="true">
-            <MudText Class="nested"><p>@_nestedErrorMessage!</p> </MudText>
-        </MudStack>
-
-    </DialogContent>
-    <DialogActions>
-            
-        <MudButton Color="Color.Info" OnClick="CloseNested" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
-
-    </DialogActions>
-</MudDialog>
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Modelos")" />
 
 
 
@@ -128,6 +111,24 @@
         new("Modelos", href: "models", disabled: false, icon: Icons.Material.Filled.Policy )
     ];
 
+    protected override async Task OnInitializedAsync()
+    {
+        hubEventsService.OnSupplierChanged += ReloadServerData;
+        await Task.CompletedTask;
+    }
+
+    private async Task ReloadServerData()
+    {
+        if (_mudDataGrid != null)
+        {
+            await _mudDataGrid!.ReloadServerData();
+        }
+    }
+
+    public void Dispose()
+    {
+        hubEventsService.OnSupplierChanged -= ReloadServerData;
+    }
 
     private async Task<GridData<Model>> LoadGridData(GridState<Model> state)
     {
@@ -142,7 +143,7 @@
     private async Task GetModels()
     {
         _loading = true;
-        var serviceResponse = await ModelService.GetModels(Useful.userId, _rowCount, _searchString);
+        var serviceResponse = await ModelService.GetModels(Useful.supplierId, Useful.userId, _rowCount, _searchString);
         if (serviceResponse.Processed)
         {
             _Models = serviceResponse.Data;
@@ -235,8 +236,6 @@
     
     private void OpenNested() => _nestedVisible = true;
 
-    private void CloseNested() => _nestedVisible = false;
-
 
     private async Task HandleMenuClick(ModuleAction module)
     {
@@ -260,13 +259,7 @@
         }
     }
 
-    // private async Task ImportItemsAsync()
-    // {
-
-    //     await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('[type=file]').click()");
-    //     return;
-    // }
-
+  
     private async Task ImportItemsAsync()
     {
 
@@ -304,7 +297,7 @@
                 formData.Add(content, "file", file.Name);
 
 
-                var serviceResponse = await ModelService.ImportModels(Useful.userId, formData);
+                var serviceResponse = await ModelService.ImportModels(Useful.supplierId, Useful.userId, formData);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -331,63 +324,9 @@
     }
 
 
-    private async Task OnInputFileChange(InputFileChangeEventArgs e)
-    {
-        if (e.FileCount == 1)
-        {
-            var file = e.File;
-            const long maxAllowedSize = 10 * 1024 * 1024; // 10MB
-            if (file.Size == 0)
-            {
-                _success = false;
-                _nestedErrorMessage = MessageEnum.ImportError.GetStringValue();
-                OpenNested();
-            }
-            else if (file.Size > maxAllowedSize)
-            {
-                _success = false;
-                _nestedErrorMessage = MessageEnum.ImportErrorMaxByte.GetStringValue();
-                OpenNested();
-            }
-            else
-            {
-                using var stream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
-
-                var content = new StreamContent(stream);
-                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
-
-                // Create a multipart form data content
-                var formData = new MultipartFormDataContent();
-                formData.Add(content, "file", file.Name);
-
-
-                var serviceResponse = await ModelService.ImportModels(Useful.userId, formData);
-                if (serviceResponse.Processed)
-                {
-                    _success = true;
-                    _nestedErrorMessage = MessageEnum.ImportOK.GetStringValue();
-
-                    OpenNested();
-                    await _mudDataGrid!.ReloadServerData();
-                    StateHasChanged();
-
-                }
-                else
-                {
-                    _success = false;
-                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ImportNotOK.GetStringValue();
-                    OpenNested();
-
-                }
-            }
-        }
-        await Task.CompletedTask;
-    }
-
-    
     private async Task ExportItemsAsync()
     {
-        var serviceResponse = await ModelService.ExportModels(Useful.userId, _searchString);
+        var serviceResponse = await ModelService.ExportModels(Useful.supplierId, Useful.userId, _searchString);
         if (serviceResponse.Processed)
         {
             _success = true;

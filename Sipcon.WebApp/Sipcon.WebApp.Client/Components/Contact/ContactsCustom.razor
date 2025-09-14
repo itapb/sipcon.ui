@@ -2,7 +2,7 @@
 <MudDataGrid @ref="ContactMudDataGrid" T="Contact" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 260px)" Loading="_loading" @bind-CurrentPage="ContactCurrentPage">
     <ToolBarContent>
         <MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="ClickAddContact" Color="Color.Info"></MudIconButton>
-        <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s=>OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
         <MudSpacer />
         <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshContact"></MudIconButton>
         <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
@@ -27,24 +27,24 @@
         <PropertyColumn Property="x => x.Reference" title="CODIGO" />
         @if (!Modulo.ToUpper().Equals("CONTACTOS-CONTACTOS"))
         {
-            <PropertyColumn Property="x => x.Type" title="TIPO"/>
+            <PropertyColumn Property="x => x.Type" title="TIPO" />
         }
         <TemplateColumn>
             <HeaderTemplate>
                 <MudText>ACTIVO</MudText>
             </HeaderTemplate>
-            <CellTemplate> 
+            <CellTemplate>
                 <MudIcon Icon="@(context.Item.IsActive ?? false ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.IsActive ?? false ? Color.Success : Color.Error)" Size="Size.Medium" />
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn>
             <CellTemplate>
-                <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="()=> ClickEditContact(context.Item)" />
+                <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditContact(context.Item)" />
             </CellTemplate>
         </TemplateColumn>
     </Columns>
     <PagerContent>
-        <MudDataGridPager T="Contact" PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        <MudDataGridPager T="Contact" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
     </PagerContent>
 </MudDataGrid>
 
@@ -53,18 +53,18 @@
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
-    
+
     [Parameter] public string Modulo { get; set; } = string.Empty;
 
-    bool _loading = true;   
+    bool _loading = true;
     bool IsAllCheckBoxSelected = false;
 
     string searchString = "";
     private int ContactCurrentPage = 0;
     private List<Module>? Modules;
-    private MudDataGrid<Contact>? ContactMudDataGrid;  
-    
-    
+    private MudDataGrid<Contact>? ContactMudDataGrid;
+
+
 
     private async Task AfterAsyncAllCheck()
     {
@@ -74,10 +74,12 @@
     }
 
     private async Task<GridData<Contact>> ServerReload(GridState<Contact> state)
-    {       
+    {
         IsAllCheckBoxSelected = false;
         _loading = true;
-        var mOffset = state.Page * state.PageSize;       
+        var mOffset = state.Page * state.PageSize;
+
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName={Modulo}&userId={Useful.userId}");
         IEnumerable<Contact> data = await Http.GetFromJsonAsync<List<Contact>>($"api/Contact/GetAll?filter={searchString}&rowFrom={mOffset}&idUser={Useful.userId}&moduleName={Modulo}") ?? new List<Contact>();
 
         var totalItems = (data.Count()! > 0) ? data.FirstOrDefault()!.Total : 0;
@@ -107,8 +109,9 @@
             }
         }
         _loading = false;
-        return new GridData<Contact>{TotalItems = totalItems, Items = data};
+        return new GridData<Contact> { TotalItems = totalItems, Items = data };
     }
+
     private async Task OnSearch(string text)
     {
         if (text.Length == 0 || text.Length >= 3)
@@ -116,9 +119,9 @@
             _loading = true;
             searchString = text;
             await ContactMudDataGrid!.ReloadServerData();
-        }      
+        }
     }
-   
+
     private async Task ClickMenuContact(string? actionName)
     {
         if (actionName == "EXPORT")
@@ -138,9 +141,15 @@
 
         var SelectedActions = (ContactMudDataGrid != null && ("ACTIVATE,DEACTIVATE".IndexOf(actionName!) > -1)) ?
                               (ContactMudDataGrid.FilteredItems.Where(item => item.IsSelected)
-                                                               .Select(item => new Client.Models.Action{UserId = Useful.userId, RecordId = item.Id, 
-                                                                                                        ModuleId = Modules!.FirstOrDefault()?.Id,actionName = actionName,
-                                                                                                        ActionComment = "", RelatedId = 0}).ToList()
+                                                               .Select(item => new Client.Models.Action
+                                                               {
+                                                                   UserId = Useful.userId,
+                                                                   RecordId = item.Id,
+                                                                   ModuleId = Modules!.FirstOrDefault()?.Id,
+                                                                   actionName = actionName,
+                                                                   ActionComment = "",
+                                                                   RelatedId = 0
+                                                               }).ToList()
                                ) : null;
 
         var result_Post_Actions = (SelectedActions is not null && SelectedActions.Count > 0) ? await Http.PostAsync("api/Contact/Post_Actions", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
@@ -152,13 +161,17 @@
         }
         await Task.CompletedTask;
     }
+
     private async Task OpenContactForm(int? mId) => await DialogService.OpenForm<ContactForm, Contact>(mId, ContactMudDataGrid, Modulo);
 
     private async Task ClickAddContact(MouseEventArgs ev) => await OpenContactForm(0);
+
     private async Task ClickEditContact(Contact item) => await OpenContactForm(item.Id);
 
     private async Task ClickRefreshContact(MouseEventArgs ev)
-    {        
-        await ContactMudDataGrid!.ReloadServerData();       
+    {
+        await ContactMudDataGrid!.ReloadServerData();
     }
+}
+
 }

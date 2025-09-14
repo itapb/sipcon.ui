@@ -14,22 +14,17 @@
         private readonly HttpClient _http = http;
 
         
-        public async Task<ApiResponse<List<Vehicle>>> GetVehicles(int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null)
+        public async Task<ApiResponse<List<Vehicle>>> GetVehicles(int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null)
         {
             ApiResponse<List<Vehicle>>? result;
 
             try
             {
-
-                if (IdDealer.HasValue && IdDealer.Value > 0)
-                {
-                    result = await _http.GetFromJsonAsync<ApiResponse<List<Vehicle>>>($"api/Vehicle/GetAll?userId={IdUser}&dealerId={IdDealer}&rowFrom={RowFrom}&filter={Filter}");
-                }
-                else
-                {
-                    result = await _http.GetFromJsonAsync<ApiResponse<List<Vehicle>>>($"api/Vehicle/GetAll?userId={IdUser}&rowFrom={RowFrom}&filter={Filter}");
-                }
-
+                var url = $"api/Vehicle/GetAll?supplierId={IdSupplier}&userId={IdUser}&rowFrom={RowFrom}";
+                url = (IdDealer.HasValue && IdDealer.Value > 0) ? $"{url}&dealerId={IdDealer}" : url;
+                url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
+                
+                result = await _http.GetFromJsonAsync<ApiResponse<List<Vehicle>>>(url);
                 
 
                 result = (result is null) ? new ApiResponse<List<Vehicle>>()
@@ -175,15 +170,12 @@
             ApiResponse<Vehicle>? result;
             try
             {
-                if (IdDealer.HasValue && IdDealer.Value > 0)
-                {
-                    result = await _http.GetFromJsonAsync<ApiResponse<Vehicle>>($"api/Vehicle/GetOneBy?userId={IdUser}&dealerId={IdDealer}&filter={Search}&filterBy={(int)SearchBy}");
-                }
-                else
-                {
-                    result = await _http.GetFromJsonAsync<ApiResponse<Vehicle>>($"api/Vehicle/GetOneBy?userId={IdUser}&filter={Search}&filterBy={(int)SearchBy}");
-                }
-                
+
+                var url = $"api/Vehicle/GetOneBy?userId={IdUser}&filterBy={(int)SearchBy}";
+                url = (IdDealer.HasValue && IdDealer.Value > 0) ? $"{url}&dealerId={IdDealer}" : url;
+                url = string.IsNullOrEmpty(Search) ? url : $"{url}&filter={Search}";
+
+                result = await _http.GetFromJsonAsync<ApiResponse<Vehicle>>(url);
 
                 result = (result is null) ? new ApiResponse<Vehicle>()
                 {
@@ -227,7 +219,10 @@
             ApiResponse<VehicleService>? result;
             try
             {
-                result = await _http.GetFromJsonAsync<ApiResponse<VehicleService>>($"api/Vehicle/GetVehicleFullBy?userId={IdUser}&filter={Search}&filterBy={(int)SearchBy}");
+                var url = $"api/Vehicle/GetVehicleFullBy?userId={IdUser}&filterBy={(int)SearchBy}";
+                url = string.IsNullOrEmpty(Search) ? url : $"{url}&filter={Search}";
+
+                result = await _http.GetFromJsonAsync<ApiResponse<VehicleService>>(url);
 
                 result = (result is null) ? new ApiResponse<VehicleService>()
                 {
@@ -492,13 +487,17 @@
 
         }
 
-        public async Task<ApiResponse<List<byte>>> ExportVehicles(int IdUser, string Filter = "")
+        public async Task<ApiResponse<List<byte>>> ExportVehicles(int IdSupplier, int IdUser, string Filter = "")
         {
             ApiResponse<List<byte>> result; 
             string fileUrl = string.Empty;
             try
             {
-                var response = await _http.GetAsync($"api/Vehicle/Export?filter={Filter}&userId={IdUser}");
+                var url = $"api/Vehicle/Export?supplierId={IdSupplier}&userId={IdUser}";
+                url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
+
+
+                var response = await _http.GetAsync(url);
                 if (!response.IsSuccessStatusCode)
                 {
                     result = new ApiResponse<List<byte>>()
@@ -552,13 +551,15 @@
             return result;
         }
 
-        public async Task<ApiResponse<bool>> ImportVehicles(int IdUser, MultipartFormDataContent FormData )
+        public async Task<ApiResponse<bool>> ImportVehicles(int IdSupplier, int IdUser, MultipartFormDataContent FormData )
         {
             ApiResponse<bool> result;
             
             try
             {
-                var response = await _http.PostAsync($"api/Vehicle/Import?userId={IdUser}", FormData);
+                var url = $"api/Vehicle/Import?supplierId={IdSupplier}&userId={IdUser}";
+
+                var response = await _http.PostAsync(url, FormData);
                 if (!response.IsSuccessStatusCode)
                 {
                     result = new ApiResponse<bool>()

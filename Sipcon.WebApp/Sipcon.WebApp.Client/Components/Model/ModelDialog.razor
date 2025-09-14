@@ -9,63 +9,43 @@
 
 <MudForm Model="@_model" @ref="@form" Validation="@(_modelValidator.ValidateValue)" ValidationDelay="0" >
     <MudDialog Class="blur dialog-background"  ActionsClass="dialog-background-surface">
-       
         <DialogContent>
-
             <MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
-
                 <MudCard>
-
                     <MudCardHeader>
                         <CardHeaderContent>
                             <MudGrid Spacing="0" Justify="Justify.Center">
                                 <MudItem xs="12" sm="4">
                                     <div class="d-flex justify-left">
-
                                         <MudSwitch @bind-Value="_model.IsActive" Label="Activo" LabelPlacement="Placement.End" Color="Color.Success" Disabled="@(ActionsModal == ActionsEnum.Create ? true : false)" />
                                         <MudHidden @bind-value="IdModel" />
-
                                     </div>
                                 </MudItem>
-
                                 <MudItem xs="12" sm="2">
 
                                 </MudItem>
                                 <MudItem xs="12" sm="6">
                                     <div class="d-flex justify-right" style="justify-content: end;">
-
                                         <MudButton OnClick="Cancel">Cancelar</MudButton>
                                         <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Aceptar" OnClick="@(async () => await OnValidSubmit())" Color="Color.Info" Size="Size.Small" />
-
-
                                     </div>
                                 </MudItem>
                             </MudGrid>
-
-
                         </CardHeaderContent>
-
                     </MudCardHeader>
-
                 </MudCard>
-
             </MudContainer>
 
             <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
                 <MudGrid Spacing="1" Justify="Justify.Center">
-
                     <MudItem xs="12" sm="4">
                         <MudCard>
-
                             <MudCardContent Style="padding-top: 0px;">
                                 <div class="d-flex justify-center" >
-
                                     <MudTooltip Text="Imagen Modelo">
                                         <MudImage Src="images/changan_rojo_1.png" Alt="Modelo" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg " FallbackSrc="Images/changan_emblema.png" Width="125" Height="152" />
                                     </MudTooltip>
                                 </div>
-
-
                             </MudCardContent>
                         </MudCard>
                     </MudItem>
@@ -77,7 +57,6 @@
                                         <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
                                         <MudText Typo="Typo.h6">Modelo</MudText>
                                     </MudStack>
-
                                 </CardHeaderContent>
                                 <CardHeaderActions>
                                     
@@ -122,12 +101,15 @@
                             </MudCardHeader>
                             <MudCardContent Style="padding-top: 0px;">
                                 <MudStack Row="true">
-                                    <MudSelect T="int?" Value="@_model.BrandId" Label="Marca" AdornmentColor="Color.Default"
+                                    <MudSelect @bind-Value="@_model.BrandId"
+                                               Label="Marca" 
+                                               Typo="Typo.caption"
+                                               Variant="Variant.Filled"
+                                               AdornmentColor="Color.Default"
                                                Margin="Margin.Dense" 
-                                               ValueChanged="@((int? brandId) => OnBrandValueChanged(brandId ?? 0))"
                                                Validation="@(new Func<int?, IEnumerable<string>>(OnValidBrand))"
                                                Immediate="true"
-                                               Disabled="@(!_model.IsActive)">
+                                               Disabled="true">
                                         @foreach (var item in _brandList)
                                         {
                                             <MudSelectItem Value="@item.Value">@item.Text </MudSelectItem>
@@ -224,7 +206,6 @@
     }
 
 
-
     protected override async Task OnInitializedAsync()
     {
 
@@ -232,10 +213,14 @@
         {
             _model = new Model();
 
-            _brandList = await ModuleActionsService.GetBrandOption(Useful.userId);
-            // _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(Useful.userId);
+            _brandList = await ModuleActionsService.GetBrandOption(Useful.supplierId);
+            _model.BrandId = _model.BrandId ?? _brandList.FirstOrDefault()?.Value ?? 0;
+            _model.BrandName = _model.BrandName ?? _brandList.FirstOrDefault()?.Text ?? string.Empty;
+            _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(Useful.supplierId, Useful.userId, _model.BrandId ?? 0);
+            
 
             await Task.Delay(50);
+            StateHasChanged();
 
         }
         else
@@ -255,8 +240,8 @@
         {
             _model = serviceResponse.Data ?? new Model();
 
-            _brandList = await ModuleActionsService.GetBrandOption(Useful.userId);
-            _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(Useful.userId, _model.BrandId ?? 0);
+            _brandList = await ModuleActionsService.GetBrandOption(Useful.supplierId);
+            _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(Useful.supplierId, Useful.userId, _model.BrandId ?? 0);
 
             await Task.Delay(50);
             StateHasChanged();
@@ -273,18 +258,6 @@
 
     }
 
-    private async Task OnBrandValueChanged(int BrandId)
-    {
-        _model.BrandId = BrandId;
-        _model.PolicyTypeId = null;
-        _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(Useful.userId, BrandId);
-        await Task.Delay(50);
-
-        StateHasChanged();
-        form?.ResetValidation();
-        await Task.CompletedTask;
-    }
-
     private async Task OnValidSubmit()
     {
         await form!.Validate();
@@ -299,8 +272,6 @@
                 if (ActionsModal == ActionsEnum.Create)
                 {
                     ActionsModal = ActionsEnum.Edit;
-                    // var _results = serviceResponse.Data ?? new List<ActionResult>();
-                    // var _result = _results.FirstOrDefault();
                     var _result = serviceResponse.Data ?? new ActionResult();
                     if (_result is not null)
                     {

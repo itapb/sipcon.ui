@@ -11,12 +11,14 @@
         private readonly HttpClient _http = http;
 
         
-        public async Task<ApiResponse<List<Model>>> GetModels(int IdUser, int RowFrom = 0, string Filter = "")
+        public async Task<ApiResponse<List<Model>>> GetModels(int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "")
         {
             ApiResponse<List<Model>>? result;
             try
             {
-                result = await _http.GetFromJsonAsync<ApiResponse<List<Model>>>($"api/Model/GetAll?filter={Filter}&rowFrom={RowFrom}&userId={IdUser}");
+                var url = $"api/Model/GetAll?supplierId={IdSupplier}&rowFrom={RowFrom}&userId={IdUser}";    
+                url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
+                result = await _http.GetFromJsonAsync<ApiResponse<List<Model>>>(url);
 
                 result = (result is null) ? new ApiResponse<List<Model>>()
                 {
@@ -108,13 +110,7 @@
 
                 modelList.Add(Model);
 
-                
                 var response = await _http.PostAsJsonAsync($"api/Model/PostModels?userId={IdUser}", modelList);
-
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    throw new Exception($"Error al crear el modelo: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                //}
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
@@ -160,23 +156,11 @@
             List<Model> modelList = ([]);
             try
             {
-                //var options = new JsonSerializerOptions
-                //{
-                //    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                //    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
-                //    IgnoreReadOnlyProperties = true,
-                //    WriteIndented = true
-                //};
 
                 modelList.Add(Model);
 
 
                 var response = await _http.PostAsJsonAsync($"api/Model/PostModels?userId={IdUser}", modelList);
-
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    throw new Exception($"Error al crear el modelo: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                //}
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
@@ -234,11 +218,6 @@
 
                 var response = await _http.PostAsJsonAsync($"api/Model/PostActions?userId={IdUser}", PostActions, options);
 
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    throw new Exception($"Error Accion modelo: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                //}
-
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
                 {
@@ -277,13 +256,17 @@
 
         }
 
-        public async Task<ApiResponse<List<byte>>> ExportModels(int IdUser, string Filter = "")
+        public async Task<ApiResponse<List<byte>>> ExportModels(int IdSupplier, int IdUser, string Filter = "")
         {
             ApiResponse<List<byte>> result;
             string fileUrl = string.Empty;
             try
             {
-                var response = await _http.GetAsync($"api/Model/Export?_filter={Filter}&userId={IdUser}");
+                var url = $"api/Model/Export?supplierId={IdSupplier}&userId={IdUser}";
+                url = string.IsNullOrEmpty(Filter) ? url : $"{url}&_filter={Filter}";
+
+                var response = await _http.GetAsync(url);
+
                 if (!response.IsSuccessStatusCode)
                 {
                     throw new Exception($"Error Exportar Modelos: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
@@ -329,13 +312,15 @@
         }
 
 
-        public async Task<ApiResponse<bool>> ImportModels(int IdUser, MultipartFormDataContent FormData)
+        public async Task<ApiResponse<bool>> ImportModels(int IdSupplier, int IdUser, MultipartFormDataContent FormData)
         {
             ApiResponse<bool> result;
 
             try
             {
-                var response = await _http.PostAsync($"api/Model/Import?userId={IdUser}", FormData);
+                var url = $"api/Model/Import?supplierId={IdSupplier}&userId={IdUser}";
+
+                var response = await _http.PostAsync(url, FormData);
                 if (!response.IsSuccessStatusCode)
                 {
                     throw new Exception($"Error Importar Modelo: {response.StatusCode.ToString()} - {response.ReasonPhrase}");

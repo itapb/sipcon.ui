@@ -8,12 +8,12 @@
 @inject IDialogService DialogService
 @inject UtilModuleActions ModuleActionsService
 @inject IJSRuntime JSRuntime
+@inject HubEventsService hubEventsService
+@implements IDisposable
 
 
 <PageTitle>Tipo Poliza</PageTitle>
 <CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
-
-<InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
 
 <MudDataGrid @ref="_mudDataGrid"
              T="PolicyType"
@@ -50,43 +50,42 @@
     </ToolBarContent>
     <Columns>
         <SelectColumn  />
-        <TemplateColumn  Title="MARCA">
+        <TemplateColumn Title="DESCRIPCION">
             <CellTemplate>
                     
-                <div class="d-flex justify-center" style="height: 45px;">
-                    <MudTooltip Text="@context.Item.BrandName">
-                        <MudImage Src="@(context.Item.BrandName.ToUpper() == "CHANGAN" ? "Images/changan_marca.jpeg" : "Images/foton_marca.jpeg")" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg "
-                                    FallbackSrc="@(context.Item.BrandName.ToUpper() == "CHANGAN" ? "Images/changan_emblema.png": "Images/foton_emblema.jpeg")" Height="45" Width="55"></MudImage>
-                    </MudTooltip>
+                <div class="d-flex justify-start" style="height: 45px;">
+                    <MudStack Row="true">
+                        
+                        <MudTooltip Text="@context.Item.BrandName">
+                            <MudImage Src="@(context.Item.BrandName.ToUpper() == "CHANGAN" ? "Images/changan_marca.jpeg" : "Images/foton_marca.jpeg")" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg "
+                                        FallbackSrc="@(context.Item.BrandName.ToUpper() == "CHANGAN" ? "Images/changan_emblema.png": "Images/foton_emblema.jpeg")" Height="45" Width="55"></MudImage>
+                        </MudTooltip>
+                        <MudText Typo="Typo.caption" Align="Align.Left" Class="mt-2 ml-2">
+                            @context.Item.Description
+                        </MudText>
+                    </MudStack>
                 </div>
                    
             </CellTemplate>
         </TemplateColumn>
-        <PropertyColumn Property="x => x.Description" Title="DESCRIPCION" Sortable="false" Filterable="false" />
-        <TemplateColumn  Title="KM">
+       @*  <PropertyColumn Property="x => x.Description" Title="DESCRIPCION" Sortable="false" Filterable="false" /> *@
+        <TemplateColumn Title="KM">
             <CellTemplate>
-                <div class="d-flex justify-end">
-                    <MudText Typo="Typo.caption" Align="Align.End">
-                        @(context.Item.KM?.ToString("N0"))
-                    </MudText>
-                </div>
+                <MudText Typo="Typo.caption" Align="Align.Left">
+                    @(context.Item.KM?.ToString("N0"))
+                </MudText>
             </CellTemplate>
         </TemplateColumn>
         <PropertyColumn Property="x => x.Months" Title="FRECUENCIA (MES)" Sortable="false" Filterable="false" />
         <TemplateColumn  Title="EXPIRACION (KM)">
             <CellTemplate>
-                <div class="d-flex justify-end">
-                    <MudText Typo="Typo.caption" Align="Align.End">
-                        @(context.Item.TopKM?.ToString("N0"))
-                    </MudText>
-                </div>
+                <MudText Typo="Typo.caption" Align="Align.Left">
+                    @(context.Item.TopKM?.ToString("N0"))
+                </MudText>
             </CellTemplate>
         </TemplateColumn>
         <PropertyColumn Property="x => x.TopMonths" Title="EXPIRACION (MES)" Sortable="false" Filterable="false" />
-
-
-        <TemplateColumn  Title="ACTIVO">
-                 
+        <TemplateColumn  Title="ESTATUS">
             <CellTemplate>
                 <div class="d-flex justify-center">
                     <MudIcon Icon="@(context.Item.IsActive ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.IsActive ? Color.Success : Color.Error)" Size="Size.Medium" />
@@ -105,27 +104,7 @@
     </PagerContent>
 </MudDataGrid>
 
-<MudDialog @bind-Visible="_nestedVisible">
-    <TitleContent>
-        <MudStack Row="true">
-            <MudIcon Icon="@Icons.Material.Filled.Policy" Color="@(_success ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
-            <MudText Typo="Typo.h6">Tipo Poliza</MudText>
-        </MudStack>
-    </TitleContent>
-    <DialogContent>
-
-        <MudStack Row="true">
-            <MudText Class="nested"><p>@_nestedErrorMessage!</p> </MudText>
-        </MudStack>
-
-    </DialogContent>
-    <DialogActions>
-            
-        <MudButton Color="Color.Info" OnClick="CloseNested" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
-
-    </DialogActions>
-</MudDialog>
-
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Tipo de Polizas")" />
 
 
 @code {
@@ -144,6 +123,8 @@
     private MudDataGrid<PolicyType>? _mudDataGrid;
     private HashSet<PolicyType> _selectedPolicyTypes = new([]);
     private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
+    private IEnumerable<SelectOption> _brandList { get; set; } = new List<SelectOption>();
+    private int _brandId { get; set; }
 
     private List<BreadcrumbItem> _itemsNavigate =
                 [
@@ -151,6 +132,26 @@
         new("Tipo Poliza",  href: "policytypes", disabled: false, icon: Icons.Material.Filled.Policy),
     ];
 
+    protected override async Task OnInitializedAsync()
+    {
+        hubEventsService.OnSupplierChanged += ReloadServerData;
+        hubEventsService.OnDealerChanged += ReloadServerData;
+        await Task.CompletedTask;
+    }
+
+    private async Task ReloadServerData()
+    {
+        if (_mudDataGrid != null)
+        {
+            await _mudDataGrid!.ReloadServerData();
+        }
+    }
+
+    public void Dispose()
+    {
+        hubEventsService.OnSupplierChanged -= ReloadServerData;
+        hubEventsService.OnDealerChanged -= ReloadServerData;
+    }
 
     private async Task<GridData<PolicyType>> LoadGridData(GridState<PolicyType> state)
     {
@@ -165,26 +166,20 @@
     private async Task GetPolicyTypes()
     {
         _loading = true;
-        var serviceResponse = await PolicyTypeService.GetPolicyTypes(Useful.userId, _rowCount, _searchString);
+        _PolicyTypes = new List<PolicyType>();
+        _rowsTotal = 0;
+        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName) ?? new List<ModuleAction>([]);
+
+        _brandList = await ModuleActionsService.GetBrandOption(Useful.supplierId);
+        _brandId  = _brandList.FirstOrDefault()?.Value ?? 0;
+
+        var serviceResponse = await PolicyTypeService.GetPolicyTypes(Useful.supplierId, Useful.userId, _rowCount, _searchString, _brandId);
         if (serviceResponse.Processed)
         {
             _PolicyTypes = serviceResponse.Data;
             _rowsTotal = serviceResponse.Total;
-
-            if (_PolicyTypes.Count() > 0)
-            {
-                _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
-            }
-            else { _itemsModules = new List<ModuleAction>([]); }
-
-           
         }
-        else
-        {
-            _PolicyTypes = new List<PolicyType>();
-            _rowsTotal = 0;
-            _itemsModules = new List<ModuleAction>([]);
-        }
+        
         _loading = false;
     }
 
@@ -258,8 +253,6 @@
     
     private void OpenNested() => _nestedVisible = true;
 
-    private void CloseNested() => _nestedVisible = false;
-
 
     private async Task HandleMenuClick(ModuleAction module)
     {
@@ -283,17 +276,9 @@
         }
     }
 
-    // private async Task ImportItemsAsync()
-    // {
-
-    //     await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('[type=file]').click()");
-    //     return;
-    // }
 
     private async Task ImportItemsAsync()
     {
-
-
         DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
 
         var parameters = new DialogParameters<ImporItemDialog> { { x => x.Title, "Importar Tipo Poliza..." } };
@@ -329,7 +314,7 @@
                 formData.Add(content, "file", file.Name);
 
 
-                var serviceResponse = await PolicyTypeService.ImportPolicyTypes(Useful.userId, formData);
+                var serviceResponse = await PolicyTypeService.ImportPolicyTypes(Useful.supplierId, Useful.userId, formData);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -352,67 +337,13 @@
 
         }
 
-        await Task.CompletedTask;
-    }
-
-
-    private async Task OnInputFileChange(InputFileChangeEventArgs e)
-    {
-        if (e.FileCount == 1)
-        {
-            var file = e.File;
-            const long maxAllowedSize = 10 * 1024 * 1024; // 10MB
-            if (file.Size == 0)
-            {
-                _success = false;
-                _nestedErrorMessage = MessageEnum.ImportError.GetStringValue();
-                OpenNested();
-            }
-            else if (file.Size > maxAllowedSize)
-            {
-                _success = false;
-                _nestedErrorMessage = MessageEnum.ImportErrorMaxByte.GetStringValue();
-                OpenNested();
-            }
-            else
-            {
-                using var stream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
-
-                var content = new StreamContent(stream);
-                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
-
-                // Create a multipart form data content
-                var formData = new MultipartFormDataContent();
-                formData.Add(content, "file", file.Name);
-
-
-                var serviceResponse = await PolicyTypeService.ImportPolicyTypes(Useful.userId, formData);
-                if (serviceResponse.Processed)
-                {
-                    _success = true;
-                    _nestedErrorMessage = MessageEnum.ImportOK.GetStringValue();
-
-                    OpenNested();
-                    await _mudDataGrid!.ReloadServerData();
-                    StateHasChanged();
-
-                }
-                else
-                {
-                    _success = false;
-                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ImportNotOK.GetStringValue();
-                    OpenNested();
-
-                }
-            }
-        }
         await Task.CompletedTask;
     }
 
     
     private async Task ExportItemsAsync()
     {
-        var serviceResponse = await PolicyTypeService.ExportPolicyTypes(Useful.userId, _searchString);
+        var serviceResponse = await PolicyTypeService.ExportPolicyTypes(Useful.supplierId, Useful.userId, _searchString);
         if (serviceResponse.Processed)
         {
             _success = true;
