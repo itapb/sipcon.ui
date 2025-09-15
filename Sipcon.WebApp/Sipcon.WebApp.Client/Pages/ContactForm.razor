@@ -105,10 +105,10 @@
                                 <MudTextField @bind-Value="SelectedContact.Email" Label="Correo" For="@(() => SelectedContact.Email)" MaxLength="50" Required="true" Disabled ="@(!SelectedContact.IsActive ?? false)"/>
                             </MudItem>
                             <MudItem xs="4">
-                                <MudTextField @bind-Value="SelectedContact.Phone1" Label="Teléfono Principal" For="@(() => SelectedContact.Phone1)" MaxLength="13" Required="true" Disabled ="@(!SelectedContact.IsActive ?? false)"/>
+                                <MudTextField @bind-Value="SelectedContact.Phone1" Label="Teléfono Principal" For="@(() => SelectedContact.Phone1)" MaxLength="13" Required="true" Disabled ="@(!SelectedContact.IsActive ?? false)" Mask="@(new PatternMask($"0000000000000"))"/>
                             </MudItem>
                             <MudItem xs="4">
-                                <MudTextField @bind-Value="SelectedContact.Phone2" Label="Teléfono Secundario" For="@(() => SelectedContact.Phone2)" MaxLength="13" Disabled ="@(!SelectedContact.IsActive ?? false)"/>
+                                <MudTextField @bind-Value="SelectedContact.Phone2" Label="Teléfono Secundario" For="@(() => SelectedContact.Phone2)" MaxLength="13" Disabled ="@(!SelectedContact.IsActive ?? false)" Mask="@(new PatternMask($"0000000000000"))"/>
                             </MudItem>
                             @if ("JG".IndexOf(SelectedRifType) > -1) {<MudItem xs="4"><MudTextField @bind-Value="SelectedContact.AgentName" Label="Represetante" MaxLength="50" RequiredError="Campo requerido." Required="(SelectedContact.IsDealer ?? false)" ReadOnly="true" Adornment="Adornment.End" OnAdornmentClick="ContactClick" AdornmentIcon="@Icons.Material.Filled.Search" Disabled ="@(!SelectedContact.IsActive ?? false)"/></MudItem> }
                             @if (SelectedContact.IsDealer ?? false)
