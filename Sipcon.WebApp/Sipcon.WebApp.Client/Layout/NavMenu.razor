@@ -86,10 +86,7 @@
                         <MudNavLink Href="test">Ajuste</MudNavLink>
                         <MudNavLink Href="collection">Recoleccion</MudNavLink>
                         
-                        @if (_ModuleNames.Contains("INVENTARIO-PROCESOS-DESPACHO"))
-                        {
-                            <MudNavLink Href="dispatchguides">Despacho</MudNavLink>
-                        }
+
                         @if (_ModuleNames.Contains("INVENTARIO-PROCESOS-BACKORDER"))
                         {
                             <MudNavLink Href="backorders">BackOrders</MudNavLink>
@@ -103,7 +100,10 @@
             {
                 <MudNavGroup Title="Pedidos" Icon="@Icons.Material.Filled.ShoppingCart" IconColor="Color.Info">
                     <MudNavLink Href="salesorder">Pedidos</MudNavLink>
-                    <MudNavLink Href="test">Reclamos</MudNavLink>
+                    @if (_ModuleNames.Contains("INVENTARIO-PROCESOS-DESPACHO"))
+                    {
+                        <MudNavLink Href="dispatchguides">Despacho</MudNavLink>
+                    }
                 </MudNavGroup>
             }
            
