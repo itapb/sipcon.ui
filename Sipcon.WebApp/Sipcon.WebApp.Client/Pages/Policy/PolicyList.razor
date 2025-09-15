@@ -1,6 +1,7 @@
 ﻿@page "/policy"
 
 @using Sipcon.WebApp.Client.Components.Policy
+@using Sipcon.WebApp.Client.Repository.Auth
 @using System.Text.Json
 
 
@@ -149,6 +150,7 @@
 
 
 @code {
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     private IEnumerable<Policy> _Policys = new List<Policy>();
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
@@ -174,6 +176,7 @@
 
     private async Task<GridData<Policy>> LoadGridData(GridState<Policy> state)
     {
+        await AuthenticationStateProvider.RefreshStaticVariables();
 
         _rowCount = state.Page * state.PageSize;
 

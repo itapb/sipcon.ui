@@ -3,6 +3,7 @@
 
 @using Sipcon.WebApp.Client.Components.License
 @using System.Text.Json
+@using Sipcon.WebApp.Client.Repository.Auth
 
 
 @inject ILicenseService LicenseService
@@ -130,6 +131,7 @@
 
 
 @code {
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     private IEnumerable<License> _Licenses = new List<License>();
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
@@ -154,6 +156,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+
         hubEventsService.OnSupplierChanged += ReloadServerData;
         await Task.CompletedTask;
     }
@@ -173,7 +177,7 @@
 
     private async Task<GridData<License>> LoadGridData(GridState<License> state)
     {
-
+        await AuthenticationStateProvider.RefreshStaticVariables();
         _rowCount = state.Page * state.PageSize;
 
         await GetLicenses();

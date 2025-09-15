@@ -2,6 +2,7 @@
 
 
 @using Sipcon.WebApp.Client.Components.Assistence
+@using Sipcon.WebApp.Client.Repository.Auth
 @using System.Text.Json
 
 
@@ -148,6 +149,7 @@
 
 
 @code {
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     private IEnumerable<Assistence> _Assistences = new List<Assistence>();
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
@@ -173,6 +175,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+
         hubEventsService.OnDealerChanged += ReloadServerData;
         await Task.CompletedTask;
     }
@@ -192,7 +196,7 @@
 
     private async Task<GridData<Assistence>> LoadGridData(GridState<Assistence> state)
     {
-
+        await AuthenticationStateProvider.RefreshStaticVariables();
         _rowCount = state.Page * state.PageSize;
 
         await GetAssistences();

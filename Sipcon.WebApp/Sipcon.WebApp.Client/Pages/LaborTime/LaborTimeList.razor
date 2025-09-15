@@ -2,6 +2,7 @@
 
 
 @using System.Text.Json
+@using Sipcon.WebApp.Client.Repository.Auth
 
 
 @inject ILaborTimeService LaborTimeService
@@ -100,6 +101,7 @@
 
 
 @code {
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     private IEnumerable<LaborTime> _LaborTimes = new List<LaborTime>();
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
@@ -129,6 +131,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+
         hubEventsService.OnSupplierChanged += ReloadServerData;
         await Task.CompletedTask;
     }
@@ -149,7 +153,7 @@
 
     private async Task<GridData<LaborTime>> LoadGridData(GridState<LaborTime> state)
     {
-
+        await AuthenticationStateProvider.RefreshStaticVariables();
         _rowCount = state.Page * state.PageSize;
 
         await GetLaborTimes();

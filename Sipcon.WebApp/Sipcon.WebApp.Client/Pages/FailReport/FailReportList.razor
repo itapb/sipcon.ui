@@ -2,6 +2,7 @@
 
 @using Sipcon.WebApp.Client.Components.FailReport
 @using System.Text.Json
+@using Sipcon.WebApp.Client.Repository.Auth
 
 
 @inject IFailReportService FailReportService
@@ -139,6 +140,7 @@
 
 
 @code {
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     private IEnumerable<FailReport> _FailReports = new List<FailReport>();
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
@@ -164,6 +166,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+
         hubEventsService.OnSupplierChanged += ReloadServerData;
         hubEventsService.OnDealerChanged += ReloadServerData;
         await Task.CompletedTask;
@@ -186,7 +190,7 @@
 
     private async Task<GridData<FailReport>> LoadGridData(GridState<FailReport> state)
     {
-
+        await AuthenticationStateProvider.RefreshStaticVariables();
         _rowCount = state.Page * state.PageSize;
 
         await GetFailReports();

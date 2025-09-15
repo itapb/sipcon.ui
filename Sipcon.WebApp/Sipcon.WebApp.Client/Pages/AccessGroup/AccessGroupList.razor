@@ -3,6 +3,7 @@
 
 @using Sipcon.WebApp.Client.Components.AccessGroup
 @using Sipcon.WebApp.Client.Components.License
+@using Sipcon.WebApp.Client.Repository.Auth
 @using System.Text.Json
 
 
@@ -91,6 +92,7 @@
 
 
 @code {
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     private IEnumerable<AccessGroup> _accessGroupList = new List<AccessGroup>();
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
@@ -118,7 +120,7 @@
 
     private async Task<GridData<AccessGroup>> LoadGridData(GridState<AccessGroup> state)
     {
-
+        await AuthenticationStateProvider.RefreshStaticVariables();
         _rowCount = state.Page * state.PageSize;
 
         await GetAccessGroup();

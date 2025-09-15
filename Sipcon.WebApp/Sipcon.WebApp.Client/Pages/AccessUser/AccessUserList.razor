@@ -1,6 +1,7 @@
 ﻿@page "/accessuser"
 
 @using Sipcon.WebApp.Client.Components.AccessUser
+@using Sipcon.WebApp.Client.Repository.Auth
 @using System.Text.Json
 
 
@@ -96,6 +97,7 @@
 
 
 @code {
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient _httpClient { get; set; } = null!;
     private IEnumerable<AccessUserDetail> _accessGroupList = new List<AccessUserDetail>();
 
@@ -124,7 +126,7 @@
 
     private async Task<GridData<AccessUserDetail>> LoadGridData(GridState<AccessUserDetail> state)
     {
-
+        await AuthenticationStateProvider.RefreshStaticVariables();
         _rowCount = state.Page * state.PageSize;
 
         await GetAccessUserDetails();

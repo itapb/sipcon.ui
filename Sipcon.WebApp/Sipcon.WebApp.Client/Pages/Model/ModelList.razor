@@ -2,6 +2,7 @@
 
 @using System.Text.Json
 @using Sipcon.WebApp.Client.Components.Model
+@using Sipcon.WebApp.Client.Repository.Auth
 
 @inject IModelService ModelService
 @inject IDialogService DialogService
@@ -88,6 +89,7 @@
 
 
 @code {
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     private IEnumerable<Model> _Models = new List<Model>();
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
@@ -113,6 +115,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+
         hubEventsService.OnSupplierChanged += ReloadServerData;
         await Task.CompletedTask;
     }
@@ -132,7 +136,7 @@
 
     private async Task<GridData<Model>> LoadGridData(GridState<Model> state)
     {
-
+        await AuthenticationStateProvider.RefreshStaticVariables();
         _rowCount = state.Page * state.PageSize;
 
         await GetModels();
