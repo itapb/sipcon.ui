@@ -2,6 +2,7 @@
 
 
 @using Sipcon.WebApp.Client.Components.Assistence
+@using Sipcon.WebApp.Client.Repository.Auth
 @using System.Text.Json
 
 
@@ -141,30 +142,14 @@
     </PagerContent>
 </MudDataGrid>
 
-<MudDialog @bind-Visible="_nestedVisible">
-    <TitleContent>
-        <MudStack Row="true">
-            <MudIcon Icon="@Icons.Material.Outlined.CarRepair" Color="@(_success? Color.Default: Color.Error)" Style="font-size: 2rem;"></MudIcon>
-            <MudText Typo="Typo.h6">ASISTENCIA TECNICA</MudText>
-        </MudStack>
-    </TitleContent>
-    <DialogContent>
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Asistencia Técnica")">
 
-        <MudStack Row="true">
-            <MudText Class="nested"><p>@_nestedErrorMessage!</p> </MudText>
-        </MudStack>
-
-    </DialogContent>
-    <DialogActions>
-
-        <MudButton Color="Color.Info" OnClick="CloseNested" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
-
-    </DialogActions>
-</MudDialog>
+</NestedDialogCustom>
 
 
 
 @code {
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     private IEnumerable<Assistence> _Assistences = new List<Assistence>();
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
@@ -190,6 +175,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+
         hubEventsService.OnDealerChanged += ReloadServerData;
         await Task.CompletedTask;
     }
@@ -209,7 +196,7 @@
 
     private async Task<GridData<Assistence>> LoadGridData(GridState<Assistence> state)
     {
-
+        await AuthenticationStateProvider.RefreshStaticVariables();
         _rowCount = state.Page * state.PageSize;
 
         await GetAssistences();
@@ -303,8 +290,6 @@
 
 
     private void OpenNested() => _nestedVisible = true;
-
-    private void CloseNested() => _nestedVisible = false;
 
 
     private async Task HandleMenuClick(ModuleAction module)

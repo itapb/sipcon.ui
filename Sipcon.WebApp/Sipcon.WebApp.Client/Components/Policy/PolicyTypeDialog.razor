@@ -12,15 +12,11 @@
     <MudDialog Class="blur dialog-background" ActionsClass="dialog-background-surface">
         <DialogContent >
             <MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
-
                 <MudCard>
-
                     <MudCardContent>
-
                         <MudGrid Spacing="0" Justify="Justify.Center">
                             <MudItem xs="12" sm="4">
                                  <div class="d-flex justify-left">
-                                    
                                      <MudSwitch @bind-Value="_model.IsActive" Label="Activo" LabelPlacement="Placement.End" 
                                             Color="Color.Success" 
                                             UncheckedColor="Color.Default"
@@ -32,35 +28,21 @@
                             </MudItem>
                             <MudItem xs="12" sm="6">
                                 <div class="d-flex justify-right" style="justify-content: end;">
-
                                     <MudButton OnClick="Cancel">Cancelar</MudButton>
                                     <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Aceptar" OnClick="@(async () => await OnValidSubmit())" Color="Color.Info" Size="Size.Small" />
-
                                 </div>
-
-
                             </MudItem>
                         </MudGrid>
-
-
-
-
                     </MudCardContent>
-
                 </MudCard>
-
             </MudContainer>
             <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
                 <MudGrid Spacing="1" Justify="Justify.Center">
 
                     <MudItem xs="12" sm="4">
                         <MudCard>
-
                             <MudCardContent Style="padding-top: 0px;">
-                                <MudHidden @bind-Value="_model.Id" />
-                                <MudHidden @bind-Value="IdPolicyType" />
                                 <div class="d-flex justify-center" >
-
                                     <MudTooltip Text="Tipo Poliza">
                                         <MudImage Src="images/changan_rojo_1.png" Alt="TipoPoliza" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg " FallbackSrc="Images/changan_emblema.png" Width="130" Height="159" />
                                     </MudTooltip>
@@ -97,23 +79,27 @@
 
                                 <MudStack Row="true">
 
-                                    <MudSelect T="int?" Value="_model.BrandId" Label="Marca" 
+                                    <MudSelect @bind-Value="@_model.BrandId"
+                                               Label="Marca" 
+                                               Typo="Typo.caption"
+                                               Variant="Variant.Filled"
                                                AdornmentColor="Color.Default"
                                                Margin="Margin.Dense"
-                                               ValueChanged="@((int? brandId) => OnBrandValueChanged(brandId ?? 0))"
                                                Validation="@(new Func<int?, IEnumerable<string>>(OnValidBrand))"
                                                Immediate="true"
-                                               Disabled="@(!_model.IsActive)">
+                                               Disabled="true">
                                         @foreach (var item in _brandList)
                                         {
                                             <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
                                         }
                                     </MudSelect>
 
-                                    <MudSelect @bind-Value="_model.SupplierId" Label="Planta"
+                                    <MudSelect @bind-Value="_model.SupplierId" 
+                                               Label="Planta"
+                                               Typo="Typo.caption"
+                                               Variant="Variant.Filled"
                                                AdornmentColor="Color.Default"
                                                Margin="Margin.Dense"
-                                               Variant="Variant.Filled"
                                                For="@(() => _model.SupplierId)"
                                                Immediate="true"
                                                ReadOnly="true">
@@ -124,10 +110,7 @@
                                     </MudSelect>
 
                                 </MudStack>
-
-
                             </MudCardContent>
-
                         </MudCard>
                     </MudItem>
                     <MudItem xs="12" sm="6">
@@ -162,7 +145,7 @@
                                                      Label="KM Tolerancia" 
                                                      Variant="Variant.Text"
                                                      Margin="Margin.Dense"
-                                                     Max="500"
+                                                     Max="1500"
                                                      HideSpinButtons="true"
                                                      For="@(() => _model.GapKM)"
                                                      Immediate="true" 
@@ -209,7 +192,7 @@
                                     Immediate="true" />
 
                                     <MudNumericField Typo="Typo.caption" @bind-Value="_model.GapMonths" Label="Dias Tolerancia" Variant="Variant.Text"
-                                    Max="15"
+                                    Max="30"
                                     HideSpinButtons="true"
                                     Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
                                     For="@(() => _model.GapMonths)"
@@ -223,14 +206,9 @@
                                     Immediate="true" />
 
                                 </MudStack>
-
-
-
                             </MudCardContent>
-
                         </MudCard>
                     </MudItem>
-
                 </MudGrid>
             </MudContainer>
 
@@ -311,10 +289,14 @@
         {
             _model = new PolicyType();
 
-            // _supplierList = await ModuleActionsService.GetSupplierOption(Useful.userId);
-            _brandList = await ModuleActionsService.GetBrandOption(Useful.userId);
+            _brandList = await ModuleActionsService.GetBrandOption(Useful.supplierId);
+            _model.BrandId = _model.BrandId ?? _brandList.FirstOrDefault()?.Value ?? 0;
 
+            _supplierList = await ModuleActionsService.GetSupplierOption(Useful.userId, _model.BrandId ?? 0);
+            _model.SupplierId = _supplierList.FirstOrDefault()?.Value ?? null;
+            
             await Task.Delay(50);
+            StateHasChanged();
         }
         else
         {
@@ -330,12 +312,16 @@
 
     private async Task GetPolicyType()
     {
+        _model = new PolicyType();
+        
         var serviceResponse = await PolicyTypeService.GetPolicyType(IdPolicyType, Useful.userId);
         if (serviceResponse.Processed)
         {
             _model = serviceResponse.Data ?? new PolicyType();
 
-            _brandList = await ModuleActionsService.GetBrandOption(Useful.userId);
+            _brandList = await ModuleActionsService.GetBrandOption(Useful.supplierId);
+            _model.BrandId = _model.BrandId ?? _brandList.FirstOrDefault()?.Value ?? 0;
+
             _supplierList = await ModuleActionsService.GetSupplierOption(Useful.userId, _model.BrandId ?? 0);
 
             await Task.Delay(50);
@@ -343,33 +329,31 @@
         }
         else
         {
-            _model = new PolicyType();
             _errorModalMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
             Console.WriteLine(serviceResponse.Message);
             OpenNested();
         }
 
         await Task.CompletedTask;
-
     }
 
 
-    private async Task OnBrandValueChanged(int BrandId)
-    {
-        _model.BrandId = BrandId;
-        _supplierList = await ModuleActionsService.GetSupplierOption(Useful.userId, BrandId);
+    // private async Task OnBrandValueChanged(int BrandId)
+    // {
+    //     _model.BrandId = BrandId;
+    //     _supplierList = await ModuleActionsService.GetSupplierOption(Useful.userId, BrandId);
 
-        await Task.Delay(50);
-        _model.SupplierId = _supplierList.FirstOrDefault()?.Value;
+    //     await Task.Delay(50);
+    //     _model.SupplierId = _supplierList.FirstOrDefault()?.Value;
 
-        StateHasChanged();
-        form?.ResetValidation();
-        await Task.CompletedTask;
-    }
+    //     StateHasChanged();
+    //     form?.ResetValidation();
+    //     await Task.CompletedTask;
+    // }
 
     private async Task OnValidSubmit()
     {
-        await form.Validate();
+        await form!.Validate();
 
         if (form.IsValid)
         {
@@ -463,7 +447,7 @@
             RuleFor(x => x.GapKM)
                 .NotNull().WithMessage("Campo requerido")
                 .NotEmpty().WithMessage("Campo requerido")
-                .InclusiveBetween(1, 500).WithMessage("Campo requerido entre {1 - 500} km"); 
+                .InclusiveBetween(1, 1500).WithMessage("Campo requerido entre {1 - 1.500} km"); 
 
             RuleFor(x => x.TopKM)
                 .NotNull().WithMessage("Campo requerido")
@@ -481,7 +465,7 @@
             RuleFor(x => x.GapMonths)
                 .NotNull().WithMessage("Campo requerido")
                 .NotEmpty().WithMessage("Campo requerido")
-                .InclusiveBetween(1, 15).WithMessage("Campo requerido entre {1 - 15} dias");
+                .InclusiveBetween(1, 30).WithMessage("Campo requerido entre {1 - 30} dias");
 
             RuleFor(x => x.TopMonths)
                 .NotNull().WithMessage("Campo requerido")

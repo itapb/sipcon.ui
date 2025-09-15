@@ -1,6 +1,7 @@
 ﻿@page "/policy"
 
 @using Sipcon.WebApp.Client.Components.Policy
+@using Sipcon.WebApp.Client.Repository.Auth
 @using System.Text.Json
 
 
@@ -144,30 +145,12 @@
     </PagerContent>
 </MudDataGrid>
 
-<MudDialog @bind-Visible="_nestedVisible">
-    <TitleContent>
-        <MudStack Row="true">
-            <MudIcon Icon="@Icons.Material.Filled.Policy" Color="@(_success ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
-            <MudText Typo="Typo.h6">Poliza</MudText>
-        </MudStack>
-    </TitleContent>
-    <DialogContent>
-
-        <MudStack Row="true">
-            <MudText Class="nested"><p>@_nestedErrorMessage!</p> </MudText>
-        </MudStack>
-
-    </DialogContent>
-    <DialogActions>
-
-        <MudButton Color="Color.Info" OnClick="CloseNested" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
-
-    </DialogActions>
-</MudDialog>
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Polizas")" />
 
 
 
 @code {
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     private IEnumerable<Policy> _Policys = new List<Policy>();
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
@@ -193,6 +176,7 @@
 
     private async Task<GridData<Policy>> LoadGridData(GridState<Policy> state)
     {
+        await AuthenticationStateProvider.RefreshStaticVariables();
 
         _rowCount = state.Page * state.PageSize;
 
@@ -321,8 +305,6 @@
 
 
     private void OpenNested() => _nestedVisible = true;
-
-    private void CloseNested() => _nestedVisible = false;
 
 
     private async Task HandleMenuClick(ModuleAction module)

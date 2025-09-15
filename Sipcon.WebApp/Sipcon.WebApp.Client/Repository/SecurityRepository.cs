@@ -72,15 +72,6 @@
 
                 var response = await _http.PostAsJsonAsync($"api/Security/PostAccessGroup?userId={IdUser}", AccessGroup);
 
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
-                //    {
-                //        throw new Exception($"Error al crear el AccessGroup: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                //    }
-
-                //}
-
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
                 {
@@ -126,15 +117,6 @@
                
                 var response = await _http.PostAsJsonAsync($"api/Security/PostAccessGroup?userId={IdUser}", AccessGroup);
 
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
-                //    {
-                //        throw new Exception($"Error al crear el AccessGroup: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                //    }
-
-                //}
-
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
                 {
@@ -179,15 +161,6 @@
             {
 
                 var response = await _http.PostAsJsonAsync($"api/Security/Post_AccessGroup_Actions?userId={IdUser}", PostActions);
-
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
-                //    {
-                //        throw new Exception($"Error al crear el AccessGroup: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                //    }
-
-                //}
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
@@ -304,15 +277,6 @@
                 var url = $"api/Security/PostAccessGroupDetails?userId={IdUser}";
                 var response = await _http.PostAsJsonAsync(url, _List);
 
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
-                //    {
-                //        throw new Exception($"Error al crear el AccessGroupDetail: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                //    }
-
-                //}
-
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
                 {
@@ -368,15 +332,6 @@
 
                 var url = $"api/Security/PostAccessGroupDetails?userId={IdUser}";
                 var response = await _http.PostAsJsonAsync(url, _List);
-
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
-                //    {
-                //        throw new Exception($"Error al crear el AccessGroupDetail: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                //    }
-
-                //}
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
@@ -539,15 +494,6 @@
                 var url = $"api/Security/PostAccessGroupUser?userId={IdUser}";
                 var response = await _http.PostAsJsonAsync(url, _List);
 
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
-                //    {
-                //        throw new Exception($"Error al crear el AccessUserDetail: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                //    }
-
-                //}
-
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
                 {
@@ -601,15 +547,6 @@
 
                 var url = $"api/Security/PostAccessGroupUser?userId={IdUser}";
                 var response = await _http.PostAsJsonAsync(url, _List);
-
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
-                //    {
-                //        throw new Exception($"Error al modificar AccessUserDetail: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                //    }
-
-                //}
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()

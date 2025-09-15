@@ -3,6 +3,7 @@
 
 @using Sipcon.WebApp.Client.Components.AccessGroup
 @using Sipcon.WebApp.Client.Components.License
+@using Sipcon.WebApp.Client.Repository.Auth
 @using System.Text.Json
 
 
@@ -84,30 +85,14 @@
     </PagerContent>
 </MudDataGrid>
 
-<MudDialog @bind-Visible="_nestedVisible">
-    <TitleContent>
-        <MudStack Row="true">
-            <MudIcon Icon="@Icons.Material.Outlined.CarRepair" Color="@(_success? Color.Default: Color.Error)" Style="font-size: 2rem;"></MudIcon>
-            <MudText Typo="Typo.h6">ROLES</MudText>
-        </MudStack>
-    </TitleContent>
-    <DialogContent>
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Roles")">
 
-        <MudStack Row="true">
-            <MudText Class="nested"><p>@_nestedErrorMessage!</p> </MudText>
-        </MudStack>
-
-    </DialogContent>
-    <DialogActions>
-
-        <MudButton Color="Color.Info" OnClick="CloseNested" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
-
-    </DialogActions>
-</MudDialog>
+</NestedDialogCustom>
 
 
 
 @code {
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     private IEnumerable<AccessGroup> _accessGroupList = new List<AccessGroup>();
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
@@ -135,7 +120,7 @@
 
     private async Task<GridData<AccessGroup>> LoadGridData(GridState<AccessGroup> state)
     {
-
+        await AuthenticationStateProvider.RefreshStaticVariables();
         _rowCount = state.Page * state.PageSize;
 
         await GetAccessGroup();
@@ -221,8 +206,6 @@
 
 
     private void OpenNested() => _nestedVisible = true;
-
-    private void CloseNested() => _nestedVisible = false;
 
 
     private async Task HandleMenuClick(ModuleAction module)

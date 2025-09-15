@@ -21,6 +21,7 @@
         <MudDataGrid @ref="PartsCatalogMudDataGrid" 
                      T="Part" 
                      ServerData="ServerReload" 
+                     Loading="_loading"
                      Striped="true" 
                      Hover="true" 
                      Filterable="false" 
@@ -72,7 +73,6 @@
     {
         if (text.Length == 0 || text.Length >= 3)
         {
-            _loading = true;
             searchString = text;
             await PartsCatalogMudDataGrid!.ReloadServerData();
         }

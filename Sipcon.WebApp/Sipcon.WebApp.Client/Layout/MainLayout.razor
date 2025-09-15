@@ -13,53 +13,55 @@
    <MudAppBar Elevation="1">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
         <MudText Typo="Typo.h5" Class="ml-3">Sipcon</MudText>
-        <MudSpacer />
-        <MudText Typo="Typo.body1" Style="@( _isDarkMode ? "color:white; margin-right: 16px;" : "")">
+       
             <AuthorizeView>
                 <Authorized>
+                <MudSpacer />
+                <MudSpacer />
                     <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center">
-                        <MudText Typo="Typo.subtitle1" Align="Align.Center" Class="d-inline-flex" Style="white-space: nowrap;">
-                            @(string.IsNullOrEmpty(_userActive.Name) ? "" : $"Bienvenido, {_userActive.Name} {_userActive.LastName}")
-                        </MudText>
+                       
                         <MudChip T="string" Icon="@Icons.Material.Filled.DomainAdd" Label="true" 
-                                 Color="Color.Primary" 
-                                 OnClick="OpenDrawer"
-                                 OnClose="OpenDrawer" 
-                                 CloseIcon="@Icons.Material.Filled.Edit">
-                                 @(SelectedSupplierText ?? "Planta?")
+                                    Color="Color.Primary" 
+                                    OnClick="OpenDrawer"
+                                    OnClose="OpenDrawer" 
+                                    CloseIcon="@Icons.Material.Filled.Edit">
+                                    @(SelectedSupplierText ?? "Planta?")
                         </MudChip>
                         <MudChip T="string" Icon="@Icons.Material.Filled.EmojiTransportation" Label="true" 
-                                 Color="Color.Info"
-                                 OnClick="OpenDrawer"
-                                 OnClose="OpenDrawer"
-                                 CloseIcon="@Icons.Material.Filled.Edit">
+                                    Color="Color.Info"
+                                    OnClick="OpenDrawer"
+                                    OnClose="OpenDrawer"
+                                    CloseIcon="@Icons.Material.Filled.Edit">
                             @(SelectedDealerText ?? "Concesionario?")
                         </MudChip>
-                        <MudChip T="string" Icon="@Icons.Material.Filled.ExitToApp" Label="true"
-                                 Color="Color.Secondary"
-                                 OnClick="Logout"
-                                 Style="@( _isDarkMode ? "background-color: rgba(255,255,255,0.2); color:white;" : "")">
-                                 @("Salir")
-                        </MudChip>
                     </MudStack>
-                </Authorized>
+                <MudButton OnClick="@OpenDrawer">
+                    <MudChat ChatPosition="ChatBubblePosition.End" Style="max-width: 250px;">
+                        <MudAvatar Color="Color.Dark"> @(string.IsNullOrEmpty(_userActive.Login) ? "U" : _userActive.Login.ToUpper().Substring(0, 1))</MudAvatar>
+                        @* <MudChatHeader Name="@(context.Item.Login.ToUpper())" Time="" /> *@
+                        <MudChatBubble Style="font-size: 10px;">@("Bienvenido, " + _userActive.Name + " " + _userActive.LastName)</MudChatBubble>
+                        <MudChatFooter Style="font-size: 8px;font-style:italic" Text="@(_userActive.Login.ToUpper())" />
+                    </MudChat>
+                 </MudButton>
+                @* <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End"  /> *@
+
+
+            </Authorized>
                 <NotAuthorized>
+                    <MudSpacer />
+                    <MudSpacer />
                     <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                                   Href="login"
-                                   Style="@(_isDarkMode ? "background-color: rgba(255,255,255,0.2); color:white;" : "")">
-                            <MudIcon Icon="@Icons.Material.Filled.Login" />Iniciar Sesión
+                        <MudButton Href="login">
+                            <MudChat ChatPosition="ChatBubblePosition.Start" Style="max-width: 135px;">
+                                <MudAvatar Color="Color.Dark"> @("U")</MudAvatar>
+                                <MudChatBubble Style="font-size: 12px;">@("Iniciar")</MudChatBubble>
+                            </MudChat>
                         </MudButton>
-                        @* <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                       Href="register">
-                <MudIcon Icon="@Icons.Material.Filled.HowToReg" />Registrarse
-            </MudButton> *@
                     </MudStack>
-                </NotAuthorized>
+               
+            </NotAuthorized>
             </AuthorizeView>
-        </MudText>
-        <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
-        <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" OnClick="@OpenDrawer" />
+       
    </MudAppBar>
    <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Variant="DrawerVariant.Mini">
         <NavMenu Modules="@_UserModules" />
@@ -229,41 +231,37 @@
         Logger.LogError(error.Message);
     }
 
-    // protected override async Task OnAfterRenderAsync(bool firstRender)
-    // {
-    //     if (!firstRender)
-    //     {
-            
-    //     }
-
-    //     await Task.CompletedTask;
-       
-    // }
     protected override async Task OnParametersSetAsync()
     {
         errorBoundary?.Recover();
 
+        
         _isAthenticate = await AuthenticationStateProvider.IsUserAuthenticated();
-
-
         _drawerOpen = _isAthenticate ? _isAthenticate : false;
-
 
         if (_isAthenticate)
         {
             _UserSuppliers = await AuthenticationStateProvider.GetUserSupplierAsync();
-            _UserDealers = await AuthenticationStateProvider.GetUserDealerAsync();
+            SelectedSupplierValue = await AuthenticationStateProvider.GetSelectedSupplierAsync();
+            SelectedDealerValue = await AuthenticationStateProvider.GetSelectedDealerAsync();
+            var userActive = await AuthenticationStateProvider.GetUserAsync();
+
+            var userDealers = await AuthenticationStateProvider.GetUserDealerAsync();
+            _UserDealers = userDealers.Where(s => s.SupplierId == SelectedSupplierValue.ToString()).ToList();
             _UserModules = await AuthenticationStateProvider.GetUserRoleAsync();
             _userActive = await AuthenticationStateProvider.GetUserAsync();
 
-            int selectedDealer = await AuthenticationStateProvider.GetSelectedDealerAsync();
-            int selectedSupplier = await AuthenticationStateProvider.GetSelectedSupplierAsync();
 
             // Console.WriteLine("User Modules: " + string.Join(", ", _UserModules.Select(m => m.Name)));
-            SelectedSupplierText = _UserSuppliers.Count > 0 ? _UserSuppliers.First(s => s.Id == selectedSupplier).Name : "Planta";
-            SelectedDealerText = _UserDealers.Count > 0 ? _UserDealers.First(s => s.Id == selectedDealer).Name : "Concesionario";
+            SelectedSupplierText = _UserSuppliers.Count > 0 ? _UserSuppliers.First(s => s.Id == SelectedSupplierValue).Name : "Planta";
+            SelectedDealerText = _UserDealers.Count > 0 ? _UserDealers.First(s => s.Id == SelectedDealerValue).Name : "Concesionario";
+
+            Useful.supplierId = SelectedSupplierValue;
+            Useful.dealerId = SelectedDealerValue;
+            Useful.userId = userActive.Id;
         }
 
+       
         await Task.CompletedTask;
         StateHasChanged();
 
@@ -273,16 +271,17 @@
     {
         base.OnInitialized();
         Useful.IsNewOrEdit = false;
-        
         await AuthenticationStateProvider.SetTimerInactivo(DotNetObjectReference.Create(this));
-        
+       
+
+        await AuthenticationStateProvider.RefreshStaticVariables();
+
        _theme = new()
        {
            PaletteLight = _lightPalette,
            PaletteDark = _darkPalette,
            LayoutProperties = new LayoutProperties()
        };
-      
         await Task.CompletedTask;
     }
 
@@ -310,8 +309,18 @@
         _expandedSupplier = !_expandedSupplier;
         SelectedSupplierText = _UserSuppliers.FirstOrDefault(x => x.Id == SelectedSupplierValue)?.Name ?? "Planta";
         await AuthenticationStateProvider.SetValueSessionStorage<int>(SelectedSupplierValue, ValuesKey.SELECTEDSUPPLIER);
-        _open = false;
         Useful.supplierId = SelectedSupplierValue;
+
+        _open = false;
+
+        var userDealers = await AuthenticationStateProvider.GetUserDealerAsync();
+        _UserDealers = userDealers.Where(s => s.SupplierId == SelectedSupplierValue.ToString()).ToList();
+        
+        SelectedDealerValue = _UserDealers.Count > 0 ? _UserDealers.FirstOrDefault()!.Id : 0;
+        SelectedDealerText = _UserDealers.FirstOrDefault(x => x.Id == SelectedDealerValue)?.Name ?? "Concesionario";
+        await AuthenticationStateProvider.SetValueSessionStorage<int>(SelectedDealerValue, ValuesKey.SELECTEDDEALER);
+        Useful.dealerId = SelectedDealerValue;
+       
         await hubEventsService.NotifySupplierChangedAsync();
         await Task.CompletedTask;
     }
@@ -321,8 +330,10 @@
         _expandedDealer = !_expandedDealer;
         SelectedDealerText = _UserDealers.FirstOrDefault(x => x.Id == SelectedDealerValue)?.Name ?? "Concesionario";
         await AuthenticationStateProvider.SetValueSessionStorage<int>(SelectedDealerValue, ValuesKey.SELECTEDDEALER);
-        _open = false;
         Useful.dealerId = SelectedDealerValue;
+
+        _open = false;
+        
         await hubEventsService.NotifyDealerChangedAsync();
         await Task.CompletedTask;
     }

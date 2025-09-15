@@ -119,12 +119,12 @@ namespace Sipcon.WebApp.Client.Utils
         }
 
 
-        public async Task<List<SelectOption>> GetModelOption(int IdUser, int IdBrand = 0)
+        public async Task<List<SelectOption>> GetModelOption(int IdSupplier, int IdUser, int IdBrand = 0)
         {
             List<SelectOption> _itemsSelect = new([]);
             
 
-            var moduleResponse = await ModelService.GetModels(IdUser, 0);
+            var moduleResponse = await ModelService.GetModels(IdSupplier, IdUser, 0);
             if (moduleResponse.Processed)
             {
                 List<Model> _List = moduleResponse.Data ?? new List<Model>();
@@ -203,12 +203,12 @@ namespace Sipcon.WebApp.Client.Utils
 
         }
 
-        public async Task<List<SelectOption>> GetBrandOption(int IdUser)
+        public async Task<List<SelectOption>> GetBrandOption(int IdSupplier)
         {
             List<SelectOption> _itemsSelect = new([]);
 
 
-            var moduleResponse = await BrandService.GetBrands(IdUser,0);
+            var moduleResponse = await BrandService.GetBrands(IdSupplier);
             if (moduleResponse.Processed)
             {
                 List<Brand> _List = moduleResponse.Data ?? new List<Brand>();
@@ -242,12 +242,12 @@ namespace Sipcon.WebApp.Client.Utils
 
         }
 
-        public async Task<List<SelectOption>> GetPolicyTypeOption(int IdUser, int IdBrand = 0)
+        public async Task<List<SelectOption>> GetPolicyTypeOption(int IdSupplier, int IdUser, int? IdBrand = null)
         {
             List<SelectOption> _itemsSelect = new([]);
 
 
-            var moduleResponse = await PolicyTypeService.GetPolicyTypes(IdUser, 0);
+            var moduleResponse = await PolicyTypeService.GetPolicyTypes(IdSupplier, IdUser, 0,"", IdBrand);
             if (moduleResponse.Processed)
             {
                 List<PolicyType> _List = moduleResponse.Data ?? new List<PolicyType>();

@@ -1,0 +1,42 @@
+﻿
+<MudDialog @bind-Visible="IsVisible">
+    <TitleContent>
+        <MudStack Row="true">
+            <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="@(Success? Color.Default: Color.Error)" Style="font-size: 2rem;"></MudIcon>
+            <MudText Typo="Typo.h6">@Title</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+
+        <MudStack Row="true">
+            <MudText Class="nested"><p>@ErrorMessage!</p> </MudText>
+        </MudStack>
+
+    </DialogContent>
+    <DialogActions>
+
+        <MudButton Color="Color.Info" OnClick="CloseNested" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
+
+    </DialogActions>
+</MudDialog>
+<style>
+    .nested {
+        font-size: 1rem;
+        font-weight: 500;
+        color: #424242;
+        text-align: center;
+    }
+
+</style>
+
+@code {
+  
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+  
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public bool Success { get; set; } = false;
+    [Parameter] public string ErrorMessage { get; set; } = string.Empty;
+    [Parameter] public string Title { get; set; } = "Sipcon";
+
+    private void CloseNested() => IsVisible = false;
+}

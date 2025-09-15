@@ -77,11 +77,6 @@
 
                 var response = await _http.PostAsJsonAsync($"api/LaborTime/PostLaborTime?userId={IdUser}", laborTimes);
 
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    throw new Exception($"Error Post LaborTime: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                //}
-
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
                 {
@@ -128,10 +123,6 @@
                 laborTimes.Add(LaborTime);
 
                 var response = await _http.PostAsJsonAsync($"api/LaborTime/PostLaborTimes?userId={IdUser}", laborTimes);
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    throw new Exception($"Error Post LaborTime: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                //}
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
@@ -171,7 +162,7 @@
 
         }
 
-        public async Task<ApiResponse<ActionResult>> DeleteLaborTimes(List<PostAction> PostActions, int IdUser)
+        public async Task<ApiResponse<ActionResult>> ActionsLaborTime(List<PostAction> PostActions, int IdUser)
         {
             ApiResponse<ActionResult>? result;
             List<PostAction> PostActionList = ([]);
@@ -186,11 +177,7 @@
                 };
 
 
-                var response = await _http.PostAsJsonAsync($"api/LaborTime/Delete_LaborTime?userId={IdUser}", PostActions, options);
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    throw new Exception($"Error Post LaborTime: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                //}
+                var response = await _http.PostAsJsonAsync($"api/LaborTime/PostActions?userId={IdUser}", PostActions, options);
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()

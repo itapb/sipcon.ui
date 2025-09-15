@@ -2,6 +2,7 @@
 
 
 @using System.Text.Json
+@using Sipcon.WebApp.Client.Repository.Auth
 
 
 @inject ILaborTimeService LaborTimeService
@@ -51,21 +52,25 @@
     </ToolBarContent>
     <Columns>
         <SelectColumn  />
-        <TemplateColumn  Title="ID">
+        <TemplateColumn Title="CODIGO">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@("#" + context.Item.Id.ToString())</MudText>
+                <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Align="Align.Left" Style="font-weight:bold;">
+                    @("#" + context.Item.Id.ToString().PadLeft(10, '0'))
+                </MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn  Title="MODELO">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Start"><b>@context.Item.ModelName.ToUpper()</b></MudText>
+                <MudText Typo="Typo.caption" Align="Align.Left">
+                    <b>@context.Item.ModelName.ToUpper()</b>
+                </MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn  Title="HORAS">
             <CellTemplate>
                 <div class="d-flex justify-end">
                     <MudText Typo="Typo.caption" Align="Align.End">
-                        @(context.Item.Hours.ToString("N0"))
+                        @(context.Item.Hours.ToString("N2"))
                     </MudText>
                 </div>
             </CellTemplate>
@@ -78,7 +83,7 @@
                 </MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn  Title="Activo">
+        <TemplateColumn  Title="ESTATUS">
             <CellTemplate>
                 <div class="d-flex justify-center">
                     <MudIcon Icon="@(context.Item.IsActive ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.IsActive ? Color.Success : Color.Error)" Size="Size.Medium" />
@@ -92,37 +97,18 @@
     </PagerContent>
 </MudDataGrid>
 
-<MudDialog @bind-Visible="_nestedVisible">
-    <TitleContent>
-        <MudStack Row="true">
-            <MudIcon Icon="@Icons.Material.Outlined.ManageAccounts" Color="@(_success ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
-            <MudText Typo="Typo.h6">Mano de Obra</MudText>
-        </MudStack>
-    </TitleContent>
-    <DialogContent>
-
-        <MudStack Row="true">
-            <MudText Class="nested"><p>@_nestedErrorMessage!</p> </MudText>
-        </MudStack>
-
-    </DialogContent>
-    <DialogActions>
-
-        <MudButton Color="Color.Info" OnClick="CloseNested" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
-
-    </DialogActions>
-</MudDialog>
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Mano de Obra")" />
 
 
 @code {
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     private IEnumerable<LaborTime> _LaborTimes = new List<LaborTime>();
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
     bool _success = false;
 
     private int _rowCount = 0;
-    
-    private int _idBrand = 1; // Cambia esto por el ID del usuario que estás utilizando
+
     private int? _modelIdSelected = null ; // Cambia esto por el ID del usuario que estás utilizando
 
     private int _rowsTotal = 0; 
@@ -145,6 +131,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+
         hubEventsService.OnSupplierChanged += ReloadServerData;
         await Task.CompletedTask;
     }
@@ -165,7 +153,7 @@
 
     private async Task<GridData<LaborTime>> LoadGridData(GridState<LaborTime> state)
     {
-
+        await AuthenticationStateProvider.RefreshStaticVariables();
         _rowCount = state.Page * state.PageSize;
 
         await GetLaborTimes();
@@ -183,18 +171,12 @@
             _LaborTimes = serviceResponse.Data;
             _rowsTotal = serviceResponse.Total;
 
-            // if (_LaborTimes.Count() > 0)
-            // {
-            //     _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
-            // }
-            // else { _itemsModules = new List<ModuleAction>([]); }
             _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
         }
         else
         {
             _LaborTimes = new List<LaborTime>();
             _rowsTotal = 0;
-            // _itemsModules = new List<ModuleAction>([]);
             _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
         }
 
@@ -238,7 +220,6 @@
 
     private void OpenNested() => _nestedVisible = true;
 
-    private void CloseNested() => _nestedVisible = false;
 
     private async Task HandleMenuClick(ModuleAction module)
     {
@@ -262,7 +243,7 @@
 
     private async Task ImportItemsAsync()
     {
-        var _modelsList = await ModuleActionsService.GetModelOption(Useful.userId, _idBrand);
+        var _modelsList = await ModuleActionsService.GetModelOption(Useful.supplierId, Useful.userId);
 
         DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
         var parameters = new DialogParameters<SelectItemDialog> { { x => x.SelectList, _modelsList }, { x => x.Title, "Modelos" } };
@@ -342,7 +323,7 @@
 
     private async Task ExportItemsAsync()
     {
-        var _modelsList = await ModuleActionsService.GetModelOption(Useful.userId, _idBrand);
+        var _modelsList = await ModuleActionsService.GetModelOption(Useful.supplierId, Useful.userId);
 
         DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
         var parameters = new DialogParameters<SelectItemDialog> { { x => x.SelectList, _modelsList }, { x => x.Title, "Modelos" } };
@@ -414,7 +395,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await LaborTimeService.DeleteLaborTimes(ActionList, Useful.userId);
+                var serviceResponse = await LaborTimeService.ActionsLaborTime(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;

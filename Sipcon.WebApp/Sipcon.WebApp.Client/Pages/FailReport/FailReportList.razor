@@ -2,6 +2,7 @@
 
 @using Sipcon.WebApp.Client.Components.FailReport
 @using System.Text.Json
+@using Sipcon.WebApp.Client.Repository.Auth
 
 
 @inject IFailReportService FailReportService
@@ -134,30 +135,12 @@
     </PagerContent>
 </MudDataGrid>
 
-<MudDialog @bind-Visible="_nestedVisible">
-    <TitleContent>
-        <MudStack Row="true">
-            <MudIcon Icon="@Icons.Material.Outlined.CarRepair" Color="@(_success? Color.Default: Color.Error)" Style="font-size: 2rem;"></MudIcon>
-            <MudText Typo="Typo.h6">Reporte Falla Tecnica</MudText>
-        </MudStack>
-    </TitleContent>
-    <DialogContent>
-
-        <MudStack Row="true">
-            <MudText Class="nested"><p>@_nestedErrorMessage!</p> </MudText>
-        </MudStack>
-
-    </DialogContent>
-    <DialogActions>
-
-        <MudButton Color="Color.Info" OnClick="CloseNested" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
-
-    </DialogActions>
-</MudDialog>
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Reporte de Falla")"/>
 
 
 
 @code {
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     private IEnumerable<FailReport> _FailReports = new List<FailReport>();
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
@@ -183,6 +166,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+
         hubEventsService.OnSupplierChanged += ReloadServerData;
         hubEventsService.OnDealerChanged += ReloadServerData;
         await Task.CompletedTask;
@@ -205,7 +190,7 @@
 
     private async Task<GridData<FailReport>> LoadGridData(GridState<FailReport> state)
     {
-
+        await AuthenticationStateProvider.RefreshStaticVariables();
         _rowCount = state.Page * state.PageSize;
 
         await GetFailReports();
@@ -294,8 +279,6 @@
 
 
     private void OpenNested() => _nestedVisible = true;
-
-    private void CloseNested() => _nestedVisible = false;
 
 
     private async Task HandleMenuClick(ModuleAction module)

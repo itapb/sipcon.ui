@@ -27,6 +27,7 @@ namespace Sipcon.WebApp.Client.Models
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
+        public string SupplierId { get; set; } = string.Empty;
         public int Id { get; set; } = 0;
         public bool IsActive { get; set; } = true;
 

@@ -9,12 +9,12 @@
         private readonly HttpClient _http = http;
 
 
-        public async Task<ApiResponse<List<Brand>>> GetBrands(int IdUser, int RowFrom = 0, string Filter = "")
+        public async Task<ApiResponse<List<Brand>>> GetBrands(int IdSupplier)
         {
             ApiResponse<List<Brand>> result;
             try
             {
-                var Brands = await _http.GetFromJsonAsync<List<Brand>>($"api/Brand/GetAll");
+                var Brands = await _http.GetFromJsonAsync<List<Brand>>($"api/Brand/GetAll?SupplierId={IdSupplier}");
 
                 result = (Brands is null) ? new ApiResponse<List<Brand>>()
                 {
