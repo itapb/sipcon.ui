@@ -14,35 +14,13 @@
             ApiResponse<List<PayMethod>>? result;
             try
             {
-
                 result = await _http.GetFromJsonAsync<ApiResponse<List<PayMethod>>>($"api/PayMethod/GetAll");
-
 
                 result = result is null ? new ApiResponse<List<PayMethod>>()
                 {
                     Processed = false,
                     Message = "La respuesta del servidor no contiene datos.",
-
-
                 } : result;
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<PayMethod>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<PayMethod>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message),
-                 };
 
             }
             catch (Exception ex)

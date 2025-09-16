@@ -23,24 +23,6 @@
                 } : result;
 
             }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<VehicleColor>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<VehicleColor>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
             catch (Exception ex)
             {
                 result = new ApiResponse<List<VehicleColor>>()

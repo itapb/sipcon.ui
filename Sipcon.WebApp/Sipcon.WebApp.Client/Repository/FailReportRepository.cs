@@ -23,33 +23,12 @@
             {
                 result = await _http.GetFromJsonAsync<ApiResponse<List<FailReport>>>($"api/Service/GetAll?filter={Filter}&rowFrom={RowFrom}&userId={IdUser}&serviceTypeId={(int)ServiceTypeEnum.FailReport}&dealerId={IdDealer}");
 
-
                 result = result is null ? new ApiResponse<List<FailReport>>()
                 {
                     Processed = false,
                     Message = "La respuesta del servidor no contiene datos.",
-                    
-
                 } : result;
 
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<FailReport>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: " , httpEx.Message)
-                };
-                
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<FailReport>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: " , notSupportedEx.Message)
-                };
-                
             }
             catch (Exception ex)
             {
@@ -72,32 +51,11 @@
             {
                 result = await _http.GetFromJsonAsync<ApiResponse<List<FailReportType>>>($"api/Service/GetReportType");
 
-
                 result = result is null ? new ApiResponse<List<FailReportType>>()
                 {
                     Processed = false,
                     Message = "La respuesta del servidor no contiene datos.",
-
-
                 } : result;
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<FailReportType>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<FailReportType>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
 
             }
             catch (Exception ex)
@@ -132,24 +90,6 @@
                     Message = resultlist.Message,
                     Data = resultlist.Data.FirstOrDefault() ?? new FailReport()
 
-                };
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<FailReport>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<FailReport>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
                 };
 
             }
@@ -188,20 +128,9 @@
                     CustomerId = FailReport.CustomerId ?? 0,
                     InvoiceNumber = FailReport.InvoiceNumber,
                     InvoiceDate = FailReport.InvoiceDate ?? DateTime.Now,
-
                 };
 
-
                 var response = await _http.PostAsJsonAsync($"api/Service/PostFailReport?userId={IdUser}", _assistence);
-
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
-                //    {
-                //        throw new Exception($"Error al crear el FailReport: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                //    }
-                    
-                //}
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
@@ -209,22 +138,6 @@
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
                 } : result;
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
 
             }
             catch (Exception ex)
@@ -234,7 +147,6 @@
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
                 };
-
             }
             return result;
         }
@@ -247,7 +159,6 @@
             {
                 var _assistence = new FailReportUp()
                 {
-
                     Id = FailReport.Id,
                     IsActive = FailReport.IsActive,
                     ReportTypeId = FailReport.ReportTypeId ?? 0,
@@ -264,20 +175,9 @@
                     CustomerId = FailReport.CustomerId ?? 0,
                     InvoiceNumber = FailReport.InvoiceNumber,
                     InvoiceDate = FailReport.InvoiceDate ?? DateTime.Now,
-
                 };
 
-
                 var response = await _http.PostAsJsonAsync($"api/Service/PostFailReport?userId={IdUser}", _assistence);
-
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
-                //    {
-                //        throw new Exception($"Error al crear el FailReport: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                //    }
-
-                //}
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
@@ -285,22 +185,6 @@
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
                 } : result;
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
 
             }
             catch (Exception ex)
@@ -310,7 +194,6 @@
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
                 };
-
             }
             return result;
         }
@@ -318,21 +201,10 @@
         public async Task<ApiResponse<ActionResult>> ActionsFailReport(List<PostAction> PostActions, int IdUser)
         {
             ApiResponse<ActionResult>? result;
-            List<PostAction> PostActionList = ([]);
+           
             try
             {
-
-
                 var response = await _http.PostAsJsonAsync($"api/Service/PostActions?userId={IdUser}&serviceTypeId={(int)ServiceTypeEnum.FailReport}", PostActions);
-
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
-                //    {
-                //        throw new Exception($"Error al crear el FailReport: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                //    }
-
-                //}
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
@@ -342,23 +214,6 @@
                 } : result;
 
             }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
             catch (Exception ex)
             {
                 result = new ApiResponse<ActionResult>()
@@ -366,7 +221,6 @@
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
                 };
-
             }
             return result;
 
@@ -375,48 +229,23 @@
         public async Task<ApiResponse<List<byte>>> ExportFailReports(int IdUser, int IdDealer, string Filter = "")
         {
             ApiResponse<List<byte>> result;
-            string fileUrl = string.Empty;
-          
             try
             {
-                
                 var response = await _http.GetAsync($"api/Service/Export?filter={Filter}&userId={IdUser}&serviceTypeId={(int)ServiceTypeEnum.FailReport}&dealerId={IdDealer}");
-
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
-                    {
-                        throw new Exception($"Error al crear el FailReport: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                    }
-
-                }
-
+                
                 var fileContent = await response.Content.ReadAsByteArrayAsync();
-                result = new ApiResponse<List<byte>>()
+                result = (fileContent is null) ? new ApiResponse<List<byte>>()
+                {
+                    Processed = false,
+                    Message = "Error al Exportar Data.",
+                    Data = []
+                } : new ApiResponse<List<byte>>()
                 {
                     Processed = true,
-                    Message = "Exportación exitosa.",
+                    Message = "",
                     Data = fileContent.ToList()
                 };
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<byte>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message),
-                    Data = []
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<byte>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message),
-                    Data = []
-                };
+
             }
             catch (Exception ex)
             {
@@ -457,24 +286,6 @@
                 } : result;
 
             }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<FailReportDetail>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<FailReportDetail>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
             catch (Exception ex)
             {
                 result = new ApiResponse<List<FailReportDetail>>()
@@ -505,7 +316,6 @@
                     IsExternal  = Detail.IsExternal,
                     IsTax       = Detail.IsTax,
                     IsActive    = Detail.IsActive 
-
                 };
 
                 _ServiceList.Add(_Service);
@@ -521,23 +331,6 @@
                 } : result;
 
             }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
             catch (Exception ex)
             {
                 result = new ApiResponse<ActionResult>()
@@ -545,7 +338,6 @@
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
                 };
-
             }
             return result;
         }
@@ -570,7 +362,6 @@
 
                 var url = $"api/Service/PostDetails?userId={IdUser}";
                 var response = await _http.PostAsJsonAsync(url, _Detail);
-
                
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
@@ -580,23 +371,6 @@
                 } : result;
                
                
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
             }
             catch (Exception ex)
             {
@@ -614,7 +388,6 @@
         public async Task<ApiResponse<ActionResult>> ActionsFailReportDetail(List<PostAction> PostActions, int IdUser)
         {
             ApiResponse<ActionResult>? result;
-            List<PostAction> PostActionList = ([]);
             try
             {
                 var options = new JsonSerializerOptions
@@ -636,23 +409,6 @@
                 } : result;
 
             }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
             catch (Exception ex)
             {
                 result = new ApiResponse<ActionResult>()
@@ -669,7 +425,6 @@
         public async Task<ApiResponse<ActionResult>> DeleteFailReportDetail(List<PostAction> PostActions, int IdUser)
         {
             ApiResponse<ActionResult>? result;
-            List<PostAction> PostActionList = ([]);
             try
             {
                 var options = new JsonSerializerOptions
@@ -689,23 +444,6 @@
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
                 } : result;
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
 
             }
             catch (Exception ex)

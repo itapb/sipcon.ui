@@ -20,7 +20,7 @@
         public Task<ApiResponse<ActionResult>> UpdateLicenseDetail(LicenseDetail Detail, int IdUser);
         public Task<ApiResponse<ActionResult>> ActionsLicenseDetail(List<PostAction> PostActions, int IdUser);
         public Task<ApiResponse<ActionResult>> DeleteLicenseDetail(List<PostAction> PostActions, int IdUser);
-        public Task<ApiResponse<bool>> ImportLicenseDetails(int IdUser, int IdLicense, MultipartFormDataContent FormData);
+        public Task<ApiResponse<ActionResult>> ImportLicenseDetails(int IdUser, int IdLicense, MultipartFormDataContent FormData);
         public Task<ApiResponse<List<byte>>> ExportLicenseDetails(int IdUser, int IdLicense, string Filter = "");
         
 
