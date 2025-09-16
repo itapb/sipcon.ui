@@ -1,9 +1,9 @@
 ﻿namespace Sipcon.WebApp.Client.Repository
 {
-    using Sipcon.WebApp.Client.Services;
-    using Sipcon.WebApp.Client.Models;
-    using Sipcon.WebApp.Client.Enum;
     using System.Net.Http.Json;
+    using Sipcon.WebApp.Client.Enum;
+    using Sipcon.WebApp.Client.Models;
+    using Sipcon.WebApp.Client.Services;
 
 
 
@@ -12,13 +12,14 @@
         private readonly HttpClient _http = http;
 
 
-        public async Task<ApiResponse<List<Policy>>> GetPolicys(int IdUser, int RowFrom = 0, string Filter = "")
+        public async Task<ApiResponse<List<Policy>>> GetPolicys(int IdUser, int RowFrom = 0, string Filter = "", int dealerId = 0)
         {
             ApiResponse<List<Policy>>? result;
 
             try
             {
-                result = await _http.GetFromJsonAsync<ApiResponse<List<Policy>>>($"api/Policy/GetAll?filter={Filter}&rowFrom={RowFrom}&userId={IdUser}");
+               
+                result = await _http.GetFromJsonAsync<ApiResponse<List<Policy>>>($"api/Policy/GetAll?filter={Filter}&rowFrom={RowFrom}&userId={IdUser}&dealerId={dealerId}");
 
 
                 result = result is null ? new ApiResponse<List<Policy>>()

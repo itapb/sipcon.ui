@@ -5,7 +5,7 @@
     public interface IPolicyService
     {
 
-        public Task<ApiResponse<List<Policy>>> GetPolicys(int IdUser, int RowFrom = 0, string Filter = "");
+        public Task<ApiResponse<List<Policy>>> GetPolicys(int IdUser, int RowFrom = 0, string Filter = "", int dealerId = 0);
         public Task<ApiResponse<Policy>> GetPolicy(int IdPolicy, int IdUser);
         public Task<ApiResponse<Policy>> GetPolicyBy(string Search, int IdUser, SearchByEnum SearchBy);
         public Task<ApiResponse<ActionResult>> CreatePolicy(Policy Policy, int IdUser);
