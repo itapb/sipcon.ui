@@ -15,10 +15,8 @@
         public async Task<ApiResponse<List<Dealer>>> GetDealers(int IdUser, int IdSupplier)
         {
             ApiResponse<List<Dealer>>? result;
-
             try
             {
-            
                 var SupplierList = await _http.GetFromJsonAsync<List<Dealer>>($"api/Contact/GetDealers?idSupplier={IdSupplier}");
 
                 result = (SupplierList is null) ? new ApiResponse<List<Dealer>>()
@@ -35,24 +33,6 @@
                 {
                     result.Data.AddRange(SupplierList ?? []);
                 }
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<Dealer>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<Dealer>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
 
             }
             catch (Exception ex)

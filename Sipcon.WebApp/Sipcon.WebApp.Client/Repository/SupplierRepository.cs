@@ -11,10 +11,6 @@
     {
         private readonly HttpClient _http = http;
 
-        
-
-
-
         public async Task<ApiResponse<List<Supplier>>> GetSuppliers(int IdUser)
         {
             ApiResponse<List<Supplier>>? result;
@@ -38,24 +34,6 @@
                 {
                     result.Data.AddRange(SupplierList ?? []);
                 }
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<Supplier>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<Supplier>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
 
             }
             catch (Exception ex)
