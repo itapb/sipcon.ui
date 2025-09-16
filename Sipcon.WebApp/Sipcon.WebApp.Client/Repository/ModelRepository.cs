@@ -27,24 +27,6 @@
                 } : result;
 
             }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<Model>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<Model>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
             catch (Exception ex)
             {
                 result = new ApiResponse<List<Model>>()
@@ -70,24 +52,6 @@
                     Message = "La respuesta del servidor no contiene datos."
 
                 } : result;
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<Model>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<Model>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
 
             }
             catch (Exception ex)
@@ -120,23 +84,6 @@
                 } : result;
 
             }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
             catch (Exception ex)
             {
                 result = new ApiResponse<ActionResult>()
@@ -159,7 +106,6 @@
 
                 modelList.Add(Model);
 
-
                 var response = await _http.PostAsJsonAsync($"api/Model/PostModels?userId={IdUser}", modelList);
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
@@ -168,23 +114,6 @@
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
                 } : result;
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
 
             }
             catch (Exception ex)
@@ -199,7 +128,6 @@
             return result;
 
         }
-
 
         public async Task<ApiResponse<ActionResult>> ActionsModel(List<PostAction> PostActions, int IdUser)
         {
@@ -226,23 +154,6 @@
                 } : result;
 
             }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
             catch (Exception ex)
             {
                 result = new ApiResponse<ActionResult>()
@@ -267,36 +178,19 @@
 
                 var response = await _http.GetAsync(url);
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new Exception($"Error Exportar Modelos: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                }
-
                 var fileContent = await response.Content.ReadAsByteArrayAsync();
-                result = new ApiResponse<List<byte>>()
+                result = (fileContent is null) ? new ApiResponse<List<byte>>()
+                {
+                    Processed = false,
+                    Message = "Error al Exportar Data.",
+                    Data = []
+                } : new ApiResponse<List<byte>>()
                 {
                     Processed = true,
-                    Message = "Exportación exitosa.",
+                    Message = "",
                     Data = fileContent.ToList()
                 };
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<byte>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message),
-                    Data = []
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<byte>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message),
-                    Data = []
-                };
+                
             }
             catch (Exception ex)
             {
@@ -311,53 +205,29 @@
             return result;
         }
 
-
-        public async Task<ApiResponse<bool>> ImportModels(int IdSupplier, int IdUser, MultipartFormDataContent FormData)
+        public async Task<ApiResponse<ActionResult>> ImportModels(int IdSupplier, int IdUser, MultipartFormDataContent FormData)
         {
-            ApiResponse<bool> result;
+            ApiResponse<ActionResult>? result;
 
             try
             {
                 var url = $"api/Model/Import?supplierId={IdSupplier}&userId={IdUser}";
 
                 var response = await _http.PostAsync(url, FormData);
-                if (!response.IsSuccessStatusCode)
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
                 {
-                    throw new Exception($"Error Importar Modelo: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                }
+                    Processed = false,
+                    Message = "El servidor devolvió una respuesta vacía."
+                } : result;
 
-                result = new ApiResponse<bool>()
-                {
-                    Processed = true,
-                    Message = "Importacion exitosa.",
-                    Data = true
-                };
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<bool>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message),
-                    Data = false
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<bool>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message),
-                    Data = false
-                };
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<bool>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
-                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message),
-                    Data = false
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
                 };
             }
 

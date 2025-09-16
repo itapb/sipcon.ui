@@ -9,7 +9,7 @@
         public Task<ApiResponse<ActionResult>> UpdateLaborTime(LaborTime LaborTime, int IdUser);
         public Task<ApiResponse<ActionResult>> ActionsLaborTime(List<PostAction> PostActions, int IdUser);
         public Task<ApiResponse<List<byte>>> ExportLaborTimes(int Idmodel, int Idsupplier, string Filter = "");
-        public Task<ApiResponse<bool>> ImportLaborTimes(int IdUser, int Idmodel, MultipartFormDataContent FormData);
+        public Task<ApiResponse<ActionResult>> ImportLaborTimes(int IdUser, int Idmodel, MultipartFormDataContent FormData);
 
     }
 }

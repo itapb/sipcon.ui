@@ -34,24 +34,6 @@
                 } : result;
 
             }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<Vehicle>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<Vehicle>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
             catch (Exception ex)
             {
                 result = new ApiResponse<List<Vehicle>>()
@@ -71,41 +53,17 @@
 
             try
             {
+                var url = $"api/Vehicle/GetAllAvailables?userId={IdUser}&rowFrom={RowFrom}";
+                url = (IdDealer.HasValue && IdDealer.Value > 0) ? $"{url}&dealerId={IdDealer}" : url;
+                url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
 
-                if (IdDealer.HasValue && IdDealer.Value > 0)
-                {
-                    result = await _http.GetFromJsonAsync<ApiResponse<List<Vehicle>>>($"api/Vehicle/GetAllAvailables?userId={IdUser}&dealerId={IdDealer}&rowFrom={RowFrom}&filter={Filter}");
-                }
-                else
-                {
-                    result = await _http.GetFromJsonAsync<ApiResponse<List<Vehicle>>>($"api/Vehicle/GetAllAvailables?userId={IdUser}&rowFrom={RowFrom}&filter={Filter}");
-                }
-
-
+                result = await _http.GetFromJsonAsync<ApiResponse<List<Vehicle>>>(url);
 
                 result = (result is null) ? new ApiResponse<List<Vehicle>>()
                 {
                     Processed = false,
                     Message = "La respuesta del servidor no contiene datos."
                 } : result;
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<Vehicle>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<Vehicle>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
 
             }
             catch (Exception ex)
@@ -133,24 +91,6 @@
                     Processed = false,
                     Message = "La respuesta del servidor no contiene datos."
                 } : result;
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<Vehicle>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<Vehicle>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
 
             }
             catch (Exception ex)
@@ -184,24 +124,6 @@
                 } : result;
 
             }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<Vehicle>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<Vehicle>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
             catch (Exception ex)
             {
                 result = new ApiResponse<Vehicle>()
@@ -231,24 +153,6 @@
                 } : result;
 
             }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<VehicleService>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<VehicleService>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
             catch (Exception ex)
             {
                 result = new ApiResponse<VehicleService>()
@@ -261,22 +165,17 @@
             return result;
         }
 
-
         public async Task<ApiResponse<Vehicle>> GetVehicleAvailable(string Search, int IdUser, int? IdDealer = null)
         {
             ApiResponse<Vehicle>? result;
             try
             {
                 ApiResponse<List<Vehicle>>? Listresult;
-                if (IdDealer.HasValue && IdDealer.Value > 0)
-                {
-                    Listresult = await _http.GetFromJsonAsync<ApiResponse<List<Vehicle>>>($"api/Vehicle/GetOneAvailable?userId={IdUser}&dealerId={IdDealer}&VinOrPlate={Search}");
-                }
-                else
-                {
-                    Listresult = await _http.GetFromJsonAsync<ApiResponse<List<Vehicle>>>($"api/Vehicle/GetOneAvailable?userId={IdUser}&VinOrPlate={Search}");
-                }
 
+                var url = $"api/Vehicle/GetOneAvailable?userId={IdUser}&VinOrPlate={Search}";
+                url = (IdDealer.HasValue && IdDealer.Value > 0) ? $"{url}&dealerId={IdDealer}" : url;
+                
+                Listresult = await _http.GetFromJsonAsync<ApiResponse<List<Vehicle>>>(url);
 
                 result = Listresult is not null ? new ApiResponse<Vehicle>()
                 {
@@ -289,24 +188,6 @@
                     Message = "La respuesta del servidor no contiene datos."
                 };
 
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<Vehicle>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<Vehicle>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
 
             }
             catch (Exception ex)
@@ -327,15 +208,9 @@
             List<Vehicle> vehicles = ([]);
             try
             {
-                
                 vehicles.Add(Vehicle);
 
                 var response = await _http.PostAsJsonAsync($"api/Vehicle/PostVehicles?userId={IdUser}", vehicles);
-
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    throw new Exception($"Error Post Vehicle: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                //}
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
@@ -343,23 +218,6 @@
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
                 } : result;
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
 
             }
             catch (Exception ex)
@@ -384,11 +242,6 @@
 
                 var response = await _http.PostAsJsonAsync($"api/Vehicle/PostVehicles?userId={IdUser}", vehicles);
 
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    throw new Exception($"Error Post Vehicle: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                //}
-
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
                 {
@@ -396,23 +249,6 @@
                     Message = "El servidor devolvió una respuesta vacía."
                 } : result;
 
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: " , httpEx.Message)
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-                
             }
             catch (Exception ex)
             {
@@ -440,14 +276,8 @@
                     IgnoreReadOnlyProperties = true,
                     WriteIndented = true
                 };
-
                 
                 var response = await _http.PostAsJsonAsync($"api/Vehicle/PostActions?userId={IdUser}", PostActions, options);
-
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    throw new Exception($"Error Post Vehicle: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                //}
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
@@ -455,23 +285,6 @@
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
                 } : result;
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
 
             }
             catch (Exception ex)
@@ -496,47 +309,21 @@
                 var url = $"api/Vehicle/Export?supplierId={IdSupplier}&userId={IdUser}";
                 url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
 
-
                 var response = await _http.GetAsync(url);
-                if (!response.IsSuccessStatusCode)
-                {
-                    result = new ApiResponse<List<byte>>()
-                    {
-                        Processed = false,
-                        Message = "Error Exportación",
-                        Data = []
-                    };
-                }
-                else
-                {
-                    var fileContent = await response.Content.ReadAsByteArrayAsync();
-                    result = new ApiResponse<List<byte>>()
-                    {
-                        Processed = true,
-                        Message = "Exportación exitosa.",
-                        Data = fileContent.ToList()
-                    };
-                }
-
                 
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<byte>>()
+                var fileContent = await response.Content.ReadAsByteArrayAsync();
+                result = (fileContent is null) ? new ApiResponse<List<byte>>()
                 {
                     Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message),
+                    Message = "Error al Exportar Data.",
                     Data = []
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<byte>>()
+                } : new ApiResponse<List<byte>>()
                 {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message),
-                    Data = []
+                    Processed = true,
+                    Message = "",
+                    Data = fileContent.ToList()
                 };
+                
             }
             catch (Exception ex)
             {
@@ -551,62 +338,30 @@
             return result;
         }
 
-        public async Task<ApiResponse<bool>> ImportVehicles(int IdSupplier, int IdUser, MultipartFormDataContent FormData )
+        public async Task<ApiResponse<ActionResult>> ImportVehicles(int IdSupplier, int IdUser, MultipartFormDataContent FormData )
         {
-            ApiResponse<bool> result;
-            
+            ApiResponse<ActionResult>? result;
+
             try
             {
                 var url = $"api/Vehicle/Import?supplierId={IdSupplier}&userId={IdUser}";
 
                 var response = await _http.PostAsync(url, FormData);
-                if (!response.IsSuccessStatusCode)
-                {
-                    result = new ApiResponse<bool>()
-                    {
-                        Processed = false,
-                        Message = "Error Importar",
-                        Data = false
-                    };
-
-                }
-                else
-                {
-                    result = new ApiResponse<bool>()
-                    {
-                        Processed = true,
-                        Message = "Importacion exitosa.",
-                        Data = true
-                    };
-                }
-
-                   
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<bool>()
+                
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
                 {
                     Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message),
-                    Data = false
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<bool>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message),
-                    Data = false
-                };
+                    Message = "El servidor devolvió una respuesta vacía."
+                } : result;
+
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<bool>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
-                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message),
-                    Data = false
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
                 };
             }
 

@@ -10,7 +10,6 @@
         private readonly HttpClient _http = http;
 
 
-
         public async Task<ApiResponse<List<Module>>> GetModules(int IdUser, string Module = " ")
         {
             ApiResponse<List<Module>> result;
@@ -32,24 +31,6 @@
                 {
                     result.Data.AddRange(Modules ?? []);
                 }
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<Module>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<Module>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message),
-                };
 
             }
             catch (Exception ex)

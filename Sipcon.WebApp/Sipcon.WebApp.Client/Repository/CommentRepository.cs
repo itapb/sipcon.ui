@@ -5,7 +5,6 @@
     using System.Net.Http.Json;
 
 
-
     public class CommentRepository(HttpClient http) : ICommentService
     {
         private readonly HttpClient _http = http;
@@ -18,34 +17,14 @@
             try
             {
                 result = await _http.GetFromJsonAsync<ApiResponse<List<Comment>>>($"api/Comment/GetAll?moduleName={ModuleName}&recordId={IdRecord}");
-
-
+                
                 result = result is null ? new ApiResponse<List<Comment>>()
                 {
                     Processed = false,
-                    Message = "La respuesta del servidor no contiene datos.",
-                    
+                    Message = "La respuesta del servidor no contiene datos."
 
                 } : result;
 
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<Comment>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: " , httpEx.Message)
-                };
-                
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<Comment>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: " , notSupportedEx.Message)
-                };
-                
             }
             catch (Exception ex)
             {
@@ -65,7 +44,6 @@
             ApiResponse<ActionResult>? result;
             try
             {
-
                 var _comment = new CommentUp()
                 {
                     Id = Comment.Id,
@@ -73,40 +51,16 @@
                     Content = Comment.Content,
                     RecordId = Comment.RecordId,
                     ModuleName = Comment.ModuleName
-
                 };
 
-
                 var response = await _http.PostAsJsonAsync($"api/Comment/PostComment?userId={IdUser}", _comment);
-
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    throw new Exception($"Error al crear el Comment: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                //}
-
+                
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
                 } : result;
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
             }
             catch (Exception ex)
             {

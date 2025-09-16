@@ -10,7 +10,7 @@
         public Task<ApiResponse<ActionResult>> UpdateModel(Model Model, int IdUser);
         public Task<ApiResponse<ActionResult>> ActionsModel(List<PostAction> PostActions, int IdUser);
         public Task<ApiResponse<List<byte>>> ExportModels(int IdSupplier, int IdUser, string Filter = "");
-        public Task<ApiResponse<bool>> ImportModels(int IdSupplier, int IdUser, MultipartFormDataContent FormData);
+        public Task<ApiResponse<ActionResult>> ImportModels(int IdSupplier, int IdUser, MultipartFormDataContent FormData);
 
     }
 }

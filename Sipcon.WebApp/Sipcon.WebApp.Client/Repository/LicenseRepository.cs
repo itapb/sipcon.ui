@@ -30,24 +30,6 @@
                 } : result;
 
             }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<License>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<License>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
             catch (Exception ex)
             {
                 result = new ApiResponse<List<License>>()
@@ -84,24 +66,6 @@
                 };
 
             }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<License>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<License>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
             catch (Exception ex)
             {
                 result = new ApiResponse<License>()
@@ -130,24 +94,6 @@
                 } : result;
 
             }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<LicenseType>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<LicenseType>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
             catch (Exception ex)
             {
                 result = new ApiResponse<List<LicenseType>>()
@@ -169,7 +115,6 @@
             {
                 var _license = new LicenseUp()
                 {
-
                     Id = License.Id,
                     IsActive = License.IsActive,
                     SupplierId = License.SupplierId,
@@ -189,23 +134,6 @@
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
                 } : result;
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
 
             }
             catch (Exception ex)
@@ -226,10 +154,8 @@
             List<LicenseUp> _licenseList  = ([]);
             try
             {
-
                 var _license = new LicenseUp()
                 {
-
                     Id = License.Id,
                     IsActive = License.IsActive,
                     SupplierId = License.SupplierId,
@@ -250,23 +176,6 @@
                     Message = "El servidor devolvió una respuesta vacía."
                 } : result;
 
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: " , httpEx.Message)
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-                
             }
             catch (Exception ex)
             {
@@ -306,23 +215,6 @@
                 } : result;
 
             }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
             catch (Exception ex)
             {
                 result = new ApiResponse<ActionResult>()
@@ -359,24 +251,6 @@
                 } : result;
 
             }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<LicenseDetail>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<LicenseDetail>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
             catch (Exception ex)
             {
                 result = new ApiResponse<List<LicenseDetail>>()
@@ -405,24 +279,6 @@
                     Processed = false,
                     Message = "La respuesta del servidor no contiene datos."
                 } : result;
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<LicenseDetail>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<LicenseDetail>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
 
             }
             catch (Exception ex)
@@ -466,23 +322,6 @@
                 } : result;
 
             }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
             catch (Exception ex)
             {
                 result = new ApiResponse<ActionResult>()
@@ -503,7 +342,6 @@
             {
                 var _license = new LicenseDetailUp()
                 {
-
                     Id = Detail.Id,
                     IsActive = Detail.IsActive,
                     LicenseId = Detail.LicenseId,
@@ -523,23 +361,6 @@
                 } : result;
 
             }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
             catch (Exception ex)
             {
                 result = new ApiResponse<ActionResult>()
@@ -556,7 +377,7 @@
         public async Task<ApiResponse<ActionResult>> ActionsLicenseDetail(List<PostAction> PostActions, int IdUser)
         {
             ApiResponse<ActionResult>? result;
-            List<PostAction> PostActionList = ([]);
+            
             try
             {
                 var options = new JsonSerializerOptions
@@ -578,23 +399,6 @@
                 } : result;
 
             }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
             catch (Exception ex)
             {
                 result = new ApiResponse<ActionResult>()
@@ -611,7 +415,7 @@
         public async Task<ApiResponse<ActionResult>> DeleteLicenseDetail(List<PostAction> PostActions, int IdUser)
         {
             ApiResponse<ActionResult>? result;
-            List<PostAction> PostActionList = ([]);
+            
             try
             {
                 var options = new JsonSerializerOptions
@@ -633,23 +437,6 @@
                 } : result;
 
             }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message)
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message)
-                };
-
-            }
             catch (Exception ex)
             {
                 result = new ApiResponse<ActionResult>()
@@ -663,60 +450,29 @@
 
         }
 
-        public async Task<ApiResponse<bool>> ImportLicenseDetails(int IdUser, int IdLicense, MultipartFormDataContent FormData)
+        public async Task<ApiResponse<ActionResult>> ImportLicenseDetails(int IdUser, int IdLicense, MultipartFormDataContent FormData)
         {
-            ApiResponse<bool> result;
+            ApiResponse<ActionResult>? result;
 
             try
             {
                 var url = $"api/License/ImportLicenseDetails?userId={IdUser}&licenseId={IdLicense}";
                 var response = await _http.PostAsync(url, FormData);
-                if (!response.IsSuccessStatusCode)
-                {
-                    result = new ApiResponse<bool>()
-                    {
-                        Processed = false,
-                        Message = "Error al Importar.",
-                        Data = false
-                    };
-                }
-                else
-                {
-                    result = new ApiResponse<bool>()
-                    {
-                        Processed = true,
-                        Message = "Importacion exitosa.",
-                        Data = true
-                    };
-                }
 
-
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<bool>()
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
                 {
                     Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message),
-                    Data = false
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<bool>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message),
-                    Data = false
-                };
+                    Message = "El servidor devolvió una respuesta vacía."
+                } : result;
+
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<bool>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
-                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message),
-                    Data = false
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
                 };
             }
 
@@ -729,49 +485,24 @@
             string fileUrl = string.Empty;
             try
             {
-
                 var url = $"api/License/ExportDetails?userId={IdUser}&licenseId={IdLicense}";
                 url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
 
                 var response = await _http.GetAsync(url);
-                if (!response.IsSuccessStatusCode)
-                {
-                    result = new ApiResponse<List<byte>>()
-                    {
-                        Processed = false,
-                        Message = "Error al Exportar ",
-                        Data = []
-                    };
-                }
-                else {
-                    var fileContent = await response.Content.ReadAsByteArrayAsync();
-                    result = new ApiResponse<List<byte>>()
-                    {
-                        Processed = true,
-                        Message = "Exportación exitosa.",
-                        Data = fileContent.ToList()
-                    };
-                }
 
+                var fileContent = await response.Content.ReadAsByteArrayAsync();
+                result = (fileContent is null) ? new ApiResponse<List<byte>>()
+                {
+                    Processed = false,
+                    Message = "Error al Exportar Data.",
+                    Data = []
+                } : new ApiResponse<List<byte>>()
+                {
+                    Processed = true,
+                    Message = "",
+                    Data = fileContent.ToList()
+                };
                 
-            }
-            catch (HttpRequestException httpEx)
-            {
-                result = new ApiResponse<List<byte>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Error al realizar la solicitud HTTP: ", httpEx.Message),
-                    Data = []
-                };
-            }
-            catch (NotSupportedException notSupportedEx)
-            {
-                result = new ApiResponse<List<byte>>()
-                {
-                    Processed = false,
-                    Message = string.Concat("El formato de la respuesta no es compatible: ", notSupportedEx.Message),
-                    Data = []
-                };
             }
             catch (Exception ex)
             {

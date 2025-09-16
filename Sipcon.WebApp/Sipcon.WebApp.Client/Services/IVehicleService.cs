@@ -15,7 +15,7 @@
         public Task<ApiResponse<ActionResult>> UpdateVehicle(Vehicle Vehicle, int IdUser);
         public Task<ApiResponse<ActionResult>> ActionsVehicle(List<PostAction> PostActions, int IdUser);
         public Task<ApiResponse<List<byte>>> ExportVehicles(int IdSupplier, int IdUser, string Filter = "");
-        public Task<ApiResponse<bool>> ImportVehicles(int IdSupplier, int IdUser, MultipartFormDataContent FormData);
+        public Task<ApiResponse<ActionResult>> ImportVehicles(int IdSupplier, int IdUser, MultipartFormDataContent FormData);
 
     }
 }
