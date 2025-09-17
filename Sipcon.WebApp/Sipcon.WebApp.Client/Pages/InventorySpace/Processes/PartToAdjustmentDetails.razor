@@ -1,0 +1,157 @@
+﻿@if (newAdjustmentDetail == null ||  ReasonTypes == null)
+{
+    <LoadingForm IsMudDialog="@(MudDialog != null)" />
+}
+else
+{
+    <MudForm @ref="form">
+        <div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
+            <MudPaper Elevation="2" Class="pa-3">
+                <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12">
+                            <MudTextField T="int?" Label="Cantidad" @bind-Value="newAdjustmentDetail.Stock" For="@(() => newAdjustmentDetail.Stock)" Required="true"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudSelect T="Location" Label="Ubicacion Origen" ToStringFunc="@ConvertLocationFunc" Value="SourceLocationSelected" ValueChanged="OnSourceLocationValueChanged" RequiredError="Campo requerido." Required="true">
+                                @foreach (var location in SourceLocations!)
+                                {
+                                    <MudSelectItem Value="location" />
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudSelect T="AdjustmentType" Label="TIPO" ToStringFunc="@ConvertAdjustmentTypeFunc" Value="AdjustmentTypeSelected" ValueChanged="OnAdjustmentTypeValueChanged" RequiredError="Campo requerido." Required="true">
+                                @foreach (var adjustmenttype in AdjustmentTypes!)
+                                {
+                                    <MudSelectItem Value="adjustmenttype"></MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudSelect T="ReasonType" Label="CONCEPTO" ToStringFunc="@ConvertReasonTypeFunc" Value="ReasonTypeSelected" ValueChanged="OnReasonTypeValueChanged" RequiredError="Campo requerido." Required="true">
+                                @foreach (var reasontype in ReasonTypes!)
+                                {
+                                    <MudSelectItem Value="reasontype" />
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudStack Row="true" Justify="Justify.Center">
+                                <MudStack Row="true" Spacing="4">
+                                    <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="CheckClick" />
+                                    <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="CloseClick" />
+                                </MudStack>
+                            </MudStack>
+                        </MudItem>
+                    </MudGrid>
+                </MudFocusTrap>
+            </MudPaper>
+        </div>
+    </MudForm>
+}
+@code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+
+    record ReasonType(int Id, string Description,bool IsActive);
+
+    record AdjustmentType(string Code, string Description);
+    private MudForm? form;  
+
+    List<Location>? Locations;
+    List<Location>? SourceLocations;
+    ReasonType? ReasonTypeSelected;
+    Location? SourceLocationSelected;
+    AdjustmentType? AdjustmentTypeSelected;
+
+    List<AdjustmentType> AdjustmentTypes = [new AdjustmentType("E", "ENTRADA"), new AdjustmentType("S", "SALIDA")];
+
+    List<ReasonType>? ReasonTypes;
+    [Parameter] public NewAdjustmentDetail? newAdjustmentDetail { get; set; } = default!;
+    private Func<ReasonType?, string> ConvertReasonTypeFunc = reasontype => reasontype?.Description!;
+    private Func<Location?, string> ConvertLocationFunc = location => location?.Name!;
+    private Func<AdjustmentType?, string> ConvertAdjustmentTypeFunc = adjustmenttype => adjustmenttype?.Description!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // await Task.Delay(3000); // Simulate a delay for loading
+        await LoadLocations();
+        await LoadReasons();
+        AdjustmentTypeSelected = AdjustmentTypes!.FirstOrDefault(r => r.Code == newAdjustmentDetail!.AdjustmentType);
+    }
+
+    private async Task LoadLocations()
+    {
+        HttpResponseMessage locationResponse = await Http.GetAsync($"api/Location/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&rowfrom=0");
+        if (locationResponse.IsSuccessStatusCode)
+        {
+            var content2 = await locationResponse.Content.ReadFromJsonAsync<WebApiResponse<List<Location>>>();
+            Locations = content2!.data ?? new List<Location>();
+            SourceLocations = Locations!.Where(r => r.TypeId == "A").ToList();
+            SourceLocationSelected = SourceLocations!.FirstOrDefault(r => r.Id == newAdjustmentDetail!.LocationId);           
+        }
+    }
+
+    private async Task LoadReasons()
+    {
+        HttpResponseMessage locationResponse = await Http.GetAsync($"api/Adjustment/GetReasons");
+        if (locationResponse.IsSuccessStatusCode)
+        {
+            var content2 = await locationResponse.Content.ReadFromJsonAsync<WebApiResponse<List<ReasonType>>>();
+            ReasonTypes = content2!.data ?? new List<ReasonType>();                      
+            ReasonTypeSelected = ReasonTypes!.FirstOrDefault(r => r.Id == newAdjustmentDetail!.ReasonId);
+        }
+    }
+    private Task OnSourceLocationValueChanged(Location selectedSourceLocation)
+    {
+        SourceLocationSelected = selectedSourceLocation;
+        newAdjustmentDetail!.LocationId = selectedSourceLocation.Id;
+        return Task.CompletedTask;
+    }
+    private Task OnAdjustmentTypeValueChanged(AdjustmentType selectedAdjustmentType)
+    {
+        AdjustmentTypeSelected = selectedAdjustmentType;
+        newAdjustmentDetail!.AdjustmentType = AdjustmentTypeSelected.Code;
+        return Task.CompletedTask;
+    }
+    private Task OnReasonTypeValueChanged(ReasonType selectedReasonType)
+    {
+        ReasonTypeSelected = selectedReasonType;
+        newAdjustmentDetail!.ReasonId = selectedReasonType.Id;
+        return Task.CompletedTask;
+    }
+    private async Task CheckClick(MouseEventArgs args)
+    {
+        await form!.Validate();
+        if (form.IsValid)
+        {
+            var strnewAdjustmenttDetail = System.Text.Json.JsonSerializer.Serialize(newAdjustmentDetail);
+            var result_newAdjustmentDetail = await Http.PostAsync($"api/Adjustment/PostAdjustmentDetails?userId={Useful.userId}", new StringContent($"{strnewAdjustmenttDetail}", null, "application/json"));
+            if (result_newAdjustmentDetail.IsSuccessStatusCode)
+            {
+                var sucessContent = await result_newAdjustmentDetail.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
+                if (sucessContent?.data is ({ insertedRows: 1 } or { updatedRows: 1 }))
+                {
+                    var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Agregar", "OK", Color.Info, Icons.Material.Filled.Commit);
+                    if (!result!.Canceled)
+                        MudDialog?.Close(DialogResult.Ok(true));
+                }
+            }
+            else if (result_newAdjustmentDetail.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                var conflictContent = await result_newAdjustmentDetail.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+                await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+            else
+            {
+                var errorMessage = await result_newAdjustmentDetail.Content.ReadAsStringAsync();
+                throw new Exception(errorMessage);
+            }
+        }
+    }
+    private void CloseClick(MouseEventArgs args) => MudDialog?.Cancel();
+}
+
