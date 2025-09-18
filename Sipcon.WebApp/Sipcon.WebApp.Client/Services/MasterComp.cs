@@ -136,6 +136,15 @@ namespace Sipcon.WebApp.Client.Services
                     await EntityMudDataGrid!.ReloadServerData();
                 }
             }
+            else if (result_Post_Actions is not null && result_Post_Actions.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                var conflictContent = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+                await DialogService.ShowDialog(conflictContent?.message, "Error al Actualizar", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+            else if (result_Post_Actions is not null)
+            {
+                await DialogService.ShowDialog("Actualizacion fallo!", "Error al Actualizar", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
             await Task.CompletedTask;
         }
 
