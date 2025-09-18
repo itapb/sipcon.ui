@@ -133,7 +133,7 @@ else
             if (result_newAdjustmentDetail.IsSuccessStatusCode)
             {
                 var sucessContent = await result_newAdjustmentDetail.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
-                if (sucessContent?.data is ({ insertedRows: 1 } or { updatedRows: 1 }))
+                if (sucessContent?.data is { insertedRows: > 0 } or { updatedRows: > 0 })
                 {
                     var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Agregar", "OK", Color.Info, Icons.Material.Filled.Commit);
                     if (!result!.Canceled)

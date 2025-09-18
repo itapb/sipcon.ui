@@ -119,7 +119,7 @@
     }
     private int UnitValue = 0;
     private int ProductValue = 0;
-    private decimal CostValue = 0;
+    private decimal? CostValue = 0;
 
 
     private bool IsAllCheckBoxSelected = false;
@@ -155,7 +155,7 @@
     {       
         UnitValue = data.Sum(x => x.Stock) ?? 0;
         ProductValue = data.Count();
-        CostValue = data.Sum(x => x.Total);
+        CostValue = data.Sum(x => x.Cost);
     }
     Func<Models.AdjustmentDetails, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
     {
@@ -182,11 +182,8 @@
             totalItems = content2!.total ?? 0;
             var masterAdjustmentDetails = content2!.data ?? new Models.MasterAdjustmentDetails();
             MasterAdjustment = masterAdjustmentDetails.Adjustment;
-            data = masterAdjustmentDetails.Details!;
-            IsCreatedAdjustment = (MasterAdjustment!.StatusName!.ToUpper() == "CREADO");
-            // IsProcessedDispatch = (MasterAdjustment.TypeId == "D" && MasterAdjustment.StatusName.ToUpper() == "PROCESADO");
-            // IsCreatedReception = (MasterAdjustment!.TypeId == "R" && MasterAdjustment.StatusName.ToUpper() == "CREADO");
-            // TempReference = MasterAdjustment!.Reference ?? "";
+            data = masterAdjustmentDetails.Details!;           
+            IsCreatedAdjustment = (MasterAdjustment!.StatusName!.ToUpper() == "CREADO");            
             getTotals(data);
         }
         else
@@ -284,11 +281,11 @@
         if (form.IsValid)
         {
             var strMasterAdjustment = System.Text.Json.JsonSerializer.Serialize(MasterAdjustment);
-            var result_MasterAdjustment = await Http.PostAsync($"api/Adjustment/PostAdjustment?userId={Useful.userId}", new StringContent($"[{strMasterAdjustment}]", null, "application/json"));
+            var result_MasterAdjustment = await Http.PostAsync($"api/Adjustment/PostAdjustment?userId={Useful.userId}", new StringContent($"{strMasterAdjustment}", null, "application/json"));
             if (result_MasterAdjustment.IsSuccessStatusCode)
             {
                 var sucessContent = await result_MasterAdjustment.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
-                IsSuccess = (sucessContent?.data! is ({ insertedRows: 1 } or { updatedRows: 1 }));
+                IsSuccess = (sucessContent?.data! is ({ insertedRows: > 0 } or { updatedRows: > 0 }));
             }
             else if (result_MasterAdjustment.StatusCode == System.Net.HttpStatusCode.Conflict)
             {
@@ -320,7 +317,7 @@
 
     private async Task DeleteMovementDetailAction(List<Models.Action>? actions)
     {
-        var result_Post_Actions = (actions?.Count > 0) ? await Http.PostAsync($"api/Movements/DeleteMovementDetail?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json")) : null;
+        var result_Post_Actions = (actions?.Count > 0) ? await Http.PostAsync($"api/Adjustment/DeleteAdjustmentDetails?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json")) : null;
         if ((result_Post_Actions?.IsSuccessStatusCode ?? false))
         {
             //var rest = result_Post_Actions.Content.ReadAsStringAsync();

@@ -189,16 +189,7 @@ else
         }
         else if (mActions?.Count > 0)
         {
-            if (actionName == "ASSIGN")
-            {
-                string ModuleName = "INVENTARIO-PROCESOS-AJUSTE";
-                var dialogReference = await DialogService.ShowAsync<AssignUserToAdjustment>("", new DialogParameters { ["SelectedActions"] = mActions, ["moduleName"] = ModuleName }, options);
-                if (await Useful.AsyncDialogResultIsOk(dialogReference)) await AdjustmentMudDataGrid!.ReloadServerData();
-            }
-            else
-            {
-                await PostActionAndReload(mActions, $"api/Adjustment/PostAdjustmentActions?userId={Useful.userId}");
-            }
+            await PostActionAndReload(mActions, $"api/Adjustment/PostAdjustmentActions?userId={Useful.userId}");
         }
 
     }

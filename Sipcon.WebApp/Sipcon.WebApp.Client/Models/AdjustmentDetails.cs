@@ -38,12 +38,13 @@ namespace Sipcon.WebApp.Client.Models
         public string? PartDescription { get; set; }
 
        
-        public string? PartPrice { get; set; }
+        public decimal? PartPrice { get; set; }
 
         
         public string? PartSize { get; set; }
 
        
         public string? ReasonDescription { get; set; }
+        public decimal? Cost { get; set; }
     }
 }
