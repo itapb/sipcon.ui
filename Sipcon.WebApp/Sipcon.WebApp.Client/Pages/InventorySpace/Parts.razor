@@ -97,7 +97,7 @@ else
             await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('[type=file]').click()");
             return;
         }
-        var SelectedActions = (PartMudDataGrid != null && ("ACTIVATE,DEACTIVATE".IndexOf(actionName!) > -1)) ?
+        var SelectedActions = (PartMudDataGrid != null && ("ACTIVATE,DEACTIVATE,PRINT".IndexOf(actionName!) > -1)) ?
                             (PartMudDataGrid.FilteredItems.Where(item => item.IsSelected)
                                                              .Select(item => new Client.Models.Action
                                                              {
@@ -119,6 +119,15 @@ else
                 var result = await DialogService.ShowDialog("Parte(s) Actualizado(s)!", "Partes", "OK", Color.Info, Icons.Material.Filled.Commit);
                 await PartMudDataGrid!.ReloadServerData();
             }
+        }
+        else if (result_Post_Actions is not null && result_Post_Actions.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflictContent = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+            await DialogService.ShowDialog(conflictContent?.message, "Error al Actualizar", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        else if (result_Post_Actions is not null)
+        {
+            await DialogService.ShowDialog("Actualizacion fallo!", "Error al Actualizar", "OK", Color.Error, Icons.Material.Filled.Error);
         }
         await Task.CompletedTask;
     }
