@@ -1,4 +1,10 @@
-﻿<MudGrid Spacing="0">
+﻿@if (Models == null)
+{  
+    <LoadingForm IsMudDialog="@(MudDialog != null)" />
+}
+else
+{
+<MudGrid Spacing="0">
     <MudItem xs="12">
         <MudPaper Elevation="2" Class="jpv1-dialog-background-title pa-3" Square="true">
             <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
@@ -15,12 +21,18 @@
     </MudItem>
     <MudItem xs="12">
         <MudDataGrid @ref="PartsCatalogMudDataGrid" T="Part" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" FixedHeader Height="calc(100vh - 280px)" @bind-CurrentPage="ContactCurrentPage">
-            <ToolBarContent>
-
+            <ToolBarContent>               
                 <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
                 <MudSpacer />
+                    <MudSelect T="Model" Label="Modelos"  ToStringFunc="@ConvertModelFunc" Immediate="true" FitContent="true" ValueChanged="OnModelValueChanged" Value="ModelSelected">
+                    @foreach (var model in Models!)
+                    {
+                        <MudSelectItem Value="model" />
+                    }
+                </MudSelect>                
+                <MudSpacer />
                 <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshPartsCatalog"></MudIconButton>
-            </ToolBarContent>
+                </ToolBarContent>
             <Columns>
                 <PropertyColumn Property="x => x.InnerCode" Title="CODIGO PARTE" />
                 <PropertyColumn Property="x => x.Description" Title="DESCRIPCION" />
@@ -37,6 +49,7 @@
         </MudDataGrid>
     </MudItem>
 </MudGrid>
+}
 @code {
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
@@ -45,11 +58,38 @@
 
     private MudDataGrid<Part>? PartsCatalogMudDataGrid;
 
+    private List<Model>? Models;
+    private Func<Model?, string> ConvertModelFunc = model => model?.Name!;
+    private Model? ModelSelected;
+    private async Task OnModelValueChanged(Model selectedModel)
+    {
+        ModelSelected = selectedModel;        
+        await PartsCatalogMudDataGrid!.ReloadServerData(); 
+    }
 
     bool _loading = true;
     string searchString = "";
     private int ContactCurrentPage = 0;
+    private async Task loadModels()
+    {
+        HttpResponseMessage response = await Http.GetAsync($"api/Model/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&rowFrom=0");
+        if (response.IsSuccessStatusCode)
+        {
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Model>>>();
+            Models = content2!.data ?? new List<Model>();
+            ModelSelected = Models.FirstOrDefault();
+        }
+        else
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
+    }
 
+    override protected async Task OnInitializedAsync()
+    {
+        await loadModels();
+    }
     private async Task OnSearch(string text)
     {
         if (text.Length == 0 || text.Length >= 3)
@@ -74,7 +114,7 @@
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Part> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Part/GetAll?rowFrom={mOffset}&filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Part/GetAll?rowFrom={mOffset}&filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}&isSell=true&ModelId={ModelSelected?.Id}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Part>>>();

@@ -17,7 +17,8 @@ namespace Sipcon.WebApp.Client.Models
 
         [Required]
         [Range(1, int.MaxValue)]
-        public Int32? PartId { get; set; }    
+        public Int32? PartId { get; set; }
+        public string? PartSize { get; set; }
         public string? PartInnerCode { get; set; }       
         public string? PartName { get; set; }
         [Required]

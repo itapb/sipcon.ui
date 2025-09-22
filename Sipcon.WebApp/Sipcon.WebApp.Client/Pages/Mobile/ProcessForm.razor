@@ -227,6 +227,9 @@
                 processName = MovementType switch { "R" => "Recepcion", "T" => "Traslado", "P" => "Recoleccion", "D" => "Despacho", _ => "Recepcion" };
                 movementDetails = movementdetails.FirstOrDefault();
                 TypeName = movementDetails?.TypeName; 
+
+                ModeValue = movementDetails?.TypeId == "P";
+                OnSwitchChanged();
             }
         } 
 
@@ -272,11 +275,14 @@
     }
     private async Task AfterAsyncMode()
     {
-        ModeText = ModeValue ? "Picking" : "Entrega";
-        ModeParameter = ModeValue ? "P" : "D";
+        OnSwitchChanged();
         await StepOne();       
     }
-
+    private void OnSwitchChanged()
+    {
+        ModeText = ModeValue ? "Picking" : "Entrega";
+        ModeParameter = ModeValue ? "P" : "D";
+    }
     private async Task<int?> ReasonConfirmation()
     {
         int? ResultPartialTypeId = null;
