@@ -12,12 +12,16 @@
         private readonly HttpClient _http = http;
 
 
-        public async Task<ApiResponse<List<Assistence>>> GetAssistences(int IdUser, int IdDealer, int RowFrom = 0, string Filter = "")
+        public async Task<ApiResponse<List<Assistence>>> GetAssistences(int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null)
         {
             ApiResponse<List<Assistence>>? result;
             try
             {
-                result = await _http.GetFromJsonAsync<ApiResponse<List<Assistence>>>($"api/Service/GetAll?filter={Filter}&rowFrom={RowFrom}&userId={IdUser}&serviceTypeId={(int)ServiceTypeEnum.Assistence}&dealerId={IdDealer}");
+                var url = $"api/Service/GetAll?userId={IdUser}&rowFrom={RowFrom}&serviceTypeId={(int)ServiceTypeEnum.Assistence}";
+                url = (IdDealer.HasValue && IdDealer.Value > 0) ? $"{url}&dealerId={IdDealer}" : url;
+                url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
+
+                result = await _http.GetFromJsonAsync<ApiResponse<List<Assistence>>>(url);
 
                 result = result is null ? new ApiResponse<List<Assistence>>()
                 {
@@ -183,12 +187,16 @@
 
         }
 
-        public async Task<ApiResponse<List<byte>>> ExportAssistences(int IdUser, int IdDealer, string Filter = "")
+        public async Task<ApiResponse<List<byte>>> ExportAssistences(int IdUser, string Filter = "", int? IdDealer = null)
         {
             ApiResponse<List<byte>> result;
             try
             {
-                var response = await _http.GetAsync($"api/Service/Export?filter={Filter}&userId={IdUser}&serviceTypeId=2&dealerId={IdDealer}");
+                var url = $"api/Service/Export?userId={IdUser}&serviceTypeId={(int)ServiceTypeEnum.Assistence}";
+                url = (IdDealer.HasValue && IdDealer.Value > 0) ? $"{url}&dealerId={IdDealer}" : url;
+                url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
+
+                var response = await _http.GetAsync(url);
                 
                 var fileContent = await response.Content.ReadAsByteArrayAsync();
                 result = (fileContent is null) ? new ApiResponse<List<byte>>()

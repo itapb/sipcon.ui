@@ -31,12 +31,15 @@
 
     <ToolBarContent>
         <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddLicense()"></MudIconButton>
-        <MudTextField @bind-Value="_searchString" Placeholder="buscar" Adornment="Adornment.Start" Immediate="true"
-        Typo="Typo.caption"
-        AdornmentIcon="@Icons.Material.Filled.Search"
-        OnAdornmentClick="() => ClickSearch()"
-        IconSize="Size.Medium" Class="mt-0" 
-        OnKeyUp="HandleKeyDownSearch">
+        <MudTextField @bind-Value="_searchString" 
+                    Placeholder="buscar" 
+                    Adornment="Adornment.Start" 
+                    Immediate="true"
+                    Typo="Typo.caption"
+                    AdornmentIcon="@Icons.Material.Filled.Search"
+                    OnAdornmentClick="() => ClickSearch()"
+                    IconSize="Size.Medium" Class="mt-0" 
+                    OnKeyUp="HandleKeyDownSearch">
         </MudTextField>
         <MudSpacer />
         <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
@@ -51,29 +54,31 @@
     </ToolBarContent>
     <Columns>
         <SelectColumn  />
-        <TemplateColumn  Title="NRO.">
+        <TemplateColumn Title="CODIGO">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@("#" + context.Item.Id.ToString())</MudText>
+                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">
+                    @("#" + context.Item.Id.ToString().PadLeft(10, '0'))
+                </MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn  Title="DESCRIP.">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Inline="true" Style="font-weight:bold;">@context.Item.Description.ToUpper()</MudText>
+                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Style="font-weight:bold;">@context.Item.Description.ToUpper()</MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn  Title="TIPO">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Start"><b>@context.Item.Type.ToUpper()</b></MudText>
+                <MudText Typo="Typo.caption" Align="Align.Left"><b>@context.Item.Type.ToUpper()</b></MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn  Title="EXPIRACION">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.ExpirationDate?.ToString("dd MMM yyyy"))</MudText>
+                <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.ExpirationDate?.ToString("dd MMM yyyy"))</MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn  Title="ESTATUS">
             <CellTemplate>
-                <div class="d-flex justify-center">
+                <div class="d-flex justify-start">
                     @if (context.Item.EstatusName != null)
                     {
                         string style = "";
@@ -188,26 +193,23 @@
     private async Task GetLicenses()
     {
         _loading = true;
+        _rowsTotal = 0;
+        _Licenses = new List<License>();
+
+        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
         var serviceResponse = await LicenseService.GetLicenses(Useful.userId, Useful.supplierId, _rowCount, _searchString);
         if (serviceResponse.Processed)
         {
             _Licenses = serviceResponse.Data;
             _rowsTotal = serviceResponse.Total;
-
-            if (_Licenses.Count() > 0)
-            {
-                _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
-            }
-            else { _itemsModules = new List<ModuleAction>([]); }
-
-
         }
         else
         {
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
             Console.WriteLine($"Error: {serviceResponse.Message}");
-            _Licenses = new List<License>();
-            _rowsTotal = 0;
-            _itemsModules = new List<ModuleAction>([]);
+            OpenNested();
+            
         }
         _loading = false;
     }

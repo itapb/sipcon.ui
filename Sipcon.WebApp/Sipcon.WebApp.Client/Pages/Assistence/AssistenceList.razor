@@ -33,12 +33,14 @@
 
     <ToolBarContent>
         <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddAssistence()"></MudIconButton>
-        <MudTextField @bind-Value="_searchString" Placeholder="buscar" Adornment="Adornment.Start" Immediate="true"
-        Typo="Typo.caption"
-        AdornmentIcon="@Icons.Material.Filled.Search"
-        OnAdornmentClick="() => ClickSearch()"
-        IconSize="Size.Medium" Class="mt-0" 
-        OnKeyUp="HandleKeyDownSearch">
+        <MudTextField @bind-Value="_searchString" 
+                        Placeholder="buscar" 
+                        Adornment="Adornment.Start" Immediate="true"
+                        Typo="Typo.caption"
+                        AdornmentIcon="@Icons.Material.Filled.Search"
+                        OnAdornmentClick="() => ClickSearch()"
+                        IconSize="Size.Medium" Class="mt-0" 
+                        OnKeyUp="HandleKeyDownSearch">
         </MudTextField>
         <MudSpacer />
         <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
@@ -55,12 +57,12 @@
         <SelectColumn  />
         <TemplateColumn  Title="ORDEN">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.End">@context.Item.OrderNumber</MudText>
+                <MudText Typo="Typo.caption" Align="Align.Start">@context.Item.OrderNumber</MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn  Title="VIN">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Vin.ToUpper()</MudText>
+                <MudText Typo="Typo.caption" Align="Align.Start" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Vin.ToUpper()</MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn  Title="PLACA">
@@ -70,11 +72,9 @@
         </TemplateColumn>
         <TemplateColumn  Title="KM" >
             <CellTemplate>
-                <div class="d-flex justify-end">
-                    <MudText Typo="Typo.caption" Align="Align.End">
-                        @(context.Item.Km?.ToString("N0"))
-                    </MudText>
-                </div>
+                <MudText Typo="Typo.caption" Align="Align.Start">
+                    @(context.Item.Km?.ToString("N0"))
+                </MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn  Title="COD. CONC.">
@@ -89,7 +89,7 @@
         </TemplateColumn>
         <TemplateColumn  Title="ESTATUS">
             <CellTemplate>
-                <div class="d-flex justify-center">
+                <div class="d-flex justify-start">
                     @if (context.Item.EstatusName != null)
                     {
                         string style = "";
@@ -177,6 +177,7 @@
     {
         await AuthenticationStateProvider.RefreshStaticVariables();
 
+        hubEventsService.OnSupplierChanged += ReloadServerData;
         hubEventsService.OnDealerChanged += ReloadServerData;
         await Task.CompletedTask;
     }
@@ -191,6 +192,7 @@
 
     public void Dispose()
     {
+        hubEventsService.OnSupplierChanged -= ReloadServerData;
         hubEventsService.OnDealerChanged -= ReloadServerData;
     }
 
@@ -207,26 +209,23 @@
     private async Task GetAssistences()
     {
         _loading = true;
-        var serviceResponse = await AssistenceService.GetAssistences(Useful.userId, Useful.dealerId, _rowCount, _searchString);
+        _Assistences = new List<Assistence>();
+        _rowsTotal = 0;
+        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
+
+        var serviceResponse = await AssistenceService.GetAssistences(Useful.userId, _rowCount, _searchString, Useful.dealerId);
         if (serviceResponse.Processed)
         {
             _Assistences = serviceResponse.Data;
             _rowsTotal = serviceResponse.Total;
-
-            if (_Assistences.Count() > 0)
-            {
-                _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
-            }
-            else { _itemsModules = new List<ModuleAction>([]); }
-
-
         }
         else
         {
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
             Console.WriteLine($"Error: {serviceResponse.Message}");
-            _Assistences = new List<Assistence>();
-            _rowsTotal = 0;
-            _itemsModules = new List<ModuleAction>([]);
+            OpenNested();
+           
         }
         _loading = false;
     }
@@ -320,7 +319,7 @@
 
     private async Task ExportItemsAsync()
     {
-        var serviceResponse = await AssistenceService.ExportAssistences(Useful.userId, Useful.dealerId, _searchString);
+        var serviceResponse = await AssistenceService.ExportAssistences(Useful.userId, _searchString, Useful.dealerId);
         if (serviceResponse.Processed)
         {
             _success = true;

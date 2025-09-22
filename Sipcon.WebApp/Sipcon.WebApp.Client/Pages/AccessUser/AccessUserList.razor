@@ -52,19 +52,18 @@
             <CellTemplate>
                 <MudStack Row="true">
                     <MudAvatar Color="Color.Dark">@(string.IsNullOrEmpty(context.Item.Login) ? "U" : context.Item.Login.ToUpper().Substring(0, 1))</MudAvatar>
-                    <MudText Typo="Typo.caption" Inline="true" Style="font-size: 12px;font-style:italic">@(context.Item.Login.ToUpper())</MudText>
+                    <MudChatBubble Style="min-width: 250px;">@(context.Item.UserName.ToUpper() + " " + context.Item.UserLastName.ToUpper())</MudChatBubble>
                 </MudStack>
-
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn  Title="NOMBRES Y APELLIDOS">
+        <TemplateColumn Title="LOGIN">
             <CellTemplate>
-                <MudChatBubble Style="min-width: 250px;">@(context.Item.UserName.ToUpper() + " " + context.Item.UserLastName.ToUpper())</MudChatBubble>
+                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Style="font-size: 12px;font-style:italic">@(context.Item.Login.ToUpper())</MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn  Title="CODIGO">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">
+                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">
                     @("#" + context.Item.UserId.ToString().PadLeft(10, '0'))
                 </MudText>
             </CellTemplate>
@@ -90,10 +89,7 @@
     </PagerContent>
 </MudDataGrid>
 
-<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Usuarios")">
-
-</NestedDialogCustom>
-
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Usuarios")"/>
 
 
 @code {
@@ -137,26 +133,23 @@
     private async Task GetAccessUserDetails()
     {
         _loading = true;
+        _rowsTotal = 0;
+        _accessGroupList = new List<AccessUserDetail>();
+        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
+
         var serviceResponse = await SecurityService.GetAccessUserDetails(0, _rowCount, false, _searchString);
         if (serviceResponse.Processed)
         {
             _accessGroupList = serviceResponse.Data.OrderBy(s => s.UserName);
             _rowsTotal = serviceResponse.Total;
-
-            if (_accessGroupList.Any())
-            {
-                _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
-            }
-            else { _itemsModules = new List<ModuleAction>([]); }
-
-
         }
         else
         {
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
             Console.WriteLine($"Error: {serviceResponse.Message}");
-            _accessGroupList = new List<AccessUserDetail>();
-            _rowsTotal = 0;
-            _itemsModules = new List<ModuleAction>([]);
+            OpenNested();
+
         }
         _loading = false;
     }
@@ -236,44 +229,28 @@
                 };
                 var url = $"api/Security/Post_CrendentialsUser?userId={Useful.userId}";
                 var response = await _httpClient.PostAsJsonAsync(url, _modelTempory);
-
-                if (!response.IsSuccessStatusCode)
+                var result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>() ?? new ApiResponse<ActionResult>()
                 {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos."
 
-                    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
-                    {
-                        throw new Exception($"Error Post_CrendentialsUser: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                    }
-
+                } ;
+                   
+                if (result.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = MessageEnum.SaveOK.GetStringValue();
+                    OpenNested();
+                    await _mudDataGrid!.ReloadServerData();
                 }
                 else
                 {
-                    var result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
-                    if (result != null)
-                    {
-                        if (result.Processed)
-                        {
-
-                            _success = true;
-                            _nestedErrorMessage = MessageEnum.SaveOK.GetStringValue();
-
-                            OpenNested();
-                            await _mudDataGrid!.ReloadServerData();
-
-                        }
-                        else
-                        {
-                            _success = false;
-                            _nestedErrorMessage = result.Message ?? MessageEnum.SaveNotOK.GetStringValue();
-                            OpenNested();
-
-                        }
-                    }
-                    else
-                    {
-                        throw new Exception($"Error Server retorno una respuesta vacia Post_CrendentialsUser");
-                    }
+                    _success = false;
+                    _nestedErrorMessage = result.Message ?? MessageEnum.SaveNotOK.GetStringValue();
+                    OpenNested();
                 }
+                   
+                
             }
             catch (Exception ex)
             {

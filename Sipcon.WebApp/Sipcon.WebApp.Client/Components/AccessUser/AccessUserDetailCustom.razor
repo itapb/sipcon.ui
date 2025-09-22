@@ -1,5 +1,4 @@
 ﻿
-@using Sipcon.WebApp.Client.Components.AccessUser
 @using System.Text.Json
 
 
@@ -41,7 +40,7 @@
                 <MudChat ChatPosition="ChatBubblePosition.Start">
                     @* <MudChatHeader Name="@(context.Item.Login.ToUpper())" Time="" /> *@
                     <MudAvatar Color="Color.Dark">@(string.IsNullOrEmpty(context.Item.Login) ? "U" : context.Item.Login.ToUpper().Substring(0, 1))</MudAvatar>
-                    <MudChatBubble Style="min-width: 250px;">@(context.Item.UserName.ToUpper() + " " + context.Item.UserLastName.ToUpper())</MudChatBubble>
+                    <MudChatBubble Style="min-width: 220px;">@(context.Item.UserName.ToUpper() + " " + context.Item.UserLastName.ToUpper())</MudChatBubble>
                     <MudChatFooter Style="font-size: 10px;font-style:italic" Text="@(context.Item.Login.ToUpper())" />
                 </MudChat>
             </CellTemplate>
@@ -60,27 +59,7 @@
     </PagerContent> *@
 </MudDataGrid>
 
-<MudDialog @bind-Visible="_nestedVisible">
-    <TitleContent>
-        <MudStack Row="true">
-            <MudIcon Icon="@Icons.Material.Outlined.CarCrash" Color="@(_success ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
-            <MudText Typo="Typo.h6">Asginaciones Rol</MudText>
-        </MudStack>
-    </TitleContent>
-    <DialogContent>
-
-        <MudStack Row="true">
-            <MudText Class="nested"><p>@_nestedErrorMessage!</p> </MudText>
-        </MudStack>
-
-    </DialogContent>
-    <DialogActions>
-
-        <MudButton Color="Color.Info" OnClick="CloseNested" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
-
-    </DialogActions>
-</MudDialog>
-
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Asignar Usuarios")"/>
 
 @code {
 
@@ -200,7 +179,6 @@
 
     private void OpenNested() => _nestedVisible = true;
 
-    private void CloseNested() => _nestedVisible = false;
 
     private async Task ClickDeleteItemAsync(AccessUserDetail detail)
     {

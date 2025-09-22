@@ -164,20 +164,22 @@
     private async Task GetLaborTimes()
     {
         _loading = true;
+        _LaborTimes = new List<LaborTime>();
+        _rowsTotal = 0;
+        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
         
         var serviceResponse = await LaborTimeService.GetLaborTimes(Useful.supplierId, _rowCount, _searchString, _modelIdSelected);
         if (serviceResponse.Processed)
         {
             _LaborTimes = serviceResponse.Data;
             _rowsTotal = serviceResponse.Total;
-
-            _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
         }
         else
         {
-            _LaborTimes = new List<LaborTime>();
-            _rowsTotal = 0;
-            _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
+            Console.WriteLine($"Error: {serviceResponse.Message}");
+            OpenNested();
         }
 
         _loading = false;

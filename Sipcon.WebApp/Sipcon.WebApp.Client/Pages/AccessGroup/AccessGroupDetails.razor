@@ -2,6 +2,7 @@
 @page "/accessgroupdetails/{IdAccesGroup}"
 
 @using Sipcon.WebApp.Client.Components.AccessGroup
+@using Sipcon.WebApp.Client.Components.AccessUser
 @using System.Globalization
 @using FluentValidation
 
@@ -41,10 +42,7 @@
                                               ReadOnly="@(!_model!.IsActive || _isEditMode)" />
 
                             </MudStack>
-
                         </MudForm>
-                        
-
                     </CardHeaderContent>
                 </MudCardHeader>
             </MudCard>
@@ -59,15 +57,11 @@
 
                         </MudStack>
                     </CardHeaderContent>
-                    <CardHeaderActions>
-                            
-                    </CardHeaderActions>
                 </MudCardHeader>
 
                 <MudCardContent Style="padding-top: 0px;">
 
                     <AccessGroupDetailCustom IdAccessGroup="@(Convert.ToInt32(IdAccesGroup))"></AccessGroupDetailCustom>
-                        
                         
                 </MudCardContent>
             </MudCard>
@@ -81,40 +75,18 @@
             <MudCard Elevation="2" Class="pa-1 mt-1">
                 <MudCardHeader>
                     <CardHeaderContent>
-
-                        <MudGrid Spacing="0" Justify="Justify.Center">
-                            <MudItem xs="12" sm="8">
-
-                                <div class="d-flex justify-left">
-
-                                    <MudStack Row="true">
-                                        <MudIcon Icon="@Icons.Material.Filled.LockPerson" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
-                                        <MudText Typo="Typo.subtitle2">Usuarios Asociados</MudText>
-
-                                    </MudStack>
-                                </div>
-                            </MudItem>
-
-                            <MudItem xs="12" sm="4">
-
-
-                            </MudItem>
-                        </MudGrid>
-
+                        <div class="d-flex justify-left">
+                            <MudStack Row="true">
+                                <MudIcon Icon="@Icons.Material.Filled.LockPerson" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
+                                <MudText Typo="Typo.subtitle2">Usuarios Asociados</MudText>
+                            </MudStack>
+                        </div>
                     </CardHeaderContent>
-                    <CardHeaderActions>
-                 
-
-                    </CardHeaderActions>
-
                 </MudCardHeader>
                 <MudCardContent Style="padding-top: 0px;">
-                       
-
                     <MudFlexBreak />
-
                     <div id="unique_id_scroll_section" class="ma-0" style="height:400px;overflow: auto;">
-
+                        
                         <AccessUserDetailCustom IdAccessGroup="@(Convert.ToInt32(IdAccesGroup))"></AccessUserDetailCustom>
 
                         <MudScrollToTop TopOffset="100"
@@ -125,34 +97,12 @@
                         </MudScrollToTop>
                     </div>  
                 </MudCardContent>
-
             </MudCard>
-
         </MudItem>
-
-
     </MudGrid>
-
 </MudContainer>
     
-
-
-<MudDialog @bind-Visible="_nestedModalVisible">
-    <TitleContent>
-        <MudStack Row="true">
-            <MudIcon Icon="@Icons.Material.Outlined.VerifiedUser" Color="@(_success? Color.Default: Color.Error)" Style="font-size: 2rem;"></MudIcon>
-            <MudText Typo="Typo.subtitle2">ROLES</MudText>
-        </MudStack>
-    </TitleContent>
-    <DialogContent>
-        <MudStack Row="true">
-            <MudText Class="nested"><p>@_nestedErrorMessage!</p> </MudText>
-        </MudStack>
-    </DialogContent>
-    <DialogActions>
-        <MudButton Color="Color.Info" OnClick="@CloseNestedModal" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
-    </DialogActions>
-</MudDialog>
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Roles")" />
 
         
 <style>
@@ -186,7 +136,7 @@
     private MudForm? form;
 
     private string _nestedErrorMessage = string.Empty;
-    private bool _nestedModalVisible  = false;
+    private bool _nestedVisible  = false;
     private bool _success = false;
     private bool _isEditMode = true;
 
@@ -276,9 +226,8 @@
 
     }
 
-    private void OpenNested() => _nestedModalVisible = true;
+    private void OpenNested() => _nestedVisible = true;
 
-    private void CloseNestedModal() => _nestedModalVisible = false;
 
     SelectValidator<string> _SelectValidator = new SelectValidator<string>(x => x
         .NotNull().WithMessage("Campo requerido")

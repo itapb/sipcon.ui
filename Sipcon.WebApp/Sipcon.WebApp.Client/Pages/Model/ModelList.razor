@@ -147,25 +147,22 @@
     private async Task GetModels()
     {
         _loading = true;
+        _Models = new List<Model>();
+        _rowsTotal = 0;
+        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
+
         var serviceResponse = await ModelService.GetModels(Useful.supplierId, Useful.userId, _rowCount, _searchString);
         if (serviceResponse.Processed)
         {
             _Models = serviceResponse.Data;
             _rowsTotal = serviceResponse.Total;
-
-            if (_Models.Count() > 0)
-            {
-                _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
-            }
-            else { _itemsModules = new List<ModuleAction>([]); }
-
-           
         }
         else
         {
-            _Models = new List<Model>();
-            _rowsTotal = 0;
-            _itemsModules = new List<ModuleAction>([]);
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
+            Console.WriteLine($"Error: {serviceResponse.Message}");
+            OpenNested();
         }
         _loading = false;
     }
