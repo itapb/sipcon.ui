@@ -86,6 +86,8 @@ namespace Sipcon.WebApp.Client.Helper
                 "PEDIDOS" => Icons.Material.Filled.RequestPage,
                 "BACKORDERS" => Icons.Material.Filled.List,
                 "RECIBIR" => Icons.Material.Filled.CallReceived,
+                "AJUSTE" => @Icons.Material.Filled.Adjust,
+                "PROCESAR" => Icons.Material.Filled.PlayCircle,
                 _ => Icons.Material.Filled.HelpOutline
             };
         }
