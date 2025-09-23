@@ -43,11 +43,11 @@ else
     </MudForm>
 }
 @code {
-    [Inject] private HttpClient Http { get; set; } = default!;
-    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
-    [Inject] private IDialogService DialogService { get; set; } = default!;
-    string TypeIdSource = "A";
-    string TypeIdTarget = "A";
+        [Inject] private HttpClient Http { get; set; } = default!;
+        [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+        [Inject] private IDialogService DialogService { get; set; } = default!;
+        string TypeIdSource = "A";
+        string TypeIdTarget = "A";
 
     private MudForm? form;
     Location? SourceLocationSelected;
@@ -97,7 +97,7 @@ else
             {
                 var sucessContent = await result_newMovementDetail.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
                 if (sucessContent?.data! is ({insertedRows : 1 } or {updatedRows : 1 }))
-                    {
+                {
                     var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Agregar", "OK", Color.Info, Icons.Material.Filled.Commit);
                     if (!result!.Canceled)
                         MudDialog?.Close(DialogResult.Ok(true));
@@ -118,6 +118,19 @@ else
 
     private void CloseClick(MouseEventArgs args) => MudDialog?.Cancel();
 
-    private string ValidateInteger(int? value) => (value.HasValue && value > newMovementDetail?.Stock) ? $"El valor debe ser menor o igual a {newMovementDetail?.Stock}." : string.Empty;
+    private string ValidateInteger(int? value) 
+    {
+        string StrReturn = string.Empty;
+        if (!value.HasValue || value <= 0)
+        {
+            StrReturn = "La cantidad debe ser un número entero mayor a cero.";
+        }
+        else if (value.HasValue && value > newMovementDetail?.Stock)
+        {
+            StrReturn = $"Cantidad ingresada excede stock disponible {newMovementDetail?.Stock}. Por favor, ajuste el valor";
+        }
+        return StrReturn;
+          
+    }
     
  }

@@ -144,6 +144,10 @@
     }
     private async Task ClickEditReceptionDetail(MovementDetails item)
     {
+        string tempContactName = MasterMovement?.ContactName ?? "";
+        string tempReference = MasterMovement?.Reference ?? "";
+        int tempContactId = MasterMovement!.ContactId ?? 0;
+
         Type tipoCatalogo = MasterMovement?.TypeId == "R" ? typeof(PartToMovementDetail) : typeof(InventoryToMovementDetail);
         NewMovementDetail AnewMovementDetail = new NewMovementDetail
         {
@@ -158,7 +162,13 @@
         };
         var dialogReference = await DialogService.ShowAsync(tipoCatalogo,"", new DialogParameters { ["newMovementDetail"] = AnewMovementDetail }, options);
         if (!((await dialogReference.Result)!.Canceled))
-            await MovementDetailsMudDataGrid!.ReloadServerData();       
+        {
+            await MovementDetailsMudDataGrid!.ReloadServerData();
+            MasterMovement!.Reference = tempReference;
+            MasterMovement!.ContactName = tempContactName;
+            MasterMovement!.ContactId = tempContactId;
+        }
+             
     }
 
     private void getTotals(IEnumerable<MovementDetails> data)
@@ -217,11 +227,21 @@
     private void CloseClick() => MovementId = null; 
 
     private async Task ClickAddMovementDetail(MouseEventArgs ev)
-    {         
+    {
+        string tempContactName = MasterMovement?.ContactName ?? "";
+        string tempReference = MasterMovement?.Reference ?? "";
+        int tempContactId = MasterMovement!.ContactId ?? 0;
+
         Type tipoCatalogo = MasterMovement?.TypeId == "R" ? typeof(PartsCatalog) : typeof(InventoryCatalog);
         var dialogReference = await DialogService.ShowAsync(tipoCatalogo,"", new DialogParameters { ["MovementId"] = MasterMovement!.Id }, options);        
         if ((await dialogReference.Result) is DialogResult dialogResult && !dialogResult.Canceled)
+        {
             await MovementDetailsMudDataGrid!.ReloadServerData();
+            MasterMovement!.Reference = tempReference;
+            MasterMovement!.ContactName = tempContactName;
+            MasterMovement!.ContactId = tempContactId;
+        }
+        
     }
 
     private async Task ClickRemoveMovementDetails(MouseEventArgs ev)
