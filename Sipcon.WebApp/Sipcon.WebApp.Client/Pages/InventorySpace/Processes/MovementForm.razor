@@ -262,6 +262,12 @@
 
     private async Task SaveClick(MouseEventArgs args)
     {
+        if (MovementDetailsMudDataGrid?.FilteredItems.Count() == 0)
+        {
+            await DialogService.ShowDialog("No se puede guardar. Debe agregar al menos un ítem.", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            return;
+        }
+
         await form!.Validate();
         if (form.IsValid)
         {
