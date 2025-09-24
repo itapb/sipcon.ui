@@ -14,5 +14,7 @@
         public int? TypeId { get; set; }
         public string? TypeName { get; set; }
 
+        public DateTime? Arrival { get; set; }
+
     }
 }

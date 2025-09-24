@@ -10,7 +10,9 @@
              Hover FixedHeader Groupable
              Height="calc(100vh - 290px)">
     <ToolBarContent>        
-        <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" ></MudTextField>
+        <MudSpacer /> 
+        <MudDateRangePicker @bind-DateRange="_dateRange" PickerVariant="PickerVariant.Inline" AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.TopCenter" PickerPaperStylename="z-index: 5;" PlaceholderStart="Desde" PlaceholderEnd="Hasta" @bind-DateRange:after="AfterDateRangeAsync" />
         <MudSpacer />
         <MudSelect T="string" @bind-Value="SelectedmGroup" Immediate="true" FitContent="true" @bind-Value:after="AfterAsync">
             @foreach (var mgroup in mGroups)
@@ -26,6 +28,7 @@
                 <MudMenuItem Label="@strmodulo.ActionDisplay" Icon="@(strmodulo.ActionDisplay.ToActionIcon())" IconColor="@Color.Info" OnClick="@(() => ClickMenuBackOrder(strmodulo.ActionName))" />
             }
         </MudMenu>
+       
     </ToolBarContent>
     <Columns>
         <TemplateColumn>
@@ -199,11 +202,15 @@
     private bool _partInnerCodeExpanded = false;
     private bool _typeIdCodeExpanded = false;
 
-
+    private DateRange? _dateRange { get; set; }
 
     // Primary grouping by industry type
     private Func<BackOrder, object>? _groupBy1;
-
+    private async Task AfterDateRangeAsync()
+    {
+        if (_dateRange is not null) await BackOrderDataGrid!.ReloadServerData();
+        await Task.CompletedTask;
+    }
     private async Task AfterAsync()
     {
         _saleOrderNumberGrouping = false;
@@ -268,7 +275,8 @@
         var mOffset = state.Page * state.PageSize;
         var totalItems = 0;
         IEnumerable<BackOrder> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/BackOrder/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&rowFrom={mOffset}&filter={searchString}");
+        string DateRange = (_dateRange is not null && _dateRange.Start.HasValue && _dateRange.End.HasValue) ? $"&startDate={_dateRange.Start.Value.ToString("yyyy-MM-dd")}&endDate={_dateRange.End.Value.ToString("yyyy-MM-dd")}" : string.Empty;
+        HttpResponseMessage response = await Http.GetAsync($"api/BackOrder/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&rowFrom={mOffset}&filter={searchString}" + DateRange);
 
         if (response.IsSuccessStatusCode)
         {
@@ -409,7 +417,8 @@
         BackOrderItem mBackOrderItem = new BackOrderItem
         {
             BackOrderId = item.Id,           
-            Quantity = item.Quantity
+            Quantity = item.Quantity,
+            ArrivalDate = item.Arrival,
         };
         var dialogReference = await DialogService.ShowAsync(typeof(PartToBackOrderDetails), "", new DialogParameters { ["mBackOrderItem"] = mBackOrderItem }, options);
         if (!((await dialogReference.Result)!.Canceled)) await BackOrderDataGrid!.ReloadServerData();      

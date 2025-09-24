@@ -148,7 +148,7 @@ else
         if (result_Post_Actions is not null && result_Post_Actions.IsSuccessStatusCode)
         {
             var resultAction = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
-            if (resultAction?.data!.updatedRows > 0)
+            if (resultAction?.data! is ({ insertedRows: > 0 } or { updatedRows: > 0 }))
             {
                 await DialogService.ShowDialog("Ubicacion(es) Actualizado(s)!", "Ubicacion", "OK", Color.Info, Icons.Material.Filled.Commit);
                 await LocationMudDataGrid!.ReloadServerData();
