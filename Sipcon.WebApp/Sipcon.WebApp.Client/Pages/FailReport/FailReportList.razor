@@ -207,7 +207,7 @@
          
         _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
 
-        var serviceResponse = await FailReportService.GetFailReports(Useful.userId, _rowCount, _searchString, Useful.dealerId);
+        var serviceResponse = await FailReportService.GetFailReports(Useful.supplierId, Useful.userId, _rowCount, _searchString, Useful.dealerId);
         if (serviceResponse.Processed)
         {
             _FailReports = serviceResponse.Data;
@@ -221,7 +221,7 @@
             OpenNested();
             
         }
-       
+        StateHasChanged();
         _loading = false;
     }
 
@@ -323,7 +323,7 @@
 
     private async Task ExportItemsAsync()
     {
-        var serviceResponse = await FailReportService.ExportFailReports(Useful.userId, _searchString, Useful.dealerId);
+        var serviceResponse = await FailReportService.ExportFailReports(Useful.supplierId, Useful.userId, _searchString, Useful.dealerId);
         if (serviceResponse.Processed)
         {
             _success = true;

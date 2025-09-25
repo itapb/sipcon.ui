@@ -218,7 +218,7 @@
         
         _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
 
-        var serviceResponse = await PolicyService.GetPolicys(Useful.userId, _rowCount, _searchString, Useful.dealerId);
+        var serviceResponse = await PolicyService.GetPolicys(Useful.supplierId, Useful.userId, _rowCount, _searchString, Useful.dealerId);
         if (serviceResponse.Processed)
         {
             _Policys = serviceResponse.Data;
@@ -359,7 +359,7 @@
 
     private async Task ExportItemsAsync()
     {
-        var serviceResponse = await PolicyService.ExportPolicys(Useful.userId, _searchString, Useful.dealerId);
+        var serviceResponse = await PolicyService.ExportPolicys(Useful.supplierId, Useful.userId, _searchString, Useful.dealerId);
         if (serviceResponse.Processed)
         {
             _success = true;

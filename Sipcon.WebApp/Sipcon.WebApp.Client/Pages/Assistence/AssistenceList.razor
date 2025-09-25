@@ -213,7 +213,7 @@
         _rowsTotal = 0;
         _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
 
-        var serviceResponse = await AssistenceService.GetAssistences(Useful.userId, _rowCount, _searchString, Useful.dealerId);
+        var serviceResponse = await AssistenceService.GetAssistences(Useful.supplierId, Useful.userId, _rowCount, _searchString, Useful.dealerId);
         if (serviceResponse.Processed)
         {
             _Assistences = serviceResponse.Data;
@@ -227,6 +227,7 @@
             OpenNested();
            
         }
+        StateHasChanged();
         _loading = false;
     }
 
@@ -319,7 +320,7 @@
 
     private async Task ExportItemsAsync()
     {
-        var serviceResponse = await AssistenceService.ExportAssistences(Useful.userId, _searchString, Useful.dealerId);
+        var serviceResponse = await AssistenceService.ExportAssistences(Useful.supplierId, Useful.userId, _searchString, Useful.dealerId);
         if (serviceResponse.Processed)
         {
             _success = true;

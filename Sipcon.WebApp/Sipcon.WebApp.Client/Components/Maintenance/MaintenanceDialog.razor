@@ -294,14 +294,13 @@
                                         <MudCardContent Style="padding-top: 0px;">
 
                                             <MudStack Row="true">
-                                                <MudNumericField Typo="Typo.caption" @bind-Value="_model.OrderNumber"
-                                                                 Label="Nro.Orden"
-                                                                 Variant="Variant.Text"
-                                                                 Margin="Margin.Dense"
-                                                                 HideSpinButtons="true"
-                                                                 Culture="@CultureInfo.GetCultureInfo("de-DE")"
-                                                                 ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                                                 For="@(() => _model.OrderNumber)" />
+                                                <MudTextField Typo="Typo.caption" @bind-Value="_model.OrderNumber"
+                                                              Label="Nro.Orden"
+                                                              Variant="Variant.Text"
+                                                              Margin="Margin.Dense"
+                                                              MaxLength="15"
+                                                              ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                              For="@(() => _model.OrderNumber)" />
                                                 <MudSpacer />
                                                 <MudSpacer />
 
@@ -782,8 +781,9 @@
         {
 
              RuleFor(x => x.OrderNumber)
-                .NotEmpty().WithMessage("Campo requerido")
-               .GreaterThan(0).WithMessage("Campo requerido.");
+               .NotEmpty().WithMessage("Campo requerido")
+               .NotNull().WithMessage("Campo requerido.");
+               
             
             RuleFor(x => x.Km)
                 .NotEmpty().WithMessage("Campo requerido")

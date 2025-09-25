@@ -287,8 +287,14 @@
 											<MudItem xs="12" sm="6">
 												<div class="d-flex justify-end">
 													<MudStack Row="true">
+														@* @if (_model.EstatusName.ToUpper() != "CREADO")
+														{ *@
+														<MudIconButton Icon="@Icons.Material.Filled.AddCard" 
+																	   Disabled="@(!_model.IsActive || _isReadOnly)"  
+																	   OnClick="() => ClickAddContact()">
+														</MudIconButton>
+														@* } *@
 														
-														<MudIconButton Icon="@Icons.Material.Filled.AddCard" OnClick="() => ClickAddContact()"></MudIconButton>
 													</MudStack>
 												</div>
 											</MudItem>
@@ -408,15 +414,18 @@
 										}
 									</MudSelect>
 
+									
 									<MudNumericField Typo="Typo.caption" @bind-Value="_model.InvoiceAmount"
-														Label="Monto"
-														Variant="Variant.Text"
-														Margin="Margin.Dense"
-														HideSpinButtons="true"
-														Format="N2" Culture="@CultureInfo.GetCultureInfo("de-DE")"
-														ReadOnly="@(!_model.IsActive || _isReadOnly)"
-														For="@(() => _model.InvoiceAmount)"
-														Immediate="false" />
+													 Label="Monto"
+													 Variant="Variant.Text"
+													 Margin="Margin.Dense"
+													 HideSpinButtons="true"
+													 ReadOnly="@(!_model.IsActive || _isReadOnly)"
+													 For="@(() => _model.InvoiceAmount)" 
+													 Format="N2"
+													 Pattern="[0-9]*"
+													 Culture="@CultureInfo.GetCultureInfo("de-DE")"
+													 Immediate="true" />
 
 
 								</MudCardContent>
@@ -479,7 +488,6 @@
 </style>
 
 @code {
-
 
 	[CascadingParameter]
 	private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -571,7 +579,7 @@
 		{
 			_errorSearchVehicle = MessageEnum.SearchVehicleNotOK.GetStringValue();
 		}
-		
+
 		_model.VehicleId = _vehicle.Id;
 		_model.Vin = _vehicle.Vin;
 		_model.Plate = _vehicle.Plate;
@@ -656,9 +664,9 @@
 				Console.WriteLine($"Buscando VIN: {_model.Vin}");
 
 				await GetVehicleAvailable();
-				
+
 				StateHasChanged();
-                await Task.CompletedTask;
+				await Task.CompletedTask;
 				return;
 
 			}
@@ -678,7 +686,7 @@
 
 				StateHasChanged();
 				await Task.CompletedTask;
-                return;
+				return;
 
 			}
 
@@ -702,7 +710,7 @@
 
 			await GetContactById();
 
-            await Task.CompletedTask;
+			await Task.CompletedTask;
 		}
 
 	}
@@ -732,7 +740,7 @@
 			_model.DealerName = _vehicle.DealerName;
 			_model.SupplierName = _vehicle.SupplierName;
 			_model.Description = _vehicle.PolicyTypeName;
-			
+
 			StateHasChanged();
 
 			await Task.CompletedTask;
@@ -743,19 +751,19 @@
 
 	private async Task ClickAddContact()
 	{
-		
+
 
 		form!.ResetValidation();
 		DialogOptions options = new() { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
 		var parameters = new DialogParameters<ContactForm> { { x => x.Value, 0 } };
-		
+
 		var dialog = await DialogService.ShowAsync<ContactForm>("Cliente", parameters, options);
 		var result = await dialog.Result;
-		
+
 		if (!result!.Canceled && result.Data != null)
 		{
 			var _selectedContact = result.Data as int?;
-			
+
 			_model.CustomerId = _selectedContact;
 			_errorSearchContact = string.Empty;
 
@@ -803,7 +811,7 @@
 				_successModal = false;
 				_errorModalMessage = "Cliente no Existe";
 				OpenNested();
-                return;
+				return;
 			}
 
 			if (_model.VehicleId == 0 || _model.VehicleId is null)
@@ -813,7 +821,7 @@
 				OpenNested();
 				return;
 			}
-			
+
 
 			var serviceResponse = await PolicyService.UpdatePolicy(_model, Useful.userId);
 			if (serviceResponse.Processed)
@@ -849,7 +857,7 @@
 
 	}
 
-	
+
 	private void Cancel()
 	{
 		if (_successModal)
@@ -903,8 +911,31 @@
 				.GreaterThan(0).WithMessage("Seleccione una Forma Pago.");
 
 			RuleFor(x => x.InvoiceAmount)
+				.Must((x, context) =>
+				{
+					return double.TryParse(x.InvoiceAmount.ToString(), out double value);
+					
+				}).WithMessage("Campo requerido solo Digitos [0-9].")
 				.NotEmpty().WithMessage("Campo requerido")
-				.GreaterThan(0).WithMessage("Campo requerido.");
+				.GreaterThan(0).WithMessage("Campo requerido.")
+				.Must((value, context) =>
+				{
+					if (string.IsNullOrEmpty(value.InvoiceAmount.ToString()))
+					{
+						return double.IsNaN(value.InvoiceAmount ?? 0);
+					}
+					return true;
+				}).WithMessage("Campo requerido solo Digitos [0-9].")
+				.Custom((x, context) =>
+				{
+					if ((!(double.TryParse(x.ToString(), out double value)) || value < 0))
+					{
+						context.AddFailure($"{x} Campo requerido solo Digitos [0-9].");
+					}
+				})
+				.NotNull().WithMessage("Campo requerido solo Digitos [0-9].");
+
+				
 
 			RuleFor(x => x.Vin)
 				.NotNull().WithMessage("Campo requerido")
@@ -939,6 +970,11 @@
 
 
         }
+		
+		// private bool BeAValidNumber(double value)
+		// {
+		// 	return double.TryParse(value.ToString(), out _); // Or decimal.TryParse, double.TryParse
+		// }
 
 
         public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
@@ -950,6 +986,55 @@
         };
 
     }
+
+	// // The validation rules (overkill, I know, but very fluent):
+	// SelectValidator<double> _SelectValidator = new SelectValidator<double>(x => x
+	// 	.Must((x, context) =>
+	// 		{
+	// 			return double.TryParse(x.ToString(), out double value);
+
+	// 		}).WithMessage("Campo requerido solo Digitos [0-9].")
+	// 	.NotEmpty().WithMessage("Campo requerido")
+	// 	.GreaterThan(0).WithMessage("Campo requerido.")
+	// 	.Must((value, context) =>
+	// 	{
+	// 		if (string.IsNullOrEmpty(value.ToString()))
+	// 		{
+	// 			return double.IsNaN(value);
+	// 		}
+	// 		return true;
+	// 	}).WithMessage("Campo requerido solo Digitos [0-9].")
+	// 	.Custom((x, context) =>
+	// 	{
+	// 		if ((!(double.TryParse(x.ToString(), out double value)) || value < 0))
+	// 		{
+	// 			context.AddFailure($"{x} Campo requerido solo Digitos [0-9].");
+	// 		}
+	// 	})
+	// 	.NotNull().WithMessage("Campo requerido solo Digitos [0-9]."));
+		
+
+	// public class SelectValidator<T> : AbstractValidator<T>
+	// {
+
+	// 	public SelectValidator(Action<IRuleBuilderInitial<T, T>> rule)
+	// 	{
+	// 		rule(RuleFor(x => x));
+	// 	}
+
+
+	// 	private IEnumerable<string> ValidateValue(T arg)
+	// 	{
+	// 		var result = Validate(arg);
+	// 		if (result.IsValid)
+	// 			return new string[0];
+	// 		return result.Errors.Select(e => e.ErrorMessage);
+	// 	}
+
+	// 	public Func<T, IEnumerable<string>> Validation => ValidateValue;
+
+	// }
+
 
 }
       

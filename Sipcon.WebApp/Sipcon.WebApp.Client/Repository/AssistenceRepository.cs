@@ -12,13 +12,13 @@
         private readonly HttpClient _http = http;
 
 
-        public async Task<ApiResponse<List<Assistence>>> GetAssistences(int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null)
+        public async Task<ApiResponse<List<Assistence>>> GetAssistences(int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null)
         {
             ApiResponse<List<Assistence>>? result;
             try
             {
-                var url = $"api/Service/GetAll?userId={IdUser}&rowFrom={RowFrom}&serviceTypeId={(int)ServiceTypeEnum.Assistence}";
-                url = (IdDealer.HasValue && IdDealer.Value > 0) ? $"{url}&dealerId={IdDealer}" : url;
+                var url = $"api/Service/GetAll?supplierId={IdSupplier}&userId={IdUser}&rowFrom={RowFrom}&serviceTypeId={(int)ServiceTypeEnum.Assistence}";
+                url = (IdDealer.HasValue ) ? $"{url}&dealerId={IdDealer}" : url;
                 url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
 
                 result = await _http.GetFromJsonAsync<ApiResponse<List<Assistence>>>(url);
@@ -86,12 +86,12 @@
                 {
                     Id = Assistence.Id,
                     IsActive = Assistence.IsActive,
-                    OrderNumber = Assistence.OrderNumber ?? 0,
+                    OrderNumber = Assistence.OrderNumber ?? string.Empty,
                     ServiceDate = Assistence.ServiceDate ?? DateTime.Now,
                     CustomerReport = Assistence.CustomerReport,
                     DealerReport = Assistence.DealerReport,
-                    TechnicalSolution = Assistence.TechnicalSolution,
                     Km = Assistence.Km ?? 0,
+                    Paralyzed = Assistence.Paralyzed ?? false,
                     DealerId = Assistence.DealerId ?? 0,
                     VehicleId = Assistence.VehicleId ?? 0
                 };
@@ -126,15 +126,16 @@
                 {
                     Id = Assistence.Id,
                     IsActive = Assistence.IsActive,
-                    OrderNumber = Assistence.OrderNumber ?? 0,
+                    OrderNumber = Assistence.OrderNumber ?? string.Empty,
                     ServiceDate = Assistence.ServiceDate ?? DateTime.Now,
                     CustomerReport = Assistence.CustomerReport,
                     DealerReport = Assistence.DealerReport,
-                    TechnicalSolution = Assistence.TechnicalSolution,
                     Km = Assistence.Km ?? 0,
+                    Paralyzed = Assistence.Paralyzed ?? false,
                     DealerId = Assistence.DealerId ?? 0,
                     VehicleId = Assistence.VehicleId ?? 0,
-                    CustomerId = Assistence.CustomerId ?? 0,
+                    CustomerId = Assistence.CustomerId ?? 0
+                   
                 };
 
 
@@ -187,13 +188,13 @@
 
         }
 
-        public async Task<ApiResponse<List<byte>>> ExportAssistences(int IdUser, string Filter = "", int? IdDealer = null)
+        public async Task<ApiResponse<List<byte>>> ExportAssistences(int IdSupplier, int IdUser, string Filter = "", int? IdDealer = null)
         {
             ApiResponse<List<byte>> result;
             try
             {
-                var url = $"api/Service/Export?userId={IdUser}&serviceTypeId={(int)ServiceTypeEnum.Assistence}";
-                url = (IdDealer.HasValue && IdDealer.Value > 0) ? $"{url}&dealerId={IdDealer}" : url;
+                var url = $"api/Service/Export?supplierId={IdSupplier}&userId={IdUser}&serviceTypeId={(int)ServiceTypeEnum.Assistence}";
+                url = (IdDealer.HasValue ) ? $"{url}&dealerId={IdDealer}" : url;
                 url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
 
                 var response = await _http.GetAsync(url);

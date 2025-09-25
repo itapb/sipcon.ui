@@ -17,7 +17,7 @@ namespace Sipcon.WebApp.Client.Models
         public string DealerReport { get; set; } = string.Empty;
         public string TechnicalSolution { get; set; } = string.Empty;
         public string SupplierReport { get; set; } = string.Empty;
-        public int? OrderNumber { get; set; } = null;
+        public string? OrderNumber { get; set; } = string.Empty;
         public int? KM { get; set; } = null;
 
         public int? SupplierId { get; set; } = null;
@@ -103,7 +103,7 @@ namespace Sipcon.WebApp.Client.Models
     {
         public int Id { get; set; } = 0;
         public bool IsActive { get; set; } = true;
-        public int OrderNumber { get; set; } = 0;
+        public string OrderNumber { get; set; } = string.Empty;
         public DateTime ServiceDate { get; set; } = DateTime.Now;
         public string CustomerReport { get; set; } = string.Empty;
         public string DealerReport { get; set; } = string.Empty;

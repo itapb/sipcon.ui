@@ -12,13 +12,13 @@
         private readonly HttpClient _http = http;
 
 
-        public async Task<ApiResponse<List<Policy>>> GetPolicys(int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null)
+        public async Task<ApiResponse<List<Policy>>> GetPolicys(int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null)
         {
             ApiResponse<List<Policy>>? result;
             try
             {
-                var url = $"api/Policy/GetAll?userId={IdUser}&rowFrom={RowFrom}";
-                url = (IdDealer.HasValue && IdDealer.Value > 0) ? $"{url}&dealerId={IdDealer}" : url;
+                var url = $"api/Policy/GetAll?supplierId={IdSupplier}&userId={IdUser}&rowFrom={RowFrom}";
+                url = (IdDealer.HasValue ) ? $"{url}&dealerId={IdDealer}" : url;
                 url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
 
                 result = await _http.GetFromJsonAsync<ApiResponse<List<Policy>>>(url);
@@ -253,15 +253,15 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<byte>>> ExportPolicys(int IdUser, string Filter = "", int? IdDealer = null)
+        public async Task<ApiResponse<List<byte>>> ExportPolicys(int IdSupplier, int IdUser, string Filter = "", int? IdDealer = null)
         {
             ApiResponse<List<byte>> result;
             string fileUrl = string.Empty;
           
             try
             {
-                var url = $"api/Policy/Export?userId={IdUser}";
-                url = (IdDealer.HasValue && IdDealer.Value > 0) ? $"{url}&dealerId={IdDealer}" : url;
+                var url = $"api/Policy/Export?supplierId={IdSupplier}&userId={IdUser}";
+                url = (IdDealer.HasValue ) ? $"{url}&dealerId={IdDealer}" : url;
                 url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
 
                 var response = await _http.GetAsync(url);
