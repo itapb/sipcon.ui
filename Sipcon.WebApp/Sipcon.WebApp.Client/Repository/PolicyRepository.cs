@@ -1,9 +1,9 @@
 ﻿namespace Sipcon.WebApp.Client.Repository
 {
-    using System.Net.Http.Json;
-    using Sipcon.WebApp.Client.Enum;
-    using Sipcon.WebApp.Client.Models;
     using Sipcon.WebApp.Client.Services;
+    using Sipcon.WebApp.Client.Models;
+    using Sipcon.WebApp.Client.Enum;
+    using System.Net.Http.Json;
 
 
 
@@ -12,15 +12,16 @@
         private readonly HttpClient _http = http;
 
 
-        public async Task<ApiResponse<List<Policy>>> GetPolicys(int IdUser, int RowFrom = 0, string Filter = "", int dealerId = 0)
+        public async Task<ApiResponse<List<Policy>>> GetPolicys(int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null)
         {
             ApiResponse<List<Policy>>? result;
-
             try
             {
-               
-                result = await _http.GetFromJsonAsync<ApiResponse<List<Policy>>>($"api/Policy/GetAll?filter={Filter}&rowFrom={RowFrom}&userId={IdUser}&dealerId={dealerId}");
+                var url = $"api/Policy/GetAll?supplierId={IdSupplier}&userId={IdUser}&rowFrom={RowFrom}";
+                url = (IdDealer.HasValue ) ? $"{url}&dealerId={IdDealer}" : url;
+                url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
 
+                result = await _http.GetFromJsonAsync<ApiResponse<List<Policy>>>(url);
 
                 result = result is null ? new ApiResponse<List<Policy>>()
                 {
@@ -252,14 +253,18 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<byte>>> ExportPolicys(int IdUser, string Filter = "")
+        public async Task<ApiResponse<List<byte>>> ExportPolicys(int IdSupplier, int IdUser, string Filter = "", int? IdDealer = null)
         {
             ApiResponse<List<byte>> result;
             string fileUrl = string.Empty;
           
             try
             {
-                var response = await _http.GetAsync($"api/Policy/Export?filter={Filter}&userId={IdUser}");
+                var url = $"api/Policy/Export?supplierId={IdSupplier}&userId={IdUser}";
+                url = (IdDealer.HasValue ) ? $"{url}&dealerId={IdDealer}" : url;
+                url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
+
+                var response = await _http.GetAsync(url);
                     
                 var fileContent = await response.Content.ReadAsByteArrayAsync();
                 result = (fileContent is null) ? new ApiResponse<List<byte>>()

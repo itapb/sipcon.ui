@@ -32,12 +32,15 @@
 
     <ToolBarContent>
         <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddFailReport()"></MudIconButton>
-        <MudTextField @bind-Value="_searchString" Placeholder="buscar" Adornment="Adornment.Start" Immediate="true"
-        Typo="Typo.caption"
-        AdornmentIcon="@Icons.Material.Filled.Search"
-        OnAdornmentClick="() => ClickSearch()"
-        IconSize="Size.Medium" Class="mt-0" 
-        OnKeyUp="HandleKeyDownSearch">
+        <MudTextField @bind-Value="_searchString" 
+                    Placeholder="buscar" 
+                    Adornment="Adornment.Start" 
+                    Immediate="true"
+                    Typo="Typo.caption"
+                    AdornmentIcon="@Icons.Material.Filled.Search"
+                    OnAdornmentClick="() => ClickSearch()"
+                    IconSize="Size.Medium" Class="mt-0" 
+                    OnKeyUp="HandleKeyDownSearch">
         </MudTextField>
         <MudSpacer />
         <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
@@ -54,41 +57,39 @@
         <SelectColumn  />
         <TemplateColumn  Title="ORDEN">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.End">@context.Item.OrderNumber</MudText>
+                <MudText Typo="Typo.caption" Align="Align.Left">@context.Item.OrderNumber</MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn  Title="VIN">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.VIN.ToUpper()</MudText>
+                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.VIN.ToUpper()</MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn  Title="CLIENTE">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.CustomerName.ToUpper() + " " + context.Item.CustomerLastName.ToUpper()) </MudText>
+                <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.CustomerName.ToUpper() + " " + context.Item.CustomerLastName.ToUpper()) </MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn  Title="TIPO" >
             <CellTemplate>
-                <div class="d-flex justify-start">
-                    <MudText Typo="Typo.caption" Align="Align.Start">
-                        @(context.Item.ReportTypeName.ToUpper())
-                    </MudText>
-                </div>
+                <MudText Typo="Typo.caption" Align="Align.Left">
+                    @(context.Item.ReportTypeName.ToUpper())
+                </MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn  Title="CONC.">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.DealerServiceCod.ToUpper())</MudText>
+                <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.DealerServiceCod.ToUpper())</MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn  Title="FECHA">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.ServiceDate?.ToString("dd MMM yyyy"))</MudText>
+                <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.ServiceDate?.ToString("dd MMM yyyy"))</MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn  Title="ESTATUS">
             <CellTemplate>
-                <div class="d-flex justify-center">
+                <div class="d-flex justify-start">
                     @if (context.Item.EstatusName != null)
                     {
                         string style = "";
@@ -201,22 +202,26 @@
     private async Task GetFailReports()
     {
         _loading = true;
-         _itemsModules = new List<ModuleAction>([]);
+        _FailReports = new List<FailReport>();
+        _rowsTotal = 0;
+         
+        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
 
-        var serviceResponse = await FailReportService.GetFailReports(Useful.userId, Useful.dealerId, _rowCount, _searchString);
+        var serviceResponse = await FailReportService.GetFailReports(Useful.supplierId, Useful.userId, _rowCount, _searchString, Useful.dealerId);
         if (serviceResponse.Processed)
         {
             _FailReports = serviceResponse.Data;
             _rowsTotal = serviceResponse.Total;
-
         }
         else
         {
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
             Console.WriteLine($"Error: {serviceResponse.Message}");
-            _FailReports = new List<FailReport>();
-            _rowsTotal = 0;
+            OpenNested();
+            
         }
-        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
+        StateHasChanged();
         _loading = false;
     }
 
@@ -318,7 +323,7 @@
 
     private async Task ExportItemsAsync()
     {
-        var serviceResponse = await FailReportService.ExportFailReports(Useful.userId, Useful.dealerId, _searchString);
+        var serviceResponse = await FailReportService.ExportFailReports(Useful.supplierId, Useful.userId, _searchString, Useful.dealerId);
         if (serviceResponse.Processed)
         {
             _success = true;

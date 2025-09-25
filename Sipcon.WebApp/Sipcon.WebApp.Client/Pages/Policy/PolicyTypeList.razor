@@ -185,7 +185,14 @@
             _PolicyTypes = serviceResponse.Data;
             _rowsTotal = serviceResponse.Total;
         }
-        
+        else
+        {
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
+            Console.WriteLine($"Error: {serviceResponse.Message}");
+            OpenNested();
+        }
+        StateHasChanged();
         _loading = false;
     }
 

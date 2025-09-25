@@ -12,13 +12,17 @@
         private readonly HttpClient _http = http;
 
 
-        public async Task<ApiResponse<List<Maintenance>>> GetMaintenances(int IdUser, int IdDealer, int RowFrom = 0, string Filter = "")
+        public async Task<ApiResponse<List<Maintenance>>> GetMaintenances(int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null)
         {
             ApiResponse<List<Maintenance>>? result;
 
             try
             {
-                result = await _http.GetFromJsonAsync<ApiResponse<List<Maintenance>>>($"api/Service/GetAll?filter={Filter}&rowFrom={RowFrom}&userId={IdUser}&serviceTypeId={(int)ServiceTypeEnum.Maintenance}&dealerId={IdDealer}");
+                var url = $"api/Service/GetAll?supplierId={IdSupplier}&userId={IdUser}&rowFrom={RowFrom}&serviceTypeId={(int)ServiceTypeEnum.Maintenance}";
+                url = (IdDealer.HasValue ) ? $"{url}&dealerId={IdDealer}" : url;
+                url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
+
+                result = await _http.GetFromJsonAsync<ApiResponse<List<Maintenance>>>(url);
                 
                 result = result is null ? new ApiResponse<List<Maintenance>>()
                 {
@@ -81,7 +85,7 @@
                 {
                     Id = Maintenance.Id,
                     IsActive = Maintenance.IsActive,
-                    OrderNumber = Maintenance.OrderNumber ?? 0,
+                    OrderNumber = Maintenance.OrderNumber ?? string.Empty,
                     ServiceDate = Maintenance.ServiceDate ?? DateTime.Now,
                     DealerReport = Maintenance.DealerReport,
                     PolicyDetailId = Maintenance.PolicyDetailId ?? 0,
@@ -126,7 +130,7 @@
                 {
                     Id = Maintenance.Id,
                     IsActive = Maintenance.IsActive,
-                    OrderNumber = Maintenance.OrderNumber ?? 0,
+                    OrderNumber = Maintenance.OrderNumber ?? string.Empty,
                     ServiceDate = Maintenance.ServiceDate ?? DateTime.Now,
                     DealerReport = Maintenance.DealerReport ?? string.Empty,
                     PolicyDetailId = Maintenance.PolicyDetailId ?? 0,
@@ -189,14 +193,18 @@
 
         }
 
-        public async Task<ApiResponse<List<byte>>> ExportMaintenances(int IdUser, int IdDealer, string Filter = "")
+        public async Task<ApiResponse<List<byte>>> ExportMaintenances(int IdSupplier, int IdUser, string Filter = "", int? IdDealer = null)
         {
             ApiResponse<List<byte>> result;
             string fileUrl = string.Empty;
           
             try
             {
-                var response = await _http.GetAsync($"api/Service/Export?filter={Filter}&userId={IdUser}&serviceTypeId=1&dealerId={IdDealer}");
+                var url = $"api/Service/Export?supplierId={IdSupplier}&userId={IdUser}&serviceTypeId={(int)ServiceTypeEnum.Maintenance}";
+                url = (IdDealer.HasValue ) ? $"{url}&dealerId={IdDealer}" : url;
+                url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
+
+                var response = await _http.GetAsync(url);
                     
                 var fileContent = await response.Content.ReadAsByteArrayAsync();
                 result = (fileContent is null) ? new ApiResponse<List<byte>>()

@@ -133,15 +133,20 @@
                                         </MudStack>
                                     </CardHeaderContent>
                                     <CardHeaderActions>
-                                        <MudSwitch @bind-Value="_model.Paralyzed" Label="Vehiculo Paralizado" LabelPlacement="Placement.End" Color="Color.Success" ReadOnly="@(!_model.IsActive || _isReadOnly)" />
+                                        <MudTextField Typo="Typo.caption" @bind-Value="_model.OrderNumber"
+                                                      Label="Nro.Orden"
+                                                      Class="align-right"
+                                                      Style="line-height: 0.8rem;"
+                                                      Variant="Variant.Text"
+                                                      Margin="Margin.None"
+                                                      MaxLength="15"
+                                                      ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                      For="@(() => _model.OrderNumber)" />
                                     </CardHeaderActions>
                                 </MudCardHeader>
                                 
-                                <MudCardContent Style="padding-top: 0px;">
-
-
+                                <MudCardContent Style="padding-top: 0px;" Class="mt-2">
                                     <MudStack Row="true">
-
                                         <MudDatePicker @bind-Date="_model.InvoiceDate"
                                                        Style="font-size: 14px;line-height: 0.8rem;"
                                                        Adornment="Adornment.Start"
@@ -158,7 +163,7 @@
                                                        ReadOnly="@(!_model.IsActive || _isReadOnly)"
                                                        For="@(() => _model.InvoiceDate)" />
 
-                                     
+                                        <MudSpacer />
                                         <MudTextField Typo="Typo.caption" @bind-Value="_model.InvoiceNumber"
                                                          Label="Nro.Factura"
                                                          Class="align-right" 
@@ -168,23 +173,13 @@
                                                          ReadOnly="@(!_model.IsActive || _isReadOnly)"
                                                          For="@(() => _model.InvoiceNumber)" />
                                         
-                                        <MudNumericField Typo="Typo.caption" @bind-Value="_model.OrderNumber"
-                                                         Label="Nro.Orden"
-                                                         Class="align-right"
-                                                         Style="line-height: 0.8rem;"
-                                                         Variant="Variant.Text"
-                                                         Margin="Margin.None"
-                                                         HideSpinButtons="true"
-                                                         Format="N0"
-                                                         Culture="@CultureInfo.GetCultureInfo("es-VE")"
-                                                         ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                                         For="@(() => _model.OrderNumber)" />
+                                        
                                         
                                     </MudStack>
 
                                     <MudStack Row="true">
                                         
-                                        @* <MudSpacer /> *@
+                                       
                                         <MudSelect @bind-Value="_model.ReportTypeId"
                                                    style="font-size: 14px"
                                                    Label="Tipo Reporte"
@@ -292,7 +287,7 @@
                                                   For="@(() => _model.CustomerReport)" />
 
                                     <MudTextField Typo="Typo.caption" @bind-Value="_model.DealerReport"
-                                                  Label="Reporte Concesionario"
+                                                  Label="Reporte de condiciones y Posible(s) causa(s)"
                                                   Lines="5"
                                                   MaxLength="500"
                                                   Variant="Variant.Text"
@@ -302,7 +297,7 @@
                                                   For="@(() => _model.DealerReport)" />
 
                                     <MudTextField Typo="Typo.caption" @bind-Value="_model.TechnicalSolution"
-                                                  Label="Solución Técnica"
+                                                  Label="Diagnóstico Concesionario, resultados de pruebas y Equipos utilizados"
                                                   Lines="5"
                                                   MaxLength="500"
                                                   Variant="Variant.Text"
@@ -381,7 +376,6 @@
 
                                 </MudCardHeader>
                                 <MudCardContent Style="padding-top: 0px;">
-                                    @* <MudHidden @bind-Value="@_modelVehicle.Id" /> *@
 
                                     <MudFlexBreak />
 
@@ -418,7 +412,7 @@
                                     <CardHeaderContent>
 
                                         <MudGrid Spacing="0" Justify="Justify.Center">
-                                            <MudItem xs="12" sm="8">
+                                            <MudItem xs="12" sm="6">
                                                 <div class="d-flex justify-left">
                                                     <MudStack Row="true">
                                                         <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
@@ -428,9 +422,12 @@
                                                 </div>
                                             </MudItem>
 
-                                            <MudItem xs="12" sm="4">
-
-
+                                            <MudItem xs="12" sm="6">
+                                                <div class="d-flex justify-start">
+                                                    <MudSwitch @bind-Value="_model.Paralyzed" LabelPlacement="Placement.End" Color="Color.Success" ReadOnly="@(!_model.IsActive || _isReadOnly)">
+                                                        <MudText Typo="Typo.caption">Paralizado</MudText>
+                                                    </MudSwitch>
+                                                </div>
                                             </MudItem>
                                         </MudGrid>
 
@@ -476,7 +473,6 @@
 
                                 </MudCardHeader>
                                 <MudCardContent Style="padding-top: 0px;">
-                                    @* <MudHidden @bind-Value="@_model.VehicleId" /> *@
 
                                     <MudTextField Typo="Typo.caption" @bind-Value="@_model.VIN"
                                                     Label="Vin"
@@ -526,33 +522,16 @@
                             <MudCard Elevation="2" Class="pa-1 mt-1">
                                 <MudCardHeader Style="padding-bottom: 0px;">
                                     <CardHeaderContent>
+                                        <div class="d-flex justify-left">
+                                            <MudStack Row="true">
+                                                <MudIcon Icon="@Icons.Material.Filled.ManageAccounts" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
+                                                <MudText Typo="Typo.subtitle2">Cliente</MudText>
 
-                                        <MudGrid Spacing="0" Justify="Justify.Center">
-                                            <MudItem xs="12" sm="6">
-                                                <div class="d-flex justify-left">
-                                                    <MudStack Row="true">
-                                                        <MudIcon Icon="@Icons.Material.Filled.ManageAccounts" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
-                                                        <MudText Typo="Typo.subtitle2">Cliente</MudText>
-
-                                                    </MudStack>
-                                                </div>
-                                            </MudItem>
-
-                                            <MudItem xs="12" sm="6">
-                                                <div class="d-flex justify-end">
-                                                    <MudStack Row="true">
-
-                                                    </MudStack>
-                                                </div>
-                                            </MudItem>
-                                        </MudGrid>
-
+                                            </MudStack>
+                                        </div>
                                     </CardHeaderContent>
-
                                 </MudCardHeader>
                                 <MudCardContent Style="padding-top: 0px;">
-                                    @* <MudHidden @bind-Value="_model.CustomerId" /> *@
-
 
                                     <MudTextField Typo="Typo.caption" T="string" Text="@_modelVehicle.Vat"
                                                     Label="RIF"
@@ -567,6 +546,14 @@
                                                         Margin="Margin.None"
                                                         ReadOnly="true" />
                                     </MudStack>
+
+                                    <MudTextField Typo="Typo.caption" T="string" Text="@_modelVehicle.Email"
+                                                  Label="Email"
+                                                  Adornment="Adornment.Start"
+                                                  AdornmentIcon="@Icons.Material.Filled.MailOutline"
+                                                  Variant="Variant.Text"
+                                                  Margin="Margin.None"
+                                                  ReadOnly="true" />
 
                                 </MudCardContent>
 
@@ -702,7 +689,7 @@
             _isReadOnly = _model.EstatusName.ToUpper() == "CREADO" || _model.EstatusName.Trim() == string.Empty ? false : true;
 
             await Task.Delay(50);
-            StateHasChanged();
+            
         }
         else
         {
@@ -711,6 +698,7 @@
             Console.WriteLine(serviceResponse.Message);
             OpenNested();
         }
+        StateHasChanged();
 
     }
 
@@ -922,8 +910,7 @@
 
              RuleFor(x => x.OrderNumber)
                 .NotEmpty().WithMessage("Campo requerido")
-                .NotNull().WithMessage("Campo requerido.")
-                .GreaterThan(0).WithMessage("Campo requerido.");
+                .NotNull().WithMessage("Campo requerido.");
             
 
             RuleFor(x => x.InvoiceNumber)

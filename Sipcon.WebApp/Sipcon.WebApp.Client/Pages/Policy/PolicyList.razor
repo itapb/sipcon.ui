@@ -9,6 +9,8 @@
 @inject IDialogService DialogService
 @inject UtilModuleActions ModuleActionsService
 @inject IJSRuntime JSRuntime
+@inject HubEventsService hubEventsService
+@implements IDisposable
 
 
 <PageTitle>Poliza</PageTitle>
@@ -173,6 +175,29 @@
         new("Poliza",  href: "policy", disabled: false, icon: Icons.Material.Filled.Policy),
     ];
 
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+
+        hubEventsService.OnSupplierChanged += ReloadServerData;
+        hubEventsService.OnDealerChanged += ReloadServerData;
+        await Task.CompletedTask;
+    }
+
+    private async Task ReloadServerData()
+    {
+        if (_mudDataGrid != null)
+        {
+            await _mudDataGrid!.ReloadServerData();
+        }
+    }
+
+    public void Dispose()
+    {
+        hubEventsService.OnSupplierChanged -= ReloadServerData;
+        hubEventsService.OnDealerChanged -= ReloadServerData;
+    }
+
 
     private async Task<GridData<Policy>> LoadGridData(GridState<Policy> state)
     {
@@ -188,26 +213,25 @@
     private async Task GetPolicys()
     {
         _loading = true;
-        var serviceResponse = await PolicyService.GetPolicys(Useful.userId, _rowCount, _searchString,Useful.dealerId);
+        _Policys = new List<Policy>();
+        _rowsTotal = 0;
+        
+        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
+
+        var serviceResponse = await PolicyService.GetPolicys(Useful.supplierId, Useful.userId, _rowCount, _searchString, Useful.dealerId);
         if (serviceResponse.Processed)
         {
             _Policys = serviceResponse.Data;
             _rowsTotal = serviceResponse.Total;
-
-            if (_Policys.Count() > 0)
-            {
-                _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
-            }
-            else { _itemsModules = new List<ModuleAction>([]); }
-
-
         }
         else
         {
-            _Policys = new List<Policy>();
-            _rowsTotal = 0;
-            _itemsModules = new List<ModuleAction>([]);
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
+            Console.WriteLine($"Error: {serviceResponse.Message}");
+            OpenNested();
         }
+
         _loading = false;
     }
 
@@ -335,7 +359,7 @@
 
     private async Task ExportItemsAsync()
     {
-        var serviceResponse = await PolicyService.ExportPolicys(Useful.userId, _searchString);
+        var serviceResponse = await PolicyService.ExportPolicys(Useful.supplierId, Useful.userId, _searchString, Useful.dealerId);
         if (serviceResponse.Processed)
         {
             _success = true;

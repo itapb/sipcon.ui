@@ -126,9 +126,11 @@
                             </MudStack>
 
                             <MudStack Row="true">
+                                <MudSwitch @bind-Value="_model.Paralyzed" LabelPlacement="Placement.End" Color="Color.Success" ReadOnly="true">
+                                    <MudText Typo="Typo.caption">Vehiculo Paralizado</MudText>
+                                </MudSwitch>
                                 <MudSpacer />
                                 <MudSpacer />
-                                <MudSwitch @bind-Value="_model.Paralyzed" Label="Vehiculo Paralizado" LabelPlacement="Placement.End" Color="Color.Success" ReadOnly="true" />
                             </MudStack>
 
                             <MudStack Row="true">
@@ -152,12 +154,10 @@
                                               Margin="Margin.Dense"
                                               ReadOnly="true" />
 
-                                <MudNumericField Typo="Typo.caption" @bind-Value="_model.OrderNumber"
+                                <MudTextField Typo="Typo.caption" @bind-Value="_model.OrderNumber"
                                                  Label="Nro.Orden"
                                                  Variant="Variant.Text"
                                                  Margin="Margin.Dense"
-                                                 HideSpinButtons="true"
-                                                 Culture="@CultureInfo.GetCultureInfo("de-DE")"
                                                  ReadOnly="true" />
 
                                 
@@ -177,7 +177,7 @@
                                           ReadOnly="true" />
 
                             <MudTextField Typo="Typo.caption" @bind-Value="_model.DealerReport"
-                                          Label="Reporte Concesionario"
+                                          Label="Reporte de condiciones y Posible(s) causa(s)"
                                           Lines="5"
                                           MaxLength="500"
                                           Variant="Variant.Text"
@@ -185,7 +185,7 @@
                                           ReadOnly="true" />
 
                             <MudTextField Typo="Typo.caption" @bind-Value="_model.TechnicalSolution"
-                                          Label="Solucion Tecnica"
+                                          Label="Diagnóstico Concesionario, resultados de pruebas y Equipos utilizados"
                                           Lines="5"
                                           MaxLength="500"
                                           Variant="Variant.Text"
@@ -271,8 +271,6 @@
 
                         </MudCardHeader>
                         <MudCardContent Style="padding-top: 0px;">
-                            @* <MudHidden @bind-Value="_model.Id" />
-                            <MudHidden @bind-Value="IdFailReport" /> *@
 
                             <MudFlexBreak />
 
@@ -394,7 +392,6 @@
 
                         </MudCardHeader>
                         <MudCardContent Style="padding-top: 0px;">
-                            @* <MudHidden @bind-Value="@_model.VehicleId" /> *@
 
                             <MudTextField Typo="Typo.caption" @bind-Value="@_model.VIN"
                                           Label="VIN"
@@ -441,6 +438,7 @@
                         </MudCardContent>
 
                     </MudCard>
+
                     @* ///Customer *@
                     <MudCard Elevation="2" Class="pa-1 mt-2">
                         <MudCardHeader Style="padding-bottom: 0px;">
@@ -470,8 +468,6 @@
 
                         </MudCardHeader>
                         <MudCardContent Style="padding-top: 0px;">
-                            @* <MudHidden @bind-Value="_model.CustomerId" /> *@
-
 
                             <MudTextField Typo="Typo.caption" T="string" Text="@_model.VAT"
                                           Label="RIF"
@@ -1075,7 +1071,7 @@
 
     private async Task ExportItemsAsync()
     {
-        var serviceResponse = await FailReportService.ExportFailReports(Useful.userId, _model.DealerId ?? Useful.dealerId, _model.VIN);
+        var serviceResponse = await FailReportService.ExportFailReports(Useful.supplierId, Useful.userId, _model.VIN, _model.DealerId ?? Useful.dealerId);
         if (serviceResponse.Processed)
         {
             _success = true;

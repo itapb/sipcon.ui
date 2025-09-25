@@ -52,20 +52,19 @@
         <SelectColumn  />
         <TemplateColumn  Title="ROL">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Inline="true" Style="font-weight:bold;">@context.Item.Name.ToUpper()</MudText>
+                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Style="font-weight:bold;">@context.Item.Name.ToUpper()</MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn  Title="CODIGO">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" Style="font-weight:bold;">
+                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">
                     @("#" + context.Item.Id.ToString().PadLeft(10, '0'))
                 </MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn  Title="ACTIVO">
-
             <CellTemplate>
-                <div class="d-flex justify-center">
+                <div class="d-flex justify-start">
                     <MudIcon Icon="@(context.Item.IsActive? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.IsActive? Color.Success: Color.Error)" Size="Size.Medium" />
                 </div>
             </CellTemplate>
@@ -75,7 +74,6 @@
                 <MudStack Row="true">
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" Href="@("accessgroupdetails/" + context.Item.Id)" />
                 </MudStack>
-
             </CellTemplate>
         </TemplateColumn>
     </Columns>
@@ -85,10 +83,7 @@
     </PagerContent>
 </MudDataGrid>
 
-<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Roles")">
-
-</NestedDialogCustom>
-
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Roles")"/>
 
 
 @code {
@@ -131,27 +126,25 @@
     private async Task GetAccessGroup()
     {
         _loading = true;
+        _accessGroupList = new List<AccessGroup>();
+        _rowsTotal = 0;
+        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
+
         var serviceResponse = await SecurityService.GetAccessGroups(_rowCount, _searchString);
         if (serviceResponse.Processed)
         {
             _accessGroupList = serviceResponse.Data.OrderBy(s => s.Name);
             _rowsTotal = serviceResponse.Total;
-
-            if (_accessGroupList.Any())
-            {
-                _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
-            }
-            else { _itemsModules = new List<ModuleAction>([]); }
-
-
         }
         else
         {
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
             Console.WriteLine($"Error: {serviceResponse.Message}");
-            _accessGroupList = new List<AccessGroup>();
-            _rowsTotal = 0;
-            _itemsModules = new List<ModuleAction>([]);
+            OpenNested();
+            
         }
+        StateHasChanged();
         _loading = false;
     }
 
