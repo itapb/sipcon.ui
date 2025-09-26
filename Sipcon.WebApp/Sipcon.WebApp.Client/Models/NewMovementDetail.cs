@@ -28,5 +28,7 @@ namespace Sipcon.WebApp.Client.Models
         public int? RequiredQty { get; set; }
 
         public int? Stock { get; set; } = 0;
+
+        public String? PartSize { get; set; } = String.Empty;
     }
 }

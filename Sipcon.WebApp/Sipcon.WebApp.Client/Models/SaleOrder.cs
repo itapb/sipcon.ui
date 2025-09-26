@@ -20,6 +20,10 @@ namespace Sipcon.WebApp.Client.Models
         public string Created { get; set; } = "";        
         public string CreatedBy { get; set; } = string.Empty;
         public bool IsClaim { get; set; } = false;
+        public bool? Paralyzed { get; set; } = false;
+        public int? VehicleId { get; set; } = 0;               
+        public string? VehicleVin { get; set; }        
+        public string? VehicleCustomer { get; set; }
 
     }
 }

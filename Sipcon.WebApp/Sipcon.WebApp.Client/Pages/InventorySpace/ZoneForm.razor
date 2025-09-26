@@ -110,7 +110,7 @@ else
         if (response1.IsSuccessStatusCode && response2.IsSuccessStatusCode)
         {
             var WarehousesContent = await response1.Content.ReadFromJsonAsync<WebApiResponse<List<Warehouse>>>();
-            Warehouses = WarehousesContent!.data;
+            Warehouses = zoneId == 0 ? WarehousesContent!.data?.Where(r => r.IsActive == true).ToList() : WarehousesContent!.data;
 
             var ZoneContent = await response2.Content.ReadFromJsonAsync<WebApiResponse<Zone>>();
             SelectedZone = zoneId > 0 ? ZoneContent!.data : new Zone() { Id = 0, Name = null, IsActive = true, WarehouseId = null, WarehouseName = null, IsSelected = false };

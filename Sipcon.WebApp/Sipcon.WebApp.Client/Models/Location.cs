@@ -12,6 +12,7 @@ namespace Sipcon.WebApp.Client.Models
         [Required]
         public Int32? ZoneId { get; set; }
         public string? ZoneName { get; set; }
+        public string? ZoneSize { get; set; }
         public string? WarehouseName { get; set; }
 
         [Required(ErrorMessage = "Campo requerido.")]

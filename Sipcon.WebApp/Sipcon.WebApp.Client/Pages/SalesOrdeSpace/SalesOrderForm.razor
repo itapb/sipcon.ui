@@ -3,9 +3,14 @@
         <MudItem xs="12" sm="9">
             <MudStack>
                 <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                    <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
                     <MudStack Row="true" Spacing="2">
                         <MudFab StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" Size="Size.Small" Label="Guardar" OnClick="SaveClick" Disabled="@(!IsCreatedSalesOrder)"></MudFab>
                         <MudButton OnClick="CloseClick">Cerrar</MudButton>
+                    </MudStack>
+                    <MudStack>
+                          @if (MasterSalesOrder is not null) { <MudSwitch @bind-Value="MasterSalesOrder.Paralyzed" Color="Color.Success" Label="Paralizado" Disabled="@(!IsCreatedSalesOrder)"/>}
+                    </MudStack>
                     </MudStack>
                 </MudPaper>
                 <MudPaper Elevation="2" Style="height: 100%;">
@@ -25,7 +30,7 @@
                             </TemplateColumn>
                             <PropertyColumn Property="x => x.PartInnerCode" Title="COD REPUESTO" />
                             <PropertyColumn Property="x => x.PartName" Title="DESCRIPCION" />
-                            <PropertyColumn Property="x => x.Price" Title="PRECIO" />
+                            <PropertyColumn Property="x => x.Price" Title="PRECIO $" />
                             <PropertyColumn Property="x => x.Quantity" Title="CANTIDAD" />
                             <TemplateColumn StickyRight="true">
                                 <CellTemplate>
@@ -50,7 +55,7 @@
                             else
                             {
                                 <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterSalesOrder.DealerName" Adornment="Adornment.Start" AdornmentText="Concesionario :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
-                                <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterSalesOrder.SupplierName" Adornment="Adornment.Start" AdornmentText="Planta :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
+                                @* <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterSalesOrder.SupplierName" Adornment="Adornment.Start" AdornmentText="Planta :" Variant="Variant.Text" Class="align-right-input" /></MudItem> *@
                                 <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterSalesOrder.Id" Adornment="Adornment.Start" AdornmentText="Nro Doc :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
                                 <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterSalesOrder.Created" Adornment="Adornment.Start" AdornmentText="Fecha :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
                                 <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterSalesOrder.CreatedBy" Adornment="Adornment.Start" AdornmentText="Usuario :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
@@ -63,7 +68,10 @@
                                         }
                                     </MudSelect>
                                 </MudItem>
-                                <MudItem xs="12"><MudTextField ReadOnly="@(!IsCreatedSalesOrder)" @bind-Value="MasterSalesOrder.Reference" Label="Referencia" Variant="Variant.Text" RequiredError="Campo requerido." Required="@(SaleOrderTypeSelected.Id == 1)" /></MudItem>
+                                <MudItem xs="12">
+                                    <MudTextField ReadOnly="true" @bind-Value="MasterSalesOrder.VehicleVin" Label="@("Vehiculo" + (!String.IsNullOrEmpty(MasterSalesOrder.VehicleCustomer) ? $" ({MasterSalesOrder.VehicleCustomer})" : ""))" Adornment="Adornment.Start" AdornmentIcon="@(IsCreatedSalesOrder ? Icons.Material.Filled.Search : "")" Variant="Variant.Text" OnAdornmentClick="VehicleInvoicesClick" RequiredError="Campo requerido" Required="@(MasterSalesOrder!.TypeId == 1 || MasterSalesOrder!.TypeId == 2)" Disabled="@(MasterSalesOrder!.TypeId == 3)" @ref="VehicleVinRef"></MudTextField>
+                                </MudItem>
+                                <MudItem xs="12"><MudTextField ReadOnly="@(!IsCreatedSalesOrder)" @bind-Value="MasterSalesOrder.Reference" Label="Referencia" Variant="Variant.Text" RequiredError="Campo requerido." Required="@(SaleOrderTypeSelected?.Id == 1)" /></MudItem>
                                 <MudItem xs="12"><MudTextField ReadOnly="@(!IsCreatedSalesOrder)" @bind-Value="MasterSalesOrder.Comment" Label="Comentario" Variant="Variant.Text" /></MudItem>
                             }
 
@@ -75,7 +83,7 @@
                         <MudItem xs="12"><MudText Typo="Typo.h6" Color="Color.Info">Totales:</MudText></MudItem>
                         <MudItem xs="12"><MudTextField ReadOnly="true" Adornment="Adornment.Start" @bind-Value="UnitValue" AdornmentText="Unidad :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
                         <MudItem xs="12"><MudTextField ReadOnly="true" Adornment="Adornment.Start" @bind-Value="ProductValue" AdornmentText="Productos :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
-                        <MudItem xs="12"><MudTextField ReadOnly="true" Adornment="Adornment.Start" @bind-Value="CostValue" AdornmentText="Precio :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
+                        <MudItem xs="12"><MudTextField ReadOnly="true" Adornment="Adornment.Start" @bind-Value="CostValue" AdornmentText="Precio $ :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
                     </MudGrid>
                 </MudPaper>
                 <MudPaper Elevation="2" Class="pa-2 mud-text-align-center flex-grow-0">
@@ -127,12 +135,11 @@
     private SaleOrder? MasterSalesOrder;
     private MudDataGrid<SaleOrderDetails>? SalesOrderDetailsMudDataGrid = new();
     private MudForm? form;
-
-
     private SaleOrderType? SaleOrderTypeSelected;
+
     private Func<SaleOrderType?, string> ConvertSaleOrderTypeFunc = saleordertype => saleordertype?.Name!;
 
-
+    private MudTextField<string?>? VehicleVinRef;
 
     private async Task AfterAsyncAllCheck()
     {
@@ -186,7 +193,7 @@
             MasterSalesOrder = masterSalesOrderDetails.SaleOrder;
             data = masterSalesOrderDetails.Details!;
             IsCreatedSalesOrder = (MasterSalesOrder!.StatusName == "CREADO");    
-            TempReference = MasterSalesOrder!.Reference ?? "";
+            TempReference = MasterSalesOrder!.Reference ?? "";           
             getTotals(data);
 
             SaleOrderTypeSelected = SaleOrderTypes?.FirstOrDefault(x => x.Id == masterSalesOrderDetails?.SaleOrder!.TypeId);
@@ -209,9 +216,22 @@
 
     private async Task ClickAddSalesOrderDetails(MouseEventArgs ev)
     {
+        string vin = MasterSalesOrder?.VehicleVin ?? "";
+        string customer = MasterSalesOrder?.VehicleCustomer ?? "";
+        int? vehicleId = MasterSalesOrder?.VehicleId;
+
         var dialogReference = await DialogService.ShowAsync(typeof(SalesOrderPartsCatalog), "", new DialogParameters { ["SalesOrderId"] = MasterSalesOrder!.Id }, options);
         if ((await dialogReference.Result) is DialogResult dialogResult && !dialogResult.Canceled)
+        {
             await SalesOrderDetailsMudDataGrid!.ReloadServerData();
+            if (MasterSalesOrder is not null && (SaleOrderTypeSelected?.Id == 1 || SaleOrderTypeSelected?.Id == 2) && vehicleId.HasValue && vehicleId > 0)
+            {
+                MasterSalesOrder.VehicleVin = vin;
+                MasterSalesOrder.VehicleCustomer = customer;
+                MasterSalesOrder.VehicleId = vehicleId;
+            }
+        }
+
     }
     record SalesOrderItem(int? Id);
     private async Task ClickRemoveSalesOrderDetails(MouseEventArgs ev)
@@ -226,7 +246,7 @@
     {
         await form!.Validate();
         if (form.IsValid)
-        {
+        {           
             var strMasterMovement = System.Text.Json.JsonSerializer.Serialize(MasterSalesOrder);
             var result_MasterMovement = await Http.PostAsync($"api/SaleOrder/PostSaleOrder?userId={Useful.userId}", new StringContent($"[{strMasterMovement}]", null, "application/json"));
             if (result_MasterMovement.IsSuccessStatusCode)
@@ -338,12 +358,33 @@
             throw new Exception(errorMessage);
         }
     }
-        
+
     private async Task OnSaleOrderTypeValueChanged(SaleOrderType selectedSaleOrderType)
     {
         SaleOrderTypeSelected = selectedSaleOrderType;
         MasterSalesOrder!.TypeId = selectedSaleOrderType.Id;
         MasterSalesOrder.TypeName = selectedSaleOrderType.Name;
+        if (selectedSaleOrderType.Id == 3)
+        {                
+            MasterSalesOrder.VehicleId = 0;
+            MasterSalesOrder.VehicleVin = "";
+            MasterSalesOrder.VehicleCustomer = "";
+            VehicleVinRef!.ResetValidation(); 
+        }         
         await Task.CompletedTask;
+    }
+    private async Task VehicleInvoicesClick(MouseEventArgs args)
+    {
+        if (IsCreatedSalesOrder)
+        {
+            DialogOptions options2 = new DialogOptions { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
+            var dialogReference = await DialogService.ShowAsync<SalesOrderVehiclesCatalog>("", new DialogParameters { }, options2);
+            if ((await dialogReference.Result) is DialogResult dialogResult && !dialogResult.Canceled && dialogResult.Data is VehicleInvoice VehicleInvoiceSelected)
+            {
+                MasterSalesOrder!.VehicleId = VehicleInvoiceSelected.Id;
+                MasterSalesOrder.VehicleVin = VehicleInvoiceSelected.Vin;
+                MasterSalesOrder.VehicleCustomer = $"{VehicleInvoiceSelected?.CustomerName ?? ""} {VehicleInvoiceSelected?.CustomerLastName ?? ""}";               
+            }
+        }       
     }
 }

@@ -95,6 +95,11 @@ else
             var data = content2!.data ?? new MasterSalesOrderDetails();            
             SalesOrderId = data.SaleOrder?.Id;
         }
+        else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflictContent = await response.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+            await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
         else
         {
             var errorMessage = await response.Content.ReadAsStringAsync();

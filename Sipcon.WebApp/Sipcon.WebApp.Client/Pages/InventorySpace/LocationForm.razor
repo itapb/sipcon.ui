@@ -107,6 +107,16 @@ else
                         LocationId = null;
                     }
                 }
+                else if (result_Post_Location.StatusCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    var conflictContent = await result_Post_Location.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+                    await DialogService.ShowDialog(conflictContent?.message!, "Error Ubicacion", "OK", Color.Error, Icons.Material.Filled.Error);
+                }
+                else
+                {
+                    var errorMessage = await result_Post_Location.Content.ReadAsStringAsync();
+                    throw new Exception(errorMessage);
+                }
 
             }
         }
@@ -136,7 +146,8 @@ else
         {    
             var zonesContent = await response1.Content.ReadFromJsonAsync<WebApiResponse<List<Zone>>>();
             var locationContent = await response2.Content.ReadFromJsonAsync<WebApiResponse<Location>>();
-            Zones = zonesContent!.data;
+            Zones = locationId == 0 ? zonesContent!.data?.Where(r => r.IsActive == true).ToList() : zonesContent!.data;
+
             SelectedLocation = locationId > 0 ? locationContent!.data : new Location() { Id = 0, Name = null, WarehouseName = null, IsActive = true, ZoneId = null, ZoneName = null, IsSelected = false };
             ZoneSelected = locationId > 0 ? Zones!.FirstOrDefault(c => c.Id == SelectedLocation!.ZoneId): null;
             LocationTypeSelected = locationId > 0 ? LocationTypes.FirstOrDefault(c => c.TypeId == SelectedLocation!.TypeId) : null;
