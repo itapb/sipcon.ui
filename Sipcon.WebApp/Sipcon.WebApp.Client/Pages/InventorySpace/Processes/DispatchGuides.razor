@@ -95,6 +95,7 @@ else
         await AuthenticationStateProvider.RefreshStaticVariables();
         await LoadDataAsync();
         hubEventsService.OnSupplierChanged += ReloadDispatchGuidesGrid;
+        hubEventsService.OnDealerChanged += ReloadDispatchGuidesGrid;
     }
 
     private async Task LoadDataAsync()
@@ -124,7 +125,7 @@ else
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Mobile.Models.Guide> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Guide/GetAllGuides?userId={Useful.userId}&supplierId={Useful.supplierId}&rowfrom={mOffset}&filter={searchString}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Guide/GetAllGuides?userId={Useful.userId}&supplierId={Useful.supplierId}&dealerId={Useful.dealerId}&rowfrom={mOffset}&filter={searchString}");
 
         if (response.IsSuccessStatusCode)
         {
@@ -203,6 +204,7 @@ else
     {       
         Useful.IsNewOrEdit = false;
         hubEventsService.OnSupplierChanged -= ReloadDispatchGuidesGrid;
+        hubEventsService.OnDealerChanged -= ReloadDispatchGuidesGrid;
     }
 }
 
