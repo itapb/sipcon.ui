@@ -52,12 +52,13 @@
     }
  </style>
 @code {
+    [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;   
+
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;   
     [Parameter] public string? MovementType { get; set; } = string.Empty;
     MovementDetails? movementDetails;
-    int UserId = 1;//5077;
-
+   
     string mHelpText = "";
     bool ModeValue = true;
     string ModeText = "Picking";
@@ -84,8 +85,10 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await AuthenticationStateProvider.RefresMobileStaticVariables();
         await NextStep();
     }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender && bardCodeField is not null)
@@ -200,7 +203,7 @@
         {
             var AnMovementMobile = new movementMobile(Id: movementDetails!.Id, MovementId: movementDetails!.MovementId, PartId: movementDetails.PartId, PartialTypeId: PartialTypeIdInput, LocationId: locationId, RealQty: InputRealQty, SerialCode: InputSerial);
             var strJsonMovementMobile = System.Text.Json.JsonSerializer.Serialize(AnMovementMobile);
-            var result_Post_Zone = await Http.PostAsync($"api/Movements/PostMovementDetailMobile?userId={UserId}", new StringContent($"{strJsonMovementMobile}", null, "application/json"));
+            var result_Post_Zone = await Http.PostAsync($"api/Movements/PostMovementDetailMobile?userId={Useful.userId}", new StringContent($"{strJsonMovementMobile}", null, "application/json"));
             if (result_Post_Zone.IsSuccessStatusCode)
             {
                 await DialogService.ShowDialog("Movimiento Procesado!", "Procesado", "OK", Color.Success, Icons.Material.Filled.Check);
@@ -218,7 +221,7 @@
     private async Task GetMovementDetailsByUser()
     {
         InitializeFormFields();
-        HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetMovementDetailsByUser?userId={UserId}&movementType={MovementType}&mode={ModeParameter}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetMovementDetailsByUser?userId={Useful.userId}&movementType={MovementType}&mode={ModeParameter}");
         if (response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadFromJsonAsync<WebApiResponse<List<MovementDetails>>>();

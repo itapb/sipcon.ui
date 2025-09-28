@@ -1,15 +1,24 @@
-﻿<CascadingAuthenticationState>
+﻿@using Sipcon.WebApp.Client.Pages
     <Router AppAssembly="typeof(Program).Assembly">
         <Found Context="routeData">
-            <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        <AuthorizeRouteView RouteData="routeData" DefaultLayout="@(Useful.isMobile ? typeof(Layout.MobileLayout) : typeof(Layout.MainLayout))">
+                <Authorizing>
+                    Autorizando...
+                 </Authorizing>
+                 <NotAuthorized>
+                     <RedirectToLogin />
+                 </NotAuthorized>
+            </AuthorizeRouteView>
             <FocusOnNavigate RouteData="routeData" Selector="h1" />
         </Found>
         <NotFound>
+        <CascadingAuthenticationState>
             <PageTitle>Error Pagina no encontrada</PageTitle>
             <LayoutView Layout="typeof(Layout.MainLayout)">
                 <p role="alert">Lo sentimos, por favor contacte al administrador</p>
             </LayoutView>
+            </CascadingAuthenticationState>
         </NotFound>
     </Router>
-</CascadingAuthenticationState>
+
 

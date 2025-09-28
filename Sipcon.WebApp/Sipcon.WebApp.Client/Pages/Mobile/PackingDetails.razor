@@ -56,6 +56,7 @@
     }
 </style>
 @code {
+    [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -91,6 +92,10 @@
 
     private async Task<GridData<Models.Package>> ServerReload(GridState<Models.Package> state)
     {
+        await AuthenticationStateProvider.RefresMobileStaticVariables();
+        currentPacking!.UserId = Useful.userId;
+        currentPacking!.SupplierId = Useful.supplierId;
+
         _loading = true;
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
@@ -200,6 +205,5 @@
         }
         await Task.CompletedTask;
     }
-    
 
 }

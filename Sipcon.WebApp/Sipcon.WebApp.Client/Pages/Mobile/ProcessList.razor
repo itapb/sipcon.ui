@@ -5,20 +5,59 @@
 <div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
     <MudPaper Elevation="2" Class="pa-3">
         <MudStack Justify="Justify.Center" Row="false" Spacing="3">
-            <MudButton Class="pa-2 mud-text-align-center" Variant="Variant.Filled" Color="Color.Info" EndIcon="@Icons.Material.Filled.AddBusiness" Href="mobile-reception">Recepcion</MudButton>
-            <MudButton Class="pa-2 mud-text-align-center" Variant="Variant.Filled" Color="Color.Info" EndIcon="@Icons.Material.Filled.MoveDown" Href="mobile-transfer">Traslado</MudButton>
-            <MudButton Class="pa-2 mud-text-align-center" Variant="Variant.Filled" Color="Color.Info" EndIcon="@Icons.Material.Filled.ShoppingCartCheckout" Href="mobile-collection">Recoleccion</MudButton>
-            <MudButton Class="pa-2 mud-text-align-center" Variant="Variant.Filled" Color="Color.Info" EndIcon="@Icons.Material.Filled.MoveToInbox" Href="mobile-packing">Embalaje</MudButton>
-            <MudButton Class="pa-2 mud-text-align-center" Variant="Variant.Filled" Color="Color.Info" EndIcon="@Icons.Material.Filled.LocalShipping" Href="mobile-dispatch">Despacho</MudButton>
+            <MudSelect T="UserType" Label="Planta" ToStringFunc="@ConvertCityFunc" ValueChanged="OnUserTypeValueChanged" Value="UserTypeSelected" Dense="true">
+                @foreach (var usersupplier in _UserSuppliers!)
+                {
+                    <MudSelectItem Value="usersupplier" />
+                }
+            </MudSelect>
+            @if (_ModuleNames.Contains("INVENTARIO-MOVIL-RECEPCION"))
+            {
+                <MudButton Class="pa-2 mud-text-align-center" Variant="Variant.Filled" Color="Color.Info" EndIcon="@Icons.Material.Filled.AddBusiness" Href="mobile-reception" Disabled="@(UserTypeSelected is null)">Recepcion</MudButton>
+            }
+            @if (_ModuleNames.Contains("INVENTARIO-MOVIL-TRASLADO"))
+            {
+            <MudButton Class="pa-2 mud-text-align-center" Variant="Variant.Filled" Color="Color.Info" EndIcon="@Icons.Material.Filled.MoveDown" Href="mobile-transfer" Disabled="@(UserTypeSelected is null)">Traslado</MudButton>
+            }
+            @if (_ModuleNames.Contains("INVENTARIO-MOVIL-RECOLECCION")) 
+            {
+            <MudButton Class="pa-2 mud-text-align-center" Variant="Variant.Filled" Color="Color.Info" EndIcon="@Icons.Material.Filled.ShoppingCartCheckout" Href="mobile-collection" Disabled="@(UserTypeSelected is null)">Recoleccion</MudButton>
+            }
+            @if (_ModuleNames.Contains("INVENTARIO-MOVIL-EMBALAJE"))
+            {
+            <MudButton Class="pa-2 mud-text-align-center" Variant="Variant.Filled" Color="Color.Info" EndIcon="@Icons.Material.Filled.MoveToInbox" Href="mobile-packing" Disabled="@(UserTypeSelected is null)">Embalaje</MudButton>
+            }
+            @if (_ModuleNames.Contains("INVENTARIO-MOVIL-DESPECHO")) 
+            {
+             <MudButton Class="pa-2 mud-text-align-center" Variant="Variant.Filled" Color="Color.Info" EndIcon="@Icons.Material.Filled.LocalShipping" Href="mobile-dispatch" Disabled="@(UserTypeSelected is null)">Despacho</MudButton>
+            }
         </MudStack>
     </MudPaper>
 </div>
 
 @code{
-    override protected Task OnInitializedAsync()
-    {
+    [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
+
+    private Func<UserType?, string> ConvertCityFunc = usertype => usertype?.Name!;
+    private UserType? UserTypeSelected;
+    public List<UserModule> Modules { get; set; } = new List<UserModule>();
+    private List<string> _ModuleNames = new List<string>();
+    private List<UserType> _UserSuppliers { get; set; } = new List<UserType>();
+
+    override protected async Task OnInitializedAsync()
+    {   
+        _UserSuppliers = await AuthenticationStateProvider.GetUserSupplierAsync();
+        Modules = await AuthenticationStateProvider.GetUserRoleAsync();       
+        _ModuleNames = Modules.Select(s => s.Name).ToList();       
+       
         Useful.customerId = 0;
-        Useful.customerName = "";
-        return base.OnInitializedAsync();
+        Useful.customerName = "";        
     }
+    private async Task OnUserTypeValueChanged(UserType selectedUserType)
+    {
+        UserTypeSelected = selectedUserType;
+        Useful.supplierId = selectedUserType.Id;
+        await AuthenticationStateProvider.SetValueSessionStorage<int>(selectedUserType.Id, ValuesKey.SELECTEDSUPPLIER);       
+    }
+   
 }
