@@ -15,6 +15,7 @@
         public string? TypeName { get; set; }
 
         public DateTime? Arrival { get; set; }
+        public int? Stock { get; set; }
 
     }
 }

@@ -92,7 +92,8 @@ else
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterSalesOrderDetails>>();
-            var data = content2!.data ?? new MasterSalesOrderDetails();            
+            var data = content2!.data ?? new MasterSalesOrderDetails();    
+            Useful.IsNewOrEdit = true;
             SalesOrderId = data.SaleOrder?.Id;
         }
         else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)

@@ -147,7 +147,14 @@
         await Task.CompletedTask;
     }
     private async Task ClickEditSalesOrderDetail(SaleOrderDetails item)
-    {        
+    {
+        var tempSaleOrderTypeSelected = SaleOrderTypeSelected;
+        var temReference = MasterSalesOrder!.Reference;
+        var tempComment = MasterSalesOrder.Comment;
+        var tempVehicleId = MasterSalesOrder!.VehicleId;
+        var tempVehicleVin = MasterSalesOrder.VehicleVin;
+        var tempVehicleCustomer = MasterSalesOrder.VehicleCustomer;
+
         NewSalesOrderDetails AnewSalesOrderrDetail = new NewSalesOrderDetails
         {
             Id = item.Id,
@@ -159,7 +166,17 @@
         };
         var dialogReference = await DialogService.ShowAsync(typeof(PartToSalesOrderDetails), "", new DialogParameters { ["newSaleOrderDetails"] = AnewSalesOrderrDetail }, options);
         if (!((await dialogReference.Result)!.Canceled))
-            await SalesOrderDetailsMudDataGrid!.ReloadServerData();
+        {
+           await SalesOrderDetailsMudDataGrid!.ReloadServerData(); 
+
+           SaleOrderTypeSelected = tempSaleOrderTypeSelected;
+           MasterSalesOrder!.Reference = temReference;
+           MasterSalesOrder.Comment = tempComment;
+           MasterSalesOrder.VehicleId = tempVehicleId;
+           MasterSalesOrder.VehicleVin = tempVehicleVin;
+           MasterSalesOrder.VehicleCustomer = tempVehicleCustomer;
+        }
+       
     }
 
     private void getTotals(IEnumerable<SaleOrderDetails> data)
@@ -216,20 +233,24 @@
 
     private async Task ClickAddSalesOrderDetails(MouseEventArgs ev)
     {
-        string vin = MasterSalesOrder?.VehicleVin ?? "";
-        string customer = MasterSalesOrder?.VehicleCustomer ?? "";
-        int? vehicleId = MasterSalesOrder?.VehicleId;
+        var tempSaleOrderTypeSelected = SaleOrderTypeSelected;
+        var temReference = MasterSalesOrder!.Reference;
+        var tempComment = MasterSalesOrder.Comment;
+        var vin = MasterSalesOrder?.VehicleVin;
+        var customer = MasterSalesOrder?.VehicleCustomer;
+        var vehicleId = MasterSalesOrder?.VehicleId;
 
         var dialogReference = await DialogService.ShowAsync(typeof(SalesOrderPartsCatalog), "", new DialogParameters { ["SalesOrderId"] = MasterSalesOrder!.Id }, options);
         if ((await dialogReference.Result) is DialogResult dialogResult && !dialogResult.Canceled)
         {
             await SalesOrderDetailsMudDataGrid!.ReloadServerData();
-            if (MasterSalesOrder is not null && (SaleOrderTypeSelected?.Id == 1 || SaleOrderTypeSelected?.Id == 2) && vehicleId.HasValue && vehicleId > 0)
-            {
-                MasterSalesOrder.VehicleVin = vin;
-                MasterSalesOrder.VehicleCustomer = customer;
-                MasterSalesOrder.VehicleId = vehicleId;
-            }
+
+            SaleOrderTypeSelected = tempSaleOrderTypeSelected;
+            MasterSalesOrder!.Reference = temReference;
+            MasterSalesOrder.Comment = tempComment;
+            MasterSalesOrder.VehicleVin = vin;
+            MasterSalesOrder.VehicleCustomer = customer;
+            MasterSalesOrder.VehicleId = vehicleId;                
         }
 
     }
