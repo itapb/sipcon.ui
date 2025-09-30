@@ -58,7 +58,7 @@
     [Inject] private IDialogService DialogService { get; set; } = default!;   
     [Parameter] public string? MovementType { get; set; } = string.Empty;
     MovementDetails? movementDetails;
-   
+
     string mHelpText = "";
     bool ModeValue = true;
     string ModeText = "Picking";
@@ -123,6 +123,9 @@
                 {
                     if ((MovementType == "T" || MovementType == "P") && InputCode == "0")
                     {
+                        InputRealQty = 0;
+                        movementDetails!.PartId = 0;
+                    
                         await PostMovemmentDetailMobile();
                     } 
                     else
@@ -209,6 +212,17 @@
                 await DialogService.ShowDialog("Movimiento Procesado!", "Procesado", "OK", Color.Success, Icons.Material.Filled.Check);
                 await StepOne(); // Reset to step one after processing
                 StateHasChanged();
+            }
+            else if (result_Post_Zone.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                var content = await result_Post_Zone.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+                await DialogService.ShowDialog(content!.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+            else
+            {
+                var errorMessage = await result_Post_Zone.Content.ReadAsStringAsync();
+                throw new Exception(errorMessage);
+                
             }
         }
 

@@ -354,6 +354,16 @@
             await DialogService.ShowDialog(Useful.OkSavedMessage, "Accion", "OK", Color.Info, Icons.Material.Filled.Commit);
             MovementId = null;
         }
+        else if (result_PostMovementActions?.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflictContent = await result_PostMovementActions.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+            await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        else
+        {
+            var errorMessage = await result_PostMovementActions!.Content.ReadAsStringAsync() ?? "";
+            throw new Exception(errorMessage);
+        }
     }
 
     private async Task DeleteMovementDetailAction(List<Models.Action>? actions)
