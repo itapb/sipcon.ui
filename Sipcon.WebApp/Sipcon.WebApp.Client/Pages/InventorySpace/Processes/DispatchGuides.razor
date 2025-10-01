@@ -100,10 +100,10 @@ else
 
     private async Task LoadDataAsync()
     {
-        MovementTitle = "Despacho";
+        MovementTitle = "Recepcion";
         string hrefMovement = "dispatchguides";
 
-        $"Home,Inventario,Procesos,{MovementTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
+        $"Home,Pedidos,Procesos,{MovementTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
         Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-{MovementTitle.ToUpper()}&userId={Useful.userId}");
     }
     Func<Mobile.Models.Guide, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
