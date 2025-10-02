@@ -9,7 +9,7 @@
                         <MudButton OnClick="CloseClick">Cerrar</MudButton>
                     </MudStack>
                     <MudStack>
-                          @if (MasterSalesOrder is not null) { <MudSwitch @bind-Value="MasterSalesOrder.Paralyzed" Color="Color.Success" Label="Paralizado" Disabled="@(!IsCreatedSalesOrder)"/>}
+                          @if (MasterSalesOrder is not null) { <MudSwitch @bind-Value="MasterSalesOrder.Paralyzed" ReadOnly="true" Color="Color.Primary" Label="Paralizado" Disabled="@(!IsCreatedSalesOrder)"/>}
                     </MudStack>
                     </MudStack>
                 </MudPaper>
@@ -71,7 +71,7 @@
                                 <MudItem xs="12">
                                     <MudTextField ReadOnly="true" @bind-Value="MasterSalesOrder.VehicleVin" Label="@("Vehiculo" + (!String.IsNullOrEmpty(MasterSalesOrder.VehicleCustomer) ? $" ({MasterSalesOrder.VehicleCustomer})" : ""))" Adornment="Adornment.Start" AdornmentIcon="@(IsCreatedSalesOrder ? Icons.Material.Filled.Search : "")" Variant="Variant.Text" OnAdornmentClick="VehicleInvoicesClick" RequiredError="Campo requerido" Required="@(MasterSalesOrder!.TypeId == 1 || MasterSalesOrder!.TypeId == 2)" Disabled="@(MasterSalesOrder!.TypeId == 3)" @ref="VehicleVinRef"></MudTextField>
                                 </MudItem>
-                                <MudItem xs="12"><MudTextField ReadOnly="@(!IsCreatedSalesOrder)" @bind-Value="MasterSalesOrder.Reference" Label="Referencia" Variant="Variant.Text" RequiredError="Campo requerido." Required="@(SaleOrderTypeSelected?.Id == 1)" /></MudItem>
+                                <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterSalesOrder.Reference" Label="Referencia" Variant="Variant.Text" RequiredError="Campo requerido." Required="@(SaleOrderTypeSelected?.Id == 1)" /></MudItem>
                                 <MudItem xs="12"><MudTextField ReadOnly="@(!IsCreatedSalesOrder)" @bind-Value="MasterSalesOrder.Comment" Label="Comentario" Variant="Variant.Text" /></MudItem>
                             }
 
@@ -391,26 +391,31 @@
         SaleOrderTypeSelected = selectedSaleOrderType;
         MasterSalesOrder!.TypeId = selectedSaleOrderType.Id;
         MasterSalesOrder.TypeName = selectedSaleOrderType.Name;
-        if (selectedSaleOrderType.Id == 3)
-        {                
+ 
+            MasterSalesOrder.Paralyzed = false;
             MasterSalesOrder.VehicleId = 0;
             MasterSalesOrder.VehicleVin = "";
             MasterSalesOrder.VehicleCustomer = "";
+            MasterSalesOrder.Reference = "";
             VehicleVinRef!.ResetValidation(); 
-        }         
+            
         await Task.CompletedTask;
     }
     private async Task VehicleInvoicesClick(MouseEventArgs args)
     {
         if (IsCreatedSalesOrder)
         {
+            string ServiceFailType = (SaleOrderTypeSelected?.Id == 1) ? "G" : (SaleOrderTypeSelected?.Id == 2) ? "L" : "";
+
             DialogOptions options2 = new DialogOptions { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
-            var dialogReference = await DialogService.ShowAsync<SalesOrderVehiclesCatalog>("", new DialogParameters { }, options2);
-            if ((await dialogReference.Result) is DialogResult dialogResult && !dialogResult.Canceled && dialogResult.Data is VehicleInvoice VehicleInvoiceSelected)
+            var dialogReference = await DialogService.ShowAsync<SalesOrderReportFailCatalog>("", new DialogParameters { ["ServiceFailType"] = ServiceFailType }, options2);
+            if ((await dialogReference.Result) is DialogResult dialogResult && !dialogResult.Canceled && dialogResult.Data is ServiceFail ServiceFailSelected)
             {
-                MasterSalesOrder!.VehicleId = VehicleInvoiceSelected.Id;
-                MasterSalesOrder.VehicleVin = VehicleInvoiceSelected.Vin;
-                MasterSalesOrder.VehicleCustomer = $"{VehicleInvoiceSelected?.CustomerName ?? ""} {VehicleInvoiceSelected?.CustomerLastName ?? ""}";               
+                MasterSalesOrder!.VehicleId = ServiceFailSelected.VehicleId;
+                MasterSalesOrder!.Reference = ServiceFailSelected.ReportId.ToString();
+                MasterSalesOrder.VehicleVin = ServiceFailSelected.Vin;
+                MasterSalesOrder.VehicleCustomer = ServiceFailSelected.Customer;
+                MasterSalesOrder.Paralyzed = ServiceFailSelected.Paralyzed;
             }
         }       
     }
