@@ -125,6 +125,7 @@ else
         await AuthenticationStateProvider.RefreshStaticVariables();
         await LoadDataAsync();
         hubEventsService.OnDealerChanged += ReloadSalesOrderGrid;
+        hubEventsService.OnSupplierChanged += ReloadSalesOrderGrid;
     }
 
     private async Task LoadDataAsync()
@@ -155,7 +156,7 @@ else
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<SaleOrder> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/SaleOrder/GetAll?userId={Useful.userId}&dealerId={Useful.dealerId}&rowfrom={mOffset}&filter={searchString}");
+        HttpResponseMessage response = await Http.GetAsync($"api/SaleOrder/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&dealerId={Useful.dealerId}&rowfrom={mOffset}&filter={searchString}");
 
         if (response.IsSuccessStatusCode)
         {
@@ -236,5 +237,6 @@ else
     {
         Useful.IsNewOrEdit = false;
         hubEventsService.OnDealerChanged -= ReloadSalesOrderGrid;
+        hubEventsService.OnSupplierChanged -= ReloadSalesOrderGrid;
     }
 }
