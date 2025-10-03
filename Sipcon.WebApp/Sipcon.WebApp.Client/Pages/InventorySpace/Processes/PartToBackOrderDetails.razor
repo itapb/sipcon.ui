@@ -13,7 +13,7 @@ else
                             <MudTextField T="int?" Label="Cantidad" @bind-Value="mBackOrderItem.Quantity" For="@(() => mBackOrderItem.Quantity)" Required="true" Validation="@(new Func<int?, string>(ValidateInteger))"></MudTextField>
                         </MudItem>
                         <MudItem xs="12">
-                            <MudDatePicker @bind-Date="mBackOrderItem.Arrival" Label="Fecha de Llegada" PickerVariant="PickerVariant.Inline" PickerPaperStylename="z-index: 5;" />
+                            <MudDatePicker @bind-Date="mBackOrderItem.Arrival" Label="Fecha de Llegada" PickerVariant="PickerVariant.Inline" PickerPaperStylename="z-index: 5;" Validation="@(new Func<DateTime?, string>(ValidateSelectedDate))" />
                         </MudItem>
                         <MudItem xs="12">
                             <MudStack Row="true" Justify="Justify.Center">
@@ -36,7 +36,7 @@ else
     private MudForm? form;
     [Parameter] public BackOrderItem? mBackOrderItem { get; set; } = default!;
 
-   
+    private bool IsArrivalValid = true;
     private int? mQuantity;
 
     protected override void OnParametersSet()
@@ -47,7 +47,7 @@ else
     private async Task CheckClick(MouseEventArgs args)
     {
         await form!.Validate();
-        if (form.IsValid)
+        if (form.IsValid && IsArrivalValid)
         {
             var strmBackOrder = System.Text.Json.JsonSerializer.Serialize(mBackOrderItem);
             var result_newMovementDetail = await Http.PostAsync($"api/BackOrder/PostBackOrder?userId={Useful.userId}", new StringContent(strmBackOrder, null, "application/json"));
@@ -84,5 +84,14 @@ else
             strreturn = $"El campo cantidad, NO puede ser mayor a la cantidad actual {mQuantity}";
 
         return strreturn;
+    }
+    private string ValidateSelectedDate(DateTime? date)
+    {
+        var errorMessage = string.Empty;
+        if (date.HasValue){
+            IsArrivalValid = (date.Value > DateTime.UtcNow);
+            errorMessage = IsArrivalValid ? "" : "Fecha debe ser mayor a Hoy!";
+        }            
+        return errorMessage;
     }
 }
