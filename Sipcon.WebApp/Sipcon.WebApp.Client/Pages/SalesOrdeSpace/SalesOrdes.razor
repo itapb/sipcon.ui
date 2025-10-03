@@ -35,7 +35,7 @@ else
             <PropertyColumn Property="x => x.Created" Title="FECHA" />
             <PropertyColumn Property="x => x.DealerName" Title="CONCESIONARIO" />
             <PropertyColumn Property="x => x.TypeName" Title="TIPO" />
-            <PropertyColumn Property="x => x.StatusName" Title="STATUS" />            
+            <PropertyColumn Property="x => x.StatusName" Title="ESTATUS" />            
             <TemplateColumn StickyRight="true">
                 <CellTemplate>
                     <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditSalesOrder(context.Item)" />
@@ -92,7 +92,8 @@ else
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterSalesOrderDetails>>();
-            var data = content2!.data ?? new MasterSalesOrderDetails();            
+            var data = content2!.data ?? new MasterSalesOrderDetails();    
+            Useful.IsNewOrEdit = true;
             SalesOrderId = data.SaleOrder?.Id;
         }
         else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
@@ -182,7 +183,7 @@ else
 
     private async Task ClickMenuSalesOrder(string? actionName)
     {
-        var strDictionary = new Dictionary<string, string> { { "GENERATE", "CREADO" }, { "DECLINE", "CREADO" } };
+        var strDictionary = new Dictionary<string, string> { { "GENERATE", "CREADO" }, { "DECLINE", "CREADO,GENERADO" } };
         var mActions = SalesOrderMudDataGrid?.FilteredItems.Where(item => item.IsSelected && strDictionary[actionName!].Contains(item!.StatusName!.ToUpper()))
                                                          .Select(item => new Client.Models.Action
                                                          {

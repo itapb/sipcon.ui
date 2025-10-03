@@ -186,5 +186,15 @@ namespace Sipcon.WebApp.Client.Repository.Auth
             }
   
         }
+
+        public async Task RefresMobileStaticVariables()
+        {
+            if (Useful.userId == 0)
+            {
+                var mUser = await GetUserAsync();
+                Useful.userId = mUser.Id;
+                Useful.supplierId = await GetSelectedSupplierAsync();
+            }
+        }
     }
 }

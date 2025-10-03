@@ -16,5 +16,6 @@
         public Task<int> GetSelectedSupplierAsync();
         public Task SetValueSessionStorage<T>(T data, ValuesKey key);
         public Task RefreshStaticVariables();
+        public Task RefresMobileStaticVariables();
     }
 }

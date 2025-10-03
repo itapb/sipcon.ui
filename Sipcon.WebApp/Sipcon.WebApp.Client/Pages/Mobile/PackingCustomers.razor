@@ -36,6 +36,7 @@
     }
 </style>
 @code {
+    [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Parameter] public Models.Packing? currentPacking { get; set; }
     [Parameter] public Models.PackingStep Value { get; set; }
@@ -70,6 +71,10 @@
 
     private async Task<GridData<Customer>> ServerReload(GridState<Customer> state)
     {
+        await AuthenticationStateProvider.RefresMobileStaticVariables();
+        currentPacking!.UserId = Useful.userId;
+        currentPacking!.SupplierId = Useful.supplierId;
+
         _loading = true;
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
@@ -117,5 +122,5 @@
         currentPacking.CustomerName = item.Name ?? "";
         currentStep = Models.PackingStep.PackingDetails;
         await Task.CompletedTask;
-    }
+    }  
 }

@@ -14,16 +14,24 @@
             </MudPaper>
         </MudItem>
         <MudItem xs="12">
-            <MudDataGrid @ref="VehicleInvoiceMudDataGrid" T="VehicleInvoice" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" FixedHeader Height="calc(100vh - 280px)" @bind-CurrentPage="ContactCurrentPage">
+        <MudDataGrid @ref="ServiceFailMudDataGrid" T="ServiceFail" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" FixedHeader Height="calc(100vh - 280px)" @bind-CurrentPage="ContactCurrentPage">
                 <ToolBarContent>
                     <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
                     <MudSpacer />
                     <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshVehicleInvoiceCatalog"></MudIconButton>
                 </ToolBarContent>
                 <Columns>
-                    <PropertyColumn Property="x => x.Vin" Title="VIN" />
-                    <PropertyColumn Property="x => x.CustomerName" Title="NOMBRE" />
-                    <PropertyColumn Property="x => x.CustomerLastName" Title="APELLIDO" />
+                <PropertyColumn Property="x => x.ReportId" Title="REPORTE ID" />
+                <PropertyColumn Property="x => x.Vin" Title="VIN" />
+                <PropertyColumn Property="x => x.Customer" Title="CLIENTE" />                
+                <TemplateColumn>
+                    <HeaderTemplate>
+                        <MudText>PARALIZADO</MudText>
+                    </HeaderTemplate>
+                    <CellTemplate>
+                        <MudIcon Icon="@(context.Item.Paralyzed ?? false ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.Paralyzed ?? false ? Color.Success : Color.Error)" Size="Size.Medium" />
+                    </CellTemplate>
+                </TemplateColumn>
                     <TemplateColumn>
                         <CellTemplate>
                         <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Add" OnClick="() => ClickAddVehicleInvoice(context.Item)" />
@@ -42,16 +50,16 @@
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public int? SalesOrderId { get; set; }
+    [Parameter] public string? ServiceFailType { get; set; }
+    private MudDataGrid<ServiceFail>? ServiceFailMudDataGrid;
 
-    private MudDataGrid<VehicleInvoice>? VehicleInvoiceMudDataGrid;
-
-    private List<VehicleInvoice>? VehicleInvoices;
+    private List<ServiceFail>? ServiceFailList;
     private Func<Model?, string> ConvertModelFunc = model => model?.Name!;
-    private VehicleInvoice? VehicleInvoiceSelected;
-    private async Task OnModelValueChanged(VehicleInvoice selectedVehicleInvoice)
+    private ServiceFail? VehicleInvoiceSelected;
+    private async Task OnModelValueChanged(ServiceFail selectedVehicleInvoice)
     {
         VehicleInvoiceSelected = selectedVehicleInvoice;
-        await VehicleInvoiceMudDataGrid!.ReloadServerData();
+        await ServiceFailMudDataGrid!.ReloadServerData();
     }
 
     bool _loading = true;
@@ -64,46 +72,47 @@
         {
             _loading = true;
             searchString = text;
-            await VehicleInvoiceMudDataGrid!.ReloadServerData();
+            await ServiceFailMudDataGrid!.ReloadServerData();
         }
     }
-    Func<VehicleInvoice, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    Func<ServiceFail, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
     {
-        nameof(VehicleInvoice.Vin) => o => o.Vin ?? "",
-        nameof(VehicleInvoice.CustomerName) => o => o.CustomerName ?? "",
-        nameof(VehicleInvoice.CustomerLastName) => o => o.CustomerLastName ?? "",
+        nameof(ServiceFail.ReportId) => o => o.ReportId ?? 0,
+        nameof(ServiceFail.Vin) => o => o.Vin ?? "",
+        nameof(ServiceFail.Customer) => o => o.Customer ?? "",
+        nameof(ServiceFail.Paralyzed) => o => o.Paralyzed ?? false,
         _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto
     };
-    private async Task<GridData<VehicleInvoice>> ServerReload(GridState<VehicleInvoice> state)
+    private async Task<GridData<ServiceFail>> ServerReload(GridState<ServiceFail> state)
     {
         _loading = true;
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
-        IEnumerable<VehicleInvoice> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Vehicle/GetVehiclesInvoiced?userId={Useful.userId}&supplierId={Useful.supplierId}&dealerId={Useful.dealerId}&rowFrom=0&filter={searchString}");
+        IEnumerable<ServiceFail> data;
+        HttpResponseMessage response = await Http.GetAsync($"api/SaleOrder/GetReportFail?userId={Useful.userId}&dealerId={Useful.dealerId}&type={ServiceFailType}&rowfrom=0");
         if (response.IsSuccessStatusCode)
         {
-            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<VehicleInvoice>>>();
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<ServiceFail>>>();
             totalItems = content2!.total ?? 0;
-            data = content2!.data ?? new List<VehicleInvoice>();
+            data = content2!.data ?? new List<ServiceFail>();
         }
         else
         {
             var errorMessage = await response.Content.ReadAsStringAsync();
             throw new Exception(errorMessage);
         }
-        if (state.SortDefinitions.FirstOrDefault() is SortDefinition<VehicleInvoice> sortDefinition)
+        if (state.SortDefinitions.FirstOrDefault() is SortDefinition<ServiceFail> sortDefinition)
         {
             data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
         }
         _loading = false;
-        return new GridData<VehicleInvoice> { TotalItems = totalItems, Items = data };
+        return new GridData<ServiceFail> { TotalItems = totalItems, Items = data };
     }
     private async Task ClickRefreshVehicleInvoiceCatalog(MouseEventArgs ev)
     {
-        await VehicleInvoiceMudDataGrid!.ReloadServerData();
+        await ServiceFailMudDataGrid!.ReloadServerData();
     }
-    private async Task ClickAddVehicleInvoice(VehicleInvoice item)
+    private async Task ClickAddVehicleInvoice(ServiceFail item)
     {
         MudDialog?.Close(DialogResult.Ok(item));
         await Task.CompletedTask;

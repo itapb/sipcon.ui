@@ -56,6 +56,7 @@
     }
 </style>
 @code {
+    [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -91,6 +92,10 @@
 
     private async Task<GridData<Models.Package>> ServerReload(GridState<Models.Package> state)
     {
+        await AuthenticationStateProvider.RefresMobileStaticVariables();
+        currentPacking!.UserId = Useful.userId;
+        currentPacking!.SupplierId = Useful.supplierId;
+
         _loading = true;
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
@@ -185,13 +190,13 @@
     }
     private async Task ClickPrintPackage(Models.Package? item)
     {
-        var strJsonSelectedPackage = System.Text.Json.JsonSerializer.Serialize(new { Type = "PK", RecordId = item?.Code });
-        var result_RequestPrint = await Http.PostAsync($"api/Print/RequestPrint?userId={currentPacking?.UserId}", new StringContent($"[{strJsonSelectedPackage}]", null, "application/json"));
-      
+        //var strJsonSelectedPackage = System.Text.Json.JsonSerializer.Serialize(new { Type = "PK", RecordId = item?.Code });
+        //var result_RequestPrint = await Http.PostAsync($"api/Print/RequestPrint?userId={currentPacking?.UserId}", new StringContent($"[{strJsonSelectedPackage}]", null, "application/json"));
+        var result_RequestPrint = await Http.PostAsync($"api/Packing/PrintPackge?packageId={item!.Id}&userId={currentPacking?.UserId}", null);
         if (result_RequestPrint.IsSuccessStatusCode)
         {
-            var RequestPrintContent = await result_RequestPrint.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
-            await DialogService.ShowDialog($"Solicitud de Impresion :{RequestPrintContent?.data?.FirstOrDefault()?.insertedRows}", "Bulto", "OK", Color.Info, Icons.Material.Filled.Commit);
+            var RequestPrintContent = await result_RequestPrint.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
+            await DialogService.ShowDialog($"Solicitud de Impresion :{RequestPrintContent?.data?.insertedRows}", "Bulto", "OK", Color.Info, Icons.Material.Filled.Commit);
         } 
         else if (result_RequestPrint.StatusCode == System.Net.HttpStatusCode.Conflict)
         {
@@ -200,6 +205,5 @@
         }
         await Task.CompletedTask;
     }
-    
 
 }

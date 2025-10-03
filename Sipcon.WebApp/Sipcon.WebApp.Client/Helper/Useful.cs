@@ -12,6 +12,7 @@ namespace Sipcon.WebApp.Client.Helper
         internal static string customerName = "";
         internal static bool IsNewOrEdit = false;
         internal static bool IsFirstTime = true;
+        internal static bool isMobile = false;
         public static User UserActive { get; set; } = new User();
         public static List<UserType> UserDealer { get; set; } = new List<UserType>();
         public static List<UserType> UserSuppliers { get; set; } = new List<UserType>();

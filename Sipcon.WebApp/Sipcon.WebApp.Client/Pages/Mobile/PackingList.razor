@@ -1,0 +1,141 @@
+﻿@page "/mobile-packinglist"
+@using Sipcon.WebApp.Client.Layout
+@using Sipcon.WebApp.Client.Pages.Mobile.Models
+@layout MobileLayout
+
+<div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
+    <MudPaper Elevation="2" Class="pa-3">
+        <MudGrid Spacing="2">
+            <MudItem xs="12">
+                <MudStack Row="false" Class="pa-2 mud-theme-info mud-typography-h6" Spacing="1" style="line-height:1.1;">
+                    <div>CLIENTE : @CustomerName</div>
+                    <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                        <div>BULTO: @PackingCode</div>
+                    </MudStack>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12">
+                <MudText>
+                    <MudDataGrid @ref="PackingListMudDataGrid" T="Models.PackageList" ServerData="ServerReload" Striped="true" Hover="true" Loading="_loading" Filterable="false" FixedHeader  @bind-CurrentPage="GuideCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers" Height="calc(100vh - 320px)">
+                        <Columns>
+                            <TemplateColumn>
+                                <CellTemplate>
+                                    <MudItem xs="12">
+                                        <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd" Spacing="2">
+                                            <div>@context.Item.PartInnerCode</div>
+                                            <div>@context.Item.PartName</div>
+                                            <div>@context.Item.Quantity</div>
+                                        </MudStack>
+                                    </MudItem>
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                        <PagerContent>
+                            <MudStack Row="false" Spacing="2">
+                                <MudPaper Class="pa-3">
+                                    <MudTextField T="string" Placeholder="Buscar" @ref="searchStringField" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Style="height:40px;" HelperText="@mHelpText" Variant="Variant.Filled" HelperId="custom-helper-text" />
+                                </MudPaper>
+                            </MudStack>
+                        </PagerContent>
+                    </MudDataGrid>
+                </MudText>
+            </MudItem>
+            <MudItem xs="12">
+                <MudStack Row="true" Justify="Justify.Center">
+                    <MudStack Row="true" Spacing="5">
+                        <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshPackingPending" />
+                        <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" Href="process-list"  />
+                    </MudStack>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</div>
+<style>
+    .hide-datagrid-headers .mud-table-head {
+        display: none !important;
+    }
+    #custom-helper-text {
+        font-size: 1rem;
+        color: red;
+        font-style: italic;
+    }
+</style>
+@code {
+    [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+
+    bool _loading = true;
+    string searchString = "";
+    private int PackageCurrentPage = 0;
+    private MudDataGrid<Models.PackageList>? PackingListMudDataGrid;
+    private MudTextField<string>? searchStringField;
+    private int GuideCurrentPage = 0;
+    private string PackingCode = "";
+    private string CustomerName = "";
+    string mHelpText = "";
+    private async Task ClickRefreshPackingPending(MouseEventArgs ev)
+    {
+        mHelpText = "";
+        CustomerName = "";
+        PackingCode = "";
+        await PackingListMudDataGrid!.ReloadServerData();
+        await searchStringField!.FocusAsync();
+    }
+    private async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            searchString = text;
+            await PackingListMudDataGrid!.ReloadServerData();
+        }
+    }
+    private async Task<GridData<Models.PackageList>> ServerReload(GridState<Models.PackageList> state)
+    {
+        await AuthenticationStateProvider.RefresMobileStaticVariables();
+        _loading = true;
+        var totalItems = 0;
+        var mOffset = state.Page * state.PageSize;
+        IEnumerable<Models.PackageList>? data = null;
+
+        if (!string.IsNullOrEmpty(searchString))
+        {
+            HttpResponseMessage response = await Http.GetAsync($"api/Packing/GetPackingList?supplierId={Useful.supplierId}&packageCode={searchString}");
+            if (response.IsSuccessStatusCode)
+            {
+                var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.PackageList>>>();
+                totalItems = content2!.total ?? 0;
+                data = content2!.data ?? new List<Models.PackageList>();
+                CustomerName = data.FirstOrDefault()?.CustomerName ?? "";
+                PackingCode = data.FirstOrDefault()?.Code ?? "";
+            }
+            else
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                throw new Exception(errorMessage);
+            }
+
+            totalItems = data.Count();
+
+            // Sorting
+            if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Models.PackageList> sortDefinition)
+            {
+                data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
+            }
+            searchString = "";
+            _loading = false;
+            mHelpText = totalItems == 0 ? "No se encontraron registros" : "";            
+        }
+  
+        return new GridData<Models.PackageList> { TotalItems = totalItems, Items = data ?? new List<Models.PackageList>() };
+
+    }
+    Func<Models.PackageList, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    {
+        nameof(Models.PackageList.PartInnerCode) => o => o.PartInnerCode ?? "",
+        nameof(Models.PackageList.PartName) => o => o.PartName ?? "",
+        nameof(Models.PackageList.Quantity) => o => o.Quantity ?? 0,
+        _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto
+    };
+}
