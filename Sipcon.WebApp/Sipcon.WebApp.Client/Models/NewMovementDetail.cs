@@ -24,7 +24,7 @@ namespace Sipcon.WebApp.Client.Models
         public int? DestinationId { get; set; } = 0;
 
         [Required( ErrorMessage ="Campo requerido")]
-        [Range(1, int.MaxValue , ErrorMessage ="Debe ser mayor que creo")]
+        [Range(1, int.MaxValue , ErrorMessage ="Debe ser mayor que cero")]
         public int? RequiredQty { get; set; }
 
         public int? Stock { get; set; } = 0;
