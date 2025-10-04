@@ -453,12 +453,12 @@ else
 		}
 	}
     private async Task PerfomLoad()    {
-        contacts = await Http.GetFromJsonAsync<List<Contact>>("api/Contact/GetAll?rowFrom=0&idUser=1");
+        contacts = await Http.GetFromJsonAsync<List<Contact>>($"api/Contact/GetAll?rowFrom=0&idUser={Useful.userId}");
         await Task.CompletedTask;
     }
 	private async Task PerformSearch()
 	{		
-		contacts = await Http.GetFromJsonAsync<List<Contact>>($"api/Contact/GetAll?filter={_searchString}&rowFrom=0&idUser=1");	
+		contacts = await Http.GetFromJsonAsync<List<Contact>>($"api/Contact/GetAll?filter={_searchString}&rowFrom=0&idUser={Useful.userId}");
 		await Task.CompletedTask;
 	}
 	private async Task OnPageChanged(int newPage)

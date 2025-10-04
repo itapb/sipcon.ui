@@ -107,17 +107,16 @@ else
                         LocationId = null;
                     }
                 }
-                else if (result_Post_Location.StatusCode == System.Net.HttpStatusCode.Conflict)
-                {
-                    var conflictContent = await result_Post_Location.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
-                    await DialogService.ShowDialog(conflictContent?.message!, "Error Ubicacion", "OK", Color.Error, Icons.Material.Filled.Error);
-                }
-                else
-                {
-                    var errorMessage = await result_Post_Location.Content.ReadAsStringAsync();
-                    throw new Exception(errorMessage);
-                }
-
+            }
+            else if (result_Post_Location.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                var conflictContent = await result_Post_Location.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+                await DialogService.ShowDialog(conflictContent?.message!, "Error Ubicacion", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+            else
+            {
+                var errorMessage = await result_Post_Location.Content.ReadAsStringAsync();
+                throw new Exception(errorMessage);
             }
         }
         await Task.CompletedTask;
