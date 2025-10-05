@@ -2,6 +2,7 @@
 using MudBlazor;
 using Sipcon.WebApp.Client.Models;
 using Sipcon.WebApp.Client.Services;
+using System.Diagnostics;
 
 
 namespace Sipcon.WebApp.Client.Utils
@@ -86,6 +87,9 @@ namespace Sipcon.WebApp.Client.Utils
                             break;
                         case "NOTVALIDATE":
                             _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.ThumbDown, module.Id, module.ActionName, Color.Info));
+                            break;
+                        case "PROCESS":
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.PlayLesson, module.Id, module.ActionName, Color.Info));
                             break;
                         default:
                             Console.WriteLine($"Acción no reconocida: {module.ActionName}");

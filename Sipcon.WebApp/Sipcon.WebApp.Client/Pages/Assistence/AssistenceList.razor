@@ -55,9 +55,11 @@
     </ToolBarContent>
     <Columns>
         <SelectColumn  />
-        <TemplateColumn  Title="ORDEN">
+        <TemplateColumn  Title="CODIGO">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Start">@context.Item.OrderNumber</MudText>
+                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">
+                    @("#" + context.Item.Id.ToString().PadLeft(10, '0'))
+                </MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn  Title="VIN">
@@ -77,7 +79,7 @@
                 </MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn  Title="COD. CONC.">
+        <TemplateColumn Title="CONCESIONARIO">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.DealerServiceCod.ToUpper())</MudText>
             </CellTemplate>
@@ -169,7 +171,8 @@
     private List<BreadcrumbItem> _itemsNavigate =
                 [
         new("Home", href: "", icon: Icons.Material.Filled.Home),
-        new("Asistencia",  href: "assistence", disabled: false, icon: Icons.Material.Filled.CarCrash),
+        new("Servicios",href: "", icon: Icons.Material.Filled.Speed),
+        new("Asistencia Técnica",  href: "assistence", disabled: false, icon: Icons.Material.Filled.CarCrash),
     ];
 
 
@@ -221,14 +224,16 @@
         }
         else
         {
+            // Console.WriteLine($"Error: {serviceResponse.Message}");
             _success = false;
             _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
-            Console.WriteLine($"Error: {serviceResponse.Message}");
+            
             OpenNested();
-           
+
         }
-        StateHasChanged();
+        
         _loading = false;
+        StateHasChanged();
     }
 
 
@@ -289,7 +294,12 @@
     }
 
 
-    private void OpenNested() => _nestedVisible = true;
+    private void OpenNested()
+    {
+        _nestedVisible = true;
+        StateHasChanged();
+    }
+    
 
 
     private async Task HandleMenuClick(ModuleAction module)
@@ -333,9 +343,10 @@
         }
         else
         {
+            // Console.WriteLine(serviceResponse.Message);
             _success = false;
             _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue();
-            Console.WriteLine(serviceResponse.Message);
+            
             OpenNested();
 
         }
@@ -381,19 +392,16 @@
                     _success = true;
                     _nestedErrorMessage = MessageEnum.GenerateOK.GetStringValue();
 
-                    OpenNested();
                     await _mudDataGrid!.ReloadServerData();
-                    StateHasChanged();
 
                 }
                 else
                 {
+                    // Console.WriteLine(serviceResponse.Message);
                     _success = false;
                     _nestedErrorMessage = MessageEnum.GenerateNotOK.GetStringValue();
-                    Console.WriteLine(serviceResponse.Message);
-                    OpenNested();
-
                 }
+                OpenNested();
             }
 
         }
@@ -441,20 +449,16 @@
 
                     _success = true;
                     _nestedErrorMessage = MessageEnum.ToApproveOK.GetStringValue();
-
-                    OpenNested();
+                    
                     await _mudDataGrid!.ReloadServerData();
-                    StateHasChanged();
-
                 }
                 else
                 {
+                    // Console.WriteLine(serviceResponse.Message);
                     _success = false;
                     _nestedErrorMessage = MessageEnum.ToApproveNotOK.GetStringValue();
-                    Console.WriteLine(serviceResponse.Message);
-                    OpenNested();
-
                 }
+                OpenNested();
             }
 
         }
@@ -514,20 +518,16 @@
 
                         _success = true;
                         _nestedErrorMessage = MessageEnum.ApproveOK.GetStringValue();
-
-                        OpenNested();
+                     
                         await _mudDataGrid!.ReloadServerData();
-                        StateHasChanged();
-
                     }
                     else
                     {
+                        // Console.WriteLine(serviceResponse.Message);
                         _success = false;
                         _nestedErrorMessage = MessageEnum.ApproveNotOK.GetStringValue();
-                        Console.WriteLine(serviceResponse.Message);
-                        OpenNested();
-
                     }
+                    OpenNested();
                 }
                 
             }
@@ -587,21 +587,18 @@
                     {
 
                         _success = true;
-                        _nestedErrorMessage = MessageEnum.ApproveOK.GetStringValue();
+                        _nestedErrorMessage = MessageEnum.DeclineOK.GetStringValue();
 
-                        OpenNested();
                         await _mudDataGrid!.ReloadServerData();
-                        StateHasChanged();
-
                     }
                     else
                     {
+                        // Console.WriteLine(serviceResponse.Message);
                         _success = false;
-                        _nestedErrorMessage = MessageEnum.ApproveNotOK.GetStringValue();
-                        Console.WriteLine(serviceResponse.Message);
-                        OpenNested();
+                        _nestedErrorMessage = MessageEnum.DeclineNotOK.GetStringValue();
 
                     }
+                    OpenNested();
                 }
                
             }

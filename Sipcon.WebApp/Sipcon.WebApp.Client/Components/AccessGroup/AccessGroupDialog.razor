@@ -160,7 +160,7 @@
     private bool _nestedModalVisible;
     bool _successModal = false;
 
-    
+
     AccessGroupValidator _modelValidator = new AccessGroupValidator();
 
 
@@ -188,13 +188,13 @@
         var serviceResponse = await SecurityService.GetAccessGroups(0, "");
         if (serviceResponse.Processed)
         {
-            
+
             IEnumerable<AccessGroup> _accessGroupList = serviceResponse.Data.OrderBy(s => s.Name);
             if (_accessGroupList.Any())
             {
                 _model = _accessGroupList.Where(s => s.Id == IdAccessGroup).FirstOrDefault() ?? new AccessGroup();
             }
-            
+
         }
         else
         {
@@ -215,17 +215,14 @@
             var serviceResponse = await SecurityService.UpdateAccessGroup(_model!, Useful.userId);
             if (serviceResponse.Processed)
             {
-                
                 _errorModalMessage = MessageEnum.SaveOK.GetStringValue();
                 _successModal = true;
-
             }
             else
             {
+                // Console.WriteLine(serviceResponse.Message);
                 _successModal = false;
                 _errorModalMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue(); ;
-                Console.WriteLine(serviceResponse.Message);
-
             }
             OpenNested();
         }
@@ -247,12 +244,17 @@
         }
     }
 
-    private void OpenNested() => _nestedModalVisible = true;
+    private void OpenNested()
+    {
+        StateHasChanged();
+        _nestedModalVisible = true;
+    }
+    
 
     private async Task CloseNestedModal()
     {
         _nestedModalVisible = false;
-       
+        StateHasChanged();
         await Task.Delay(50);
         if (_successModal)
             MudDialog.Close(DialogResult.Ok(true));

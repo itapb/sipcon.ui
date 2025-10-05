@@ -2,12 +2,13 @@
 @page "/failreportdetail/{IdFailReport}"
 
 
-
+@using Sipcon.WebApp.Client.Components.FailReport
+@using Sipcon.WebApp.Client.Repository.Auth
+@using System.Globalization
 @using System.Text.RegularExpressions
 @using System.ComponentModel.DataAnnotations
-@using Sipcon.WebApp.Client.Components.FailReport
 @using FluentValidation
-@using System.Globalization
+
 
 @inject IFailReportService FailReportService
 @inject IVehicleService VehicleService
@@ -21,7 +22,7 @@
 
 <PageTitle>Reporte de Falla</PageTitle>
 
-<MudContainer>
+<MudContainer Style="position:relative;">
 
     <MudStack Row="true">
         <CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
@@ -32,7 +33,7 @@
 
     <MudTabs Elevation="2" Rounded="true" Centered="true" ApplyEffectsToContainer="true" PanelClass="pa-2" Color="Color.Info">
         @* DATOS REPORTE *@
-        <MudTabPanel Icon="@Icons.Material.Filled.CarRepair" Text="REPORTE" BadgeData='"!"' BadgeColor="Color.Error" >
+        <MudTabPanel Icon="@Icons.Material.Filled.CarRepair" Text="REPORTE" >
             <MudGrid Spacing="1" Justify="Justify.Center">
 
                 <MudItem xs="12" sm="8">
@@ -40,9 +41,31 @@
                     <MudCard Elevation="1" Class="pa-1 mt-2">
                         <MudCardHeader Style="padding-bottom: 0px;">
                             <CardHeaderContent>
+                                @* <MudStack Row="true">
+                                    <MudText Typo="Typo.h6">Reporte de Falla 
+                                        <MudText Typo="Typo.caption" Color="Color.Info">@(_model.Id != 0 ? " #" + _model.Id.ToString().PadLeft(10, '0') : "") </MudText>
+                                    </MudText>
+                                </MudStack> *@
                                 <MudStack Row="true">
-                                    <MudText Typo="Typo.h6">Reporte de Falla</MudText>
-                                </MudStack>
+                                    <MudChat ChatPosition="ChatBubblePosition.Start">
+                                        <MudAvatar Color="Color.Info"> <MudIcon Icon="@Icons.Material.Filled.CarCrash" /></MudAvatar>
+                                        <MudChatBubble>
+                                            <MudText Typo="Typo.h6">
+                                                Reporte de Falla
+                                                
+                                            </MudText>
+                                        </MudChatBubble>
+                                        <MudChatFooter Style="font-size: 12px;font-style:italic;color:blue" Text="@(_model.Id != 0 ? " #" + _model.Id.ToString().PadLeft(10, '0') : "")" />
+                                    </MudChat>
+                                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+                                        @foreach (var module in _itemsModules)
+                                        {
+                                            <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
+                                                         Label="@module.Text"
+                                                         OnClick="() => HandleMenuClick(module)" />
+                                        }
+                                    </MudMenu>
+                                </MudStack> 
                             </CardHeaderContent>
 
                             <CardHeaderActions>
@@ -67,21 +90,14 @@
                                         style += "color:#fff";
                                         style += ";background-color:#FF7043";
                                     }
-                                    style += ";font-size: 11px";
+                                    style += ";font-size: 10px";
                                     style += ";font-style:italic";
 
 
-                                    <MudChip T="string" Style="@style" Label="true">@_model.EstatusName</MudChip>
+                                    <MudChip T="string" Style="@style" Label="true" Disabled="true">@_model.EstatusName</MudChip>
                                 }
 
-                                <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
-                                    @foreach (var module in _itemsModules)
-                                    {
-                                        <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
-                                                     Label="@module.Text"
-                                                     OnClick="() => HandleMenuClick(module)" />
-                                    }
-                                </MudMenu>
+                               
 
                             </CardHeaderActions>
 
@@ -124,7 +140,7 @@
 
 
                             </MudStack>
-
+                            <MudDivider />
                             <MudStack Row="true">
                                 <MudSwitch @bind-Value="_model.Paralyzed" LabelPlacement="Placement.End" Color="Color.Success" ReadOnly="true">
                                     <MudText Typo="Typo.caption">Vehiculo Paralizado</MudText>
@@ -166,7 +182,7 @@
                             </MudStack>
                     
 
-                            <MudDivider />
+                           
 
                             <MudTextField Typo="Typo.caption" @bind-Value="_model.CustomerReport"
                                           Label="Reporte Cliente"
@@ -350,46 +366,49 @@
 
                                     <MudItem xs="12" sm="4">
 
-                                        @if (_modelVehicle.EstatusId != 0)
-                                        {
-                                            string style = "";
-
-                                            if (_modelVehicle.EstatusName.ToUpper() == "CREADO")
-                                                style += "";
-                                            else if (_modelVehicle.EstatusName.ToUpper() == "DISPONIBLE")
-                                            {
-                                                style += "color:#fff";
-                                                style += ";background-color:#0099F3";
-                                            }
-                                            else if (_modelVehicle.EstatusName.ToUpper() == "ASIGNADO")
-                                            {
-                                                style += "color:#fff";
-                                                style += ";background-color:#0099F3";
-                                            }
-                                            else if (_modelVehicle.EstatusName.ToUpper() == "NO DISPONIBLE")
-                                            {
-                                                style += "color:#fff";
-                                                style += ";background-color:#757575";
-                                            }
-                                            else
-                                            {
-                                                style += "color:#fff";
-                                                style += ";background-color:#FF7043";
-                                            }
-                                            style += ";font-size: 10px";
-                                            style += ";font-style:italic";
-
-                                            <MudChip T="string" Style="@style" Label="true" Disabled="true">
-                                                @(_modelVehicle.EstatusName.ToUpper())
-                                            </MudChip>
-                                        }
+                                       
 
                                     </MudItem>
                                 </MudGrid>
 
 
                             </CardHeaderContent>
+                               
+                            <CardHeaderActions>
+                                @if (_modelVehicle.EstatusId != 0)
+                                {
+                                    string style = "";
 
+                                    if (_modelVehicle.EstatusName.ToUpper() == "CREADO")
+                                        style += "";
+                                    else if (_modelVehicle.EstatusName.ToUpper() == "DISPONIBLE")
+                                    {
+                                        style += "color:#fff";
+                                        style += ";background-color:#0099F3";
+                                    }
+                                    else if (_modelVehicle.EstatusName.ToUpper() == "ASIGNADO")
+                                    {
+                                        style += "color:#fff";
+                                        style += ";background-color:#0099F3";
+                                    }
+                                    else if (_modelVehicle.EstatusName.ToUpper() == "NO DISPONIBLE")
+                                    {
+                                        style += "color:#fff";
+                                        style += ";background-color:#757575";
+                                    }
+                                    else
+                                    {
+                                        style += "color:#fff";
+                                        style += ";background-color:#FF7043";
+                                    }
+                                    style += ";font-size: 10px";
+                                    style += ";font-style:italic";
+
+                                    <MudChip T="string" Style="@style" Label="true" Disabled="true">
+                                        @(_modelVehicle.EstatusName.ToUpper())
+                                    </MudChip>
+                                }
+                            </CardHeaderActions>
                         </MudCardHeader>
                         <MudCardContent Style="padding-top: 0px;">
 
@@ -631,17 +650,28 @@
                             <MudDivider />
                             @if (_attachment.Count > 0)
                             {
-                                foreach (var item in _attachment)
+                                <MudGrid Spacing="0" Justify="Justify.Center">
+
+                                @foreach (var item in _attachment)
                                 {
-                                    <MudStack Row="true">
-                                        <div class="rounded mud-paper-outlined d-flex align-center pa-1 ma-2">
-                                            <MudIcon Icon="@Icons.Custom.FileFormats.FileDocument" Color="Color.Inherit" Class="mr-2" />
-                                            @item.FileName
-                                        </div>
-                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Class="mt-2" Style="height: 29px;width: 29px;" Variant="Variant.Filled" Color="Color.Info" Size="Size.Small" OnClick="() => ClickDeleteAttachment(item.Id)" Disabled="@_disableAddFile" />
-                                        <MudIconButton Icon="@Icons.Material.Outlined.FileDownload" Class="mt-2" Style="height: 29px;width: 29px;" Variant="Variant.Filled" Color="Color.Info" Size="Size.Small" OnClick="() => ClickExportAttachment(item.Id, item.FileName)" />
-                                    </MudStack>
+                                        <MudItem xs="12" sm="4">
+                                            <MudText Typo="Typo.caption"><b><MudIcon Icon="@Icons.Custom.FileFormats.FileDocument" Color="Color.Inherit" Class="mr-2" />@item.FileName</b></MudText>
+                                        </MudItem>
+                                        <MudItem xs="12" sm="4">
+                                            <MudText Typo="Typo.caption">@item.DateCreate!.Value.ToString("F")</MudText>
+                                        </MudItem>
+                                        <MudItem xs="12" sm="4">
+                                            <div class="d-flex justify-left">
+                                                <MudStack Row="true">
+                                                    <MudIconButton Icon="@Icons.Material.Outlined.FileDownload" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickExportAttachment(item.Id, item.FileName)" />
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickDeleteAttachment(item.Id)" Disabled="@_disableAddFile" />
+                                                    
+                                                </MudStack>
+                                            </div>
+                                        </MudItem>
+                                   
                                 }
+                                </MudGrid>
                             }
                         </MudContainer>
                         <MudScrollToTop TopOffset="100"
@@ -661,33 +691,19 @@
             </MudCard>
         </MudTabPanel>
     </MudTabs>
-
+    @if (!dataLoaded)
+    {
+        <MudOverlay Visible="isLoaded" DarkBackground="true" Absolute="true">
+            <MudProgressCircular Color="Color.Secondary" Indeterminate="true" />
+        </MudOverlay>
+    }
    
 </MudContainer>
 
-<MudDialog @bind-Visible="_nestedVisible">
-    <TitleContent>
-        <MudStack Row="true">
-            <MudIcon Icon="@Icons.Material.Outlined.CarRepair" Color="@(_success? Color.Default: Color.Error)" Style="font-size: 2rem;"></MudIcon>
-            <MudText Typo="Typo.h6">REPORTE DE FALLA</MudText>
-        </MudStack>
-    </TitleContent>
-    <DialogContent>
-
-        <MudStack Row="true">
-            <MudText Class="nested"><p>@_nestedErrorMessage!</p> </MudText>
-        </MudStack>
-
-    </DialogContent>
-    <DialogActions>
-
-        <MudButton Color="Color.Info" OnClick="CloseNested" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
-
-    </DialogActions>
-</MudDialog>
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Reporte de Falla")"/>
 
 @code {
-
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Parameter]
     public string IdFailReport { get; set; } = string.Empty;    
 
@@ -701,7 +717,9 @@
     private string _moduleName = "SERVICIOS-REPORTE FALLA";
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
-    
+    private bool dataLoaded = false;
+    private bool isLoaded = false;
+
     string _strComment = string.Empty;
     bool _success = false;
 
@@ -720,7 +738,8 @@
         "PARA VALIDAR",
         "PROCESADO",
         "NO VALIDADO",
-        "RECHAZADO"
+        "RECHAZADO",
+        "GENERADO"
     };
 
     private bool _disableAddFile = false;
@@ -730,10 +749,11 @@
         "PARA APROBAR",
         "PROCESADO",
         "NO VALIDADO",
-        "RECHAZADO"
+        "RECHAZADO",
+        "GENERADO"
     };
 
-    
+
     private bool _disableActionsDetail = false;
     List<string> _statusDisableActionsDetail = new List<string>()
     {
@@ -742,7 +762,8 @@
         "VALIDADO",
         "PROCESADO",
         "NO VALIDADO",
-        "RECHAZADO"
+        "RECHAZADO",
+        "GENERADO"
     };
 
     IMask maskDate = new DateMask("dd/MM/yyyy");
@@ -757,12 +778,14 @@
     private List<BreadcrumbItem> _itemsNavigate =
                 [
         new("Home", href: "", icon: Icons.Material.Filled.Home),
-        new("Reporte de Falla",  href: "FailReportdetail", disabled: false, icon: Icons.Material.Filled.CarCrash),
+        new("Servicios",href: "", icon: Icons.Material.Filled.Speed),
+        new("Reporte Falla",  href: "FailReportdetail", disabled: false, icon: Icons.Material.Filled.CarCrash),
     ];
 
 
     protected override async Task OnInitializedAsync()
     {
+        await AuthenticationStateProvider.RefreshStaticVariables();
 
         await GetFailReport();
 
@@ -808,7 +831,7 @@
     private async Task GetVehicle()
     {
         _modelVehicle = new VehicleService();
-        var serviceResponse = await VehicleService.GetVehicleFullBy(Useful.userId, _model.VIN, SearchByEnum.VIN);
+        var serviceResponse = await VehicleService.GetVehicleFullBy(_model.SupplierId ?? Useful.supplierId, Useful.userId, _model.VIN, SearchByEnum.VIN);
         if (serviceResponse.Processed)
         {
             _modelVehicle = serviceResponse.Data ?? new VehicleService();
@@ -866,16 +889,22 @@
 
         if (result == true)
         {
-            
             var serviceResponse = await AttachmentService.DeleteAttachment(IdAttachment, Useful.userId);
             if (serviceResponse.Processed)
             {
                 await GetAttachments();
+                await Task.Delay(50);
             }
-
-            await Task.CompletedTask;
-            await Task.Delay(50);
+            else
+            {
+                _success = false;
+                _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GenerateNotOK.GetStringValue();
+                Console.WriteLine(serviceResponse.Message);
+                OpenNested();
+            }
             StateHasChanged();
+            await Task.CompletedTask;
+            
         }
     }
 
@@ -936,54 +965,73 @@
         var result = await dialog.Result;
         if (!result!.Canceled)
         {
+            bool isFormData = false;
+            dataLoaded = false;
+            isLoaded = true;
+            StateHasChanged();
+            IReadOnlyList<IBrowserFile> files = (IReadOnlyList<IBrowserFile>)(result.Data ?? new List<IBrowserFile>());
+            const long maxAllowedSize = 6 * 1024 * 1024; // 6MB
+            //Console.WriteLine($"Número de archivos seleccionados: {files.Count}");
 
-            IBrowserFile file = (IBrowserFile)(result.Data ?? string.Empty);
-            const long maxAllowedSize = 10 * 1024 * 1024; // 10MB
-            if (file.Size == 0)
+            using (MultipartFormDataContent formData = new MultipartFormDataContent())
             {
-                _success = false;
-                _nestedErrorMessage = MessageEnum.ImportError.GetStringValue();
-                OpenNested();
-            }
-            else if (file.Size > maxAllowedSize)
-            {
-                _success = false;
-                _nestedErrorMessage = MessageEnum.ImportErrorMaxByte.GetStringValue();
-                OpenNested();
-            }
-            else
-            {
-                using var stream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
-
-                var content = new StreamContent(stream);
-                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
-
-                // Create a multipart form data content
-                var formData = new MultipartFormDataContent();
-                formData.Add(content, "file", file.Name);
-
-
-                var serviceResponse = await AttachmentService.CreateAttachment(_model.Id, _moduleName, Useful.userId, formData);
-                if (serviceResponse.Processed)
+                foreach (var file in files)
                 {
-                    _success = true;
-                    _nestedErrorMessage = MessageEnum.ImportOK.GetStringValue();
 
-                    await GetAttachments();
+                    if (file.Size == 0)
+                    {
+                        _success = false;
+                        isFormData = false;
+                        _nestedErrorMessage = MessageEnum.ImportError.GetStringValue();
+                        OpenNested();
+                        break;
+                    }
+                    else if (file.Size > maxAllowedSize)
+                    {
+                        _success = false;
+                        isFormData = false;
+                        _nestedErrorMessage = MessageEnum.ImportErrorMaxByte.GetStringValue();
+                        OpenNested();
+                        break;
+                    }
+                    else
+                    {
 
+                        var content = new StreamContent(file.OpenReadStream(maxAllowedSize: maxAllowedSize));
+
+                        content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+                        formData.Add(content, "files", file.Name);
+
+                        isFormData = true;
+
+                    }
+                }
+
+                if (isFormData)
+                {
+                    var serviceResponse = await AttachmentService.CreateAttachment(_model.Id, _moduleName, Useful.userId, formData);
+                    if (serviceResponse.Processed)
+                    {
+                        _success = true;
+                        _nestedErrorMessage = MessageEnum.ImportOK.GetStringValue();
+                        await GetAttachments();
+                    }
+                    else
+                    {
+                        _success = false;
+                        _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ImportNotOK.GetStringValue();
+                        OpenNested();
+                        
+                    }
                     StateHasChanged();
-
-                }
-                else
-                {
-                    _success = false;
-                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ImportNotOK.GetStringValue();
-                    OpenNested();
-
+                    await Task.Delay(50);
                 }
             }
 
-
+            dataLoaded = true;
+            isLoaded = false;
+            StateHasChanged();
         }
 
         await Task.CompletedTask;
@@ -1061,6 +1109,9 @@
                 break;
             case "DECLINE":
                 await DeclineItemsAsync(module.IdAction, module.ActionName);
+                break;
+            case "PROCESS":
+                await ProcessItemsAsync(module.IdAction, module.ActionName);
                 break;
             default:
                 Console.WriteLine($"{MessageEnum.ActionsError.GetStringValue()}: {module.ActionName}");
@@ -1514,8 +1565,77 @@
         
     }
 
-    private void OpenNested() => _nestedVisible = true;
+    private async Task ProcessItemsAsync(int moduleId, string moduleActionName)
+    {
+        Console.WriteLine("Procesar Reporte de Falla...");
+       
+        var option = new DialogOptions
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            BackdropClick = false
+        };
+        bool? confir = await DialogService.ShowMessageBox(
+            "Procesar Reporte de Falla ",
+            $"Seguro de Procesar? ",
+            yesText: "Si", noText: "No", "", option);
 
-    private void CloseNested() => _nestedVisible = false;
+        if (confir == true)
+        {
+
+            DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+            var parameters = new DialogParameters<InvoiceDialog> { { x => x.Title, "Procesar Reporte de Falla ..." } };
+            var dialog = await DialogService.ShowAsync<InvoiceDialog>("Reporte de Falla ", parameters, options);
+
+            StateHasChanged();
+
+            var result = await dialog.Result;
+            if (!result!.Canceled)
+            {
+                FailReportInvoice _Observacion = (FailReportInvoice)(result.Data ?? new FailReportInvoice());
+                List<PostActionProcess> ActionList = ([]);
+
+                var ItemAction = new PostActionProcess
+                {
+                    RecordId = _model.Id,
+                    ModuleId = moduleId,
+                    ActionName = moduleActionName,
+                    ActionComment = "",
+                    InvoiceNumber = _Observacion.InvoiceNumber,
+                    InvoiceDate = _Observacion.InvoiceDate,
+                };
+                ActionList.Add(ItemAction);
+                   
+                var serviceResponse = await FailReportService.ActionsFailReportProcess(ActionList, Useful.userId);
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = MessageEnum.ApproveOK.GetStringValue();
+                    OpenNested();
+                    
+                    await GetFailReport();
+                    await Task.Delay(50);
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ApproveNotOK.GetStringValue();
+                    Console.WriteLine(serviceResponse.Message);
+                    OpenNested();
+                }
+
+                StateHasChanged();
+                await Task.CompletedTask;
+            }
+        }
+    }
+
+    private void OpenNested()
+    {
+        _nestedVisible = true;
+        StateHasChanged();
+    }
+
 
 }

@@ -3,7 +3,7 @@
 
 
 @using System.Text.Json
-
+@using Sipcon.WebApp.Client.Repository.Auth
 
 @inject ILicenseService LicenseService
 @inject IDialogService DialogService
@@ -32,8 +32,9 @@
 						<MudStack Row="false">
                             <MudStack Row="true">
 							    <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
-							    <MudText Typo="Typo.h6">Licencia </MudText>
-                                <MudText Typo="Typo.h6" Color="Color.Info">@(_model.Id != 0 ? " #" + _model.Id : "")</MudText>
+                                <MudText Typo="Typo.h6">
+                                    Licencia <MudText Typo="Typo.caption" Color="Color.Info">@(_model.Id != 0 ? " #" + _model.Id.ToString().PadLeft(10, '0') : "") </MudText>
+                                </MudText>
                             </MudStack>
                             <MudText Typo="Typo.caption">@_model.Description.ToUpper()</MudText>
                         </MudStack>
@@ -229,7 +230,7 @@
 
 
 @code {
-
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Parameter]
     public string strLicenseId { get; set; } = string.Empty;    
 
@@ -254,7 +255,8 @@
     private List<BreadcrumbItem> _itemsNavigate =
                 [
         new("Home", href: "", icon: Icons.Material.Filled.Home),
-        new("Detalle Licencia",  href: "licensedetails", disabled: false, icon: Icons.Material.Filled.CarCrash),
+        new("Servicios",href: "", icon: Icons.Material.Filled.Speed),
+        new("Licencias",  href: "licensedetails", disabled: false, icon: Icons.Material.Filled.CarCrash),
     ];
 
 
@@ -283,6 +285,7 @@
 
     private async Task<GridData<LicenseDetail>> LoadGridData(GridState<LicenseDetail> state)
     {
+        await AuthenticationStateProvider.RefreshStaticVariables();
 
         _rowCount = state.Page * state.PageSize;
 

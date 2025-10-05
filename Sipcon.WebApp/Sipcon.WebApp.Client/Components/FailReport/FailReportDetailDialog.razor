@@ -257,15 +257,17 @@
 
             _isReadOnly = _model.EstatusName.ToUpper() == "PARA APROBAR" ? false : true;
 
-            await Task.Delay(50);
             StateHasChanged();
+            await Task.Delay(50);
+
         }
         else
         {
+            // Console.WriteLine(serviceResponse.Message);
+            _errorModalMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
 
-            _errorModalMessage = MessageEnum.GetError.GetStringValue();
-            Console.WriteLine(serviceResponse.Message);
             OpenNested();
+
         }
 
     }
@@ -313,7 +315,7 @@
         var parameters = new DialogParameters<PartsCatalogFailReport> { { x => x.ModelId, ModelId }, { x => x.Title, "Repuestos" } };
         var dialog = await DialogService.ShowAsync<PartsCatalogFailReport>("Repuestos", parameters, options);
         var result = await dialog.Result;
-        
+
         if (!result!.Canceled && result.Data != null)
         {
             Part _detail = (Part?)result?.Data ?? new Part();
@@ -349,7 +351,7 @@
             {
                 _model.Quantity =  1 ;
             }
-            
+
         }
     }
 
@@ -387,9 +389,10 @@
             }
             else
             {
+                // Console.WriteLine(serviceResponse.Message);
                 _successModal = false;
                 _errorModalMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue();
-                Console.WriteLine(serviceResponse.Message);
+
                 OpenNested();
 
             }
@@ -413,12 +416,18 @@
         }
     }
 
-    private void OpenNested() => _nestedModalVisible = true;
+    private void OpenNested()
+    {
+        StateHasChanged();
+        _nestedModalVisible = true;
+    }
+
+    
 
     private async Task CloseNestedModal()
     {
         _nestedModalVisible = false;
-
+        StateHasChanged();
         await Task.Delay(50);
         if (_successModal)
             MudDialog.Close(DialogResult.Ok(true));
@@ -429,7 +438,7 @@
     private async Task CloseNestedModalError()
     {
         _nestedModalVisible = false;
-
+        StateHasChanged();
         await Task.Delay(50);
         await Task.CompletedTask;
 

@@ -197,7 +197,7 @@
 
 								</MudCardHeader>
 								<MudCardContent Style="padding-top: 0px;">
-									@* <MudHidden @bind-Value="_model.VehicleId" /> *@
+									
 
 									<MudText Class="nested" Color="Color.Error" Style="font-weight:bold;font-style:italic;"><p>@_errorSearchVehicle</p> </MudText>
 
@@ -304,7 +304,7 @@
 
 								</MudCardHeader>
 								<MudCardContent Style="padding-top: 0px;">
-									@* <MudHidden @bind-Value="_model.CustomerId" /> *@
+									
 									<MudText Class="nested" Color="Color.Error" Style="font-weight:bold;font-style:italic;"><p>@_errorSearchContact</p> </MudText>
 
 									<MudTextField Typo="Typo.caption" @bind-Value="_model.Vat"
@@ -378,11 +378,16 @@
 								<MudCardContent Style="padding-top: 0px;">
 
 									@*  <MudStack Row="true"> *@
-									<MudTextField Typo="Typo.caption" @bind-Value="_model.InvoiceNumber"
+									<MudNumericField Typo="Typo.caption" @bind-Value="_model.InvoiceNumber"
 													Label="Nro. Factura"
-													MaxLength="20"
+													MaxLength="10"
 													Variant="Variant.Text"
-													Margin="Margin.Dense" ReadOnly="@(!_model.IsActive || _isReadOnly)"
+													Margin="Margin.Dense"
+												    HideSpinButtons="true"
+													Pattern="[0-9]*"
+												    Format="N0"
+												    Culture="@CultureInfo.GetCultureInfo("es-VE")"
+													ReadOnly="@(!_model.IsActive || _isReadOnly)"
 													For="@(() => _model.InvoiceNumber)"
 													Immediate="true" />
 
@@ -417,15 +422,16 @@
 									
 									<MudNumericField Typo="Typo.caption" @bind-Value="_model.InvoiceAmount"
 													 Label="Monto"
+													 MaxLength="15"
 													 Variant="Variant.Text"
 													 Margin="Margin.Dense"
 													 HideSpinButtons="true"
-													 ReadOnly="@(!_model.IsActive || _isReadOnly)"
-													 For="@(() => _model.InvoiceAmount)" 
 													 Format="N2"
-													 Pattern="[0-9]*"
-													 Culture="@CultureInfo.GetCultureInfo("de-DE")"
-													 Immediate="true" />
+													 Pattern="[0-9,]*"
+													 Culture="@CultureInfo.GetCultureInfo("es-VE")"
+													 ReadOnly="@(!_model.IsActive || _isReadOnly)"
+													 For="@(() => _model.InvoiceAmount)"
+													 Immediate="false" />
 
 
 								</MudCardContent>
@@ -448,7 +454,7 @@
 				<TitleContent>
 					<MudStack Row="true">
 						<MudIcon Icon="@Icons.Material.Filled.Policy" Color="@(_successModal? Color.Default: Color.Error)" Style="font-size: 2rem;"></MudIcon>
-						<MudText Typo="Typo.h6">Tipo Poliza</MudText>
+						<MudText Typo="Typo.h6">Poliza</MudText>
 					</MudStack>
 				</TitleContent>
 				<DialogContent>
@@ -514,6 +520,8 @@
 	PolicyValidator _modelValidator = new PolicyValidator();
 
 	IMask maskDate = new DateMask("dd/MM/yyyy");
+	IMask maskInt = new DateMask(@"\d");
+
 
 
 	protected override async Task OnInitializedAsync()
@@ -549,15 +557,15 @@
 			_isReadOnly = _model.EstatusName.ToUpper() == "CREADO" || _model.EstatusName.Trim() == string.Empty ? false : true;
 			_PayMethodList = await ModuleActionsService.GetPayMethodOption(Useful.userId);
 
-
-			await Task.Delay(100);
 			StateHasChanged();
+			await Task.Delay(50);
+			
 		}
 		else
 		{
 			_model = new Policy();
 			_errorModalMessage = MessageEnum.GetError.GetStringValue();
-			Console.WriteLine(serviceResponse.Message);
+			// Console.WriteLine(serviceResponse.Message);
 			OpenNested();
 		}
 
@@ -569,7 +577,7 @@
 	{
 		var _vehicle = new Vehicle();
 		form!.ResetValidation();
-		var serviceResponse = await VehicleService.GetVehicleAvailable(_model.Vin, Useful.userId);
+		var serviceResponse = await VehicleService.GetVehicleAvailable(_model.Vin, Useful.userId, Useful.dealerId);
 		if (serviceResponse.Processed)
 		{
 			_vehicle = serviceResponse.Data ?? new Vehicle();
@@ -789,9 +797,10 @@
 		}
 		else
 		{
+			// Console.WriteLine(serviceResponse.Message);
 			_successModal = false;
 			_errorModalMessage = MessageEnum.ExportNotOK.GetStringValue();
-			Console.WriteLine(serviceResponse.Message);
+			
 			OpenNested();
 
 		}
@@ -844,9 +853,9 @@
 			}
 			else
 			{
+				// Console.WriteLine(serviceResponse.Message);
 				_successModal = false;
-				_errorModalMessage = MessageEnum.SaveNotOK.GetStringValue();
-				Console.WriteLine(serviceResponse.Message);
+				_errorModalMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue();
 
 			}
 			OpenNested();
@@ -868,12 +877,17 @@
 		}
 	}
 
-	private void OpenNested() => _nestedModalVisible = true;
+	private void OpenNested() 
+	{
+		_nestedModalVisible = true;
+        StateHasChanged();
+	}
+	
 
 	private async Task CloseNestedModal()
 	{
 		_nestedModalVisible = false;
-
+		StateHasChanged();
 		await Task.Delay(50);
 		if (_successModal)
 			MudDialog.Close(DialogResult.Ok(true));
@@ -891,10 +905,17 @@
 		public PolicyValidator()
 		{
 
-
 			RuleFor(x => x.InvoiceNumber)
-				.NotEmpty().WithMessage("Campo requerido")
-				.Length(5, 20).WithMessage("Campo requerido entre 5-20 carácteres");
+				.NotEmpty().WithMessage("Campo requerido ")
+				.Length(5, 10).WithMessage("Campo requerido entre 5-10 digitos")
+				.Custom((value, context) =>
+				{
+                    long number;
+					if (! long.TryParse(value, out number))
+					{
+						context.AddFailure($"Campo requerido solo digitos [0-9]");
+					}
+				});
 
 			RuleFor(x => x.InvoiceDate)
 				.NotEmpty().WithMessage("Campo requerido")
@@ -911,29 +932,40 @@
 				.GreaterThan(0).WithMessage("Seleccione una Forma Pago.");
 
 			RuleFor(x => x.InvoiceAmount)
-				.Must((x, context) =>
-				{
-					return double.TryParse(x.InvoiceAmount.ToString(), out double value);
-					
-				}).WithMessage("Campo requerido solo Digitos [0-9].")
+				
+				.NotNull().WithMessage("Campo requerido")
 				.NotEmpty().WithMessage("Campo requerido")
 				.GreaterThan(0).WithMessage("Campo requerido.")
-				.Must((value, context) =>
+				.Custom((value, context) =>
 				{
-					if (string.IsNullOrEmpty(value.InvoiceAmount.ToString()))
+					double number;
+					if (!double.TryParse(value.ToString(), out number))
 					{
-						return double.IsNaN(value.InvoiceAmount ?? 0);
-					}
-					return true;
-				}).WithMessage("Campo requerido solo Digitos [0-9].")
-				.Custom((x, context) =>
-				{
-					if ((!(double.TryParse(x.ToString(), out double value)) || value < 0))
-					{
-						context.AddFailure($"{x} Campo requerido solo Digitos [0-9].");
+						context.AddFailure($"Campo requerido solo digitos [0-9]");
 					}
 				})
-				.NotNull().WithMessage("Campo requerido solo Digitos [0-9].");
+				.Custom((value, context) =>
+				{
+					string s = value.ToString() ?? string.Empty;
+					if (s.Split(',').Length > 1)
+					{
+						context.AddFailure($"Campo requerido solo digitos [0-9]");
+					}
+				});
+				// .Must((x, context) =>
+				// {
+				// 	return double.TryParse(x.InvoiceAmount.ToString(), out double value);
+
+				// }).WithMessage("Campo requerido solo Digitos [0-9].")
+				// .Must((value, context) =>
+				// {
+				// 	if (string.IsNullOrEmpty(value.InvoiceAmount.ToString()))
+				// 	{
+				// 		return double.IsNaN(value.InvoiceAmount ?? 0);
+				// 	}
+				// 	return true;
+				// }).WithMessage("Campo requerido solo Digitos [0-9].")
+				
 
 				
 

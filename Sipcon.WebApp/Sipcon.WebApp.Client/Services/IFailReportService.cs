@@ -11,6 +11,7 @@
         public Task<ApiResponse<ActionResult>> CreateFailReport(FailReport FailReport, int IdUser);
         public Task<ApiResponse<ActionResult>> UpdateFailReport(FailReport FailReport, int IdUser);
         public Task<ApiResponse<ActionResult>> ActionsFailReport(List<PostAction> PostActions, int IdUser);
+        public Task<ApiResponse<ActionResult>> ActionsFailReportProcess(List<PostActionProcess> PostActions, int IdUser);
         public Task<ApiResponse<List<byte>>> ExportFailReports(int IdSupplier, int IdUser, string Filter = "", int? IdDealer = null);
 
 

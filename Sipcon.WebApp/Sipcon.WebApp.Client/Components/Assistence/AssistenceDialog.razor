@@ -16,11 +16,8 @@
     <MudDialog Class="blur dialog-background" ActionsClass="dialog-background-surface">
         <DialogContent>
             <MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
-
                 <MudCard>
-
                     <MudCardContent>
-
                         <MudGrid Spacing="0" Justify="Justify.Center">
                             <MudItem xs="12" sm="4">
                                 <div class="d-flex justify-left">
@@ -37,23 +34,13 @@
                                     <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Aceptar" OnClick="@(async () => await OnValidSubmit())" Color="Color.Info" Size="Size.Small" />
 
                                 </div>
-
-
                             </MudItem>
                         </MudGrid>
-
-
-
-
                     </MudCardContent>
-
                 </MudCard>
-
             </MudContainer>
             <div id="unique_id_scroll_section" class="ma-0" style="height:400px;overflow: auto;">
-
                 <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
-
                     <MudGrid Spacing="1" Justify="Justify.Center">
                         <MudItem xs="12" sm="8">
                             
@@ -134,12 +121,16 @@
                                         </MudStack>
                                     </CardHeaderContent>
                                     <CardHeaderActions>
-                                        <MudTextField Typo="Typo.caption" @bind-Value="_model.OrderNumber"
+                                        <MudNumericField Typo="Typo.caption" @bind-Value="_model.OrderNumber"
                                                       Label="Nro. Reporte Falla"
                                                       Style="max-width: 220px;"
                                                       Variant="Variant.Text"
-                                                      MaxLength="15"
                                                       Margin="Margin.Dense"
+                                                      MaxLength="10"
+                                                      HideSpinButtons="true"
+                                                      Pattern="[0-9]*"
+                                                      Format="N0"
+                                                      Culture="@CultureInfo.GetCultureInfo("es-VE")"
                                                       ReadOnly="@(!_model.IsActive || _isReadOnly)" />
 
                                     </CardHeaderActions>
@@ -503,9 +494,10 @@
         }
         else
         {
+            // Console.WriteLine(serviceResponse.Message);
             _model = new Assistence();
             _errorModalMessage = MessageEnum.GetError.GetStringValue();
-            Console.WriteLine(serviceResponse.Message);
+            
             OpenNested();
         }
 
@@ -514,7 +506,7 @@
     private async Task GetPolicyBy()
     {
         _modelPolicy = new Models.Policy();
-        var serviceResponse = await PolicyService.GetPolicyBy(_searchVin, Useful.userId, SearchByEnum.Dual);
+        var serviceResponse = await PolicyService.GetPolicyBy(Useful.supplierId, Useful.userId, _searchVin, SearchByEnum.Dual);
         if (serviceResponse.Processed)
         {
             _modelPolicy = serviceResponse.Data ?? new Models.Policy();
@@ -637,9 +629,10 @@
             }
             else
             {
+                // Console.WriteLine(serviceResponse.Message);
                 _successModal = false;
                 _errorModalMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue();
-                Console.WriteLine(serviceResponse.Message);
+                
                 OpenNested();
 
             }
@@ -663,12 +656,17 @@
         }
     }
 
-    private void OpenNested() => _nestedModalVisible = true;
+    private void OpenNested() 
+    {
+        _nestedModalVisible = true;
+        StateHasChanged();
+    }
+    
 
     private async Task CloseNestedModal()
     {
         _nestedModalVisible = false;
-
+        StateHasChanged();
         await Task.Delay(50);
         if (_successModal)
             MudDialog.Close(DialogResult.Ok(true));
@@ -679,7 +677,7 @@
     private async Task CloseNestedModalError()
     {
         _nestedModalVisible = false;
-
+        StateHasChanged();
         await Task.Delay(50);
         await Task.CompletedTask;
 
