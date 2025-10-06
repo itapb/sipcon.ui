@@ -3,6 +3,7 @@
     using Sipcon.WebApp.Client.Enum;
     using Sipcon.WebApp.Client.Models;
     using Sipcon.WebApp.Client.Services;
+    using System;
     using System.Collections.Generic;
     using System.Net.Http.Json;
     using System.Text.Json;
@@ -267,6 +268,44 @@
 
                 var response = await _http.GetAsync(url);
                 
+                var fileContent = await response.Content.ReadAsByteArrayAsync();
+                result = (fileContent is null) ? new ApiResponse<List<byte>>()
+                {
+                    Processed = false,
+                    Message = "Error al Exportar Data.",
+                    Data = []
+                } : new ApiResponse<List<byte>>()
+                {
+                    Processed = true,
+                    Message = "",
+                    Data = fileContent.ToList()
+                };
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<byte>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message),
+                    Data = []
+                };
+            }
+
+            return result;
+        }
+
+        public async Task<ApiResponse<List<byte>>> ExportPdfSRG(int IdUser, int IdService, int? IdDealer = null)
+        {
+            ApiResponse<List<byte>> result;
+            string fileUrl = string.Empty;
+
+            try
+            {
+                var url = $"api/Service/ExportSRG?serviceId={IdService}&userId={IdUser}";
+                url = (IdDealer.HasValue) ? $"{url}&dealerId={IdDealer}" : url;
+                var response = await _http.GetAsync(url);
+
                 var fileContent = await response.Content.ReadAsByteArrayAsync();
                 result = (fileContent is null) ? new ApiResponse<List<byte>>()
                 {

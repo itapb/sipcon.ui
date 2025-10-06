@@ -54,7 +54,18 @@
                                                 Reporte de Falla
                                                 @if (_model.EstatusName.ToUpper() == "CREADO")
                                                 {
-                                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickUpdateFailReport()" />
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" 
+                                                                   Color="Color.Default" 
+                                                                   Size="Size.Small" 
+                                                                   OnClick="() => ClickUpdateFailReport()" />
+                                                }
+                                                @if (_statusPrintSRG.Contains(_model.EstatusName.ToUpper()))
+                                                {
+                                                    <MudIconButton Icon="@Icons.Custom.FileFormats.FilePdf" Variant="Variant.Text"
+                                                                   Color="Color.Default"
+                                                                   Size="Size.Small"
+                                                                   OnClick="() => ClickExportPdfSRG()">
+                                                    </MudIconButton>
                                                 }
                                                 <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" AriaLabel="Open user menu">
                                                     @foreach (var module in _itemsModules)
@@ -73,35 +84,42 @@
                             </CardHeaderContent>
 
                             <CardHeaderActions>
-                                @if (_modelVehicle.Id != 0)
-                                {
-                                    string style = "";
-
-                                    if (_model.EstatusName.ToUpper() == "CREADO")
-                                        style += "";
-                                    else if (_model.EstatusName.ToUpper() == "VALIDADO")
+                                <MudStack Row="false">
+                                    @if (_modelVehicle.Id != 0)
                                     {
-                                        style += "color:#fff";
-                                        style += ";background-color:#0099F3";
+                                        string style = "";
+
+                                        if (_model.EstatusName.ToUpper() == "CREADO")
+                                            style += "";
+                                        else if (_model.EstatusName.ToUpper() == "VALIDADO")
+                                        {
+                                            style += "color:#fff";
+                                            style += ";background-color:#0099F3";
+                                        }
+                                        else if (_model.EstatusName.ToUpper() == "PROCESADO")
+                                        {
+                                            style += "color:#fff";
+                                            style += ";background-color:#757575";
+                                        }
+                                        else
+                                        {
+                                            style += "color:#fff";
+                                            style += ";background-color:#FF7043";
+                                        }
+                                        style += ";font-size: 10px";
+                                        style += ";font-style:italic";
+
+
+                                        <MudChip T="string" Style="@style" Label="true" Disabled="true">@_model.EstatusName</MudChip>
                                     }
-                                    else if (_model.EstatusName.ToUpper() == "PROCESADO")
+
+                                    @if (!string.IsNullOrEmpty(_model.SrgNumber))
                                     {
-                                        style += "color:#fff";
-                                        style += ";background-color:#757575";
+                                        <MudText Typo="Typo.caption"><b>SRG: </b> <MudText Typo="Typo.caption" Color="Color.Info">@_model.SrgNumber</MudText></MudText>
                                     }
-                                    else
-                                    {
-                                        style += "color:#fff";
-                                        style += ";background-color:#FF7043";
-                                    }
-                                    style += ";font-size: 10px";
-                                    style += ";font-style:italic";
 
-
-                                    <MudChip T="string" Style="@style" Label="true" Disabled="true">@_model.EstatusName</MudChip>
-                                }
-
-                               
+                                </MudStack>
+                                
 
                             </CardHeaderActions>
 
@@ -727,6 +745,13 @@
     string _strComment = string.Empty;
     bool _success = false;
 
+    List<string> _statusPrintSRG = new List<string>()
+    {
+        "APROBADO",
+        "GENERADO",
+        "PROCESADO"
+    };
+
     private bool _disableDetail = false;
     List<string> _statusDisableDetail = new List<string>()
     {
@@ -914,6 +939,39 @@
         }
     }
 
+    private async Task ClickExportPdfSRG()
+    {
+        var serviceResponse = await FailReportService.ExportPdfSRG(Useful.userId, _model.Id, Useful.dealerId);
+        if (serviceResponse.Processed)
+        {
+            _success = true;
+            _nestedErrorMessage = "";
+
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+            var fileUrl = $"data:application/pdf;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, $"SRG_{_model.Id.ToString().PadLeft(10, '0')}.pdf");
+
+            if (string.IsNullOrEmpty(_model.SrgNumber))
+            {
+                await GetFailReport();
+
+                await Task.Delay(50);
+
+                StateHasChanged();
+                await Task.CompletedTask;
+            }
+            
+
+        }
+        else
+        {
+            _success = false;
+            _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue();
+            // Console.WriteLine(serviceResponse.Message);
+            OpenNested();
+
+        }
+    }
 
     private async Task ClickExportAttachment(int IdAttachment, string FileName)
     {

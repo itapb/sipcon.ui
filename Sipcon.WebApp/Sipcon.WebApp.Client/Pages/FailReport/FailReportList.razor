@@ -89,6 +89,12 @@
                 <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.ServiceDate?.ToString("dd MMM yyyy"))</MudText>
             </CellTemplate>
         </TemplateColumn>
+        <TemplateColumn Title="SRG">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.SrgNumber)</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        
         <TemplateColumn  Title="ESTATUS">
             <CellTemplate>
                 <div class="d-flex justify-start">
@@ -127,6 +133,11 @@
             <CellTemplate>
                 <MudStack Row="true">
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" Href="@(" FailReportdetail/" + context.Item.Id)" />
+                    @if (_statusPrintSRG.Contains(context.Item.EstatusName.ToUpper()))
+                    {
+                        <MudIconButton Icon="@Icons.Custom.FileFormats.FilePdf" Color="Color.Default" Size="Size.Small" OnClick="() => ClickExportPdfSRG(context.Item)"></MudIconButton>
+                    }
+
                 </MudStack>
 
             </CellTemplate>
@@ -166,6 +177,13 @@
         new("Servicios",href: "", icon: Icons.Material.Filled.Speed),
         new("Reporte Falla",  href: "failreport", disabled: false, icon: Icons.Material.Filled.CarCrash),
     ];
+
+    List<string> _statusPrintSRG = new List<string>()
+    {
+        "APROBADO",
+        "GENERADO",
+        "PROCESADO"
+    };
 
 
     protected override async Task OnInitializedAsync()
@@ -207,7 +225,7 @@
         _loading = true;
         _FailReports = new List<FailReport>();
         _rowsTotal = 0;
-         
+
         _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
 
         var serviceResponse = await FailReportService.GetFailReports(Useful.supplierId, Useful.userId, _rowCount, _searchString, Useful.dealerId);
@@ -222,7 +240,7 @@
             _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
             Console.WriteLine($"Error: {serviceResponse.Message}");
             OpenNested();
-            
+
         }
         StateHasChanged();
         _loading = false;
@@ -283,6 +301,36 @@
         }
 
         await Task.CompletedTask;
+    }
+
+
+    private async Task ClickExportPdfSRG(FailReport item)
+    {
+        var serviceResponse = await FailReportService.ExportPdfSRG(Useful.userId, item.Id, Useful.dealerId);
+        if (serviceResponse.Processed)
+        {
+            _success = true;
+            _nestedErrorMessage = "";
+
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+            var fileUrl = $"data:application/pdf;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, $"SRG_{item.Id.ToString().PadLeft(10, '0')}.pdf");
+
+            if (string.IsNullOrWhiteSpace(item.SrgNumber))
+            {
+                _searchString = string.Empty;
+                await _mudDataGrid!.ReloadServerData();
+            }
+
+        }
+        else
+        {
+            _success = false;
+            _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue();
+            // Console.WriteLine(serviceResponse.Message);
+            OpenNested();
+
+        }
     }
 
 
