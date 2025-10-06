@@ -89,7 +89,7 @@ else
     private async Task CheckClick(MouseEventArgs args)
     {
         await form!.Validate();
-        if (form.IsValid)
+        if (form.IsValid && await UnequalLocations())
         {
             var strnewMovementDetail = System.Text.Json.JsonSerializer.Serialize(newMovementDetail);
             var result_newMovementDetail = await Http.PostAsync($"api/Movements/PostMovementDetail?userId={Useful.userId}", new StringContent($"[{strnewMovementDetail}]", null, "application/json"));
@@ -132,5 +132,10 @@ else
         return StrReturn;
           
     }
-    
+    private async Task<bool> UnequalLocations()
+    {
+        var Uresult = SourceLocationSelected?.Id != TargetLocationSelected?.Id;
+        if (!Uresult) await DialogService.ShowDialog("Las ubicaciones deben ser diferentes!", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        return Uresult;
+    }
  }
