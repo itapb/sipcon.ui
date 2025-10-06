@@ -30,7 +30,7 @@ else
                         </MudItem>
                         <MudItem xs="12">
                             <MudSelect T="ReasonType" Label="CONCEPTO" ToStringFunc="@ConvertReasonTypeFunc" Value="ReasonTypeSelected" ValueChanged="OnReasonTypeValueChanged" RequiredError="Campo requerido." Required="true">
-                                @foreach (var reasontype in ReasonTypes!)
+                                @foreach (var reasontype in FilteredReasonTypes ?? Enumerable.Empty<ReasonType>())
                                 {
                                     <MudSelectItem Value="reasontype" />
                                 }
@@ -56,7 +56,7 @@ else
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
 
 
-    record ReasonType(int Id, string Description,bool IsActive);
+    record ReasonType(int Id, string Description, bool IsActive, string Type);
 
     record AdjustmentType(string Code, string Description);
     private MudForm? form;  
@@ -70,6 +70,7 @@ else
     List<AdjustmentType> AdjustmentTypes = [new AdjustmentType("E", "ENTRADA"), new AdjustmentType("S", "SALIDA")];
 
     List<ReasonType>? ReasonTypes;
+    List<ReasonType>? FilteredReasonTypes;
     [Parameter] public NewAdjustmentDetail? newAdjustmentDetail { get; set; } = default!;
     private Func<ReasonType?, string> ConvertReasonTypeFunc = reasontype => reasontype?.Description!;
     private Func<Location?, string> ConvertLocationFunc = location => location?.Name!;
@@ -101,8 +102,9 @@ else
         if (locationResponse.IsSuccessStatusCode)
         {
             var content2 = await locationResponse.Content.ReadFromJsonAsync<WebApiResponse<List<ReasonType>>>();
-            ReasonTypes = content2!.data ?? new List<ReasonType>();                      
+            ReasonTypes = content2!.data ?? new List<ReasonType>();           
             ReasonTypeSelected = ReasonTypes!.FirstOrDefault(r => r.Id == newAdjustmentDetail!.ReasonId);
+            FilteredReasonTypes = ReasonTypes!.Where(r => r.IsActive == true && r.Type == ReasonTypeSelected?.Type).ToList();
         }
     }
     private Task OnSourceLocationValueChanged(Location selectedSourceLocation)
@@ -115,6 +117,9 @@ else
     {
         AdjustmentTypeSelected = selectedAdjustmentType;
         newAdjustmentDetail!.AdjustmentType = AdjustmentTypeSelected.Code;
+
+        ReasonTypeSelected = null;
+        FilteredReasonTypes = ReasonTypes!.Where(r => r.IsActive == true && r.Type == selectedAdjustmentType.Code ).ToList();
         return Task.CompletedTask;
     }
     private Task OnReasonTypeValueChanged(ReasonType selectedReasonType)
