@@ -33,7 +33,7 @@
         }
         <TemplateColumn>
             <HeaderTemplate>
-                <MudText>ACTIVO</MudText>
+                <MudText>ESTATUS</MudText>
             </HeaderTemplate>
             <CellTemplate> 
                 <MudIcon Icon="@(context.Item.IsActive ?? false ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.IsActive ?? false ? Color.Success : Color.Error)" Size="Size.Medium" />
@@ -149,7 +149,7 @@
                                                                                                         ActionComment = "", RelatedId = 0}).ToList()
                                ) : null;
 
-        var result_Post_Actions = (SelectedActions is not null && SelectedActions.Count > 0) ? await Http.PostAsync("api/Contact/Post_Actions", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
+        var result_Post_Actions = (SelectedActions is not null && SelectedActions.Count > 0) ? await Http.PostAsync($"api/Contact/Post_Actions?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
         if (result_Post_Actions is not null && result_Post_Actions.IsSuccessStatusCode)
         {
             var rest = result_Post_Actions.Content.ReadAsStringAsync();

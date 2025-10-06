@@ -614,7 +614,7 @@ else
             if (SelectedContact != null && SelectedContact.Male == null) SelectedContact.Male = true;
 
             var strJsonSelectedContact = System.Text.Json.JsonSerializer.Serialize(SelectedContact);
-            var result_Post_Contacts = await Http.PostAsync("api/Contact/Post_Contacts", new StringContent($"[{strJsonSelectedContact}]", null, "application/json"));
+            var result_Post_Contacts = await Http.PostAsync($"api/Contact/Post_Contacts?userId={Useful.userId}", new StringContent($"[{strJsonSelectedContact}]", null, "application/json"));
             if (result_Post_Contacts.IsSuccessStatusCode)
             {
                 var resultString = await result_Post_Contacts.Content.ReadAsStringAsync();
@@ -654,7 +654,7 @@ else
     private async Task ContactClick(MouseEventArgs args)
     {
         DialogOptions options2 = new DialogOptions { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
-        var dialogReference = await DialogService.ShowAsync<ContactsCatalog>("", new DialogParameters { ["ContactId"] = SelectedContact!.Id, ["ContactName"] = SelectedContact!.FirstName, ["ContactType"] = "U" }, options2);
+        var dialogReference = await DialogService.ShowAsync<ContactsCatalog>("", new DialogParameters { ["ContactId"] = SelectedContact!.Id, ["ContactName"] = SelectedContact!.FirstName, ["ContactType"] = "C" }, options2);
         if ((await dialogReference.Result) is DialogResult dialogResult && !dialogResult.Canceled && dialogResult.Data is not null)
         {
             dynamic contactData = dialogResult.Data;

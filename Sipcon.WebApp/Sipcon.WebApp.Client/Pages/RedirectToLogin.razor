@@ -1,0 +1,18 @@
+﻿﻿﻿﻿<div class="loader loader-bouncing"><span>Redireccionando a Login...</span></div>
+
+@code {
+    [Inject]
+    public NavigationManager? navigationManager { get; set; }
+    private bool _initialized;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_initialized)
+        {
+            _initialized = true;
+            Useful.isMobile = navigationManager!.ToBaseRelativePath(navigationManager.Uri).Contains("process-list");
+
+            navigationManager!.NavigateTo($"{navigationManager.BaseUri}login");
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+}

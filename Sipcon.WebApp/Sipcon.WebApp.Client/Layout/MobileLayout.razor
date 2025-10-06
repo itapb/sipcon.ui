@@ -7,8 +7,11 @@
 <MudLayout>
    <MudAppBar Elevation="1">      
        <MudText Typo="Typo.h5" Class="ml-3">Sipcon</MudText>
-       <MudSpacer />
+       <MudSpacer />          
        <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
+         <AuthorizeView>
+            <Authorized><MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" OnClick="@LogoutClick" /></Authorized>
+         </AuthorizeView>       
    </MudAppBar>
    <MudMainContent Class="pt-16 pa-4">
        @Body
@@ -23,32 +26,38 @@
 </div>
 
 @code {
-   private bool _drawerOpen = true;
-   private bool _isDarkMode = false; // Set to false to start in light mode
-   private MudTheme? _theme = null;
+    private bool _drawerOpen = true;
+    private bool _isDarkMode = false; // Set to false to start in light mode
+    private MudTheme? _theme = null;
 
-   protected override void OnInitialized()
-   {
-       base.OnInitialized();
+    [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;   
+    [Inject] private NavigationManager NavigationManager { get; set; } = null!;
 
-       _theme = new()
+    protected override void OnInitialized()
+    {
+        _theme = new()
        {
            PaletteLight = _lightPalette,
            PaletteDark = _darkPalette,
            LayoutProperties = new LayoutProperties()
        };
-   }
+    }
 
-   private void DrawerToggle()
-   {
-       _drawerOpen = !_drawerOpen;
-   }
+    private void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
 
-   private void DarkModeToggle()
-   {
-       _isDarkMode = !_isDarkMode;
-   }
-
+    private void DarkModeToggle()
+    {
+        _isDarkMode = !_isDarkMode;
+    }
+    private async Task LogoutClick()
+    {
+        await AuthenticationStateProvider!.Logout();
+        Useful.isMobile = true;       
+        NavigationManager.NavigateTo("login");
+    }
    private readonly PaletteLight _lightPalette = new()
    {
        Black = "#110e2d",

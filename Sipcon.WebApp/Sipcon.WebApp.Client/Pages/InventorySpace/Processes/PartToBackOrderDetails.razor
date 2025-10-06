@@ -13,6 +13,9 @@ else
                             <MudTextField T="int?" Label="Cantidad" @bind-Value="mBackOrderItem.Quantity" For="@(() => mBackOrderItem.Quantity)" Required="true" Validation="@(new Func<int?, string>(ValidateInteger))"></MudTextField>
                         </MudItem>
                         <MudItem xs="12">
+                            <MudDatePicker @bind-Date="mBackOrderItem.Arrival" Label="Fecha de Llegada" PickerVariant="PickerVariant.Inline" PickerPaperStylename="z-index: 5;" />
+                        </MudItem>
+                        <MudItem xs="12">
                             <MudStack Row="true" Justify="Justify.Center">
                                 <MudStack Row="true" Spacing="4">
                                     <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="CheckClick" />
@@ -33,6 +36,13 @@ else
     private MudForm? form;
     [Parameter] public BackOrderItem? mBackOrderItem { get; set; } = default!;
 
+   
+    private int? mQuantity;
+
+    protected override void OnParametersSet()
+    {
+        mQuantity = mBackOrderItem?.Quantity;
+    }
 
     private async Task CheckClick(MouseEventArgs args)
     {
@@ -43,8 +53,8 @@ else
             var result_newMovementDetail = await Http.PostAsync($"api/BackOrder/PostBackOrder?userId={Useful.userId}", new StringContent(strmBackOrder, null, "application/json"));
             if (result_newMovementDetail.IsSuccessStatusCode)
             {
-                var sucessContent = await result_newMovementDetail.Content.ReadFromJsonAsync<WebApiResponse<List<PostResponse>>>();
-                if (sucessContent?.data![0] is ({ insertedRows: 1 } or { updatedRows: 1 }))
+                var sucessContent = await result_newMovementDetail.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
+                if (sucessContent?.data! is ({ insertedRows: 1 } or { updatedRows: 1 }))
                 {
                     var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Item", "OK", Color.Info, Icons.Material.Filled.Commit);
                     if (!result!.Canceled)
@@ -65,5 +75,14 @@ else
     }
     private void CloseClick(MouseEventArgs args) => MudDialog?.Cancel();
 
-    private string ValidateInteger(int? value) => (value.HasValue && value <= 0) ? $"El valor debe ser mayor a cero" : string.Empty;
+    private string ValidateInteger(int? value) 
+    {
+        string strreturn = string.Empty;
+        if (value.HasValue && value <= 0) 
+            strreturn = $"El valor debe ser mayor a cero";
+        else if (value.HasValue && value > mQuantity)
+            strreturn = $"El campo cantidad, NO puede ser mayor a la cantidad actual {mQuantity}";
+
+        return strreturn;
+    }
 }

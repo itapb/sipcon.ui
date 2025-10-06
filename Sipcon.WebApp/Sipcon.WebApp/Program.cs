@@ -19,7 +19,9 @@ builder.Services.AddHttpClient("ServerAPI", client => client.BaseAddress = new U
 builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("ServerAPI"));
 // Add MudBlazor services
 builder.Services.AddMudServices();
-builder.Services.AddAuthorizationCore();
+
+builder.Services.AddAuthorization();
+builder.Services.AddCascadingAuthenticationState();
 
 builder.Services.AddTransient<ISessionStorageService, SessionStorageRepository>();
 builder.Services.AddScoped<AuthenticationProviderJWT>();
@@ -67,11 +69,12 @@ else
 }
 app.UsePathBase(AppSettingsHelper.GetAppSetting("pathBase"));//app.UsePathBase("/sipconapp/");
 //app.UseHttpsRedirection();
+app.UseAuthorization();
 app.UseRouting();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
-app.MapRazorComponents<App>()
+app.MapRazorComponents<App>().AllowAnonymous()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(Sipcon.WebApp.Client._Imports).Assembly);

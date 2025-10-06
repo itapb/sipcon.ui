@@ -52,11 +52,12 @@
     }
  </style>
 @code {
+    [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;   
+
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;   
     [Parameter] public string? MovementType { get; set; } = string.Empty;
     MovementDetails? movementDetails;
-    int UserId = 1;//5077;
 
     string mHelpText = "";
     bool ModeValue = true;
@@ -84,8 +85,10 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await AuthenticationStateProvider.RefresMobileStaticVariables();
         await NextStep();
     }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender && bardCodeField is not null)
@@ -120,6 +123,9 @@
                 {
                     if ((MovementType == "T" || MovementType == "P") && InputCode == "0")
                     {
+                        InputRealQty = 0;
+                        movementDetails!.PartId = 0;
+                    
                         await PostMovemmentDetailMobile();
                     } 
                     else
@@ -200,12 +206,23 @@
         {
             var AnMovementMobile = new movementMobile(Id: movementDetails!.Id, MovementId: movementDetails!.MovementId, PartId: movementDetails.PartId, PartialTypeId: PartialTypeIdInput, LocationId: locationId, RealQty: InputRealQty, SerialCode: InputSerial);
             var strJsonMovementMobile = System.Text.Json.JsonSerializer.Serialize(AnMovementMobile);
-            var result_Post_Zone = await Http.PostAsync($"api/Movements/PostMovementDetailMobile?userId={UserId}", new StringContent($"{strJsonMovementMobile}", null, "application/json"));
+            var result_Post_Zone = await Http.PostAsync($"api/Movements/PostMovementDetailMobile?userId={Useful.userId}", new StringContent($"{strJsonMovementMobile}", null, "application/json"));
             if (result_Post_Zone.IsSuccessStatusCode)
             {
                 await DialogService.ShowDialog("Movimiento Procesado!", "Procesado", "OK", Color.Success, Icons.Material.Filled.Check);
                 await StepOne(); // Reset to step one after processing
                 StateHasChanged();
+            }
+            else if (result_Post_Zone.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                var content = await result_Post_Zone.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+                await DialogService.ShowDialog(content!.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+            else
+            {
+                var errorMessage = await result_Post_Zone.Content.ReadAsStringAsync();
+                throw new Exception(errorMessage);
+                
             }
         }
 
@@ -218,7 +235,7 @@
     private async Task GetMovementDetailsByUser()
     {
         InitializeFormFields();
-        HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetMovementDetailsByUser?userId={UserId}&movementType={MovementType}&mode={ModeParameter}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetMovementDetailsByUser?userId={Useful.userId}&movementType={MovementType}&mode={ModeParameter}");
         if (response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadFromJsonAsync<WebApiResponse<List<MovementDetails>>>();
@@ -227,6 +244,9 @@
                 processName = MovementType switch { "R" => "Recepcion", "T" => "Traslado", "P" => "Recoleccion", "D" => "Despacho", _ => "Recepcion" };
                 movementDetails = movementdetails.FirstOrDefault();
                 TypeName = movementDetails?.TypeName; 
+
+                ModeValue = movementDetails?.TypeId == "P";
+                OnSwitchChanged();
             }
         } 
 
@@ -272,11 +292,14 @@
     }
     private async Task AfterAsyncMode()
     {
-        ModeText = ModeValue ? "Picking" : "Entrega";
-        ModeParameter = ModeValue ? "P" : "D";
+        OnSwitchChanged();
         await StepOne();       
     }
-
+    private void OnSwitchChanged()
+    {
+        ModeText = ModeValue ? "Picking" : "Entrega";
+        ModeParameter = ModeValue ? "P" : "D";
+    }
     private async Task<int?> ReasonConfirmation()
     {
         int? ResultPartialTypeId = null;

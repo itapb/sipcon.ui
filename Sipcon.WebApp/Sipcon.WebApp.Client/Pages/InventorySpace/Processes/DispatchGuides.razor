@@ -33,10 +33,10 @@ else
             </TemplateColumn>
             <PropertyColumn Property="x => x.Id" Title="NRO" />
             <PropertyColumn Property="x => x.CreatedDate" Title="FECHA" />            
-            <PropertyColumn Property="x => x.CustomerName" Title ="CLIENTE" />            
+            <PropertyColumn Property="x => x.CustomerName" Title ="CONCESIONARIO" />            
             <PropertyColumn Property="x => x.ProviderName" Title="PROVEEDOR" />
             <PropertyColumn Property="x => x.Number" Title="NUMERO" />
-            <PropertyColumn Property="x => x.StatusName" Title="STATUS" />
+            <PropertyColumn Property="x => x.StatusName" Title="ESTATUS" />
             <PropertyColumn Property="x => x.Weith" Title="PESO" />
             <TemplateColumn StickyRight="true">
                 <CellTemplate>
@@ -95,15 +95,16 @@ else
         await AuthenticationStateProvider.RefreshStaticVariables();
         await LoadDataAsync();
         hubEventsService.OnSupplierChanged += ReloadDispatchGuidesGrid;
+        hubEventsService.OnDealerChanged += ReloadDispatchGuidesGrid;
     }
 
     private async Task LoadDataAsync()
     {
-        MovementTitle = "Despacho";
+        MovementTitle = "Recepcion";
         string hrefMovement = "dispatchguides";
 
-        $"Home,Inventario,Procesos,{MovementTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
-        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-{MovementTitle.ToUpper()}&userId={Useful.userId}");
+        $"Home,Pedidos,Procesos,{MovementTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-DESPACHO&userId={Useful.userId}");
     }
     Func<Mobile.Models.Guide, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
     {
@@ -124,7 +125,7 @@ else
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Mobile.Models.Guide> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Guide/GetAllGuides?userId={Useful.userId}&supplierId={Useful.supplierId}&rowfrom={mOffset}&filter={searchString}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Guide/GetAllGuides?userId={Useful.userId}&supplierId={Useful.supplierId}&dealerId={Useful.dealerId}&rowfrom={mOffset}&filter={searchString}");
 
         if (response.IsSuccessStatusCode)
         {
@@ -151,9 +152,9 @@ else
 
     private async Task ClickMenuGuides(string? actionName)
     {
-        var strDictionary = new Dictionary<string, string> { { "RECEIVE", "ENVIADO" }};
-        var mActions = GuidesMudDataGrid?.FilteredItems.Where(item => item.IsSelected && strDictionary[actionName!].Contains(item.StatusName!.ToUpper()))
-                                                         .Select(item => new Client.Models.Action
+        var strDictionary = new Dictionary<string, string> { { "RECEIVE", "ENVIADO" }, { "PRINT", "" } };
+        var mActions = GuidesMudDataGrid?.FilteredItems.Where(item => (item.IsSelected && strDictionary.ContainsKey(actionName!) && (strDictionary[actionName!].Contains(item.StatusName!.ToUpper())) || strDictionary[actionName!] == ""))
+                                                     .Select(item => new Client.Models.Action
                                                          {
                                                              UserId = Useful.userId,
                                                              RecordId = item.Id,
@@ -203,6 +204,7 @@ else
     {       
         Useful.IsNewOrEdit = false;
         hubEventsService.OnSupplierChanged -= ReloadDispatchGuidesGrid;
+        hubEventsService.OnDealerChanged -= ReloadDispatchGuidesGrid;
     }
 }
 

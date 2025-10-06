@@ -74,7 +74,7 @@ else
             Locations = content2!.data ?? new List<Location>(); 
 
             SourceLocations = Locations!.Where(r => r.TypeId == TypeIdSource).ToList();
-            TargetLocations = Locations!.Where(r => r.TypeId == TypeIdTarget).ToList();
+            TargetLocations = Locations!.Where(r => r.TypeId == TypeIdTarget && r.IsActive == true && r.ZoneSize == newMovementDetail?.PartSize).ToList();
             SourceLocationSelected = SourceLocations!.FirstOrDefault(r => r.Id == newMovementDetail!.LocationId);
             TargetLocationSelected = TargetLocations!.FirstOrDefault(r => r.Id == newMovementDetail!.DestinationId);
         }

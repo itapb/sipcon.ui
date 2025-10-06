@@ -35,7 +35,7 @@ else
             <PropertyColumn Property="x => x.Created" Title="FECHA" />
             <PropertyColumn Property="x => x.DealerName" Title="CONCESIONARIO" />
             <PropertyColumn Property="x => x.TypeName" Title="TIPO" />
-            <PropertyColumn Property="x => x.StatusName" Title="STATUS" />            
+            <PropertyColumn Property="x => x.StatusName" Title="ESTATUS" />            
             <TemplateColumn StickyRight="true">
                 <CellTemplate>
                     <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditSalesOrder(context.Item)" />
@@ -92,8 +92,14 @@ else
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterSalesOrderDetails>>();
-            var data = content2!.data ?? new MasterSalesOrderDetails();            
+            var data = content2!.data ?? new MasterSalesOrderDetails();    
+            Useful.IsNewOrEdit = true;
             SalesOrderId = data.SaleOrder?.Id;
+        }
+        else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflictContent = await response.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+            await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
         }
         else
         {
@@ -119,6 +125,7 @@ else
         await AuthenticationStateProvider.RefreshStaticVariables();
         await LoadDataAsync();
         hubEventsService.OnDealerChanged += ReloadSalesOrderGrid;
+        hubEventsService.OnSupplierChanged += ReloadSalesOrderGrid;
     }
 
     private async Task LoadDataAsync()
@@ -149,7 +156,7 @@ else
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<SaleOrder> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/SaleOrder/GetAll?userId={Useful.userId}&dealerId={Useful.dealerId}&rowfrom={mOffset}&filter={searchString}");
+        HttpResponseMessage response = await Http.GetAsync($"api/SaleOrder/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&dealerId={Useful.dealerId}&rowfrom={mOffset}&filter={searchString}");
 
         if (response.IsSuccessStatusCode)
         {
@@ -176,7 +183,7 @@ else
 
     private async Task ClickMenuSalesOrder(string? actionName)
     {
-        var strDictionary = new Dictionary<string, string> { { "GENERATE", "CREADO" }, { "DECLINE", "CREADO" } };
+        var strDictionary = new Dictionary<string, string> { { "GENERATE", "CREADO" }, { "DECLINE", "CREADO,GENERADO" } };
         var mActions = SalesOrderMudDataGrid?.FilteredItems.Where(item => item.IsSelected && strDictionary[actionName!].Contains(item!.StatusName!.ToUpper()))
                                                          .Select(item => new Client.Models.Action
                                                          {
@@ -230,5 +237,6 @@ else
     {
         Useful.IsNewOrEdit = false;
         hubEventsService.OnDealerChanged -= ReloadSalesOrderGrid;
+        hubEventsService.OnSupplierChanged -= ReloadSalesOrderGrid;
     }
 }

@@ -34,6 +34,7 @@
     </MudPaper>
 </div>
 @code {
+    [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
 
@@ -107,5 +108,12 @@
         }
 
         return result;
+    }
+  
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthenticationStateProvider.RefresMobileStaticVariables();
+        currentPacking!.UserId = Useful.userId;
+        currentPacking.SupplierId = Useful.supplierId;        
     }
 }

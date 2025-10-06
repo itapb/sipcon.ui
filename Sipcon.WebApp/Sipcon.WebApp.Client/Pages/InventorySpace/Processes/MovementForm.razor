@@ -33,7 +33,7 @@
                             <PropertyColumn Property="x => x.RealQty" Title="REAL" />
                             <PropertyColumn Property="x => x.TypeName" Title="TIPO" />
 
-                            <TemplateColumn Title="STATUS">
+                            <TemplateColumn Title="ESTATUS">
                                 <CellTemplate>
                                     <span>@((context.Item.Processed ?? false) ? "Procesado":"No Procesado")</span>
                                  </CellTemplate>
@@ -144,6 +144,10 @@
     }
     private async Task ClickEditReceptionDetail(MovementDetails item)
     {
+        string tempContactName = MasterMovement?.ContactName ?? "";
+        string tempReference = MasterMovement?.Reference ?? "";
+        int tempContactId = MasterMovement!.ContactId ?? 0;
+
         Type tipoCatalogo = MasterMovement?.TypeId == "R" ? typeof(PartToMovementDetail) : typeof(InventoryToMovementDetail);
         NewMovementDetail AnewMovementDetail = new NewMovementDetail
         {
@@ -158,7 +162,13 @@
         };
         var dialogReference = await DialogService.ShowAsync(tipoCatalogo,"", new DialogParameters { ["newMovementDetail"] = AnewMovementDetail }, options);
         if (!((await dialogReference.Result)!.Canceled))
-            await MovementDetailsMudDataGrid!.ReloadServerData();       
+        {
+            await MovementDetailsMudDataGrid!.ReloadServerData();
+            MasterMovement!.Reference = tempReference;
+            MasterMovement!.ContactName = tempContactName;
+            MasterMovement!.ContactId = tempContactId;
+        }
+             
     }
 
     private void getTotals(IEnumerable<MovementDetails> data)
@@ -217,11 +227,21 @@
     private void CloseClick() => MovementId = null; 
 
     private async Task ClickAddMovementDetail(MouseEventArgs ev)
-    {         
+    {
+        string tempContactName = MasterMovement?.ContactName ?? "";
+        string tempReference = MasterMovement?.Reference ?? "";
+        int tempContactId = MasterMovement!.ContactId ?? 0;
+
         Type tipoCatalogo = MasterMovement?.TypeId == "R" ? typeof(PartsCatalog) : typeof(InventoryCatalog);
         var dialogReference = await DialogService.ShowAsync(tipoCatalogo,"", new DialogParameters { ["MovementId"] = MasterMovement!.Id }, options);        
         if ((await dialogReference.Result) is DialogResult dialogResult && !dialogResult.Canceled)
+        {
             await MovementDetailsMudDataGrid!.ReloadServerData();
+            MasterMovement!.Reference = tempReference;
+            MasterMovement!.ContactName = tempContactName;
+            MasterMovement!.ContactId = tempContactId;
+        }
+        
     }
 
     private async Task ClickRemoveMovementDetails(MouseEventArgs ev)
@@ -242,6 +262,12 @@
 
     private async Task SaveClick(MouseEventArgs args)
     {
+        if (MovementDetailsMudDataGrid?.FilteredItems.Count() == 0)
+        {
+            await DialogService.ShowDialog("No se puede guardar. Debe agregar al menos un ítem.", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            return;
+        }
+
         await form!.Validate();
         if (form.IsValid)
         {
@@ -328,6 +354,16 @@
             await DialogService.ShowDialog(Useful.OkSavedMessage, "Accion", "OK", Color.Info, Icons.Material.Filled.Commit);
             MovementId = null;
         }
+        else if (result_PostMovementActions?.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflictContent = await result_PostMovementActions.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+            await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        else
+        {
+            var errorMessage = await result_PostMovementActions!.Content.ReadAsStringAsync() ?? "";
+            throw new Exception(errorMessage);
+        }
     }
 
     private async Task DeleteMovementDetailAction(List<Models.Action>? actions)
@@ -336,7 +372,7 @@
         if ((result_Post_Actions?.IsSuccessStatusCode ?? false))
         {
             //var rest = result_Post_Actions.Content.ReadAsStringAsync();
-            await DialogService.ShowDialog(Useful.OkSavedMessage, "Remover", "OK", Color.Info, Icons.Material.Filled.Commit);
+            await DialogService.ShowDialog(MessageEnum.DeclineOK.GetStringValue(), "Remover", "OK", Color.Info, Icons.Material.Filled.Commit);
             await MovementDetailsMudDataGrid!.ReloadServerData();
         }
         else if (result_Post_Actions?.StatusCode == System.Net.HttpStatusCode.Conflict)

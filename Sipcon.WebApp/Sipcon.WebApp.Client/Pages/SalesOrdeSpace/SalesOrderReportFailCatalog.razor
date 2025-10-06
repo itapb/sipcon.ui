@@ -1,0 +1,126 @@
+﻿    <MudGrid Spacing="0">
+        <MudItem xs="12">
+            <MudPaper Elevation="2" Class="jpv1-dialog-background-title pa-3" Square="true">
+                <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                    <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                        <MudStack Row="true">
+                            <MudText Typo="Typo.h6" Color="Color.Info">Catalogo Vehiculos</MudText>
+                        </MudStack>
+                        <MudStack>
+                            <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="CloseClick" />
+                        </MudStack>
+                    </MudStack>
+                </MudPaper>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12">
+        <MudDataGrid @ref="ServiceFailMudDataGrid" T="ServiceFail" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" FixedHeader Height="calc(100vh - 280px)" @bind-CurrentPage="ContactCurrentPage">
+                <ToolBarContent>
+                    <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                    <MudSpacer />
+                    <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshVehicleInvoiceCatalog"></MudIconButton>
+                </ToolBarContent>
+                <Columns>
+                <PropertyColumn Property="x => x.ReportId" Title="REPORTE ID" />
+                <PropertyColumn Property="x => x.Vin" Title="VIN" />
+                <PropertyColumn Property="x => x.Customer" Title="CLIENTE" />                
+                <TemplateColumn>
+                    <HeaderTemplate>
+                        <MudText>PARALIZADO</MudText>
+                    </HeaderTemplate>
+                    <CellTemplate>
+                        <MudIcon Icon="@(context.Item.Paralyzed ?? false ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.Paralyzed ?? false ? Color.Success : Color.Error)" Size="Size.Medium" />
+                    </CellTemplate>
+                </TemplateColumn>
+                    <TemplateColumn>
+                        <CellTemplate>
+                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Add" OnClick="() => ClickAddVehicleInvoice(context.Item)" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+                <PagerContent>
+                    <MudDataGridPager T="Part" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+                </PagerContent>
+            </MudDataGrid>
+        </MudItem>
+    </MudGrid>
+
+@code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public int? SalesOrderId { get; set; }
+    [Parameter] public string? ServiceFailType { get; set; }
+    private MudDataGrid<ServiceFail>? ServiceFailMudDataGrid;
+
+    private List<ServiceFail>? ServiceFailList;
+    private Func<Model?, string> ConvertModelFunc = model => model?.Name!;
+    private ServiceFail? VehicleInvoiceSelected;
+    private async Task OnModelValueChanged(ServiceFail selectedVehicleInvoice)
+    {
+        VehicleInvoiceSelected = selectedVehicleInvoice;
+        await ServiceFailMudDataGrid!.ReloadServerData();
+    }
+
+    bool _loading = true;
+    string searchString = "";
+    private int ContactCurrentPage = 0;
+   
+    private async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            _loading = true;
+            searchString = text;
+            await ServiceFailMudDataGrid!.ReloadServerData();
+        }
+    }
+    Func<ServiceFail, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    {
+        nameof(ServiceFail.ReportId) => o => o.ReportId ?? 0,
+        nameof(ServiceFail.Vin) => o => o.Vin ?? "",
+        nameof(ServiceFail.Customer) => o => o.Customer ?? "",
+        nameof(ServiceFail.Paralyzed) => o => o.Paralyzed ?? false,
+        _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto
+    };
+    private async Task<GridData<ServiceFail>> ServerReload(GridState<ServiceFail> state)
+    {
+        _loading = true;
+        var totalItems = 0;
+        var mOffset = state.Page * state.PageSize;
+        IEnumerable<ServiceFail> data;
+        HttpResponseMessage response = await Http.GetAsync($"api/SaleOrder/GetReportFail?userId={Useful.userId}&dealerId={Useful.dealerId}&type={ServiceFailType}&rowfrom=0");
+        if (response.IsSuccessStatusCode)
+        {
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<ServiceFail>>>();
+            totalItems = content2!.total ?? 0;
+            data = content2!.data ?? new List<ServiceFail>();
+        }
+        else
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
+        if (state.SortDefinitions.FirstOrDefault() is SortDefinition<ServiceFail> sortDefinition)
+        {
+            data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
+        }
+        _loading = false;
+        return new GridData<ServiceFail> { TotalItems = totalItems, Items = data };
+    }
+    private async Task ClickRefreshVehicleInvoiceCatalog(MouseEventArgs ev)
+    {
+        await ServiceFailMudDataGrid!.ReloadServerData();
+    }
+    private async Task ClickAddVehicleInvoice(ServiceFail item)
+    {
+        MudDialog?.Close(DialogResult.Ok(item));
+        await Task.CompletedTask;
+    }
+      
+    private void CloseClick(MouseEventArgs args)
+    {
+        MudDialog?.Close();
+    }
+}
+

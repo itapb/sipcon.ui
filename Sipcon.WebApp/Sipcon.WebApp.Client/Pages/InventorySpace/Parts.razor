@@ -38,7 +38,7 @@
             <PropertyColumn Property="x => x.Price" title="PRECIO" />
             <TemplateColumn>
                 <HeaderTemplate>
-                    <MudText>ACTIVO</MudText>
+                    <MudText>ESTATUS</MudText>
                 </HeaderTemplate>
                 <CellTemplate>
                     <MudIcon Icon="@(context.Item.IsActive ?? false ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.IsActive ?? false ? Color.Success : Color.Error)" Size="Size.Medium" />
@@ -114,7 +114,7 @@ else
         if (result_Post_Actions is not null && result_Post_Actions.IsSuccessStatusCode)
         {
             var resultAction = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
-            if (resultAction?.data!.updatedRows > 0)
+            if (resultAction?.data! is ({ insertedRows: > 0 } or { updatedRows: > 0 }))
             {
                 var result = await DialogService.ShowDialog("Parte(s) Actualizado(s)!", "Partes", "OK", Color.Info, Icons.Material.Filled.Commit);
                 await PartMudDataGrid!.ReloadServerData();
