@@ -391,7 +391,8 @@
                     UnitPrice = Detail.UnitPrice ?? 0,
                     IsExternal = Detail.IsExternal,
                     IsTax = Detail.IsTax,
-                    IsActive = Detail.IsActive
+                    IsActive = Detail.IsActive,
+                    InvoiceNumber = Detail.InvoiceNumber
                 };
 
                 var url = $"api/Service/PostDetails?userId={IdUser}";

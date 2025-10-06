@@ -20,7 +20,8 @@ namespace Sipcon.WebApp.Client.Models
         public bool IsExternal { get; set; } = false;
         public bool IsTax { get; set; } = false;
         public bool IsActive { get; set; } = true;
-  
+        public string InvoiceNumber { get; set; } = string.Empty;
+
     }
 
 
@@ -35,6 +36,7 @@ namespace Sipcon.WebApp.Client.Models
         public bool IsExternal { get; set; } = true;
         public bool IsTax { get; set; } = true;
         public bool IsActive { get; set; } = true;
+        public string InvoiceNumber { get; set; } = string.Empty;
 
     }
 

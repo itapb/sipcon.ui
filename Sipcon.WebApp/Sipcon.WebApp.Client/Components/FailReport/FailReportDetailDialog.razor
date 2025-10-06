@@ -122,7 +122,18 @@
 
                             <MudStack Row="true">
                                 <MudSpacer />
-                                <MudSpacer />
+                            <MudNumericField Typo="Typo.caption" @bind-Value="_model.InvoiceNumber"
+                                             Label="Nro.Factura"
+                                             Class="align-right"
+                                             Style="line-height: 0.8rem;"
+                                             Variant="Variant.Text"
+                                             Margin="Margin.None"
+                                             MaxLength="10"
+                                             HideSpinButtons="true"
+                                             Pattern="[0-9]*"
+                                             Format="N0"
+                                             Culture="@CultureInfo.GetCultureInfo("es-VE")"/>
+
                                 <MudNumericField Typo="Typo.caption" T="double" @bind-Value="_model.Price"
                                              Label="Precio"
                                              Class="align-right"
@@ -474,6 +485,19 @@
 
             RuleFor(x => x.UnitPrice)
                .NotNull().WithMessage("Campo requerido");
+
+            // RuleFor(x => x.InvoiceNumber)
+            //    .NotNull().WithMessage("Campo requerido.")
+            //    .NotEmpty().WithMessage("Campo requerido ")
+            //    .Length(5, 10).WithMessage("Campo requerido entre 5-10 digitos")
+            //    .Custom((value, context) =>
+            //    {
+            //        long number;
+            //        if (!long.TryParse(value, out number))
+            //        {
+            //            context.AddFailure($"Campo requerido solo digitos [0-9]");
+            //        }
+            //    });
 
         }
 

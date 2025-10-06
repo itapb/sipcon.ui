@@ -463,16 +463,19 @@
         {
             _model = new Assistence();
             _isReadOnly = false;
-
+            _searchVin = string.Empty;
             await Task.Delay(50);
         }
         else
         {
             await GetAssistence();
+            _searchVin = _model.Vin;
+
+            await GetPolicyBy();
 
         }
 
-        _searchVin = string.Empty;
+       
 
         StateHasChanged();
         await Task.CompletedTask;

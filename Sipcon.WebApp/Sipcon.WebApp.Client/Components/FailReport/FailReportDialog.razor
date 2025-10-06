@@ -639,18 +639,21 @@
             };
 
             _isReadOnly = false;
-
+            _searchVin = string.Empty;
             await Task.Delay(50);
         }
         else
         {
             await GetFailReport();
 
+            _searchVin = _model.VIN;
+            await GetVehicle();
+
         }
 
         _FailReportTypeList = await ModuleActionsService.GetFailReportType(Useful.userId);
 
-        _searchVin = string.Empty;
+       
 
         StateHasChanged();
         await Task.CompletedTask;

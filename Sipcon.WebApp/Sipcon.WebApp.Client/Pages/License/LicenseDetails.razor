@@ -110,7 +110,7 @@
 
                 <ToolBarContent>
 
-                    <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddLicenseDetail()"></MudIconButton>
+                    <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddLicenseDetail()" Disabled="@_disableAddDetail"></MudIconButton>
                     <MudTextField @bind-Value="_searchString" Placeholder="buscar" Adornment="Adornment.Start" Immediate="true"
                                   Typo="Typo.caption"
                                   AdornmentIcon="@Icons.Material.Filled.Search"
@@ -125,7 +125,8 @@
                         {
                             <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
                                          Label="@module.Text"
-                                         OnClick="() => HandleMenuClick(module)" />
+                                         OnClick="() => HandleMenuClick(module)"
+                                         Disabled="@(_acionsDisableDetail.Contains(module.Text) ? _disableAddDetail : false)" />
                         }
                     </MudMenu>
                 </ToolBarContent>
@@ -251,6 +252,18 @@
     private HashSet<LicenseDetail> selectedLicenseDetail = new([]);
     private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
 
+    private bool _disableAddDetail = false;
+    List<string> _statusDisableAddDetail = new List<string>()
+    {
+        "ACTIVADO"
+    };
+
+    List<string> _acionsDisableDetail = new List<string>()
+    {
+        "INACTIVAR",
+        "IMPORTAR"
+    };
+
    
     private List<BreadcrumbItem> _itemsNavigate =
                 [
@@ -260,6 +273,20 @@
     ];
 
 
+
+    private async Task<GridData<LicenseDetail>> LoadGridData(GridState<LicenseDetail> state)
+    {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+        Useful.IsNewOrEdit = true;
+
+        _rowCount = state.Page * state.PageSize;
+
+        await GetLicense();
+        await GetLicenseDetails();
+
+        return new GridData<LicenseDetail> { TotalItems = _rowsTotal, Items = _LicenseDetails };
+    }
+
     private async Task GetLicense()
     {
 
@@ -267,6 +294,7 @@
         if (serviceResponse.Processed)
         {
             _model = serviceResponse.Data ?? new License();
+            _disableAddDetail = _statusDisableAddDetail.Contains(_model.EstatusName.ToUpper());
         }
         else
         {
@@ -280,19 +308,6 @@
         await Task.Delay(50);
         StateHasChanged();
 
-    }
-
-
-    private async Task<GridData<LicenseDetail>> LoadGridData(GridState<LicenseDetail> state)
-    {
-        await AuthenticationStateProvider.RefreshStaticVariables();
-
-        _rowCount = state.Page * state.PageSize;
-
-        await GetLicense();
-        await GetLicenseDetails();
-
-        return new GridData<LicenseDetail> { TotalItems = _rowsTotal, Items = _LicenseDetails };
     }
 
     private async Task GetLicenseDetails()
