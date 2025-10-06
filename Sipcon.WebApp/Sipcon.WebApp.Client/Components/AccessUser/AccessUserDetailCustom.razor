@@ -64,9 +64,9 @@
 @code {
 
     [Parameter] public int? IdAccessGroup { get; set; } = null;
-    
+
     private MudDataGrid<AccessUserDetail>? _mudDataGrid;
-    
+
     private IEnumerable<AccessUserDetail> _accessUserDetails = new List<AccessUserDetail>();
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
@@ -76,7 +76,7 @@
     private int _rowsTotal = 0; 
     private string _searchString = string.Empty;
     private bool _loading = true;
-    
+
 
     private async Task<GridData<AccessUserDetail>> LoadGridData(GridState<AccessUserDetail> state)
     {
@@ -92,7 +92,7 @@
     {
         _loading = true;
         _rowsTotal = 0;
-        
+
         _accessUserDetails = new List<AccessUserDetail>();
 
         var serviceResponse = await SecurityService.GetAccessUserDetails(IdAccessGroup ?? 0, _rowCount, true, _searchString);
@@ -101,7 +101,7 @@
             _accessUserDetails = serviceResponse.Data;
             _rowsTotal = serviceResponse.Total;
         }
-        
+
         await Task.Delay(50);
         StateHasChanged();
         _loading = false;
@@ -142,11 +142,11 @@
         }
 
     }
-   
+
 
     private async Task ClickAddDetailAccessUser()
     {
-     
+
         DialogOptions options = new() { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
 
         var parameters = new DialogParameters<AccesUserCatalog> { { x => x.IdAccessGroup, IdAccessGroup ?? 0 }, { x => x.Title, "USUARIOS" } };
@@ -169,7 +169,7 @@
             {
                 _success = false;
                 _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.DeleteNotOK.GetStringValue();
-                Console.WriteLine(serviceResponse.Message);
+                // Console.WriteLine(serviceResponse.Message);
             }
 
         }
@@ -177,7 +177,12 @@
     }
 
 
-    private void OpenNested() => _nestedVisible = true;
+    private void OpenNested()
+    {
+        StateHasChanged();
+        _nestedVisible = true;
+    }
+    
 
 
     private async Task ClickDeleteItemAsync(AccessUserDetail detail)
@@ -202,20 +207,20 @@
             {
                 _success = true;
                 _nestedErrorMessage = MessageEnum.DeleteOK.GetStringValue();
+
+                await _mudDataGrid!.ReloadServerData();
             }
             else
             {
+                // Console.WriteLine(serviceResponse.Message);
                 _success = false;
                 _nestedErrorMessage = MessageEnum.DeleteNotOK.GetStringValue();
-                Console.WriteLine(serviceResponse.Message);
+                
             }
 
             OpenNested();
-            await _mudDataGrid!.ReloadServerData();
-            StateHasChanged();
 
         }
-       
 
         await Task.CompletedTask;
     }

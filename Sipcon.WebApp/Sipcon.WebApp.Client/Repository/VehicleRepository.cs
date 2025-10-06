@@ -21,7 +21,7 @@
             try
             {
                 var url = $"api/Vehicle/GetAll?supplierId={IdSupplier}&userId={IdUser}&rowFrom={RowFrom}";
-                url = (IdDealer.HasValue && IdDealer.Value > 0) ? $"{url}&dealerId={IdDealer}" : url;
+                url = (IdDealer.HasValue ) ? $"{url}&dealerId={IdDealer}" : url;
                 url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
                 
                 result = await _http.GetFromJsonAsync<ApiResponse<List<Vehicle>>>(url);
@@ -54,7 +54,7 @@
             try
             {
                 var url = $"api/Vehicle/GetAllAvailables?userId={IdUser}&rowFrom={RowFrom}";
-                url = (IdDealer.HasValue && IdDealer.Value > 0) ? $"{url}&dealerId={IdDealer}" : url;
+                url = (IdDealer.HasValue ) ? $"{url}&dealerId={IdDealer}" : url;
                 url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
 
                 result = await _http.GetFromJsonAsync<ApiResponse<List<Vehicle>>>(url);
@@ -112,7 +112,7 @@
             {
 
                 var url = $"api/Vehicle/GetOneBy?userId={IdUser}&filterBy={(int)SearchBy}";
-                url = (IdDealer.HasValue && IdDealer.Value > 0) ? $"{url}&dealerId={IdDealer}" : url;
+                url = (IdDealer.HasValue ) ? $"{url}&dealerId={IdDealer}" : url;
                 url = string.IsNullOrEmpty(Search) ? url : $"{url}&filter={Search}";
 
                 result = await _http.GetFromJsonAsync<ApiResponse<Vehicle>>(url);
@@ -136,12 +136,12 @@
             return result;
         }
 
-        public async Task<ApiResponse<VehicleService>> GetVehicleFullBy(int IdUser, string Search,SearchByEnum SearchBy)
+        public async Task<ApiResponse<VehicleService>> GetVehicleFullBy(int IdSupplier, int IdUser, string Search,SearchByEnum SearchBy)
         {
             ApiResponse<VehicleService>? result;
             try
             {
-                var url = $"api/Vehicle/GetVehicleFullBy?userId={IdUser}&filterBy={(int)SearchBy}";
+                var url = $"api/Vehicle/GetVehicleFullBy?supplierId={IdSupplier}&userId={IdUser}&filterBy={(int)SearchBy}";
                 url = string.IsNullOrEmpty(Search) ? url : $"{url}&filter={Search}";
 
                 result = await _http.GetFromJsonAsync<ApiResponse<VehicleService>>(url);
@@ -173,7 +173,7 @@
                 ApiResponse<List<Vehicle>>? Listresult;
 
                 var url = $"api/Vehicle/GetOneAvailable?userId={IdUser}&VinOrPlate={Search}";
-                url = (IdDealer.HasValue && IdDealer.Value > 0) ? $"{url}&dealerId={IdDealer}" : url;
+                url = (IdDealer.HasValue ) ? $"{url}&dealerId={IdDealer}" : url;
                 
                 Listresult = await _http.GetFromJsonAsync<ApiResponse<List<Vehicle>>>(url);
 

@@ -6,6 +6,7 @@
 @inject IPolicyTypeService PolicyTypeService
 @inject IDialogService DialogService
 @inject UtilModuleActions ModuleActionsService
+@using System.Globalization
 
 
 <MudForm Model="@_model" @ref="@form" Validation="@(_modelValidator.ValidateValue)" ValidationDelay="0" >
@@ -136,31 +137,40 @@
                                                      Label="KM Frecuencia" 
                                                      Variant="Variant.Text"
                                                      Margin="Margin.Dense"
-                                                     Max="500000"
+                                                     MaxLength="6"
                                                      HideSpinButtons="true"
+                                                     Pattern="[0-9]*"
+                                                     Format="N0"
+                                                     Culture="@CultureInfo.GetCultureInfo("es-VE")"
+                                                     Disabled="@(!_model.IsActive)"
                                                      For="@(() => _model.KM)"
-                                                     Immediate="true" 
-                                                     Disabled="@(!_model.IsActive)" />
+                                                     Immediate="true" />
 
                                     <MudNumericField Typo="Typo.caption" @bind-Value="_model.GapKM" 
                                                      Label="KM Tolerancia" 
                                                      Variant="Variant.Text"
                                                      Margin="Margin.Dense"
-                                                     Max="1500"
+                                                     MaxLength="4"
                                                      HideSpinButtons="true"
+                                                     Pattern="[0-9]*"
+                                                     Format="N0"
+                                                     Culture="@CultureInfo.GetCultureInfo("es-VE")"
+                                                     Disabled="@(!_model.IsActive)"
                                                      For="@(() => _model.GapKM)"
-                                                     Immediate="true" 
-                                                     Disabled="@(!_model.IsActive)" />
+                                                     Immediate="true" />
 
                                     <MudNumericField Typo="Typo.caption" @bind-Value="_model.TopKM" 
                                                      Label="KM Cobertura" 
                                                      Variant="Variant.Text"
                                                      Margin="Margin.Dense"
-                                                     Max="500000"
+                                                     MaxLength="6"
                                                      HideSpinButtons="true"
+                                                     Pattern="[0-9]*"
+                                                     Format="N0"
+                                                     Culture="@CultureInfo.GetCultureInfo("es-VE")"
+                                                     Disabled="@(!_model.IsActive)"
                                                      For="@(() => _model.TopKM)"
-                                                     Immediate="true" 
-                                                     Disabled="@(!_model.IsActive)" />
+                                                     Immediate="true" />
 
                                 </MudStack>
 
@@ -185,26 +195,44 @@
 
                                 <MudStack Row="false">
 
-                                    <MudNumericField Typo="Typo.caption" @bind-Value="_model.Months" Label="Meses Frecuencia" Variant="Variant.Text"
-                                    Max="120"
-                                    HideSpinButtons="true" 
-                                    Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                    For="@(() => _model.Months)"
-                                    Immediate="true" />
+                                    <MudNumericField Typo="Typo.caption" @bind-Value="_model.Months" 
+                                                     Label="Meses Frecuencia" 
+                                                     Variant="Variant.Text"
+                                                     Margin="Margin.Dense"
+                                                     MaxLength="3"
+                                                     HideSpinButtons="true"
+                                                     Pattern="[0-9]*"
+                                                     Format="N0"
+                                                     Culture="@CultureInfo.GetCultureInfo("es-VE")"
+                                                     Disabled="@(!_model.IsActive)"
+                                                     For="@(() => _model.Months)"
+                                                     Immediate="true" />
 
-                                    <MudNumericField Typo="Typo.caption" @bind-Value="_model.GapMonths" Label="Dias Tolerancia" Variant="Variant.Text"
-                                    Max="30"
-                                    HideSpinButtons="true"
-                                    Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                    For="@(() => _model.GapMonths)"
-                                    Immediate="true" />
+                                    <MudNumericField Typo="Typo.caption" @bind-Value="_model.GapMonths" 
+                                                     Label="Dias Tolerancia" 
+                                                     Variant="Variant.Text"
+                                                     Margin="Margin.Dense"
+                                                     MaxLength="2"
+                                                     HideSpinButtons="true"
+                                                     Pattern="[0-9]*"
+                                                     Format="N0"
+                                                     Culture="@CultureInfo.GetCultureInfo("es-VE")"
+                                                     Disabled="@(!_model.IsActive)"
+                                                     For="@(() => _model.GapMonths)"
+                                                     Immediate="true" />
 
-                                    <MudNumericField Typo="Typo.caption" @bind-Value="_model.TopMonths" Label="Meses Cobertura " Variant="Variant.Text"
-                                    Max="120"
-                                    HideSpinButtons="true"
-                                    Margin="Margin.Dense" Disabled="@(!_model.IsActive)"
-                                    For="@(() => _model.TopMonths)"
-                                    Immediate="true" />
+                                    <MudNumericField Typo="Typo.caption" @bind-Value="_model.TopMonths" 
+                                                     Label="Meses Cobertura " 
+                                                     Variant="Variant.Text"
+                                                     Margin="Margin.Dense"
+                                                     MaxLength="3"
+                                                     HideSpinButtons="true"
+                                                     Pattern="[0-9]*"
+                                                     Format="N0"
+                                                     Culture="@CultureInfo.GetCultureInfo("es-VE")"
+                                                     Disabled="@(!_model.IsActive)"
+                                                     For="@(() => _model.TopMonths)"
+                                                     Immediate="true" />
 
                                 </MudStack>
                             </MudCardContent>
@@ -295,7 +323,7 @@
 
             _supplierList = await ModuleActionsService.GetSupplierOption(Useful.userId, _model.BrandId ?? 0);
             _model.SupplierId = _supplierList.FirstOrDefault()?.Value ?? null;
-            
+
             await Task.Delay(50);
             StateHasChanged();
         }
@@ -314,7 +342,7 @@
     private async Task GetPolicyType()
     {
         _model = new PolicyType();
-        
+
         var serviceResponse = await PolicyTypeService.GetPolicyType(IdPolicyType, Useful.userId);
         if (serviceResponse.Processed)
         {
@@ -325,13 +353,16 @@
 
             _supplierList = await ModuleActionsService.GetSupplierOption(Useful.userId, _model.BrandId ?? 0);
 
-            await Task.Delay(50);
             StateHasChanged();
+            await Task.Delay(50);
+
         }
         else
         {
+            // Console.WriteLine(serviceResponse.Message);
+            _successModal = false;
             _errorModalMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
-            Console.WriteLine(serviceResponse.Message);
+
             OpenNested();
         }
 
@@ -381,9 +412,9 @@
             }
             else
             {
+                // Console.WriteLine(serviceResponse.Message);
                 _successModal = false;
                 _errorModalMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue();
-                Console.WriteLine(serviceResponse.Message);
 
             }
             OpenNested();
@@ -406,12 +437,17 @@
         }
     }
 
-    private void OpenNested() => _nestedModalVisible = true;
+    private void OpenNested()
+    {
+        _nestedModalVisible = true;
+        StateHasChanged();
+    }
+
 
     private async Task CloseNestedModal()
     {
         _nestedModalVisible = false;
-
+        StateHasChanged();
         await Task.Delay(50);
         MudDialog.Close(DialogResult.Ok(true));
         await Task.CompletedTask;
@@ -440,20 +476,48 @@
                 .NotNull().WithMessage("Campo requerido")
                 .GreaterThan(0).WithMessage("Campo requerido");
 
+
             RuleFor(x => x.KM)
                 .NotNull().WithMessage("Campo requerido")
                 .NotEmpty().WithMessage("Campo requerido")
-                .InclusiveBetween(1, 500000).WithMessage("Campo requerido entre {1 - 500.000} km");
+                .InclusiveBetween(1, 500000).WithMessage("Campo requerido entre {1 - 500.000} km")
+                .Custom((value, context) =>
+                {
+                    int number;
+                    if (!int.TryParse(value.ToString(), out number))
+                    {
+                        context.AddFailure($"Campo requerido solo digitos [0-9]");
+                    }
+                })
+                .Must((model, KM) =>
+                    KM.HasValue && model.KM.HasValue && KM.Value > (model.GapKM ?? 0)
+                ).WithMessage("Frecuencia debe ser MAYOR a la Tolerancia."); 
 
             RuleFor(x => x.GapKM)
                 .NotNull().WithMessage("Campo requerido")
                 .NotEmpty().WithMessage("Campo requerido")
+                .Custom((value, context) =>
+                {
+                    int number;
+                    if (!int.TryParse(value.ToString(), out number))
+                    {
+                        context.AddFailure($"Campo requerido solo digitos [0-9]");
+                    }
+                })
                 .InclusiveBetween(1, 1500).WithMessage("Campo requerido entre {1 - 1.500} km"); 
 
             RuleFor(x => x.TopKM)
                 .NotNull().WithMessage("Campo requerido")
                 .NotEmpty().WithMessage("Campo requerido")
                 .InclusiveBetween(1, 500000).WithMessage("Campo requerido entre {1 - 500.000} km")
+                .Custom((value, context) =>
+                {
+                    int number;
+                    if (!int.TryParse(value.ToString(), out number))
+                    {
+                        context.AddFailure($"Campo requerido solo digitos [0-9]");
+                    }
+                })
                 .Must((model, TopKM) =>
                         model.KM.HasValue && TopKM.HasValue && TopKM.Value > model.KM.Value
                     ).WithMessage("Cobertura debe ser MAYOR a la Frecuencia ");
@@ -461,17 +525,41 @@
             RuleFor(x => x.Months)
                 .NotNull().WithMessage("Campo requerido")
                 .NotEmpty().WithMessage("Campo requerido")
+                .Custom((value, context) =>
+                {
+                    int number;
+                    if (!int.TryParse(value.ToString(), out number))
+                    {
+                        context.AddFailure($"Campo requerido solo digitos [0-9]");
+                    }
+                })
                 .InclusiveBetween(1, 120).WithMessage("Campo requerido entre {1 - 120} Meses");
 
             RuleFor(x => x.GapMonths)
                 .NotNull().WithMessage("Campo requerido")
                 .NotEmpty().WithMessage("Campo requerido")
+                .Custom((value, context) =>
+                {
+                    int number;
+                    if (!int.TryParse(value.ToString(), out number))
+                    {
+                        context.AddFailure($"Campo requerido solo digitos [0-9]");
+                    }
+                })
                 .InclusiveBetween(1, 30).WithMessage("Campo requerido entre {1 - 30} dias");
 
             RuleFor(x => x.TopMonths)
                 .NotNull().WithMessage("Campo requerido")
                 .NotEmpty().WithMessage("Campo requerido")
                 .InclusiveBetween(1, 120).WithMessage("Campo requerido entre {1 - 120} Meses ")
+                .Custom((value, context) =>
+                {
+                    int number;
+                    if (!int.TryParse(value.ToString(), out number))
+                    {
+                        context.AddFailure($"Campo requerido solo digitos [0-9]");
+                    }
+                })
                 .Must((model, TopMonths) =>
                     TopMonths.HasValue && model.Months.HasValue && TopMonths.Value > model.Months.Value
                 ).WithMessage("Cobertura debe ser MAYOR a la Frecuencia.");

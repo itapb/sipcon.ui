@@ -129,9 +129,8 @@
                     DealerId = FailReport.DealerId ?? 0,
                     VehicleId = FailReport.VehicleId ?? 0,
                     Km = FailReport.KM ?? 0,
-                    CustomerId = FailReport.CustomerId ?? 0,
-                    InvoiceNumber = FailReport.InvoiceNumber,
-                    InvoiceDate = FailReport.InvoiceDate ?? DateTime.Now,
+                    CustomerId = FailReport.CustomerId ?? 0
+                   
                 };
 
                 var response = await _http.PostAsJsonAsync($"api/Service/PostFailReport?userId={IdUser}", _assistence);
@@ -176,9 +175,7 @@
                     DealerId = FailReport.DealerId ?? 0,
                     VehicleId = FailReport.VehicleId ?? 0,
                     Km = FailReport.KM ?? 0,
-                    CustomerId = FailReport.CustomerId ?? 0,
-                    InvoiceNumber = FailReport.InvoiceNumber,
-                    InvoiceDate = FailReport.InvoiceDate ?? DateTime.Now,
+                    CustomerId = FailReport.CustomerId ?? 0
                 };
 
                 var response = await _http.PostAsJsonAsync($"api/Service/PostFailReport?userId={IdUser}", _assistence);
@@ -229,6 +226,35 @@
             return result;
 
         }
+
+        public async Task<ApiResponse<ActionResult>> ActionsFailReportProcess(List<PostActionProcess> PostActions, int IdUser)
+        {
+            ApiResponse<ActionResult>? result;
+
+            try
+            {
+                var response = await _http.PostAsJsonAsync($"api/Service/PostProcess?userId={IdUser}&serviceTypeId={(int)ServiceTypeEnum.FailReport}", PostActions);
+
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = "El servidor devolvió una respuesta vacía."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+            return result;
+
+        }
+
 
         public async Task<ApiResponse<List<byte>>> ExportFailReports(int IdSupplier, int IdUser, string Filter = "", int? IdDealer = null)
         {
@@ -365,7 +391,8 @@
                     UnitPrice = Detail.UnitPrice ?? 0,
                     IsExternal = Detail.IsExternal,
                     IsTax = Detail.IsTax,
-                    IsActive = Detail.IsActive
+                    IsActive = Detail.IsActive,
+                    InvoiceNumber = Detail.InvoiceNumber
                 };
 
                 var url = $"api/Service/PostDetails?userId={IdUser}";

@@ -196,7 +196,7 @@
     bool _successModal = false;
 
     private IEnumerable<SelectOption> _lisenceTypeList { get; set; } = new List<SelectOption>();
-    
+
     LicenseValidator _modelValidator = new LicenseValidator();
     IMask maskDate = new DateMask("dd/MM/yyyy");
 
@@ -233,15 +233,15 @@
             _model = serviceResponse.Data ?? new License();
 
             _lisenceTypeList = await ModuleActionsService.GetLicenseTypeOption(Useful.userId);
-
-            await Task.Delay(50);
             StateHasChanged();
+            await Task.Delay(50);
         }
         else
         {
+            // Console.WriteLine(serviceResponse.Message);
             _model = new License();
             _errorModalMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
-            Console.WriteLine(serviceResponse.Message);
+
             OpenNested();
         }
 
@@ -252,7 +252,7 @@
     private async Task OnLicenseTypeValueChanged(int IdType)
     {
         _model.TypeId = IdType;
-        
+
         StateHasChanged();
         form?.ResetValidation();
         await Task.CompletedTask;
@@ -287,9 +287,9 @@
             }
             else
             {
+                // Console.WriteLine(serviceResponse.Message);
                 _successModal = false;
                 _errorModalMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue(); ;
-                Console.WriteLine(serviceResponse.Message);
 
             }
             OpenNested();
@@ -312,12 +312,17 @@
         }
     }
 
-    private void OpenNested() => _nestedModalVisible = true;
+    private void OpenNested()
+    {
+        StateHasChanged();
+        _nestedModalVisible = true;
+    }
+    
 
     private async Task CloseNestedModal()
     {
         _nestedModalVisible = false;
-       
+        StateHasChanged();
         await Task.Delay(50);
         if (_successModal)
             MudDialog.Close(DialogResult.Ok(true));

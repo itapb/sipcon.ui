@@ -1,0 +1,217 @@
+﻿@using Sipcon.WebApp.Client.Models
+@using Sipcon.WebApp.Client.Services
+@using Sipcon.WebApp.Client.Utils
+@using FluentValidation
+@using System.Globalization
+
+
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+
+<MudForm Model="@_model" @ref="@form" Validation="@(_modelValidator.ValidateValue)" ValidationDelay="0">
+    <MudDialog Class="blur dialog-background "  ActionsClass="dialog-background-surface">
+
+        <DialogContent>
+
+            <MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
+
+                <MudCard>
+
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudGrid Spacing="0" Justify="Justify.Center">
+                                <MudItem xs="12" sm="4">
+                                    <div class="d-flex justify-left">
+                                    </div>
+                                </MudItem>
+
+                                <MudItem xs="12" sm="2">
+
+                                </MudItem>
+                                <MudItem xs="12" sm="6">
+                                    <div class="d-flex justify-right" style="justify-content: end;">
+
+                                        <MudButton OnClick="Cancel">Cancelar</MudButton>
+                                        <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Aceptar" OnClick="@(async () => await OnValidSubmit())" Color="Color.Info" Size="Size.Small" />
+
+
+                                    </div>
+                                </MudItem>
+                            </MudGrid>
+
+
+                        </CardHeaderContent>
+
+                    </MudCardHeader>
+
+                </MudCard>
+
+            </MudContainer>
+
+            <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
+                <MudGrid Spacing="1" Justify="Justify.Center">
+
+                    <MudItem xs="12" sm="12">
+                        <MudCard>
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudStack Row="true">
+                                        <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Default" Style="font-size: 1.5rem;"></MudIcon>
+                                        <MudText Typo="Typo.subtitle2">@(string.IsNullOrEmpty(Title) ? "Datos de Factura" : Title)</MudText>
+                                    </MudStack>
+
+                                </CardHeaderContent>
+                                <CardHeaderActions>
+
+                                </CardHeaderActions>
+                            </MudCardHeader>
+                            <MudCardContent Style="padding-top: 3px;">
+                                <MudStack Row="true">
+
+                                     <MudDatePicker @bind-Date="_model.InvoiceDate"
+                                                       Style="font-size: 14px;line-height: 0.8rem;"
+                                                       Adornment="Adornment.Start"
+                                                       AdornmentColor="Color.Info"
+                                                       Class="align-right"
+                                                       Label="Fecha Factura"
+                                                       Variant="Variant.Text"
+                                                       PickerVariant="PickerVariant.Inline"
+                                                       Margin="Margin.None"
+                                                       Modal="false"
+                                                       ShowToolbar="false"
+                                                       DateFormat="dd/MM/yyyy"
+                                                       Mask="@maskDate"
+                                                       For="@(() => _model.InvoiceDate)" />
+
+                                        <MudSpacer />
+                                    <MudNumericField Typo="Typo.caption" @bind-Value="_model.InvoiceNumber"
+                                                  Label="Nro.Factura"
+                                                  Class="align-right" 
+                                                  Style="line-height: 0.8rem;"
+                                                  Variant="Variant.Text"
+                                                  Margin="Margin.None"
+                                                  MaxLength="10"
+                                                  HideSpinButtons="true"
+                                                  Pattern="[0-9]*"
+                                                  Format="N0"
+                                                  Culture="@CultureInfo.GetCultureInfo("es-VE")"
+                                                  For="@(() => _model.InvoiceNumber)" />
+
+
+
+                                </MudStack>
+
+
+                            </MudCardContent>
+                        </MudCard>
+
+
+                    </MudItem>
+                </MudGrid>
+            </MudContainer>
+
+        </DialogContent>
+
+    </MudDialog>
+</MudForm>
+
+
+<style>
+    .blur {
+    backdrop-filter: blur(10px);
+    }
+
+    .dialog-background {
+    background-color: transparent;
+    }
+
+    .dialog-background-title {
+    background: rgb(from var(--mud-palette-info-lighten) r g b / 50%);
+    color: var(--mud-palette-white);
+    }
+
+    .dialog-background-surface {
+    background: rgb(from var(--mud-palette-surface) r g b / 75%);
+    }
+</style>
+
+@code {
+
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    private MudForm? form;
+    
+    private FailReportInvoice _model { get; set; } = new FailReportInvoice();
+    private string _errorMessage = string.Empty;
+
+    FailReportValidator _modelValidator = new FailReportValidator();
+
+    IMask maskDate = new DateMask("dd/MM/yyyy");
+
+
+    private async Task OnValidSubmit()
+    {
+        await form!.Validate();
+        if (form.IsValid)
+        {
+            MudDialog.Close(DialogResult.Ok(_model));
+            
+        }
+
+        StateHasChanged();
+        await Task.CompletedTask;
+        
+    }
+
+
+    private void Cancel() => MudDialog.Cancel();
+
+    /// <summary>
+    /// Validacion del formulario
+    /// </summary>
+    /// <typeparam name="FailReport"></typeparam>
+    public class FailReportValidator : AbstractValidator<FailReportInvoice>
+    {
+        public FailReportValidator()
+        {
+
+            RuleFor(x => x.InvoiceNumber)
+               .NotNull().WithMessage("Campo requerido.")
+               .NotEmpty().WithMessage("Campo requerido ")
+               .Length(5, 10).WithMessage("Campo requerido entre 5-10 digitos")
+               .Custom((value, context) =>
+               {
+                   long number;
+                   if (!long.TryParse(value, out number))
+                   {
+                       context.AddFailure($"Campo requerido solo digitos [0-9]");
+                   }
+               });
+
+            RuleFor(x => x.InvoiceDate)
+                   .NotEmpty().WithMessage("Campo requerido")
+                   .Custom((value, context) =>
+                   {
+                       if (value > DateTime.Now)
+                       {
+                           context.AddFailure($"Campo requerido menor a la fecha actual {(DateTime.Now.ToString("dd-MMM-yyyy"))}");
+                       }
+                   });
+
+        }
+
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<FailReportInvoice>.CreateWithOptions((FailReportInvoice)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+
+    }
+}

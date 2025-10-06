@@ -69,12 +69,12 @@
             return result;
         }
 
-        public async Task<ApiResponse<Policy>> GetPolicyBy(string Search, int IdUser, SearchByEnum SearchBy)
+        public async Task<ApiResponse<Policy>> GetPolicyBy(int IdSupplier, int IdUser, string Search,  SearchByEnum SearchBy)
         {
             ApiResponse<Policy>? result;
             try
             {
-                result = await _http.GetFromJsonAsync<ApiResponse<Policy>>($"api/Policy/GetOneBy?userId={IdUser}&filter={Search}&filterBy={(int)SearchBy}");
+                result = await _http.GetFromJsonAsync<ApiResponse<Policy>>($"api/Policy/GetOneBy?supplierId={IdSupplier}&userId={IdUser}&filter={Search}&filterBy={(int)SearchBy}");
 
                 result = (result is null) ? new ApiResponse<Policy>()
                 {

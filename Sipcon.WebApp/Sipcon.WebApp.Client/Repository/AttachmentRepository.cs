@@ -4,6 +4,8 @@
     using Sipcon.WebApp.Client.Enum;
     using Sipcon.WebApp.Client.Models;
     using Sipcon.WebApp.Client.Services;
+    using System;
+    using System.Net.Http;
     using System.Net.Http.Json;
     using System.Reflection;
     using System.Text.Json;
@@ -78,31 +80,42 @@
             return result;
         }
 
-        public async Task<ApiResponse<bool>> CreateAttachment(int IdRecord, string ModuleName, int IdUser, MultipartFormDataContent FormData)
+        public async Task<ApiResponse<List<ActionResult>>> CreateAttachment(int IdRecord, string ModuleName, int IdUser, MultipartFormDataContent FormData)
         {
-            ApiResponse<bool> result;
+            ApiResponse<List<ActionResult>>? result;
             try
             {
-                var response = await _http.PostAsync($"api/Attachment/PostAttachment?userId={IdUser}&recordId={IdRecord}&moduleName={ModuleName}", FormData);
-                if (!response.IsSuccessStatusCode)
+                var Timeout = TimeSpan.FromSeconds(50); // Timeout value is 50 seconds
+                using (var cts = new CancellationTokenSource(Timeout))
                 {
-                    throw new Exception($"Error Crear Attachment: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                }
+                    var url = $"api/Attachment/PostAttachments?userId={IdUser}&recordId={IdRecord}&moduleName={ModuleName}";
+                    var response = await _http.PostAsync(url, FormData, cts.Token).ConfigureAwait(false);
 
-                result = new ApiResponse<bool>()
+                    result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ActionResult>>>();
+                    result = (result is null) ? new ApiResponse<List<ActionResult>>()
+                    {
+                        Processed = false,
+                        Message = "El servidor devolvió una respuesta vacía."
+                    } : result;
+                }
+                
+            }
+            catch (OperationCanceledException ex)
+            {
+                // Handle the cancellation gracefully
+                Console.WriteLine($"Operation was cancelled: {ex.Message}");
+                result = new ApiResponse<List<ActionResult>>()
                 {
-                    Processed = true,
-                    Message = "Importacion exitosa.",
-                    Data = true
+                    Processed = false,
+                    Message = string.Concat("Termino el tiempo de espera: 50 Segundos... ", ex.Message)
                 };
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<bool>()
+                result = new ApiResponse<List<ActionResult>>()
                 {
                     Processed = false,
-                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message),
-                    Data = false
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
                 };
             }
 
@@ -110,31 +123,27 @@
 
         }
 
-        public async Task<ApiResponse<bool>> DeleteAttachment(int IdAttachment, int IdUser)
+        public async Task<ApiResponse<ActionResult>> DeleteAttachment(int IdAttachment, int IdUser)
         {
-            ApiResponse<bool> result;
+            ApiResponse<ActionResult>? result;
             try
             {
-                var response = await _http.PostAsync($"api/Attachment/Delete_Attachment?userId={IdUser}&attachmentId={IdAttachment}", null);
-                if (!response.IsSuccessStatusCode)
+                string? _assistence = null;
+                var response = await _http.PostAsJsonAsync($"api/Attachment/Delete_Attachment?userId={IdUser}&attachmentId={IdAttachment}", _assistence);
+                
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
                 {
-                    throw new Exception($"Error Eliminar Attachment: {response.StatusCode.ToString()} - {response.ReasonPhrase}");
-                }
-
-                result = new ApiResponse<bool>()
-                {
-                    Processed = true,
-                    Message = "Importacion exitosa.",
-                    Data = true
-                };
+                    Processed = false,
+                    Message = "El servidor devolvió una respuesta vacía."
+                } : result;
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<bool>()
+                result = new ApiResponse<ActionResult>()
                 {
                     Processed = false,
-                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message),
-                    Data = false
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
                 };
             }
 

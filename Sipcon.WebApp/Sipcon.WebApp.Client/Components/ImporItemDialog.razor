@@ -31,12 +31,15 @@
 
                     <MudItem xs="12" sm="12">
                         <MudCard>
+                          
                             <MudCardContent Style="padding-top: 3px;">
                                 <MudItem xs="12">
-                                    <MudFileUpload T="IBrowserFile"
+                                    <MudFileUpload T="IReadOnlyList<IBrowserFile>"
                                                    @ref="@_fileUpload"
-                                                   @bind-Files="@_model.Files"
+                                                   OnFilesChanged="OnInputFileChanged"
+                                                   @bind-Files="_model.Files"
                                                    For="@(() => _model.Files)"
+                                                   AppendMultipleFiles
                                                    Hidden="@false"
                                                    InputClass="absolute mud-width-full mud-height-full overflow-hidden z-10"
                                                    InputStyle="opacity:0"
@@ -46,7 +49,8 @@
                                                    @ondragenter="@SetDragClass"
                                                    @ondragleave="@ClearDragClass"
                                                    @ondragend="@ClearDragClass" 
-                                                   Accept=".xls,.xlsx,.pdf,.png,.pneg,.jpg,.jpeg,.mp4" MaximumFileCount="100">
+                                                   Accept=".xls,.xlsx,.pdf,.png,.pneg,.jpg,.jpeg,.mp4" 
+                                                   MaximumFileCount="6">
                                         <ActivatorContent>
                                             <MudPaper Height="300px"
                                             Outlined="true"
@@ -55,11 +59,10 @@
                                                     Arrastre y suelte el archivo aquí o haga click.
                                                 </MudText>
 
-                                                @if (_fileUpload?.Files?.Name is not null)
+                                                @foreach (var file in _model.Files?.Select(file => file.Name) ?? Enumerable.Empty<string>())
                                                 {
-                                                    <MudChip T="string" Color="Color.Dark" Text="@(_model.Files is null? string.Empty : _model.Files.Name)" />
+                                                    <MudChip T="string" Color="Color.Dark" Text="@file" />
                                                 }
-
 
                                             </MudPaper>
                                         </ActivatorContent>
@@ -74,15 +77,15 @@
                                         </MudButton>
 
                                         <MudButton Color="Color.Error"
-                                        Disabled="@(_model.Files is null )"
-                                        OnClick="@ClearAsync"
-                                        Variant="Variant.Filled">
+                                                   Disabled="@(_model.Files is null || !_model.Files.Any())"
+                                                   OnClick="@ClearAsync"
+                                                   Variant="Variant.Filled">
                                             Eliminar
                                         </MudButton>
                                         <MudButton OnClick="Cancel">Cerrar</MudButton>
                                         <MudFab StartIcon="@Icons.Material.Filled.AttachFile"
                                                 Label="Adjuntar"
-                                            Disabled="@(!_isValid || !_isTouched || _model.Files is null )"
+                                                Disabled="@(!_isValid || !_isTouched || _model.Files is null || !_model.Files.Any())"
                                             OnClick="@(async () => await OnValidSubmit())" 
                                             Color="Color.Info" Size="Size.Small" />
                                     </MudToolBar>
@@ -135,27 +138,46 @@
 @code {
 
 
-    [CascadingParameter]
-    private IMudDialogInstance MudDialog { get; set; } = default!;
+    [CascadingParameter]private IMudDialogInstance MudDialog { get; set; } = default!;
 
-    [Parameter]
-    public string Title { get; set; } = string.Empty;
+    [Parameter]public string Title { get; set; } = string.Empty;
 
     private MudForm? form;
 
-    public class ModelFileUpload
-    {
-        public IBrowserFile? Files { get; set; } 
-    }
+    // public class ModelFileUpload
+    // {
+    //     public IBrowserFile? Files { get; set; } 
+    // }
+    // private ModelFileUpload _model = new();
+    // private MudFileUpload<IBrowserFile>? _fileUpload;
 
-    private ModelFileUpload _model = new();
+    public class Model
+    {
+        public IReadOnlyList<IBrowserFile>? Files { get; set; } = new List<IBrowserFile>();
+    }
+    private Model _model = new();
+    
     private ModelFluentValidator _validationRules = new();
-    private MudFileUpload<IBrowserFile>? _fileUpload;
+    
+    private MudFileUpload<IReadOnlyList<IBrowserFile>>? _fileUpload;
+
+
+    private readonly List<string> _fileNames = new();
+
     private bool _isValid;
     private bool _isTouched;
     private const string DefaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mt-4 mud-width-full mud-height-full";
     private string _dragClass = DefaultDragClass;
 
+    private void OnInputFileChanged(InputFileChangeEventArgs e)
+    {
+        ClearDragClass();
+        var files = e.GetMultipleFiles();
+        foreach (var file in files)
+        {
+            _fileNames.Add(file.Name);
+        }
+    }
 
     private void SetDragClass()
         => _dragClass = $"{DefaultDragClass} mud-border-primary";
@@ -187,17 +209,18 @@
 
     private void Cancel() => MudDialog.Cancel();
 
-    public class ModelFluentValidator : AbstractValidator<ModelFileUpload>
+    public class MudFileUploadValidator : AbstractValidator<IBrowserFile>
     {
-        public ModelFluentValidator()
+        public MudFileUploadValidator()
         {
-            RuleFor(x => x.Files == null ? string.Empty : x.Files!.Name)
+
+            RuleFor(x => x.Name)
                 .NotNull().WithMessage("Debe haber al menos un archivo. ")
-                .NotEmpty().WithMessage("Debe haber al menos un archivo. "); 
+                .NotEmpty().WithMessage("Debe haber al menos un archivo. ");
+            // 6 * 1024 * 1024  = 5MB
+            RuleFor(x => x.Size).NotNull().LessThanOrEqualTo(6 * 1024 * 1024).WithMessage("Archivo excede el limite maximo permitido de 5MB");
 
-            RuleFor(x => x.Files == null ? 0 : x.Files!.Size).NotNull().LessThanOrEqualTo(10000).WithMessage("Archivo excede el limite maximo permitido de 10MB");
-
-            RuleFor(x => x.Files == null ? string.Empty : x.Files!.ContentType).NotNull().Must(x => x.Equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            RuleFor(x => x.ContentType).NotNull().Must(x => x.Equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                     || x.Equals("application/vnd.ms-excel")
                     || x.Equals("application/pdf")
                     || x.Equals("image/jpeg")
@@ -211,8 +234,31 @@
 
         public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
         {
-            var result = await ValidateAsync(ValidationContext<ModelFileUpload>.CreateWithOptions((ModelFileUpload)model, x => x.IncludeProperties(propertyName)));
+            var result = await ValidateAsync(ValidationContext<IBrowserFile>.CreateWithOptions((IBrowserFile)model, x => x.IncludeProperties(propertyName)));
             return result.IsValid ? Array.Empty<string>() : result.Errors.Select(e => e.ErrorMessage);
         };
     }
+
+    public class ModelFluentValidator : AbstractValidator<Model>
+    {
+        public ModelFluentValidator()
+        {
+            RuleFor(x => x.Files)
+               .NotEmpty()
+               .WithMessage("Debe haber al menos un archivo.");
+
+            RuleForEach(x => x.Files).SetValidator(new MudFileUploadValidator());
+
+        }
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<Model>.CreateWithOptions((Model)model, x => x.IncludeProperties(propertyName)));
+            return result.IsValid ? Array.Empty<string>() : result.Errors.Select(e => e.ErrorMessage);
+        };
+    }
+
+    
 }
+
+

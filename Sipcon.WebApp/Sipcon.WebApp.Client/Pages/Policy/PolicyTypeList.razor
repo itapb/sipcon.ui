@@ -132,7 +132,8 @@
     private List<BreadcrumbItem> _itemsNavigate =
                 [
         new("Home", href: "", icon: Icons.Material.Filled.Home),
-        new("Tipo Poliza",  href: "policytypes", disabled: false, icon: Icons.Material.Filled.Policy),
+        new("Polizas",href: "", icon: Icons.Custom.FileFormats.FileDocument),
+        new("Tipos",  href: "policytypes", disabled: false, icon: Icons.Material.Filled.Policy),
     ];
 
     protected override async Task OnInitializedAsync()
@@ -187,13 +188,15 @@
         }
         else
         {
+            // Console.WriteLine($"Error: {serviceResponse.Message}");
             _success = false;
             _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
-            Console.WriteLine($"Error: {serviceResponse.Message}");
+
             OpenNested();
         }
-        StateHasChanged();
+
         _loading = false;
+        StateHasChanged();
     }
 
 
@@ -230,7 +233,7 @@
 
     private async Task ClickEditPolicyType(PolicyType item)
     {
-        
+
 
         DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
 
@@ -259,12 +262,17 @@
             await _mudDataGrid!.ReloadServerData();
             StateHasChanged();
         }
-       
+
         await Task.CompletedTask;
     }
 
+
+    private void OpenNested()
+    {
+        _nestedVisible = true;
+        StateHasChanged();
+    }
     
-    private void OpenNested() => _nestedVisible = true;
 
 
     private async Task HandleMenuClick(ModuleAction module)
@@ -332,22 +340,16 @@
                 {
                     _success = true;
                     _nestedErrorMessage = MessageEnum.ImportOK.GetStringValue();
-
-                    OpenNested();
+                
                     await _mudDataGrid!.ReloadServerData();
-                    StateHasChanged();
-
                 }
                 else
                 {
                     _success = false;
                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ImportNotOK.GetStringValue();
-                    OpenNested();
-
                 }
+                OpenNested();
             }
-
-
         }
 
         await Task.CompletedTask;
@@ -369,9 +371,10 @@
         }
         else
         {
+            // Console.WriteLine(serviceResponse.Message);
             _success = false;
             _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
-            Console.WriteLine(serviceResponse.Message);
+            
             OpenNested();
 
         }
@@ -416,19 +419,16 @@
                     _success = true;
                     _nestedErrorMessage = MessageEnum.ActivateOK.GetStringValue();
 
-                    OpenNested();
                     await _mudDataGrid!.ReloadServerData();
                     StateHasChanged();
-
                 }
                 else
                 {
+                    // Console.WriteLine(serviceResponse.Message);
                     _success = false;
                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ActivateNotOK.GetStringValue();
-                    Console.WriteLine(serviceResponse.Message);
-                    OpenNested();
-
                 }
+                OpenNested();
             }
 
         }
@@ -474,20 +474,16 @@
                 {
                     _success = true;
                     _nestedErrorMessage = MessageEnum.DeactivateOK.GetStringValue();
-
-                    OpenNested();
                     await _mudDataGrid!.ReloadServerData();
-                    StateHasChanged();
-
                 }
                 else
                 {
+                    // Console.WriteLine(serviceResponse.Message);
                     _success = false;
                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.DeactivateNotOK.GetStringValue();
-                    Console.WriteLine(serviceResponse.Message);
-                    OpenNested();
 
                 }
+                OpenNested();
             }
 
         }

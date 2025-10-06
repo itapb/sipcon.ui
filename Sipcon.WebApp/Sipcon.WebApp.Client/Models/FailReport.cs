@@ -115,9 +115,14 @@ namespace Sipcon.WebApp.Client.Models
         public int ReportTypeId { get; set; } = 0;
         public int LicenseId { get; set; } = 0;
         public bool Paralyzed { get; set; } = true;
-        public string InvoiceNumber { get; set; } = string.Empty;
-        public DateTime InvoiceDate { get; set; } = DateTime.Now;
 
     }
 
+
+    public class FailReportInvoice
+    {
+        public string InvoiceNumber { get; set; } = string.Empty;
+        public DateTime? InvoiceDate { get; set; } = null;
+
+    }
 }

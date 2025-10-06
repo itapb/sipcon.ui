@@ -30,13 +30,18 @@
 </style>
 
 @code {
-  
+
     [Inject] private IDialogService DialogService { get; set; } = default!;
-  
+
     [Parameter] public bool IsVisible { get; set; } = false;
     [Parameter] public bool Success { get; set; } = false;
     [Parameter] public string ErrorMessage { get; set; } = string.Empty;
     [Parameter] public string Title { get; set; } = "Sipcon";
 
-    private void CloseNested() => IsVisible = false;
+    private void CloseNested()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+    
 }

@@ -196,7 +196,7 @@
 
     private IEnumerable<SelectOption> _brandList { get; set; } = new List<SelectOption>();
     private IEnumerable<SelectOption> _policyTypeList { get; set; } = new List<SelectOption>();
-    
+
     ModelValidator _modelValidator = new ModelValidator();
 
     private IEnumerable<string> OnValidBrand(int? IdBrand)
@@ -217,7 +217,7 @@
             _model.BrandId = _model.BrandId ?? _brandList.FirstOrDefault()?.Value ?? 0;
             _model.BrandName = _model.BrandName ?? _brandList.FirstOrDefault()?.Text ?? string.Empty;
             _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(Useful.supplierId, Useful.userId, _model.BrandId ?? 0);
-            
+
 
             await Task.Delay(50);
             StateHasChanged();
@@ -248,9 +248,10 @@
         }
         else
         {
+            // Console.WriteLine(serviceResponse.Message);
             _model = new Model();
             _errorModalMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
-            Console.WriteLine(serviceResponse.Message);
+
             OpenNested();
         }
 
@@ -287,7 +288,7 @@
             {
                 _successModal = false;
                 _errorModalMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue(); ;
-                Console.WriteLine(serviceResponse.Message);
+                // Console.WriteLine(serviceResponse.Message);
 
             }
             OpenNested();
@@ -310,12 +311,17 @@
         }
     }
 
-    private void OpenNested() => _nestedModalVisible = true;
+    private void OpenNested()
+    {
+        StateHasChanged();
+        _nestedModalVisible = true;
+    }
+    
 
     private async Task CloseNestedModal()
     {
         _nestedModalVisible = false;
-
+        StateHasChanged();
         await Task.Delay(50);
         MudDialog.Close(DialogResult.Ok(true));
         await Task.CompletedTask;

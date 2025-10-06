@@ -361,6 +361,7 @@
 
     private async Task GetVehicle()
     {
+        _model = new Vehicle();
         var serviceResponse = await VehicleService.GetVehicle(IdVehicle, Useful.userId);
         if (serviceResponse.Processed)
         {
@@ -380,10 +381,11 @@
         }
         else
         {
-            _model = new Vehicle();
-          
+            
+            // Console.WriteLine(serviceResponse.Message);
+            _successModal = false;
             _errorModalMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
-            Console.WriteLine(serviceResponse.Message);
+            
             OpenNestedModal();
         }
 
@@ -446,9 +448,10 @@
             }
             else
             {
+                // Console.WriteLine(serviceResponse.Message);
                 _successModal = false;
                 _errorModalMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue();
-                Console.WriteLine(serviceResponse.Message);            
+                          
             }
 
             OpenNestedModal();
@@ -471,13 +474,17 @@
     } 
 
 
-    private void OpenNestedModal() => _nestedModalVisible = true;
+    private void OpenNestedModal()
+    {
+        StateHasChanged();
+        _nestedModalVisible = true;
+    }
 
 
     private async Task CloseNestedModal()
     {
         _nestedModalVisible = false;
-
+        StateHasChanged();
         await Task.Delay(50);
         MudDialog.Close(DialogResult.Ok(true));
         await Task.CompletedTask;

@@ -3,8 +3,10 @@
 
 @using Sipcon.WebApp.Client.Components.AccessGroup
 @using Sipcon.WebApp.Client.Components.AccessUser
+@using Sipcon.WebApp.Client.Repository.Auth
 @using System.Globalization
 @using FluentValidation
+
 
 @inject ISecurityService SecurityService
 @inject UtilModuleActions ModuleActionsService
@@ -129,7 +131,7 @@
 </style>
 
 @code {
-
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
 
     [Parameter] public string? IdAccesGroup { get; set; }
     public AccessGroup? _model { get; set; } = new AccessGroup();  
@@ -146,11 +148,13 @@
                [
         new("Home", href: "", icon: Icons.Material.Filled.Home),
         new("Seguridad", href: "accessgroup", icon: Icons.Material.Filled.Security),
-        new("Detalle Rol",  href: "", icon: Icons.Material.Filled.VerifiedUser, disabled: true),
+        new("Roles",  href: "", icon: Icons.Material.Filled.VerifiedUser, disabled: true),
     ];
 
     protected override async Task OnInitializedAsync()
     {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+        Useful.IsNewOrEdit = true;
 
         await GetAccessGroup();
 

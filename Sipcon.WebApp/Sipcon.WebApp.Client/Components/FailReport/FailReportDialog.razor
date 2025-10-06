@@ -109,7 +109,6 @@
                                                           ReadOnly="@(!_model.IsActive || _isReadOnly)"
                                                           Disabled="@(!_model.IsActive || _isReadOnly)" />
 
-                                            @* <MudFab StartIcon="@Icons.Material.Filled.Search" Style="width: 35px; height: 20px;" Color="Color.Info" OnClick="() => ClicSearchVehicle()" /> *@
                                         </MudStack>
 
                                         <div class="d-flex justify-center">
@@ -133,48 +132,30 @@
                                         </MudStack>
                                     </CardHeaderContent>
                                     <CardHeaderActions>
-                                        <MudTextField Typo="Typo.caption" @bind-Value="_model.OrderNumber"
-                                                      Label="Nro.Orden"
-                                                      Class="align-right"
-                                                      Style="line-height: 0.8rem;"
-                                                      Variant="Variant.Text"
-                                                      Margin="Margin.None"
-                                                      MaxLength="15"
-                                                      ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                                      For="@(() => _model.OrderNumber)" />
+                                        <MudNumericField Typo="Typo.caption" @bind-Value="_model.OrderNumber"
+                                                         Label="Nro.Orden"
+                                                         Class="align-right"
+                                                         Style="line-height: 0.8rem;"
+                                                         Variant="Variant.Text"
+                                                         Margin="Margin.None"
+                                                         MaxLength="10"
+                                                         HideSpinButtons="true"
+                                                         Pattern="[0-9]*"
+                                                         Format="N0"
+                                                         Culture="@CultureInfo.GetCultureInfo("es-VE")"
+                                                         ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                         For="@(() => _model.OrderNumber)" />
                                     </CardHeaderActions>
                                 </MudCardHeader>
                                 
                                 <MudCardContent Style="padding-top: 0px;" Class="mt-2">
                                     <MudStack Row="true">
-                                        <MudDatePicker @bind-Date="_model.InvoiceDate"
-                                                       Style="font-size: 14px;line-height: 0.8rem;"
-                                                       Adornment="Adornment.Start"
-                                                       AdornmentColor="Color.Info"
-                                                       Class="align-right"
-                                                       Label="Fecha Factura"
-                                                       Variant="Variant.Text"
-                                                       PickerVariant="PickerVariant.Inline"
-                                                       Margin="Margin.None"
-                                                       Modal="false"
-                                                       ShowToolbar="false"
-                                                       DateFormat="dd/MM/yyyy"
-                                                       Mask="@maskDate"
-                                                       ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                                       For="@(() => _model.InvoiceDate)" />
 
+                                        <MudSwitch @bind-Value="_model.Paralyzed" LabelPlacement="Placement.Start" Color="Color.Success" ReadOnly="@(!_model.IsActive || _isReadOnly)">
+                                                <MudText Typo="Typo.caption">Vehiculo paralizado</MudText>
+                                        </MudSwitch>
                                         <MudSpacer />
-                                        <MudTextField Typo="Typo.caption" @bind-Value="_model.InvoiceNumber"
-                                                         Label="Nro.Factura"
-                                                         Class="align-right" 
-                                                         Style="line-height: 0.8rem;"
-                                                         Variant="Variant.Text"
-                                                         Margin="Margin.None"
-                                                         ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                                         For="@(() => _model.InvoiceNumber)" />
-                                        
-                                        
-                                        
+                                        <MudSpacer />
                                     </MudStack>
 
                                     <MudStack Row="true">
@@ -298,7 +279,7 @@
 
                                     <MudTextField Typo="Typo.caption" @bind-Value="_model.TechnicalSolution"
                                                   Label="Diagnóstico Concesionario, resultados de pruebas y Equipos utilizados"
-                                                  Lines="5"
+                                                  Lines="8"
                                                   MaxLength="500"
                                                   Variant="Variant.Text"
                                                   Margin="Margin.None"
@@ -424,9 +405,7 @@
 
                                             <MudItem xs="12" sm="6">
                                                 <div class="d-flex justify-start">
-                                                    <MudSwitch @bind-Value="_model.Paralyzed" LabelPlacement="Placement.End" Color="Color.Success" ReadOnly="@(!_model.IsActive || _isReadOnly)">
-                                                        <MudText Typo="Typo.caption">Paralizado</MudText>
-                                                    </MudSwitch>
+                                                   
                                                 </div>
                                             </MudItem>
                                         </MudGrid>
@@ -660,18 +639,21 @@
             };
 
             _isReadOnly = false;
-
+            _searchVin = string.Empty;
             await Task.Delay(50);
         }
         else
         {
             await GetFailReport();
 
+            _searchVin = _model.VIN;
+            await GetVehicle();
+
         }
 
         _FailReportTypeList = await ModuleActionsService.GetFailReportType(Useful.userId);
 
-        _searchVin = string.Empty;
+       
 
         StateHasChanged();
         await Task.CompletedTask;
@@ -689,13 +671,13 @@
             _isReadOnly = _model.EstatusName.ToUpper() == "CREADO" || _model.EstatusName.Trim() == string.Empty ? false : true;
 
             await Task.Delay(50);
-            
+
         }
         else
         {
             _model = new FailReport();
             _errorModalMessage = MessageEnum.GetError.GetStringValue();
-            Console.WriteLine(serviceResponse.Message);
+            // Console.WriteLine(serviceResponse.Message);
             OpenNested();
         }
         StateHasChanged();
@@ -705,7 +687,7 @@
     private async Task GetVehicle()
     {
         _modelVehicle = new VehicleService();
-        var serviceResponse = await VehicleService.GetVehicleFullBy(Useful.userId, _searchVin, SearchByEnum.Dual);
+        var serviceResponse = await VehicleService.GetVehicleFullBy(Useful.supplierId,Useful.userId, _searchVin, SearchByEnum.Dual);
         if (serviceResponse.Processed)
         {
             _modelVehicle = serviceResponse.Data ?? new VehicleService();
@@ -766,7 +748,7 @@
     private async Task ClickSearchVehicle()
     {
         _errorSearchVehicle = string.Empty;
-        
+
         if (_model.ServiceDate is null || _model.ServiceDate.Value.ToString().Length == 0)
         {
             _errorSearchVehicle = "Indique Fecha Servicio...";
@@ -784,7 +766,7 @@
             return;
         }
 
-       
+
         await GetVehicle();
 
     }
@@ -849,13 +831,14 @@
             }
             else
             {
+                // Console.WriteLine(serviceResponse.Message);
                 _successModal = false;
                 _errorModalMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue();
-                Console.WriteLine(serviceResponse.Message);
+
                 OpenNested();
 
             }
-           
+
         }
 
         StateHasChanged();
@@ -875,12 +858,17 @@
         }
     }
 
-    private void OpenNested() => _nestedModalVisible = true;
+    private void OpenNested()
+    {
+        StateHasChanged();
+        _nestedModalVisible = true;
+    }
+
 
     private async Task CloseNestedModal()
     {
         _nestedModalVisible = false;
-
+        StateHasChanged();
         await Task.Delay(50);
         if (_successModal)
             MudDialog.Close(DialogResult.Ok(true));
@@ -891,7 +879,7 @@
     private async Task CloseNestedModalError()
     {
         _nestedModalVisible = false;
-
+        StateHasChanged();
         await Task.Delay(50);
         await Task.CompletedTask;
 
@@ -909,13 +897,19 @@
         {
 
              RuleFor(x => x.OrderNumber)
-                .NotEmpty().WithMessage("Campo requerido")
-                .NotNull().WithMessage("Campo requerido.");
+               .NotNull().WithMessage("Campo requerido.")
+               .NotEmpty().WithMessage("Campo requerido ")
+               .Length(5, 10).WithMessage("Campo requerido entre 5-10 digitos")
+               .Custom((value, context) =>
+               {
+                   long number;
+                   if (!long.TryParse(value, out number))
+                   {
+                       context.AddFailure($"Campo requerido solo digitos [0-9]");
+                   }
+               });
             
-
-            RuleFor(x => x.InvoiceNumber)
-               .NotEmpty().WithMessage("Campo requerido")
-               .NotNull().WithMessage("Campo requerido.");
+            
 
             RuleFor(x => x.KM)
                 .NotEmpty().WithMessage("Campo requerido")
@@ -935,16 +929,6 @@
                    }
                });
             
-            RuleFor(x => x.InvoiceDate)
-                   .NotEmpty().WithMessage("Campo requerido")
-                   .Custom((value, context) =>
-                   {
-                       if (value > DateTime.Now)
-                       {
-                           context.AddFailure($"Campo requerido menor a la fecha actual {(DateTime.Now.ToString("dd-MMM-yyyy"))}");
-                       }
-                   });
-
 
             RuleFor(x => x.VIN)
                 .NotNull().WithMessage("Campo requerido")

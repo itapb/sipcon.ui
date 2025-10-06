@@ -9,6 +9,8 @@ namespace Sipcon.WebApp.Client.Models
         public string FileName { get; set; } = string.Empty;
         public int RecordId { get; set; } = 0;
         public int ModuleId { get; set; } = 0;
+        public string ModuleName { get; set; } =  string.Empty;
+        public DateTime? DateCreate { get; set; } = null; 
 
     }
 

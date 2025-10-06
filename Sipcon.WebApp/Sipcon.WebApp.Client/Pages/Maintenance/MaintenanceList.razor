@@ -52,9 +52,11 @@
     </ToolBarContent>
     <Columns>
         <SelectColumn  />
-        <TemplateColumn  Title="ORDEN">
+        <TemplateColumn  Title="CODIGO">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Left">@context.Item.OrderNumber</MudText>
+                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">
+                    @("#" + context.Item.Id.ToString().PadLeft(10, '0'))
+                </MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn  Title="VIN">
@@ -74,7 +76,7 @@
                 </MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn  Title="COD. CONC.">
+        <TemplateColumn Title="CONCESIONARIO">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.DealerServiceCod.ToUpper())</MudText>
             </CellTemplate>
@@ -169,6 +171,7 @@
     private List<BreadcrumbItem> _itemsNavigate =
                 [
         new("Home", href: "", icon: Icons.Material.Filled.Home),
+        new("Servicios",href: "", icon: Icons.Material.Filled.Speed),
         new("Mantenimiento",  href: "maintenance", disabled: false, icon: Icons.Material.Filled.CarCrash),
     ];
 
