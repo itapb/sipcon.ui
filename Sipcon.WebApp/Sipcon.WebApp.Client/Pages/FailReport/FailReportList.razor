@@ -89,6 +89,12 @@
                 <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.ServiceDate?.ToString("dd MMM yyyy"))</MudText>
             </CellTemplate>
         </TemplateColumn>
+        <TemplateColumn Title="SRG">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.SrgNumber)</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        
         <TemplateColumn  Title="ESTATUS">
             <CellTemplate>
                 <div class="d-flex justify-start">
@@ -127,6 +133,11 @@
             <CellTemplate>
                 <MudStack Row="true">
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" Href="@(" FailReportdetail/" + context.Item.Id)" />
+                    @if (_statusPrintSRG.Contains(context.Item.EstatusName.ToUpper()))
+                    {
+                        <MudIconButton Icon="@Icons.Custom.FileFormats.FilePdf" Color="Color.Default" Size="Size.Small" OnClick="() => ClickExportPdfSRG(context.Item)"></MudIconButton>
+                    }
+
                 </MudStack>
 
             </CellTemplate>
@@ -138,7 +149,10 @@
     </PagerContent>
 </MudDataGrid>
 
-<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Reporte de Falla")"/>
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" 
+                    onCloseNested="() => _nestedVisible = false"
+                    ErrorMessage="@_nestedErrorMessage" 
+                    Title="@("Reporte de Falla")"/>
 
 
 
@@ -166,6 +180,13 @@
         new("Servicios",href: "", icon: Icons.Material.Filled.Speed),
         new("Reporte Falla",  href: "failreport", disabled: false, icon: Icons.Material.Filled.CarCrash),
     ];
+
+    List<string> _statusPrintSRG = new List<string>()
+    {
+        "APROBADO",
+        "GENERADO",
+        "PROCESADO"
+    };
 
 
     protected override async Task OnInitializedAsync()
@@ -207,7 +228,7 @@
         _loading = true;
         _FailReports = new List<FailReport>();
         _rowsTotal = 0;
-         
+
         _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
 
         var serviceResponse = await FailReportService.GetFailReports(Useful.supplierId, Useful.userId, _rowCount, _searchString, Useful.dealerId);
@@ -218,14 +239,16 @@
         }
         else
         {
+            // Console.WriteLine($"Error: {serviceResponse.Message}");
             _success = false;
             _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
-            Console.WriteLine($"Error: {serviceResponse.Message}");
+
             OpenNested();
-            
+
         }
-        StateHasChanged();
+       
         _loading = false;
+        StateHasChanged();
     }
 
 
@@ -286,7 +309,42 @@
     }
 
 
-    private void OpenNested() => _nestedVisible = true;
+    private async Task ClickExportPdfSRG(FailReport item)
+    {
+        var serviceResponse = await FailReportService.ExportPdfSRG(Useful.userId, item.Id, Useful.dealerId);
+        if (serviceResponse.Processed)
+        {
+            _success = true;
+            _nestedErrorMessage = "";
+
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+            var fileUrl = $"data:application/pdf;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, $"SRG_{item.Id.ToString().PadLeft(10, '0')}.pdf");
+
+            if (string.IsNullOrWhiteSpace(item.SrgNumber))
+            {
+                _searchString = string.Empty;
+                await _mudDataGrid!.ReloadServerData();
+            }
+
+        }
+        else
+        {
+            // Console.WriteLine(serviceResponse.Message);
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
+            
+            OpenNested();
+
+        }
+    }
+
+
+    private void OpenNested()
+    {
+        _nestedVisible = true;
+        StateHasChanged();
+    }
 
 
     private async Task HandleMenuClick(ModuleAction module)
@@ -343,9 +401,10 @@
         }
         else
         {
+            // Console.WriteLine(serviceResponse.Message);
             _success = false;
             _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
-            Console.WriteLine(serviceResponse.Message);
+            
             OpenNested();
 
         }
@@ -390,19 +449,15 @@
                     _success = true;
                     _nestedErrorMessage = MessageEnum.GenerateOK.GetStringValue();
 
-                    OpenNested();
                     await _mudDataGrid!.ReloadServerData();
-                    StateHasChanged();
-
                 }
                 else
                 {
+                    // Console.WriteLine(serviceResponse.Message);
                     _success = false;
                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GenerateNotOK.GetStringValue();
-                    Console.WriteLine(serviceResponse.Message);
-                    OpenNested();
-
                 }
+                OpenNested();
             }
 
         }
@@ -449,20 +504,17 @@
 
                     _success = true;
                     _nestedErrorMessage = MessageEnum.ToApproveOK.GetStringValue();
-
-                    OpenNested();
+                    
                     await _mudDataGrid!.ReloadServerData();
-                    StateHasChanged();
-
                 }
                 else
                 {
+                    // Console.WriteLine(serviceResponse.Message);
                     _success = false;
                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ToApproveNotOK.GetStringValue();
-                    Console.WriteLine(serviceResponse.Message);
-                    OpenNested();
-
+                    
                 }
+                OpenNested();
             }
 
         }
@@ -521,20 +573,17 @@
 
                         _success = true;
                         _nestedErrorMessage = MessageEnum.ApproveOK.GetStringValue();
-
-                        OpenNested();
+                        
                         await _mudDataGrid!.ReloadServerData();
-                        StateHasChanged();
-
                     }
                     else
                     {
+                        // Console.WriteLine(serviceResponse.Message);
                         _success = false;
                         _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ApproveNotOK.GetStringValue();
-                        Console.WriteLine(serviceResponse.Message);
-                        OpenNested();
-
+                        
                     }
+                    OpenNested();
                 }
 
             }
@@ -594,20 +643,17 @@
 
                         _success = true;
                         _nestedErrorMessage = MessageEnum.DeclineOK.GetStringValue();
-
-                        OpenNested();
+                        
                         await _mudDataGrid!.ReloadServerData();
-                        StateHasChanged();
-
                     }
                     else
                     {
+                        // Console.WriteLine(serviceResponse.Message);
                         _success = false;
                         _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.DeclineNotOK.GetStringValue();
-                        Console.WriteLine(serviceResponse.Message);
-                        OpenNested();
-
+                        
                     }
+                     OpenNested();
                 }
 
             }
@@ -657,19 +703,16 @@
                     _success = true;
                     _nestedErrorMessage = MessageEnum.ToApproveOK.GetStringValue();
 
-                    OpenNested();
                     await _mudDataGrid!.ReloadServerData();
-                    StateHasChanged();
-
                 }
                 else
                 {
+                    // Console.WriteLine(serviceResponse.Message);
                     _success = false;
                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ToApproveNotOK.GetStringValue();
-                    Console.WriteLine(serviceResponse.Message);
-                    OpenNested();
 
                 }
+                OpenNested();
             }
 
         }
@@ -729,19 +772,17 @@
                         _success = true;
                         _nestedErrorMessage = MessageEnum.ApproveOK.GetStringValue();
 
-                        OpenNested();
                         await _mudDataGrid!.ReloadServerData();
-                        StateHasChanged();
 
                     }
                     else
                     {
+                        // Console.WriteLine(serviceResponse.Message);
                         _success = false;
                         _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ApproveNotOK.GetStringValue();
-                        Console.WriteLine(serviceResponse.Message);
-                        OpenNested();
 
                     }
+                    OpenNested();
                 }
                 
             }
@@ -802,19 +843,90 @@
                         _success = true;
                         _nestedErrorMessage = MessageEnum.DeclineOK.GetStringValue();
 
-                        OpenNested();
                         await _mudDataGrid!.ReloadServerData();
-                        StateHasChanged();
 
                     }
                     else
                     {
+                        // Console.WriteLine(serviceResponse.Message);
                         _success = false;
                         _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.DeclineNotOK.GetStringValue();
-                        Console.WriteLine(serviceResponse.Message);
-                        OpenNested();
 
                     }
+                    OpenNested();
+                }
+
+            }
+
+        }
+
+        selectedFailReport = new([]);
+        await Task.CompletedTask;
+    }
+
+    private async Task ProcessItemsAsync(int moduleId, string moduleActionName)
+    {
+        Console.WriteLine("Procesar Reporte de Falla...");
+        if (selectedFailReport.Any())
+        {
+            var option = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false
+            };
+            bool? confir = await DialogService.ShowMessageBox(
+                "Procesar Reporte de Falla ",
+                $"Seguro de Procesar? ",
+                yesText: "Si", noText: "No", "", option);
+
+            if (confir == true)
+            {
+
+                DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+                var parameters = new DialogParameters<InvoiceDialog> { { x => x.Title, "Procesar Reporte de Falla ..." } };
+                var dialog = await DialogService.ShowAsync<InvoiceDialog>("Reporte de Falla ", parameters, options);
+
+                StateHasChanged();
+
+                var result = await dialog.Result;
+                if (!result!.Canceled)
+                {
+                    FailReportInvoice _Observacion = (FailReportInvoice)(result.Data ?? new FailReportInvoice());
+                    List<PostActionProcess> ActionList = ([]);
+
+                    foreach (var Item in selectedFailReport)
+                    {
+                        var ItemAction = new PostActionProcess
+                        {
+                            RecordId = Item.Id,
+                            ModuleId = moduleId,
+                            ActionName = moduleActionName,
+                            ActionComment = "",
+                            InvoiceNumber = _Observacion.InvoiceNumber,
+                            InvoiceDate = _Observacion.InvoiceDate,
+                        };
+                        ActionList.Add(ItemAction);
+                    }
+
+                    var serviceResponse = await FailReportService.ActionsFailReportProcess(ActionList, Useful.userId);
+                    if (serviceResponse.Processed)
+                    {
+
+                        _success = true;
+                        _nestedErrorMessage = MessageEnum.ApproveOK.GetStringValue();
+
+                        await _mudDataGrid!.ReloadServerData();
+                    }
+                    else
+                    {
+                        // Console.WriteLine(serviceResponse.Message);
+                        _success = false;
+                        _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ApproveNotOK.GetStringValue();
+                        
+                    }
+                    OpenNested();
                 }
 
             }

@@ -952,20 +952,6 @@
 						context.AddFailure($"Campo requerido solo digitos [0-9]");
 					}
 				});
-				// .Must((x, context) =>
-				// {
-				// 	return double.TryParse(x.InvoiceAmount.ToString(), out double value);
-
-				// }).WithMessage("Campo requerido solo Digitos [0-9].")
-				// .Must((value, context) =>
-				// {
-				// 	if (string.IsNullOrEmpty(value.InvoiceAmount.ToString()))
-				// 	{
-				// 		return double.IsNaN(value.InvoiceAmount ?? 0);
-				// 	}
-				// 	return true;
-				// }).WithMessage("Campo requerido solo Digitos [0-9].")
-				
 
 				
 
@@ -992,22 +978,8 @@
                 .NotEmpty().WithMessage("Campo requerido");
 
 
-            // RuleFor(x => x.VehicleId)
-            //     .NotEmpty().WithMessage("Campo requerido")
-            //     .GreaterThan(0).WithMessage("Campo requerido.");
-
-            // RuleFor(x => x.CustomerId)
-            //        .NotEmpty().WithMessage("Campo requerido")
-            //        .GreaterThan(0).WithMessage("Campo requerido.");
-
-
         }
 		
-		// private bool BeAValidNumber(double value)
-		// {
-		// 	return double.TryParse(value.ToString(), out _); // Or decimal.TryParse, double.TryParse
-		// }
-
 
         public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
         {
@@ -1018,55 +990,6 @@
         };
 
     }
-
-	// // The validation rules (overkill, I know, but very fluent):
-	// SelectValidator<double> _SelectValidator = new SelectValidator<double>(x => x
-	// 	.Must((x, context) =>
-	// 		{
-	// 			return double.TryParse(x.ToString(), out double value);
-
-	// 		}).WithMessage("Campo requerido solo Digitos [0-9].")
-	// 	.NotEmpty().WithMessage("Campo requerido")
-	// 	.GreaterThan(0).WithMessage("Campo requerido.")
-	// 	.Must((value, context) =>
-	// 	{
-	// 		if (string.IsNullOrEmpty(value.ToString()))
-	// 		{
-	// 			return double.IsNaN(value);
-	// 		}
-	// 		return true;
-	// 	}).WithMessage("Campo requerido solo Digitos [0-9].")
-	// 	.Custom((x, context) =>
-	// 	{
-	// 		if ((!(double.TryParse(x.ToString(), out double value)) || value < 0))
-	// 		{
-	// 			context.AddFailure($"{x} Campo requerido solo Digitos [0-9].");
-	// 		}
-	// 	})
-	// 	.NotNull().WithMessage("Campo requerido solo Digitos [0-9]."));
-		
-
-	// public class SelectValidator<T> : AbstractValidator<T>
-	// {
-
-	// 	public SelectValidator(Action<IRuleBuilderInitial<T, T>> rule)
-	// 	{
-	// 		rule(RuleFor(x => x));
-	// 	}
-
-
-	// 	private IEnumerable<string> ValidateValue(T arg)
-	// 	{
-	// 		var result = Validate(arg);
-	// 		if (result.IsValid)
-	// 			return new string[0];
-	// 		return result.Errors.Select(e => e.ErrorMessage);
-	// 	}
-
-	// 	public Func<T, IEnumerable<string>> Validation => ValidateValue;
-
-	// }
-
 
 }
       

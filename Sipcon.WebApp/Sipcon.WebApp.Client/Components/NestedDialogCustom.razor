@@ -37,10 +37,12 @@
     [Parameter] public bool Success { get; set; } = false;
     [Parameter] public string ErrorMessage { get; set; } = string.Empty;
     [Parameter] public string Title { get; set; } = "Sipcon";
+    [Parameter] public EventCallback onCloseNested { get; set; }
 
-    private void CloseNested()
+    private async Task CloseNested()
     {
         IsVisible = false;
+        await onCloseNested.InvokeAsync();
         StateHasChanged();
     }
     

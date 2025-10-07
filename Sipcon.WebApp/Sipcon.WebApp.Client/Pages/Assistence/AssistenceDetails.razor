@@ -93,7 +93,7 @@
                             </CardHeaderActions>
                         </MudCardHeader>
 
-                        <MudCardContent Style="padding-top: 0px;">
+                        <MudCardContent Style="padding-top: 2px;">
                             <MudStack Row="true">
                                 <MudIcon Icon="@Icons.Material.Filled.Speed" Color="Color.Info" Style="font-size: 2rem;"></MudIcon>
 
@@ -136,12 +136,35 @@
                                 <MudSpacer />
                             </MudStack>
 
+                             <MudStack Row="true">
+                                <MudIcon Icon="@Icons.Material.Filled.CarRepair" Color="Color.Info" Style="font-size: 2rem;"></MudIcon>
+
+                                <MudTextField Typo="Typo.caption" @bind-Value="_model.PossibleFault"
+                                              Label="Posible Falla"
+                                              Variant="Variant.Text"
+                                              Margin="Margin.Dense"
+                                              ReadOnly="true" />
+
+                                <MudTextField Typo="Typo.caption" @bind-Value="_model.AuthorizedUserName"
+                                              Label="Asignado a"
+                                              Variant="Variant.Text"
+                                              Margin="Margin.Dense"
+                                              ReadOnly="true" />
+
+                                <MudTextField Typo="Typo.caption" @bind-Value="_model.AssistanceType"
+                                              Label="Tipo de Asistencia"
+                                              Variant="Variant.Text"
+                                              Margin="Margin.Dense"
+                                              ReadOnly="true" />
+
+
+                            </MudStack>
 
                             <MudDivider />
 
                             <MudTextField Typo="Typo.caption" @bind-Value="_model.CustomerReport"
                                             Label="Reporte Cliente"
-                                            Lines="5"
+                                            Lines="6"
                                             MaxLength="500"
                                             Variant="Variant.Text"
                                             Margin="Margin.None"
@@ -149,7 +172,7 @@
 
                             <MudTextField Typo="Typo.caption" @bind-Value="_model.DealerReport"
                                             Label="Reporte de condiciones y Posible(s) causa(s)"
-                                            Lines="5"
+                                            Lines="6"
                                             MaxLength="500"
                                             Variant="Variant.Text"
                                             Margin="Margin.None"
@@ -157,7 +180,7 @@
 
                             <MudTextField Typo="Typo.caption" @bind-Value="_model.SupplierReport"
                                             Label="Reporte de Planta"
-                                            Lines="5"
+                                            Lines="6"
                                             MaxLength="500"
                                             Variant="Variant.Text"
                                             Margin="Margin.None"
@@ -570,7 +593,10 @@
     }
 </MudContainer>
 
-<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Asistencia Técnica")" />
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success"
+                    onCloseNested="() => _nestedVisible = false"
+                    ErrorMessage="@_nestedErrorMessage" 
+                    Title="@("Asistencia Técnica")" />
 
 
 
