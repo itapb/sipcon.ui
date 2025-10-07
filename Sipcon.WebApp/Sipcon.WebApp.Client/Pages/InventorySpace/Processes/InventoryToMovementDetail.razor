@@ -68,7 +68,7 @@ else
         {
             var content2 = await locationResponse.Content.ReadFromJsonAsync<WebApiResponse<List<Location>>>();
             Locations = content2!.data ?? new List<Location>();
-            SourceLocations = Locations!.Where(r => r.TypeId == TypeIdSource && r.Id == newMovementDetail!.LocationId).ToList();
+            SourceLocations = Locations!.Where(r => r.TypeId == TypeIdSource && r.IsActive == true && r.ZoneSize == newMovementDetail?.PartSize && r.Id == newMovementDetail!.LocationId).ToList();
             TargetLocations = Locations!.Where(r => r.TypeId == TypeIdTarget && r.IsActive == true && r.ZoneSize == newMovementDetail?.PartSize).ToList();
             SourceLocationSelected = SourceLocations!.FirstOrDefault(r => r.Id == newMovementDetail!.LocationId);
             TargetLocationSelected = TargetLocations!.FirstOrDefault(r => r.Id == newMovementDetail!.DestinationId);
