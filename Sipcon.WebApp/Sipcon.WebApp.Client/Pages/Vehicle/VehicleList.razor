@@ -142,7 +142,10 @@
     </PagerContent>
 </MudDataGrid>
 
-<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Vehiculos")" />
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success"
+                    onCloseNested="() => _nestedVisible = false"
+                    ErrorMessage="@_nestedErrorMessage" 
+                    Title="@("Vehiculos")" />
 
 <style>
     .nested {
@@ -244,9 +247,10 @@
         }
         else
         {
+            // Console.WriteLine($"Error: {serviceResponse.Message}");
             _success = false;
             _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
-            Console.WriteLine($"Error: {serviceResponse.Message}");
+           
             OpenNested();
         }
 
@@ -324,7 +328,11 @@
     }
 
 
-    private void OpenNested() => _nestedVisible = true;
+    private void OpenNested()
+    {
+        _nestedVisible = true;
+        StateHasChanged();
+    }
 
     private async Task HandleMenuClick(ModuleAction module)
     {
@@ -404,18 +412,15 @@
                     _success = true;
                     _nestedErrorMessage = MessageEnum.ImportOK.GetStringValue();
 
-                    OpenNested();
                     await _mudDataGrid!.ReloadServerData();
-                    StateHasChanged();
 
                 }
                 else
                 {
                     _success = false;
                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ImportNotOK.GetStringValue();
-                    OpenNested();
-
                 }
+                OpenNested();
             }
            
 
@@ -497,9 +502,10 @@
         }
         else
         {
+            //Console.WriteLine(serviceResponse.Message);
             _success = false;
             _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
-            Console.WriteLine(serviceResponse.Message);
+            
             OpenNested();
 
         }                
@@ -543,19 +549,17 @@
                     _success = true;
                     _nestedErrorMessage = MessageEnum.ActivateOK.GetStringValue();
 
-                    OpenNested();
                     await _mudDataGrid!.ReloadServerData();
-                    StateHasChanged();
 
                 }
                 else
                 {
+                    //Console.WriteLine(serviceResponse.Message);
                     _success = false;
                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ActivateNotOK.GetStringValue();
-                    Console.WriteLine(serviceResponse.Message);
-                    OpenNested();
 
-                }                
+                }  
+                OpenNested();
             }
            
         }
@@ -601,19 +605,17 @@
                     _success = true;
                     _nestedErrorMessage = MessageEnum.DeactivateOK.GetStringValue();
 
-                    OpenNested();
                     await _mudDataGrid!.ReloadServerData();
-                    StateHasChanged();
 
                 }
                 else
                 {
+                    //Console.WriteLine(serviceResponse.Message);
                     _success = false;
                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.DeactivateNotOK.GetStringValue();
-                    Console.WriteLine(serviceResponse.Message);
-                    OpenNested();
-
+                    
                 }
+                 OpenNested();
             }
 
         }
@@ -659,19 +661,16 @@
                     _success = true;
                     _nestedErrorMessage = MessageEnum.AssignOK.GetStringValue();
 
-                    OpenNested();
                     await _mudDataGrid!.ReloadServerData();
-                    StateHasChanged();
-                    
                 }
                 else
                 {
+                    //Console.WriteLine(serviceResponse.Message);
                     _success = false;
                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.AssignNotOK.GetStringValue();
-                    Console.WriteLine(serviceResponse.Message);
-                    OpenNested();
 
                 }
+                OpenNested();
                
             }
 
@@ -717,19 +716,17 @@
                     _success = true;
                     _nestedErrorMessage = MessageEnum.UnassignOK.GetStringValue();
 
-                    OpenNested();
                     await _mudDataGrid!.ReloadServerData();
-                    StateHasChanged();
 
                 }
                 else
                 {
+                    //Console.WriteLine(serviceResponse.Message);
                     _success = false;
                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.UnassignNotOK.GetStringValue();
-                    Console.WriteLine(serviceResponse.Message);
-                    OpenNested();
-
+                    
                 }
+                OpenNested();
 
             }
 
@@ -777,19 +774,15 @@
                     _success = true;
                     _nestedErrorMessage = MessageEnum.AvailableOK.GetStringValue();
 
-                    OpenNested();
                     await _mudDataGrid!.ReloadServerData();
-                    StateHasChanged();
-
                 }
                 else
                 {
+                    //Console.WriteLine(serviceResponse.Message);
                     _success = false;
                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.AvailableNotOK.GetStringValue();
-                    Console.WriteLine(serviceResponse.Message);
-                    OpenNested();
-
                 }
+                OpenNested();
             }
 
         }
@@ -834,18 +827,16 @@
                     _success = true;
                     _nestedErrorMessage = MessageEnum.UnavailableOK.GetStringValue();
 
-                    OpenNested();
                     await _mudDataGrid!.ReloadServerData();
-                    StateHasChanged();
-
                 }
                 else
                 {
+                    //Console.WriteLine(serviceResponse.Message);
                     _success = false;
                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.UnavailableNotOK.GetStringValue();
-                    Console.WriteLine(serviceResponse.Message);
-                    OpenNested();
+                    
                 }
+                OpenNested();
             }
         }
 

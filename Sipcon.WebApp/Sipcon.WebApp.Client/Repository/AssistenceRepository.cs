@@ -77,6 +77,101 @@
             return result;
         }
 
+        public async Task<ApiResponse<List<PossibleFault>>> GetPossibleFault(int IdUser)
+        {
+            ApiResponse<List<PossibleFault>>? result;
+
+            try
+            {
+                var url = $"api/Service/GetPossibleFault";
+
+                result = await _http.GetFromJsonAsync<ApiResponse<List<PossibleFault>>>(url);
+
+                result = (result is null) ? new ApiResponse<List<PossibleFault>>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<PossibleFault>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+
+        }
+
+        public async Task<ApiResponse<List<AssistanceType>>> GetAssistanceType(int IdUser)
+        {
+            ApiResponse<List<AssistanceType>>? result;
+
+            try
+            {
+                var url = $"api/Service/GetAssistanceType";
+
+                result = await _http.GetFromJsonAsync<ApiResponse<List<AssistanceType>>>(url);
+
+                result = (result is null) ? new ApiResponse<List<AssistanceType>>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<AssistanceType>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+
+        }
+
+        public async Task<ApiResponse<List<UserAssign>>> GetUserAssign(int IdSupplier, int IdUser, int RowFrom, string Filter = "", int? Id = null)
+        {
+            ApiResponse<List<UserAssign>>? result;
+
+            try
+            {
+                var url = $"api/Service/GetUserAssign?supplierId={IdSupplier}&userId={IdUser}&irowFrom={RowFrom}";
+                url = (Id.HasValue) ? $"{url}&Id={Id}" : url;
+                url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
+
+
+                result = await _http.GetFromJsonAsync<ApiResponse<List<UserAssign>>>(url);
+
+                result = (result is null) ? new ApiResponse<List<UserAssign>>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<UserAssign>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+
+        }
+
+
+
         public async Task<ApiResponse<ActionResult>> CreateAssistence(Assistence Assistence, int IdUser)
         {
             ApiResponse<ActionResult>? result;
@@ -93,7 +188,8 @@
                     Km = Assistence.Km ?? 0,
                     Paralyzed = Assistence.Paralyzed ?? false,
                     DealerId = Assistence.DealerId ?? 0,
-                    VehicleId = Assistence.VehicleId ?? 0
+                    VehicleId = Assistence.VehicleId ?? 0,
+                    PossibleFaultId = Assistence.PossibleFaultId ?? 0
                 };
 
                 var response = await _http.PostAsJsonAsync($"api/Service/PostAssistence?userId={IdUser}", _assistence);
@@ -134,8 +230,9 @@
                     Paralyzed = Assistence.Paralyzed ?? false,
                     DealerId = Assistence.DealerId ?? 0,
                     VehicleId = Assistence.VehicleId ?? 0,
-                    CustomerId = Assistence.CustomerId ?? 0
-                   
+                    CustomerId = Assistence.CustomerId ?? 0,
+                    PossibleFaultId = Assistence.PossibleFaultId ?? 0
+
                 };
 
 

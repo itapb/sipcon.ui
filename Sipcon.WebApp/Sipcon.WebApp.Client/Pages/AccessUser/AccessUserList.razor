@@ -89,7 +89,10 @@
     </PagerContent>
 </MudDataGrid>
 
-<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Usuarios")"/>
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" 
+                    onCloseNested="() => _nestedVisible = false"
+                    ErrorMessage="@_nestedErrorMessage" 
+                    Title="@("Usuarios")"/>
 
 
 @code {
@@ -145,9 +148,10 @@
         }
         else
         {
+            // Console.WriteLine($"Error: {serviceResponse.Message}");
             _success = false;
             _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
-            Console.WriteLine($"Error: {serviceResponse.Message}");
+
             OpenNested();
 
         }
@@ -241,15 +245,16 @@
                 {
                     _success = true;
                     _nestedErrorMessage = MessageEnum.SaveOK.GetStringValue();
-                    OpenNested();
+                    
                     await _mudDataGrid!.ReloadServerData();
                 }
                 else
                 {
                     _success = false;
                     _nestedErrorMessage = result.Message ?? MessageEnum.SaveNotOK.GetStringValue();
-                    OpenNested();
+                    
                 }
+                OpenNested();
                    
                 
             }
@@ -278,7 +283,11 @@
 
     private async Task ClickAddUserAsync() => await OpenContactForm(0);
 
-    private void OpenNested() => _nestedVisible = true;
+    private void OpenNested()
+    {
+        _nestedVisible = true;
+        StateHasChanged();
+    }
 
     private async Task HandleMenuClick(ModuleAction module)
     {
@@ -333,20 +342,17 @@
                 {
                     _success = true;
                     _nestedErrorMessage = MessageEnum.ActivateOK.GetStringValue();
-
-                    OpenNested();
+                    
                     await _mudDataGrid!.ReloadServerData();
-                    StateHasChanged();
-
                 }
                 else
                 {
+                    // Console.WriteLine(serviceResponse.Message);
                     _success = false;
                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ActivateNotOK.GetStringValue();
-                    Console.WriteLine(serviceResponse.Message);
-                    OpenNested();
 
                 }
+                OpenNested();
             }
 
         }
@@ -387,25 +393,22 @@
                     ActionList.Add(_action);
                 }
 
-        var serviceResponse = await SecurityService.ActionsAccessGroup(ActionList, Useful.userId);
+                var serviceResponse = await SecurityService.ActionsAccessGroup(ActionList, Useful.userId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
                     _nestedErrorMessage = MessageEnum.DeactivateOK.GetStringValue();
 
-                    OpenNested();
                     await _mudDataGrid!.ReloadServerData();
-                    StateHasChanged();
-
                 }
                 else
                 {
+                    // Console.WriteLine(serviceResponse.Message);
                     _success = false;
                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.DeactivateNotOK.GetStringValue();
-                    Console.WriteLine(serviceResponse.Message);
-                    OpenNested();
 
                 }
+                OpenNested();
             }
 
         }

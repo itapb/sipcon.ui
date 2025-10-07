@@ -89,12 +89,13 @@
                                                           AdornmentIcon="@Icons.Material.Filled.Search"
                                                           Adornment="Adornment.End"
                                                           AdornmentColor="Color.Info"
-                                                          OnAdornmentClick="() => ClickSearchVehicle()"
-                                                          OnKeyUp="HandleKeyUpSearchVehicle"
                                                           Placeholder="Placa/Vin"
                                                           MaxLength="20"
                                                           Variant="Variant.Text"
                                                           Margin="Margin.None"
+                                                          OnAdornmentClick="() => ClickSearchVehicle()"
+                                                          OnKeyUp="HandleKeyUpSearchVehicle"
+                                                          Validation="@_SelectValidator.Validation"
                                                           ReadOnly="@(!_model.IsActive || _isReadOnly)"
                                                           Disabled="@(!_model.IsActive || _isReadOnly)" />
                                             
@@ -121,26 +122,55 @@
                                         </MudStack>
                                     </CardHeaderContent>
                                     <CardHeaderActions>
-                                        <MudNumericField Typo="Typo.caption" @bind-Value="_model.OrderNumber"
-                                                      Label="Nro. Reporte Falla"
-                                                      Style="max-width: 220px;"
-                                                      Variant="Variant.Text"
-                                                      Margin="Margin.Dense"
-                                                      MaxLength="10"
-                                                      HideSpinButtons="true"
-                                                      Pattern="[0-9]*"
-                                                      Format="N0"
-                                                      Culture="@CultureInfo.GetCultureInfo("es-VE")"
-                                                      ReadOnly="@(!_model.IsActive || _isReadOnly)" />
+                                        
 
                                     </CardHeaderActions>
                                 </MudCardHeader>
 
-                                <MudCardContent Style="padding-top: 0px;">
+                                <MudCardContent Style="padding-top: 0px;" Class="mt-2">
+
+                                    <MudStack Row="true">
+
+                                        <MudSwitch @bind-Value="_model.Paralyzed" LabelPlacement="Placement.Start" Color="Color.Success" ReadOnly="@(!_model.IsActive || _isReadOnly)">
+                                            <MudText Typo="Typo.caption">Vehiculo paralizado</MudText>
+                                        </MudSwitch>
+                                        <MudSpacer />
+                                        <MudSpacer />
+                                    </MudStack>
+
+                                    <MudStack Row="true">
+                                        <MudNumericField Typo="Typo.caption" @bind-Value="_model.OrderNumber"
+                                                         Label="Nro. Reporte Falla"
+                                                         Style="max-width: 220px;"
+                                                         Variant="Variant.Text"
+                                                         Margin="Margin.Dense"
+                                                         MaxLength="10"
+                                                         HideSpinButtons="true"
+                                                         Pattern="[0-9]*"
+                                                         Format="N0"
+                                                         Culture="@CultureInfo.GetCultureInfo("es-VE")"
+                                                         ReadOnly="@(!_model.IsActive || _isReadOnly)" />
+
+                                        <MudSelect @bind-Value="_model.PossibleFaultId"
+                                                   Typo="Typo.caption"
+                                                   Label="Posible Falla"
+                                                   AdornmentColor="Color.Default"
+                                                   Margin="Margin.None"
+                                                   For="@(() => _model.PossibleFaultId)"
+                                                   Disabled="@(!_model.IsActive)"
+                                                   Immediate="true">
+                                            @foreach (var item in _possibleFaultList)
+                                            {
+                                                <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                    </MudStack>
+                                    
+
 
                                     <MudTextField Typo="Typo.caption" @bind-Value="_model.CustomerReport"
                                                     Label="Reporte Cliente"
-                                                    Lines="10"
+                                                    Lines="6"
                                                     MaxLength="500"
                                                     Variant="Variant.Text"
                                                     Margin="Margin.None"
@@ -150,7 +180,7 @@
 
                                     <MudTextField Typo="Typo.caption" @bind-Value="_model.DealerReport"
                                                     Label="Reporte de condiciones y Posible(s) causa(s)"
-                                                    Lines="10"
+                                                    Lines="6"
                                                     MaxLength="500"
                                                     Variant="Variant.Text"
                                                     Margin="Margin.None"
@@ -277,9 +307,7 @@
 
                                             <MudItem xs="12" sm="6">
                                                 <div class="d-flex justify-start">
-                                                    <MudSwitch @bind-Value="_model.Paralyzed" LabelPlacement="Placement.End" Color="Color.Success" ReadOnly="@(!_model.IsActive || _isReadOnly)">
-                                                        <MudText Typo="Typo.caption">Paralizado</MudText>
-                                                    </MudSwitch>
+                                                
                                                 </div>
                                             </MudItem>
                                         </MudGrid>
@@ -450,14 +478,22 @@
 
     bool _isReadOnly = false;
     string _searchVin = string.Empty;
+    bool _isSearchVin = false;
 
     AssistenceValidator _modelValidator = new AssistenceValidator();
+    private IEnumerable<SelectOption> _possibleFaultList { get; set; } = new List<SelectOption>();
 
     IMask maskDate = new DateMask("dd/MM/yyyy");
+
+    SelectValidator<string> _SelectValidator = new SelectValidator<string>(x => x
+   .NotNull().WithMessage("Campo requerido")
+   .NotEmpty().WithMessage("Campo requerido")
+   .Length(1, 20).WithMessage("Campo requerido entre 1-20 carácteres"));
 
 
     protected override async Task OnInitializedAsync()
     {
+        _possibleFaultList = await ModuleActionsService.GetPossibleFaultOption(Useful.userId);
 
         if (ActionsModal == ActionsEnum.Create)
         {
@@ -474,8 +510,6 @@
             await GetPolicyBy();
 
         }
-
-       
 
         StateHasChanged();
         await Task.CompletedTask;
@@ -509,11 +543,13 @@
     private async Task GetPolicyBy()
     {
         _modelPolicy = new Models.Policy();
+        _isSearchVin = false;
         var serviceResponse = await PolicyService.GetPolicyBy(Useful.supplierId, Useful.userId, _searchVin, SearchByEnum.Dual);
         if (serviceResponse.Processed)
         {
             _modelPolicy = serviceResponse.Data ?? new Models.Policy();
 
+            _isSearchVin = true;
             _errorSearchVehicle = string.Empty;
             form!.ResetValidation();
         }
@@ -546,6 +582,8 @@
     private async Task ClickSearchVehicle()
     {
         _errorSearchVehicle = string.Empty;
+        _isSearchVin = false;
+
         if (_model.ServiceDate is null || _model.ServiceDate.Value.ToString().Length == 0)
         {
             _errorSearchVehicle = "Indique Fecha Servicio...";
@@ -577,7 +615,7 @@
         if (e.Key == "Enter")
         {
             _errorSearchVehicle = string.Empty;
-
+            _isSearchVin = false;
             if (_model.ServiceDate is null || _model.ServiceDate.Value.ToString().Length == 0)
             {
                 _errorSearchVehicle = "Indique Fecha Servicio...";
@@ -605,6 +643,15 @@
     private async Task OnValidSubmit()
     {
         await form!.Validate();
+        
+        if (!_isSearchVin)
+        {
+            _errorSearchVehicle = "Buscar VIN/Placa Vehiculo...";
+            StateHasChanged();
+            await Task.CompletedTask;
+            return;
+        }
+
 
         if (form.IsValid)
         {
@@ -686,6 +733,26 @@
 
     }
 
+    public class SelectValidator<T> : AbstractValidator<T>
+    {
+
+        public SelectValidator(Action<IRuleBuilderInitial<T, T>> rule)
+        {
+            rule(RuleFor(x => x));
+        }
+
+
+        private IEnumerable<string> ValidateValue(T arg)
+        {
+            var result = Validate(arg);
+            if (result.IsValid)
+                return new string[0];
+            return result.Errors.Select(e => e.ErrorMessage);
+        }
+
+        public Func<T, IEnumerable<string>> Validation => ValidateValue;
+
+    }
 
 
     /// <summary>
@@ -711,10 +778,14 @@
                    }
                });
 
-            RuleFor(x => x.Vin)
+            RuleFor(x => x.PossibleFaultId)
                 .NotNull().WithMessage("Campo requerido")
-                .NotEmpty().WithMessage("Campo requerido")
-                .Length(1, 20).WithMessage("Campo requerido entre 1-20 carácteres");
+                .GreaterThan(0).WithMessage("seleccione Posible Falla.");
+
+            // RuleFor(x => x.Vin)
+            //     .NotNull().WithMessage("Campo requerido")
+            //     .NotEmpty().WithMessage("Campo requerido")
+            //     .Length(1, 20).WithMessage("Campo requerido entre 1-20 carácteres");
 
 
             RuleFor(x => x.DealerReport)

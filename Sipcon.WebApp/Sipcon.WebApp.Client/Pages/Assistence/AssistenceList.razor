@@ -89,6 +89,11 @@
                 <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.ServiceDate?.ToString("dd MMM yyyy"))</MudText>
             </CellTemplate>
         </TemplateColumn>
+        <TemplateColumn Title="ASIGNADO">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Start">@(context.Item.AuthorizedUserName)</MudText>
+            </CellTemplate>
+        </TemplateColumn>
         <TemplateColumn  Title="ESTATUS">
             <CellTemplate>
                 <div class="d-flex justify-start">
@@ -144,7 +149,10 @@
     </PagerContent>
 </MudDataGrid>
 
-<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Asistencia Técnica")">
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success"
+                    onCloseNested="() => _nestedVisible = false"
+                    ErrorMessage="@_nestedErrorMessage" 
+                    Title="@("Asistencia Técnica")">
 
 </NestedDialogCustom>
 
@@ -154,7 +162,7 @@
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     private IEnumerable<Assistence> _Assistences = new List<Assistence>();
     private string _nestedErrorMessage = string.Empty;
-    private bool _nestedVisible;
+    private bool _nestedVisible = false;
     bool _success = false;
 
     private int _rowCount = 0;
@@ -227,11 +235,11 @@
             // Console.WriteLine($"Error: {serviceResponse.Message}");
             _success = false;
             _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
-            
+
             OpenNested();
 
         }
-        
+
         _loading = false;
         StateHasChanged();
     }
@@ -299,7 +307,7 @@
         _nestedVisible = true;
         StateHasChanged();
     }
-    
+
 
 
     private async Task HandleMenuClick(ModuleAction module)
@@ -321,6 +329,13 @@
             case "DECLINE":
                 await DeclineItemsAsync(module.IdAction, module.ActionName);
                 break;
+            case "ASSIGN":
+                await AssignItemsAsync(module.IdAction, module.ActionName);
+                break;
+            case "UNASSIGN":
+                await UnassignItemsAsync(module.IdAction, module.ActionName);
+                break;
+
             default:
                 Console.WriteLine($"{MessageEnum.ActionsError.GetStringValue()}: {module.ActionName}");
                 break;
@@ -345,8 +360,8 @@
         {
             // Console.WriteLine(serviceResponse.Message);
             _success = false;
-            _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue();
-            
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
+
             OpenNested();
 
         }
@@ -399,7 +414,7 @@
                 {
                     // Console.WriteLine(serviceResponse.Message);
                     _success = false;
-                    _nestedErrorMessage = MessageEnum.GenerateNotOK.GetStringValue();
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GenerateNotOK.GetStringValue();
                 }
                 OpenNested();
             }
@@ -449,14 +464,14 @@
 
                     _success = true;
                     _nestedErrorMessage = MessageEnum.ToApproveOK.GetStringValue();
-                    
+
                     await _mudDataGrid!.ReloadServerData();
                 }
                 else
                 {
                     // Console.WriteLine(serviceResponse.Message);
                     _success = false;
-                    _nestedErrorMessage = MessageEnum.ToApproveNotOK.GetStringValue();
+                    _nestedErrorMessage = serviceResponse.Message ??  MessageEnum.ToApproveNotOK.GetStringValue();
                 }
                 OpenNested();
             }
@@ -473,6 +488,8 @@
         Console.WriteLine("Aprobar Asistencia...");
         if (selectedAssistence.Any())
         {
+            var _AssistanceTypeList = await ModuleActionsService.GetAssistanceType(Useful.userId);
+
             var option = new DialogOptions
             {
                 CloseButton = false,
@@ -480,6 +497,8 @@
                 FullWidth = true,
                 BackdropClick = false
             };
+
+
             bool? confir = await DialogService.ShowMessageBox(
                 "Aprobar Asistencia Tècnica",
                 $"Seguro de Aprobar? ",
@@ -489,15 +508,15 @@
             {
 
                 DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
-                var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Aprobar Asistencia Tècnica..." } };
-                var dialog = await DialogService.ShowAsync<TextItemDialog>("Asistencia Tècnica", parameters, options);
+                var parameters = new DialogParameters<SelectItemDialog> { { x => x.SelectList, _AssistanceTypeList }, { x => x.Title, "Tipo Asistencia Tècnica" } };
+                var dialog = await DialogService.ShowAsync<SelectItemDialog>("Asistencia Tècnica", parameters, options);
 
                 StateHasChanged();
 
                 var result = await dialog.Result;
                 if (!result!.Canceled)
                 {
-                    var _Observacion = (string)(result.Data ?? string.Empty);
+                    var _selectedAssistanceType = (int)(result.Data ?? 0);
                     List<PostAction> ActionList = ([]);
 
                     foreach (var policy in selectedAssistence)
@@ -507,7 +526,7 @@
                             RecordId = policy.Id,
                             ModuleId = moduleId,
                             ActionName = moduleActionName,
-                            ActionComment = _Observacion
+                            RelatedId = _selectedAssistanceType
                         };
                         ActionList.Add(VehicleAction);
                     }
@@ -518,18 +537,18 @@
 
                         _success = true;
                         _nestedErrorMessage = MessageEnum.ApproveOK.GetStringValue();
-                     
+
                         await _mudDataGrid!.ReloadServerData();
                     }
                     else
                     {
                         // Console.WriteLine(serviceResponse.Message);
                         _success = false;
-                        _nestedErrorMessage = MessageEnum.ApproveNotOK.GetStringValue();
+                        _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ApproveNotOK.GetStringValue();
                     }
                     OpenNested();
                 }
-                
+
             }
 
         }
@@ -595,12 +614,12 @@
                     {
                         // Console.WriteLine(serviceResponse.Message);
                         _success = false;
-                        _nestedErrorMessage = MessageEnum.DeclineNotOK.GetStringValue();
+                        _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.DeclineNotOK.GetStringValue();
 
                     }
                     OpenNested();
                 }
-               
+
             }
 
         }
@@ -608,6 +627,153 @@
         selectedAssistence = new([]);
         await Task.CompletedTask;
     }
+
+
+    private async Task AssignItemsAsync(int moduleId, string moduleActionName)
+    {
+
+        if (selectedAssistence.Any())
+        {
+            
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false
+            };
+
+            bool? confirm = await DialogService.ShowMessageBox(
+               "Asignar Asistencia Tècnica",
+               $"Seguro de Asignar? ",
+               yesText: "Si", noText: "No", "", options);
+
+            if (confirm == true)
+            {
+                options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+                var parameters = new DialogParameters<UserAssignCatalog> { { x => x.Title, "Asignar Asistencia Tècnica" } };
+                var dialog = await DialogService.ShowAsync<UserAssignCatalog>("Asistencia Tècnica", parameters, options);
+
+                StateHasChanged();
+
+                var result = await dialog.Result;
+                if (!result!.Canceled)
+                {
+                    var _selectedUserAssign = (UserAssign)(result.Data ?? new UserAssign());
+                    List<PostAction> ActionList = ([]);
+
+                    foreach (var vehicle in selectedAssistence)
+                    {
+                        var Action = new PostAction
+                        {
+                            RecordId = vehicle.Id,
+                            ModuleId = moduleId,
+                            ActionName = moduleActionName,
+                            RelatedId = _selectedUserAssign.Id
+                        };
+                        ActionList.Add(Action);
+                    }
+
+                    var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, Useful.userId);
+                    if (serviceResponse.Processed)
+                    {
+                        _success = true;
+                        _nestedErrorMessage = MessageEnum.AssignOK.GetStringValue();
+
+                        await _mudDataGrid!.ReloadServerData();
+
+                    }
+                    else
+                    {
+                        // Console.WriteLine(serviceResponse.Message);
+                        _success = false;
+                        _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.AssignNotOK.GetStringValue();
+
+                    }
+                    OpenNested();
+
+                }
+
+            }
+           
+        }
+
+        selectedAssistence = new([]);
+        await Task.CompletedTask;
+    }
+
+
+    private async Task UnassignItemsAsync(int moduleId, string moduleActionName)
+    {
+        Console.WriteLine("Desasignar Asistencia...");
+        if (selectedAssistence.Any())
+        {
+            var option = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false
+            };
+            bool? confirm = await DialogService.ShowMessageBox(
+                "Desasignar Asistencia Tècnica",
+                $"Seguro de Desasignar? ",
+                yesText: "Si", noText: "No", "", option);
+
+            if (confirm == true)
+            {
+                DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+                var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Desasignar Asistencia Tècnica..." } };
+                var dialog = await DialogService.ShowAsync<TextItemDialog>("Asistencia Tècnica", parameters, options);
+
+                StateHasChanged();
+
+                var result = await dialog.Result;
+                if (!result!.Canceled)
+                {
+                    var _Observacion = (string)(result.Data ?? string.Empty);
+                    List<PostAction> ActionList = ([]);
+
+                    foreach (var policy in selectedAssistence)
+                    {
+                        var Action = new PostAction
+                        {
+                            RecordId = policy.Id,
+                            ModuleId = moduleId,
+                            ActionName = moduleActionName,
+                            ActionComment = _Observacion
+                        };
+                        ActionList.Add(Action);
+                    }
+
+                    var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, Useful.userId);
+                    if (serviceResponse.Processed)
+                    {
+
+                        _success = true;
+                        _nestedErrorMessage = MessageEnum.UnassignOK.GetStringValue();
+
+                        await _mudDataGrid!.ReloadServerData();
+                    }
+                    else
+                    {
+                        // Console.WriteLine(serviceResponse.Message);
+                        _success = false;
+                        _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.UnassignNotOK.GetStringValue();
+
+                    }
+                    OpenNested();
+                }
+
+            }
+
+        }
+
+        selectedAssistence = new([]);
+        await Task.CompletedTask;
+    }
+
+
 
     private Func<Assistence, string> _cellStyleFunc => x =>
     {

@@ -147,7 +147,10 @@
     </PagerContent>
 </MudDataGrid>
 
-<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Polizas")" />
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success"
+                    onCloseNested="() => _nestedVisible = false"
+                    ErrorMessage="@_nestedErrorMessage" 
+                    Title="@("Polizas")" />
 
 
 
@@ -227,7 +230,7 @@
         }
         else
         {
-            Console.WriteLine($"Error: {serviceResponse.Message}");            
+            // Console.WriteLine($"Error: {serviceResponse.Message}");            
             _success = false;
             _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
             OpenNested();
@@ -302,9 +305,10 @@
         }
         else
         {
+            // Console.WriteLine(serviceResponse.Message);
             _success = false;
             _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue();
-            // Console.WriteLine(serviceResponse.Message);
+            
             OpenNested();
 
         }

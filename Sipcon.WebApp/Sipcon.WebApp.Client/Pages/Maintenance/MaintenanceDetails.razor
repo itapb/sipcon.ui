@@ -571,7 +571,10 @@
     }
 </MudContainer>
 
-<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Mantenimiento")" />
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success"
+                    onCloseNested="() => _nestedVisible = false"
+    ErrorMessage="@_nestedErrorMessage" 
+    Title="@("Mantenimiento")" />
 
 @code {
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
@@ -650,8 +653,9 @@
         }
         else
         {
+            //Console.WriteLine(serviceResponse.Message);
             _model = new Maintenance();
-            Console.WriteLine(serviceResponse.Message);
+            
         }
 
     }
@@ -735,9 +739,10 @@
             }
             else
             {
+                //Console.WriteLine(serviceResponse.Message);
                 _success = false;
                 _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GenerateNotOK.GetStringValue();
-                Console.WriteLine(serviceResponse.Message);
+                
                 OpenNested();
             }
             StateHasChanged();
@@ -911,9 +916,10 @@
         }
         else
         {
+            //Console.WriteLine(serviceResponse.Message);
             _success = false;
             _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue();
-            Console.WriteLine(serviceResponse.Message);
+            
             OpenNested();
         }
 

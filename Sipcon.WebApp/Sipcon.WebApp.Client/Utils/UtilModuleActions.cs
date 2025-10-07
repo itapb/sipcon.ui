@@ -17,7 +17,8 @@ namespace Sipcon.WebApp.Client.Utils
         IPolicyTypeService PolicyTypeService,
         IPayMethodService PayMethodService,
         ILicenseService LicenseService,
-        IFailReportService FailReportService
+        IFailReportService FailReportService,
+        IAssistenceService AssistenceService
         ) 
     {
 
@@ -304,6 +305,44 @@ namespace Sipcon.WebApp.Client.Utils
             {
                 List<FailReportType> _List = moduleResponse.Data ?? new List<FailReportType>();
 
+
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Id, item.Name));
+                }
+            }
+            return _itemsSelect;
+
+        }
+
+        public async Task<List<SelectOption>> GetPossibleFaultOption(int IdUser)
+        {
+            List<SelectOption> _itemsSelect = new([]);
+
+
+            var response = await AssistenceService.GetPossibleFault(IdUser);
+            if (response.Processed)
+            {
+                List<PossibleFault> _List = response.Data ?? new List<PossibleFault>();
+
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Id, item.Name));
+                }
+            }
+            return _itemsSelect;
+
+        }
+
+        public async Task<List<SelectOption>> GetAssistanceType(int IdUser)
+        {
+            List<SelectOption> _itemsSelect = new([]);
+
+
+            var moduleResponse = await AssistenceService.GetAssistanceType(IdUser);
+            if (moduleResponse.Processed)
+            {
+                List<AssistanceType> _List = moduleResponse.Data ?? new List<AssistanceType>();
 
                 foreach (var item in _List.ToList())
                 {

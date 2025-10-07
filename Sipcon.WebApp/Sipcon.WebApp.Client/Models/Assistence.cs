@@ -24,6 +24,14 @@ namespace Sipcon.WebApp.Client.Models
         public int? EstatusId { get; set; } = null;
         public string EstatusName { get; set; } = string.Empty;
         public bool? Paralyzed { get; set; } = false;
+        public int? AssistanceTypeId { get; set; } = null;
+        public string? AssistanceType { get; set; } = string.Empty;
+        public int? PossibleFaultId { get; set; } = null;
+        public string PossibleFault { get; set; } = string.Empty;
+        public DateTime? StartDate { get; set; } = null;
+        public DateTime? EndDate { get; set; } = null;
+        public int? Assesment { get; set; } = null;
+        public string? AuthorizedUserName { get; set; } = string.Empty; 
         public bool IsActive { get; set; } = true;
 
 
@@ -70,6 +78,7 @@ namespace Sipcon.WebApp.Client.Models
         public int DealerId { get; set; } = 0;
         public int VehicleId { get; set; } = 0;
         public int CustomerId { get; set; } = 0;
+        public int PossibleFaultId { get; set; } = 0;
 
     }
 

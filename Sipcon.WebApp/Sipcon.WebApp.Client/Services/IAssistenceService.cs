@@ -6,6 +6,9 @@
 
         public Task<ApiResponse<List<Assistence>>> GetAssistences(int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null);
         public Task<ApiResponse<Assistence>> GetAssistence(int IdUser, int IdDealer, int IdAssistence);
+        public Task<ApiResponse<List<PossibleFault>>> GetPossibleFault(int IdUser);
+        public Task<ApiResponse<List<AssistanceType>>> GetAssistanceType(int IdUser);
+        public Task<ApiResponse<List<UserAssign>>> GetUserAssign(int IdSupplier, int IdUser, int RowFrom, string Filter = "", int? Id = null);
         public Task<ApiResponse<ActionResult>> CreateAssistence(Assistence Assistence, int IdUser);
         public Task<ApiResponse<ActionResult>> UpdateAssistence(Assistence Assistence, int IdUser);
         public Task<ApiResponse<ActionResult>> ActionsAssistence(List<PostAction> PostActions, int IdUser);

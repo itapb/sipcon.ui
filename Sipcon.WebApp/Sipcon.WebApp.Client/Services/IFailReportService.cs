@@ -14,7 +14,7 @@
         public Task<ApiResponse<ActionResult>> ActionsFailReportProcess(List<PostActionProcess> PostActions, int IdUser);
         public Task<ApiResponse<List<byte>>> ExportFailReports(int IdSupplier, int IdUser, string Filter = "", int? IdDealer = null);
         public Task<ApiResponse<List<byte>>> ExportPdfSRG(int IdUser, int IdService, int? IdDealer = null);
-
+       
 
         public Task<ApiResponse<List<FailReportDetail>>> GetFailReportDetails(int IdService, string Filter = "", ServiceDetailTypeEnum dType = ServiceDetailTypeEnum.LaborTime);
         public Task<ApiResponse<ActionResult>> CreateFailReportDetail(FailReportDetail Detail, int IdUser);

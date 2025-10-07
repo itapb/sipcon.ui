@@ -84,48 +84,55 @@
                             </CardHeaderContent>
 
                             <CardHeaderActions>
-                                <MudStack Row="false">
-                                    @if (_modelVehicle.Id != 0)
-                                    {
-                                        string style = "";
-
-                                        if (_model.EstatusName.ToUpper() == "CREADO")
-                                            style += "";
-                                        else if (_model.EstatusName.ToUpper() == "VALIDADO")
+                                <div class="d-flex align-end justify-space-between mud-width-full">
+                                    <div class="d-flex flex-column">
+                                        @if (_modelVehicle.Id != 0)
                                         {
-                                            style += "color:#fff";
-                                            style += ";background-color:#0099F3";
+                                            string style = "";
+
+                                            if (_model.EstatusName.ToUpper() == "CREADO")
+                                                style += "";
+                                            else if (_model.EstatusName.ToUpper() == "VALIDADO")
+                                            {
+                                                style += "color:#fff";
+                                                style += ";background-color:#0099F3";
+                                            }
+                                            else if (_model.EstatusName.ToUpper() == "PROCESADO")
+                                            {
+                                                style += "color:#fff";
+                                                style += ";background-color:#757575";
+                                            }
+                                            else
+                                            {
+                                                style += "color:#fff";
+                                                style += ";background-color:#FF7043";
+                                            }
+                                            style += ";font-size: 10px";
+                                            style += ";font-style:italic";
+
+
+                                            <MudChip T="string" Style="@style" Label="true" Disabled="true">@_model.EstatusName</MudChip>
                                         }
-                                        else if (_model.EstatusName.ToUpper() == "PROCESADO")
+
+                                        @if (!string.IsNullOrEmpty(_model.SrgNumber))
                                         {
-                                            style += "color:#fff";
-                                            style += ";background-color:#757575";
+                                            <MudText Typo="Typo.caption"><b>SRG: </b> <MudText Typo="Typo.caption" Color="Color.Info">@_model.SrgNumber</MudText></MudText>
                                         }
-                                        else
+                                        @if (!string.IsNullOrEmpty(_model.InvoiceAmount.ToString()))
                                         {
-                                            style += "color:#fff";
-                                            style += ";background-color:#FF7043";
+                                            <MudText Typo="Typo.caption" Class="mt-0"><b>TOTAL: </b> <MudText Typo="Typo.caption" Color="Color.Info">@_model.InvoiceAmount?.ToString("N2")</MudText></MudText>
                                         }
-                                        style += ";font-size: 10px";
-                                        style += ";font-style:italic";
+                                         
 
-
-                                        <MudChip T="string" Style="@style" Label="true" Disabled="true">@_model.EstatusName</MudChip>
-                                    }
-
-                                    @if (!string.IsNullOrEmpty(_model.SrgNumber))
-                                    {
-                                        <MudText Typo="Typo.caption"><b>SRG: </b> <MudText Typo="Typo.caption" Color="Color.Info">@_model.SrgNumber</MudText></MudText>
-                                    }
-
-                                </MudStack>
+                                    </div>
+                                </div>
                                 
 
                             </CardHeaderActions>
 
                         </MudCardHeader>
 
-                        <MudCardContent Style="padding-top: 0px;">
+                        <MudCardContent Style="padding-top: 2px;">
 
                            
                             <MudStack Row="true">
@@ -722,7 +729,10 @@
    
 </MudContainer>
 
-<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Reporte de Falla")"/>
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success"
+                    onCloseNested="() => _nestedVisible = false"
+                    ErrorMessage="@_nestedErrorMessage" 
+                    Title="@("Reporte de Falla")"/>
 
 @code {
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
@@ -853,8 +863,9 @@
         }
         else
         {
+            // //Console.WriteLine(serviceResponse.Message);
             _model = new FailReport();
-            Console.WriteLine(serviceResponse.Message);
+            
         }
 
     }
@@ -928,9 +939,9 @@
             }
             else
             {
+                //Console.WriteLine(serviceResponse.Message);
                 _success = false;
                 _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GenerateNotOK.GetStringValue();
-                Console.WriteLine(serviceResponse.Message);
                 OpenNested();
             }
             StateHasChanged();
@@ -965,9 +976,9 @@
         }
         else
         {
+            //Console.WriteLine(serviceResponse.Message);
             _success = false;
-            _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue();
-            // Console.WriteLine(serviceResponse.Message);
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
             OpenNested();
 
         }
@@ -1135,9 +1146,10 @@
         }
         else
         {
+            //Console.WriteLine(serviceResponse.Message);
             _success = false;
             _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue();
-            Console.WriteLine(serviceResponse.Message);
+            
             OpenNested();
         }
 
@@ -1219,9 +1231,10 @@
         }
         else
         {
+            //Console.WriteLine(serviceResponse.Message);
             _success = false;
             _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
-            Console.WriteLine(serviceResponse.Message);
+            
             OpenNested();
 
         }
@@ -1260,20 +1273,18 @@
             {
                 _success = true;
                 _nestedErrorMessage = MessageEnum.GenerateOK.GetStringValue();
-                OpenNested();
 
                 await GetFailReport();
                 await Task.Delay(50);
             }
             else
             {
+                //Console.WriteLine(serviceResponse.Message);
                 _success = false;
                 _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GenerateNotOK.GetStringValue();
-                Console.WriteLine(serviceResponse.Message);
-                OpenNested();
 
             }
-            StateHasChanged();
+            OpenNested();
             await Task.CompletedTask;
         }
     }
@@ -1310,20 +1321,18 @@
             {
                 _success = true;
                 _nestedErrorMessage = MessageEnum.ToValidateOK.GetStringValue();
-                OpenNested();
                 
                 await GetFailReport();
                 await Task.Delay(50);
             }
             else
             {
+                //Console.WriteLine(serviceResponse.Message);
                 _success = false;
                 _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ToValidateNotOK.GetStringValue();
-                Console.WriteLine(serviceResponse.Message);
-                OpenNested();
 
             }
-            StateHasChanged();
+            OpenNested();
             await Task.CompletedTask;
         }
         
@@ -1374,20 +1383,18 @@
                 {
                     _success = true;
                     _nestedErrorMessage = MessageEnum.ValidateOK.GetStringValue();
-                    OpenNested();
                         
                     await GetFailReport();
                     await Task.Delay(50);
                 }
                 else
                 {
+                    //Console.WriteLine(serviceResponse.Message);
                     _success = false;
                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ValidateNotOK.GetStringValue();
-                    Console.WriteLine(serviceResponse.Message);
-                    OpenNested();
+                    
                 }
-     
-                StateHasChanged();
+                OpenNested();
                 await Task.CompletedTask;
             }
         }
@@ -1440,7 +1447,6 @@
 
                     _success = true;
                     _nestedErrorMessage = MessageEnum.DeclineOK.GetStringValue();
-                    OpenNested();
                     
                     await GetFailReport();
                     await Task.Delay(50);
@@ -1448,14 +1454,11 @@
                 }
                 else
                 {
+                    //Console.WriteLine(serviceResponse.Message);
                     _success = false;
                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.DeclineNotOK.GetStringValue();
-                    Console.WriteLine(serviceResponse.Message);
-                    OpenNested();
-
                 }
-
-                StateHasChanged();
+                OpenNested();
                 await Task.CompletedTask;
             }
 
@@ -1496,22 +1499,17 @@
 
                 _success = true;
                 _nestedErrorMessage = MessageEnum.ToApproveOK.GetStringValue();
-                OpenNested();
                 
                 await GetFailReport();
                 await Task.Delay(50);
-                
-
             }
             else
             {
+                //Console.WriteLine(serviceResponse.Message);
                 _success = false;
                 _nestedErrorMessage = serviceResponse.Message ??  MessageEnum.ToApproveNotOK.GetStringValue();
-                Console.WriteLine(serviceResponse.Message);
-                OpenNested();
-
             }
-            StateHasChanged();
+            OpenNested();
             await Task.CompletedTask;
         }
     }
@@ -1561,20 +1559,18 @@
                 {
                     _success = true;
                     _nestedErrorMessage = MessageEnum.ApproveOK.GetStringValue();
-                    OpenNested();
                  
                     await GetFailReport();
                     await Task.Delay(50);
                 }
                 else
                 {
+                    //Console.WriteLine(serviceResponse.Message);
                     _success = false;
                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ApproveNotOK.GetStringValue();
-                    Console.WriteLine(serviceResponse.Message);
-                    OpenNested();
 
                 }
-                StateHasChanged();
+                OpenNested();
                 await Task.CompletedTask;
             }
             
@@ -1628,20 +1624,18 @@
                 {
                     _success = true;
                     _nestedErrorMessage = MessageEnum.DeclineOK.GetStringValue();
-                    OpenNested();
-                        
+                    
                     await GetFailReport();
                     await Task.Delay(50);
                 }
                 else
                 {
+                    //Console.WriteLine(serviceResponse.Message);
                     _success = false;
                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.DeclineNotOK.GetStringValue();
-                    Console.WriteLine(serviceResponse.Message);
-                    OpenNested();
-
+                
                 }
-                StateHasChanged();
+                OpenNested();
                 await Task.CompletedTask;
             }
 
@@ -1696,20 +1690,18 @@
                 {
                     _success = true;
                     _nestedErrorMessage = MessageEnum.ApproveOK.GetStringValue();
-                    OpenNested();
                     
                     await GetFailReport();
                     await Task.Delay(50);
                 }
                 else
                 {
+                    //Console.WriteLine(serviceResponse.Message);
                     _success = false;
                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ApproveNotOK.GetStringValue();
-                    Console.WriteLine(serviceResponse.Message);
-                    OpenNested();
                 }
 
-                StateHasChanged();
+                OpenNested();
                 await Task.CompletedTask;
             }
         }
