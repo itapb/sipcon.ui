@@ -72,5 +72,7 @@ namespace Sipcon.WebApp.Client.Models
 
         public string? PartBarcode { get; set; } = string.Empty;
 
+        public string? PartSize  { get; set; } = string.Empty;
+
     }
 }

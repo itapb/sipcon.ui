@@ -201,7 +201,7 @@
     }
     private async Task PostMovemmentDetailMobile()
     {
-        var PartialTypeIdInput = (MovementType == "P" && movementDetails!.TypeId!.ToUpper() == "P" && InputRealQty < movementDetails!.RequiredQty) ? await ReasonConfirmation() : 0;
+        var PartialTypeIdInput = ("RTP".Contains(MovementType ?? "") && movementDetails!.TypeId!.ToUpper() == "P" && InputRealQty < movementDetails!.RequiredQty) ? await ReasonConfirmation() : 0;
         if (PartialTypeIdInput != null)
         {
             var AnMovementMobile = new movementMobile(Id: movementDetails!.Id, MovementId: movementDetails!.MovementId, PartId: movementDetails.PartId, PartialTypeId: PartialTypeIdInput, LocationId: locationId, RealQty: InputRealQty, SerialCode: InputSerial);
