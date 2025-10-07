@@ -104,7 +104,7 @@ else
         string hrefMovement = "dispatchguides";
 
         $"Home,Pedidos,Procesos,{MovementTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
-        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-DESPACHO&userId={Useful.userId}");
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=PEDIDOS-RECEPCION&userId={Useful.userId}");
     }
     Func<Mobile.Models.Guide, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
     {
