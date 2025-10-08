@@ -91,6 +91,11 @@ else
             Useful.IsNewOrEdit = true;
             AdjustmentId = data.Adjustment?.Id;
         }
+        else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflictContent = await response.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+            await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
         else
         {
             var errorMessage = await response.Content.ReadAsStringAsync();
