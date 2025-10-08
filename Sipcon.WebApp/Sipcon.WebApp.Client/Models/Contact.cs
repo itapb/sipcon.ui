@@ -4,7 +4,7 @@ namespace Sipcon.WebApp.Client.Models
 {
     public class Contact : Record
     {
-        [Required(ErrorMessage = "Campo requerido.")]
+        [Required(ErrorMessage = "Campo requerido."), StringLength(maximumLength: 10, MinimumLength = 10, ErrorMessage = "Longitud requerida 10 caracteres")]
         public string? Vat { get; set; }
         [Required(ErrorMessage = "Campo requerido.")]
         public string? FirstName { get; set; }
