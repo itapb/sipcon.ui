@@ -803,8 +803,8 @@
     {
 
         DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
-        var parameters = new DialogParameters<ImporItemDialog> { { x => x.Title, "Adjuntar Archivo..." } };
-        var dialog = await DialogService.ShowAsync<ImporItemDialog>("simple dialog", parameters, options);
+        var parameters = new DialogParameters<ImporFilesDialog> { { x => x.Title, "Adjuntar Archivo..." } };
+        var dialog = await DialogService.ShowAsync<ImporFilesDialog>("simple dialog", parameters, options);
 
         var result = await dialog.Result;
         if (!result!.Canceled)
@@ -827,6 +827,9 @@
                         _success = false;
                         isFormData = false;
                         _nestedErrorMessage = MessageEnum.ImportError.GetStringValue();
+                        dataLoaded = true;
+                        isLoaded = false;
+                        StateHasChanged();
                         OpenNested();
                         break;
                     }
@@ -835,6 +838,9 @@
                         _success = false;
                         isFormData = false;
                         _nestedErrorMessage = MessageEnum.ImportErrorMaxByte.GetStringValue();
+                        dataLoaded = true;
+                        isLoaded = false;
+                        StateHasChanged();
                         OpenNested();
                         break;
                     }
@@ -859,22 +865,29 @@
                     {
                         _success = true;
                         _nestedErrorMessage = MessageEnum.ImportOK.GetStringValue();
+                        dataLoaded = true;
+                        isLoaded = false;
+                        StateHasChanged();
                         await GetAttachments();
                     }
                     else
                     {
                         _success = false;
                         _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ImportNotOK.GetStringValue();
+                        dataLoaded = true;
+                        isLoaded = false;
+                        StateHasChanged();
                         OpenNested();
                     }
                      StateHasChanged();
                     await Task.Delay(50);
                 }
+                else{
+                    dataLoaded = true;
+                    isLoaded = false;
+                    StateHasChanged();
+                }
             }
-
-            dataLoaded = true;
-            isLoaded = false;
-            StateHasChanged();
 
         }
 

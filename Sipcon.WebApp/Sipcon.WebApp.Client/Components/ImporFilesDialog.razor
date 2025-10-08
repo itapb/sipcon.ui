@@ -34,11 +34,12 @@
                           
                             <MudCardContent Style="padding-top: 3px;">
                                 <MudItem xs="12">
-                                    <MudFileUpload T="IBrowserFile"
+                                    <MudFileUpload T="IReadOnlyList<IBrowserFile>"
                                                    @ref="@_fileUpload"
                                                    OnFilesChanged="OnInputFileChanged"
                                                    @bind-Files="_model.Files"
                                                    For="@(() => _model.Files)"
+                                                   AppendMultipleFiles
                                                    Hidden="@false"
                                                    InputClass="absolute mud-width-full mud-height-full overflow-hidden z-10"
                                                    InputStyle="opacity:0"
@@ -48,8 +49,8 @@
                                                    @ondragenter="@SetDragClass"
                                                    @ondragleave="@ClearDragClass"
                                                    @ondragend="@ClearDragClass" 
-                                                   Accept=".xls,.xlsx" 
-                                                   MaximumFileCount="1">
+                                                   Accept=".xls,.xlsx,.pdf,.png,.pneg,.jpg,.jpeg,.mp4" 
+                                                   MaximumFileCount="6">
                                         <ActivatorContent>
                                             <MudPaper Height="300px"
                                             Outlined="true"
@@ -57,12 +58,11 @@
                                                 <MudText Typo="Typo.h6">
                                                     Arrastre y suelte el archivo aquí o haga click.
                                                 </MudText>
-                                                @if (!string.IsNullOrEmpty(_model.Files?.Name))
-                                                {
-                                                    <MudChip T="string" Color="Color.Dark" Text="@(_model.Files!.Name)" />
 
+                                                @foreach (var file in _model.Files?.Select(file => file.Name) ?? Enumerable.Empty<string>())
+                                                {
+                                                    <MudChip T="string" Color="Color.Dark" Text="@file" />
                                                 }
-                                               
 
                                             </MudPaper>
                                         </ActivatorContent>
@@ -77,7 +77,7 @@
                                         </MudButton>
 
                                         <MudButton Color="Color.Error"
-                                                   Disabled="@(_model.Files is null)"
+                                                   Disabled="@(_model.Files is null || !_model.Files.Any())"
                                                    OnClick="@ClearAsync"
                                                    Variant="Variant.Filled">
                                             Eliminar
@@ -85,7 +85,7 @@
                                         <MudButton OnClick="Cancel">Cerrar</MudButton>
                                         <MudFab StartIcon="@Icons.Material.Filled.AttachFile"
                                                 Label="Adjuntar"
-                                                Disabled="@(!_isValid || !_isTouched || _model.Files is null)"
+                                                Disabled="@(!_isValid || !_isTouched || _model.Files is null || !_model.Files.Any())"
                                             OnClick="@(async () => await OnValidSubmit())" 
                                             Color="Color.Info" Size="Size.Small" />
                                     </MudToolBar>
@@ -153,13 +153,13 @@
 
     public class Model
     {
-        public IBrowserFile? Files { get; set; } 
+        public IReadOnlyList<IBrowserFile>? Files { get; set; } = new List<IBrowserFile>();
     }
     private Model _model = new();
     
     private ModelFluentValidator _validationRules = new();
     
-    private MudFileUpload<IBrowserFile>? _fileUpload;
+    private MudFileUpload<IReadOnlyList<IBrowserFile>>? _fileUpload;
 
 
     private readonly List<string> _fileNames = new();
@@ -247,7 +247,7 @@
                .NotEmpty()
                .WithMessage("Debe haber al menos un archivo.");
 
-            // RuleForEach(x => x.Files).SetValidator(new MudFileUploadValidator());
+            RuleForEach(x => x.Files).SetValidator(new MudFileUploadValidator());
 
         }
 
