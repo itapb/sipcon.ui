@@ -17,8 +17,15 @@ namespace Sipcon.WebApp.Client.Helper
         public static List<UserType> UserDealer { get; set; } = new List<UserType>();
         public static List<UserType> UserSuppliers { get; set; } = new List<UserType>();
         public static List<UserModule> UserModules { get; set; } = new List<UserModule>();
-        
 
+        internal static async Task<string> GetErrorMessageAsync(System.Net.Http.HttpResponseMessage response)
+        {
+            var resultString = await response.Content.ReadAsStringAsync();
+            var IsJson = System.Text.RegularExpressions.Regex.IsMatch(resultString, "(?<json>{(?:[^{}]|(?<Nested>{)|(?<-Nested>}))*(?(Nested)(?!))})"); //? JsonSerializer.Deserialize<WebApiResponse<Object?>>(conflictContent)?.message : conflictContent;
+
+            var errorMessage = IsJson ? System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(resultString).GetProperty("message").ToString() : resultString;
+            return errorMessage;
+        }
 
         internal static string OkSavedMessage = "Registro guardado satisfactoriamente.";
         internal static async Task<DialogResult?> ShowDialog(this IDialogService dialogService, string? strMessage, string strTitle, string strPrimaryButton, Color mColor, string? strIcon)

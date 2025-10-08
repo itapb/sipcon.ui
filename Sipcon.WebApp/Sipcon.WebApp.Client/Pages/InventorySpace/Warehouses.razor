@@ -57,6 +57,7 @@ else
 }
 
 @code {
+    [Inject] private IDialogService DialogService { get; set; } = default!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private MasterComp<Warehouse, WarehouseForm> masterComp { get; set; } = default!;
     private int? WarehouseId;
@@ -77,7 +78,7 @@ else
         masterComp.loading = true;
         var mOffset = state.Page * state.PageSize;
         var totalItems = 0;
-        IEnumerable<Warehouse> data;
+        IEnumerable<Warehouse> data = null!;
         HttpResponseMessage response = await masterComp.Http.GetAsync($"api/Warehouse/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&rowFrom={mOffset}&filter={masterComp.searchString}");
 
         if (response.IsSuccessStatusCode)
@@ -89,11 +90,11 @@ else
         else
         {
             var errorMessage = await response.Content.ReadAsStringAsync();
-            throw new Exception(errorMessage);
+            await DialogService.ShowDialog(errorMessage, "Error Almacen", "OK", Color.Error, Icons.Material.Filled.Error);
         }
         masterComp.loading = false;
 
-        return new GridData<Warehouse> { TotalItems = totalItems, Items = data };
+        return new GridData<Warehouse> { TotalItems = totalItems, Items = data};
     }
     private async Task ReloadWarehousesGrid()
     {
