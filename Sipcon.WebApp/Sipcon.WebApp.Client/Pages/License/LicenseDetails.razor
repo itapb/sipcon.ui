@@ -223,7 +223,12 @@
         </MudItem>
 
     </MudGrid>
-
+    @if (!dataLoaded)
+    {
+        <MudOverlay Visible="isLoaded" DarkBackground="true" Absolute="true">
+            <MudProgressCircular Color="Color.Secondary" Indeterminate="true" />
+        </MudOverlay>
+    }
 </MudContainer>
 
 
@@ -243,6 +248,8 @@
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
     bool _success = false;
+    private bool dataLoaded = false;
+    private bool isLoaded = false;
 
     private int _rowCount = 0;
     private int _rowsTotal = 0; 
@@ -258,7 +265,8 @@
     private bool _disableAddDetail = false;
     List<string> _statusDisableAddDetail = new List<string>()
     {
-        "ACTIVADO"
+        "ACTIVADO",
+        "DESACTIVADO"
     };
 
     List<string> _acionsDisableDetail = new List<string>()
@@ -515,19 +523,27 @@
         var result = await dialog.Result;
         if (!result!.Canceled)
         {
-
+            dataLoaded = false;
+            isLoaded = true;
+            StateHasChanged();
             IBrowserFile file = (IBrowserFile)(result.Data ?? string.Empty);
             const long maxAllowedSize = 10 * 1024 * 1024; // 10MB
             if (file.Size == 0)
             {
                 _success = false;
                 _nestedErrorMessage = MessageEnum.ImportError.GetStringValue();
+                dataLoaded = true;
+                isLoaded = false;
+                StateHasChanged();
                 OpenNested();
             }
             else if (file.Size > maxAllowedSize)
             {
                 _success = false;
                 _nestedErrorMessage = MessageEnum.ImportErrorMaxByte.GetStringValue();
+                dataLoaded = true;
+                isLoaded = false;
+                StateHasChanged();
                 OpenNested();
             }
             else
@@ -555,6 +571,9 @@
                     _success = false;
                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ImportNotOK.GetStringValue();
                 }
+                dataLoaded = true;
+                isLoaded = false;
+                StateHasChanged();
                 OpenNested();
             }
 
