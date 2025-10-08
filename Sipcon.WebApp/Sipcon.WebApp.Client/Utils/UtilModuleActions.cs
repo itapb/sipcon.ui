@@ -264,11 +264,11 @@ namespace Sipcon.WebApp.Client.Utils
                 
                 foreach (var item in _List.ToList())
                 {
-                    _itemsSelect.Add(new SelectOption(item.Id, item.Description));
+                    if (item.IsActive)
+                    {
+                        _itemsSelect.Add(new SelectOption(item.Id, item.Description));
+                    }
                 }
-
-                
-                
             }
             return _itemsSelect;
 
