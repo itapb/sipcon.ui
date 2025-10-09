@@ -22,5 +22,11 @@
         public Task<ApiResponse<ActionResult>> ActionsFailReportDetail(List<PostAction> PostActions, int IdUser);
         public Task<ApiResponse<ActionResult>> DeleteFailReportDetail(List<PostAction> PostActions, int IdUser);
 
+        public Task<ApiResponse<Part>> GetPartExternal(int IdUser, int IdPartExternal);
+        public Task<ApiResponse<LaborTime>> GetLaborTimeExternal(int IdUser, int IdLaborTimeExternal);
+        public Task<ApiResponse<ActionResult>> CreatePartExternal(PartExternal partExternal, int IdUser);
+        public Task<ApiResponse<ActionResult>> UpdatePartExternal(PartExternal partExternal, int IdUser);
+        
+
     }
 }

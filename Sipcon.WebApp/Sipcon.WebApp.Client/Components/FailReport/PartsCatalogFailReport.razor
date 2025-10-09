@@ -1,11 +1,15 @@
-﻿<MudGrid Spacing="0">
+﻿@using Sipcon.WebApp.Client.Components.FailReport
+
+<MudGrid Spacing="0">
     <MudItem xs="12">
 
         <MudPaper Elevation="2" Class="jpv1-dialog-background-title pa-3" Square="true">
             <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
                 <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
                     <MudStack Row="true">
-                        <MudText Typo="Typo.h6" Color="Color.Info">Catalogo Repuestos</MudText>
+                        <MudText Typo="Typo.h6" Color="Color.Info">
+                            @("Catalogo Repuestos" +   (IsExternal ? " Externos" : ""))
+                        </MudText>
                     </MudStack>
                     <MudStack>
                         <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="CloseClick" />
@@ -28,18 +32,29 @@
                      FixedHeader Height="calc(100vh - 280px)" 
                      @bind-CurrentPage="ContactCurrentPage">
             <ToolBarContent>
-       
+                @if (IsExternal)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddModel()"></MudIconButton>
+                }
+                
                 <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
                 <MudSpacer />
                 <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshPartsCatalog"></MudIconButton>
             </ToolBarContent>
             <Columns>
-                <PropertyColumn Property="x => x.InnerCode" Title="CODIGO PARTE" />
+                @if (!IsExternal)
+                {
+                    <PropertyColumn Property="x => x.InnerCode" Title="CODIGO PARTE" />
+                }
                 <PropertyColumn Property="x => x.Description" Title="DESCRIPCION" />
                 <PropertyColumn Property="x => x.Price" Title="PRECIO" />
                 @* <PropertyColumn Property="x => x.Stock" Title="EXISTENCIA" /> *@
                 <TemplateColumn>
                     <CellTemplate>
+                        @if (IsExternal)
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditModel(context.Item)" />
+                        }
                         <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Add" OnClick="() => ClickAddPart(context.Item)" />
                     </CellTemplate>
                 </TemplateColumn>
@@ -61,10 +76,11 @@
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;   
     [Parameter] public int ModelId { get; set; }
     [Parameter] public string? Title { get; set; }
-   
+    [Parameter] public bool IsExternal { get; set; }
+
     private MudDataGrid<Part>? PartsCatalogMudDataGrid;
 
-    
+
     bool _loading = true;
     string searchString = "";
     private int ContactCurrentPage = 0;
@@ -77,7 +93,7 @@
             await PartsCatalogMudDataGrid!.ReloadServerData();
         }
     }
-    
+
     Func<Part, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
     {
         nameof(Part.InnerCode) => o => o.InnerCode ?? "",
@@ -87,15 +103,26 @@
         nameof(Part.Stock) => o => o.Stock ?? 0,
         _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto
     };
-    
+
     private async Task<GridData<Part>> ServerReload(GridState<Part> state)
     {        
         _loading = true;
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Part> data;
-        
-        HttpResponseMessage response = await Http.GetAsync($"api/Part/GetByModel?modelId={ModelId}&userId={Useful.userId}&supplierId={Useful.supplierId}");
+
+        var url = $"api/Part/GetByModel?modelId={ModelId}&userId={Useful.userId}&supplierId={Useful.supplierId}";
+        if (IsExternal)
+        {
+
+            url = $"api/Service/GetItems?userId={Useful.userId}&supplierId={Useful.supplierId}";
+            url = $"{url}&modelId={ModelId}";
+            url = $"{url}&type=P";
+            url = $"{url}&rowFrom={ContactCurrentPage}";
+            url = string.IsNullOrEmpty(searchString) ? url : $"{url}&filter={searchString}";
+        }
+
+        HttpResponseMessage response = await Http.GetAsync(url);
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Part>>>();
@@ -123,6 +150,48 @@
     private async Task ClickAddPart(Part item)
     {
         MudDialog?.Close(DialogResult.Ok(item));
+        await Task.CompletedTask;
+    }
+
+    private async Task ClickAddModel()
+    {
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+        var parameters = new DialogParameters<PartExternalDialog> { 
+            { x => x.PartExternalId, 0 },
+            { x => x.ModelId, ModelId },
+            { x => x.DetailType, ServiceDetailTypeEnum.Parts },
+            { x => x.ActionsModal, ActionsEnum.Create } 
+        };
+        var dialog = await DialogService.ShowAsync<PartExternalDialog>("Partes Externas", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            await PartsCatalogMudDataGrid!.ReloadServerData();
+            StateHasChanged();
+        }
+
+        await Task.CompletedTask;
+    }
+
+    private async Task ClickEditModel(Part item)
+    {
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+        var parameters = new DialogParameters<PartExternalDialog> {
+            { x => x.PartExternalId, item.Id ?? 0},
+            { x => x.ModelId, ModelId },
+            { x => x.DetailType, ServiceDetailTypeEnum.Parts },
+            { x => x.ActionsModal, ActionsEnum.Edit }
+        };
+        var dialog = await DialogService.ShowAsync<PartExternalDialog>("Partes Externas", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            await PartsCatalogMudDataGrid!.ReloadServerData();
+            StateHasChanged();
+        }
+
         await Task.CompletedTask;
     }
 
