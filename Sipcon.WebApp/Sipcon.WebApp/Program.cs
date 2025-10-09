@@ -1,3 +1,5 @@
+using System.Globalization;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Components.Authorization;
 using MudBlazor.Services;
 using Sipcon.WebApp;
@@ -9,6 +11,35 @@ using Sipcon.WebApp.Components;
 
 
 var builder = WebApplication.CreateBuilder(args);
+
+// =======================================================
+// INICIO: CONFIGURACIÓN DE CULTURA (EN-US / Punto Decimal)
+// =======================================================
+var cultureInfo = new CultureInfo("en-US");
+var supportedCultures = new[] { cultureInfo };
+
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    // 1. Configuración del Pipeline HTTP/Model Binding
+    options.DefaultRequestCulture = new RequestCulture(cultureInfo);
+
+    // Solo se soportará esta cultura para forzar la consistencia
+    options.SupportedCultures = supportedCultures;
+    options.SupportedUICultures = supportedCultures;
+
+    // Se eliminan los proveedores para prevenir que la configuración del navegador
+    // (ej. español) intente sobrescribir 'en-US'.
+    options.RequestCultureProviders.Clear();
+});
+
+// 2. CLAVE: Fuerza la cultura de los threads que ejecutan el código Blazor Server y el runtime.
+// Esto asegura que el Model Binding de los componentes Blazor use la cultura en-US.
+CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
+
+// =======================================================
+// FIN: CONFIGURACIÓN DE CULTURA
+// =======================================================
 
 
 // Add services to the container.
@@ -69,6 +100,13 @@ else
 }
 app.UsePathBase(AppSettingsHelper.GetAppSetting("pathBase"));//app.UsePathBase("/sipconapp/");
 //app.UseHttpsRedirection();
+
+// =======================================================
+// APLICAR CULTURA: Debe ir antes de app.UseRouting()
+// =======================================================
+app.UseRequestLocalization();
+// =======================================================
+
 app.UseAuthorization();
 app.UseRouting();
 app.UseAntiforgery();

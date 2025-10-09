@@ -1,4 +1,4 @@
-
+using System.Globalization;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
@@ -8,6 +8,10 @@ using Sipcon.WebApp.Client.Services;
 using Sipcon.WebApp.Client.Utils;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
+
+CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US");
+CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("en-US");
+
 
 //builder.Services.AddScoped<TokenHandler>();
 var backEndUrl = builder.Configuration.GetValue<string>("BackEndUrl")!;

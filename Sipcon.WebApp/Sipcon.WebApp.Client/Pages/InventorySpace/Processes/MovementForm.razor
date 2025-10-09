@@ -79,7 +79,7 @@
                         <MudItem xs="12"><MudText Typo="Typo.h6" Color="Color.Info">Totales:</MudText></MudItem>
                         <MudItem xs="12"><MudTextField ReadOnly="true" Adornment="Adornment.Start" @bind-Value="UnitValue" AdornmentText="Unidad :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
                         <MudItem xs="12"><MudTextField ReadOnly="true" Adornment="Adornment.Start" @bind-Value="ProductValue" AdornmentText="Productos :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
-                        <MudItem xs="12"><MudTextField ReadOnly="true" Adornment="Adornment.Start" @bind-Value="CostValue" AdornmentText="Costo :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
+                        <MudItem xs="12"><MudTextField ReadOnly="true" Adornment="Adornment.Start" @bind-Value="CostValue" AdornmentText="Costo :" Format="N2" Variant="Variant.Text" Class="align-right-input" /></MudItem>
                     </MudGrid>
                 </MudPaper>
                 <MudPaper Elevation="2" Class="pa-2 mud-text-align-center flex-grow-0">
@@ -169,7 +169,7 @@
             MasterMovement!.ContactName = tempContactName;
             MasterMovement!.ContactId = tempContactId;
         }
-             
+
     }
 
     private void getTotals(IEnumerable<MovementDetails> data)
@@ -242,7 +242,7 @@
             MasterMovement!.ContactName = tempContactName;
             MasterMovement!.ContactId = tempContactId;
         }
-        
+
     }
 
     private async Task ClickRemoveMovementDetails(MouseEventArgs ev)
@@ -423,6 +423,16 @@
                 {
                     await DialogService.ShowDialog("Archivo cargado con exito!.", "Importar", "OK", Color.Info, Icons.Material.Filled.Commit);
                     await MovementDetailsMudDataGrid!.ReloadServerData();
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    //var conflictContent = await response.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+                    var resultString = await response.Content.ReadAsStringAsync();
+                    var IsJson = System.Text.RegularExpressions.Regex.IsMatch(resultString, "(?<json>{(?:[^{}]|(?<Nested>{)|(?<-Nested>}))*(?(Nested)(?!))})"); //? JsonSerializer.Deserialize<WebApiResponse<Object?>>(conflictContent)?.message : conflictContent;
+                                      
+                    var errorMessage = IsJson ? System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(resultString).GetProperty("message").ToString() : resultString;
+                    await DialogService.ShowDialog(errorMessage, "Error al cargar", "OK", Color.Error, Icons.Material.Filled.Error); //.message!
+                    Loading = false;
                 }
                 else
                 {
