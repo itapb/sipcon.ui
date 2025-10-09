@@ -536,7 +536,7 @@
     [Parameter] public ActionsEnum ActionsModal { get; set; }
 
     private MudForm? form;
-    
+
     private Maintenance _model { get; set; } = new Maintenance();
     private Models.Policy _modelPolicy { get; set; } = new Models.Policy();
     private PolicyDetail _modelPolicyDetail { get; set; } = new PolicyDetail();
@@ -560,7 +560,7 @@
        .NotEmpty().WithMessage("Campo requerido")
        .Length(1, 20).WithMessage("Campo requerido entre 1-20 carácteres"));
 
-   
+
     protected override async Task OnInitializedAsync()
     {
 
@@ -602,7 +602,7 @@
             // Console.WriteLine(serviceResponse.Message);
             _model = new Maintenance();
             _errorModalMessage = MessageEnum.GetError.GetStringValue();
-            
+
             OpenNested();
         }
 
@@ -639,7 +639,8 @@
         }
         else
         {
-            _errorSearchVehicle = MessageEnum.SearchVehicleNotOK.GetStringValue();
+            //_errorSearchVehicle = MessageEnum.SearchVehicleNotOK.GetStringValue();
+            _errorSearchVehicle = "Vehiculo sin poliza activa!";
         }
 
         _model.PolicyDetailId = _modelPolicyDetail.Id;
