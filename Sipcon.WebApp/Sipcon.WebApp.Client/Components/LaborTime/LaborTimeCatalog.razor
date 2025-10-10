@@ -1,6 +1,4 @@
-﻿
-@inject ILaborTimeService LaborTimeService
-@inject IDialogService DialogService
+﻿@using Sipcon.WebApp.Client.Components.FailReport
 
 <MudGrid Spacing="0">
     <MudItem xs="12">
@@ -8,7 +6,9 @@
         <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
             <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
                 <MudStack Row="true">
-                    <MudText Typo="Typo.h6" Color="Color.Info">@(Title ?? "Mano Obra")</MudText>
+                    <MudText Typo="Typo.h6" Color="Color.Info">
+                            @("Catalogo Mano Obra" + (IsExternal ? " Externa" : ""))
+                    </MudText>
                 </MudStack>
                 <MudStack>
                     <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="CloseClick" />
@@ -27,29 +27,37 @@
                      FixedHeader Height="calc(100vh - 400px)" 
                      @bind-CurrentPage="_CurrentPage">
         <ToolBarContent>
+            @if (IsExternal)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddModel()"></MudIconButton>
+            }
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="_searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             <MudSpacer />
             <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshCatalog"></MudIconButton>
         </ToolBarContent>
         <Columns>
-                <TemplateColumn  Title="MODELO">
-                    <CellTemplate>
-                        <MudText Typo="Typo.caption" Align="Align.Start"><b>@context.Item.ModelName.ToUpper()</b></MudText>
-                    </CellTemplate>
-                </TemplateColumn>
-                <TemplateColumn  Title="REF.">
-                    <CellTemplate>
-                        <MudText Typo="Typo.caption" Align="Align.Start">
-                            @(context.Item.Reference.ToUpper())
-                        </MudText>
-                    </CellTemplate>
-                </TemplateColumn>
+                @if (!IsExternal)
+                {
+                    <TemplateColumn Title="MODELO">
+                        <CellTemplate>
+                            <MudText Typo="Typo.caption" Align="Align.Start"><b>@context.Item.ModelName?.ToUpper()</b></MudText>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="REF.">
+                        <CellTemplate>
+                            <MudText Typo="Typo.caption" Align="Align.Start">
+                                @(context.Item.Reference?.ToUpper())
+                            </MudText>
+                        </CellTemplate>
+                    </TemplateColumn>
+                }
+                
                 <PropertyColumn Property="x => x.Description" Title="DESCRIPCION" Sortable="false" Filterable="false" />
                 <TemplateColumn  Title="HORAS">
                     <CellTemplate>
                         <div class="d-flex justify-end">
                             <MudText Typo="Typo.caption" Align="Align.End">
-                                @(context.Item.Hours.ToString("N2"))
+                                @((context.Item.Hours ?? 0).ToString("N2"))
                             </MudText>
                         </div>
                     </CellTemplate>
@@ -57,7 +65,11 @@
                
             <TemplateColumn>
                 <CellTemplate>
-                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Filled.NextPlan" OnClick="() => ClickSelect(context.Item)" />
+                    @if (IsExternal)
+                    {
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditModel(context.Item)" />
+                    }
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Add" OnClick="() => ClickSelect(context.Item)" />
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
@@ -70,11 +82,14 @@
 
 
 @code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
 
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;   
     [Parameter] public int ModelId { get; set; }
     [Parameter] public string? Title { get; set; }
-    
+    [Parameter] public bool IsExternal { get; set; }
+
     private MudDataGrid<LaborTime>? LaborTimeGrid;
 
     string _searchString = "";
@@ -103,19 +118,53 @@
     {
         _rowCount = state.Page * state.PageSize;
         IEnumerable<LaborTime> _LaborTimes = new List<LaborTime>();
-        var serviceResponse = await LaborTimeService.GetLaborTimes(Useful.supplierId, _rowCount, _searchString, ModelId);
 
-        if (serviceResponse.Processed)
+
+        var url = $"api/LaborTime/GetAll?supplierId={Useful.supplierId}&irowfrom={_rowCount}";
+        url = $"{url}&modelId={ModelId}";
+        url = string.IsNullOrEmpty(_searchString) ? url : $"{url}&filter={_searchString}";
+        if (IsExternal)
         {
-            _LaborTimes = serviceResponse.Data;
-            _rowsTotal = serviceResponse.Total;
-           
+            url = $"api/Service/GetItems?userId={Useful.userId}&supplierId={Useful.supplierId}";
+            url = $"{url}&modelId={ModelId}";
+            url = $"{url}&type=L";
+            url = $"{url}&rowFrom={_rowCount}";
+            url = string.IsNullOrEmpty(_searchString) ? url : $"{url}&filter={_searchString}";
+        }
+
+
+        HttpResponseMessage response = await Http.GetAsync(url);
+        if (response.IsSuccessStatusCode)
+        {
+            var serviceResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<LaborTime>>>();
+
+            _LaborTimes = serviceResponse?.Data ?? new List<LaborTime>();
+            _rowsTotal = serviceResponse?.Total ?? 0;
         }
         else
         {
-            _LaborTimes = new List<LaborTime>();
-            _rowsTotal = 0;
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
         }
+        if (state.SortDefinitions.FirstOrDefault() is SortDefinition<LaborTime> sortDefinition)
+        {
+            _LaborTimes = _LaborTimes.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
+        }
+
+        // var serviceResponse = await LaborTimeService.GetLaborTimes(Useful.supplierId, _rowCount, _searchString, ModelId);
+
+        
+        // if (serviceResponse.Processed)
+        // {
+        //     _LaborTimes = serviceResponse.Data;
+        //     _rowsTotal = serviceResponse.Total;
+           
+        // }
+        // else
+        // {
+        //     _LaborTimes = new List<LaborTime>();
+        //     _rowsTotal = 0;
+        // }
 
         return new GridData<LaborTime> { TotalItems = _rowsTotal, Items = _LaborTimes };
 
@@ -134,6 +183,48 @@
         await Task.CompletedTask;  
     }  
    
+    private async Task ClickAddModel()
+    {
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+        var parameters = new DialogParameters<PartExternalDialog> { 
+            { x => x.PartExternalId, 0 },
+            { x => x.ModelId, ModelId },
+            { x => x.DetailType, ServiceDetailTypeEnum.LaborTime },
+            { x => x.ActionsModal, ActionsEnum.Create } 
+        };
+        var dialog = await DialogService.ShowAsync<PartExternalDialog>("Mano Obra  Externas", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            await LaborTimeGrid!.ReloadServerData();
+            StateHasChanged();
+        }
+
+        await Task.CompletedTask;
+    }
+
+    private async Task ClickEditModel(LaborTime item)
+    {
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+        var parameters = new DialogParameters<PartExternalDialog> {
+            { x => x.PartExternalId, item.Id},
+            { x => x.ModelId, ModelId },
+            { x => x.DetailType, ServiceDetailTypeEnum.LaborTime },
+            { x => x.ActionsModal, ActionsEnum.Edit }
+        };
+        var dialog = await DialogService.ShowAsync<PartExternalDialog>("Mano Obra Externas", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            await LaborTimeGrid!.ReloadServerData();
+            StateHasChanged();
+        }
+
+        await Task.CompletedTask;
+    }
+
 
     private void CloseClick(MouseEventArgs args)
     {

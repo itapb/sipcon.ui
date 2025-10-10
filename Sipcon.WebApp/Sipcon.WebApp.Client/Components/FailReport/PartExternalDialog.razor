@@ -1,0 +1,409 @@
+﻿@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+@using FluentValidation
+
+@inject IModelService ModelService
+@inject IFailReportService FailReportService
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+
+
+<MudForm Model="@_model" @ref="@form" Validation="@(_modelValidator.ValidateValue)" ValidationDelay="0" >
+    <MudDialog Class="blur dialog-background"  ActionsClass="dialog-background-surface">
+        <DialogContent>
+            <MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
+                <MudCard>
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudGrid Spacing="0" Justify="Justify.Center">
+                                <MudItem xs="12" sm="4">
+                                    <div class="d-flex justify-left">
+                                        <MudSwitch @bind-Value="_model.IsActive" Label="Activo" LabelPlacement="Placement.End" Color="Color.Success" Disabled="@(ActionsModal == ActionsEnum.Create ? true : false)" />
+                                    </div>
+                                </MudItem>
+                                <MudItem xs="12" sm="2">
+
+                                </MudItem>
+                                <MudItem xs="12" sm="6">
+                                    <div class="d-flex justify-right" style="justify-content: end;">
+                                        <MudButton OnClick="Cancel">Cancelar</MudButton>
+                                        <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Aceptar" OnClick="@(async () => await OnValidSubmit())" Color="Color.Info" Size="Size.Small" />
+                                    </div>
+                                </MudItem>
+                            </MudGrid>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                </MudCard>
+            </MudContainer>
+
+            <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
+                <MudGrid Spacing="1" Justify="Justify.Center">
+                    <MudItem xs="12" sm="5">
+                        <MudCard>
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudStack Row="true">
+                                        <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
+                                        <MudText Typo="Typo.h6">Modelo</MudText>
+                                    </MudStack>
+                                </CardHeaderContent>
+                                <CardHeaderActions>
+                                    
+                                </CardHeaderActions>
+                            </MudCardHeader>
+                            <MudCardContent Style="padding-top: 0px;">
+                                <MudHidden @bind-value="_model.Id" />
+
+                                <MudTextField Typo="Typo.caption" @bind-Value="_modelModel.Name"
+                                              Label="Código" 
+                                              Variant="Variant.Text"
+                                              Margin="Margin.Dense" 
+                                              Disabled="true"/>
+
+                                <MudTextField Typo="Typo.caption" @bind-Value="_modelModel.Description"
+                                              Label="Descripci&oacute;n" 
+                                              Variant="Variant.Text"
+                                              Margin="Margin.Dense" 
+                                              Disabled="true" />
+
+                            </MudCardContent>
+
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12" sm="7">
+                        <MudCard>
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudStack Row="true">
+                                        <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Default" Style="font-size: 1.5rem;"></MudIcon>
+                                        <MudText Typo="Typo.subtitle2">@(DetailType.ToString() == "LaborTime" ? "MANO DE OBRA" : "REPUESTO")</MudText>
+                                    </MudStack>
+
+                                </CardHeaderContent>
+                                <CardHeaderActions>
+
+                                </CardHeaderActions>
+                            </MudCardHeader>
+                            <MudCardContent Style="padding-top: 0px;">
+                                <MudTextField Typo="Typo.caption" @bind-Value="_model.Description"
+                                              Label="Descripci&oacute;n"
+                                              Variant="Variant.Text"
+                                              Margin="Margin.Dense"
+                                              MaxLength="250"
+                                              Lines="4"
+                                              Disabled="@(!_model.IsActive)"
+                                              For="@(() => _model.Description)"
+                                              Immediate="true" />
+
+                            </MudCardContent>
+
+                        </MudCard>
+                    </MudItem>
+                </MudGrid>
+            </MudContainer>
+
+            <MudDialog @bind-Visible="_nestedModalVisible">
+                <TitleContent>
+                    <MudStack Row="true">
+                        <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="@(_successModal ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
+                        <MudText Typo="Typo.h6">Modelo</MudText>
+                    </MudStack>
+                </TitleContent>
+                <DialogContent>
+                    <MudStack Row="true">
+                        <MudText Class="nested"><p>@_errorModalMessage!</p> </MudText>
+                    </MudStack>
+                </DialogContent>
+                <DialogActions>
+                    <MudButton Color="Color.Info" OnClick="CloseNestedModal" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
+                </DialogActions>
+            </MudDialog>
+
+        </DialogContent>
+       
+    </MudDialog>
+</MudForm>
+
+<style>
+    .blur {
+    backdrop-filter: blur(10px);
+    }
+
+    .dialog-background {
+    background-color: transparent;
+    }
+
+    .dialog-background-title {
+    background: rgb(from var(--mud-palette-info-lighten) r g b / 50%);
+    color: var(--mud-palette-white);
+    }
+
+    .dialog-background-surface {
+    background: rgb(from var(--mud-palette-surface) r g b / 75%);
+    }
+</style>
+
+@code {
+
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public int PartExternalId { get; set; }
+    [Parameter] public int ModelId { get; set; } 
+    [Parameter] public ActionsEnum ActionsModal { get; set; }
+    [Parameter] public ServiceDetailTypeEnum DetailType { get; set; }
+
+    private MudForm? form;
+    private PartExternal _model { get; set; } = new PartExternal();
+    private Model _modelModel { get; set; } = new Model();
+
+    private string _errorModalMessage = string.Empty;
+    private bool _nestedModalVisible;
+    bool _successModal = false;
+
+    ModelValidator _modelValidator = new ModelValidator();
+
+    private IEnumerable<string> OnValidBrand(int? IdBrand)
+    {
+        if (string.IsNullOrEmpty(IdBrand.ToString()))
+            yield return "Campo requerido";
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        if (ActionsModal == ActionsEnum.Create)
+        {
+            _model = new PartExternal();
+
+            await GetModel();
+
+            _model.ModelId = _modelModel.Id;
+            _model.SupplierId = Useful.supplierId;
+            _model.Type = DetailType.ToString() == "LaborTime" ? "L" : "P";
+
+            await Task.Delay(50);
+            StateHasChanged();
+
+        }
+        else
+        {
+            if (DetailType == ServiceDetailTypeEnum.LaborTime)
+            {
+                await GetExternalLaborTime();
+            }
+            else
+            {
+                await GetExternalPart();
+            }
+            
+
+        }
+
+        await Task.CompletedTask;
+    }
+
+
+    private async Task GetModel()
+    {
+        var serviceResponse = await ModelService.GetModel(ModelId, Useful.userId);
+        if (serviceResponse.Processed)
+        {
+            _modelModel = serviceResponse.Data ?? new Model();
+
+            await Task.Delay(50);
+            StateHasChanged();
+        }
+        else
+        {
+            // Console.WriteLine(serviceResponse.Message);
+            _modelModel = new Model();
+            _errorModalMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
+
+            OpenNested();
+        }
+
+        await Task.CompletedTask;
+
+    }
+
+    private async Task GetExternalPart()
+    {
+
+        var serviceResponse = await FailReportService.GetPartExternal(Useful.userId, PartExternalId);
+        if (serviceResponse.Processed)
+        {
+
+            var data = serviceResponse.Data ?? new Part();
+            _model = new PartExternal()
+            {
+                Id = data.Id ?? 0,
+                Description = data.Description ?? string.Empty,
+                IsActive = data.IsActive ?? true,
+                ModelId = ModelId,
+                SupplierId = data.SupplierId ?? 0,
+                Type = "P"
+            };
+
+            await GetModel();
+
+            await Task.Delay(50);
+            StateHasChanged();
+        }
+        else
+        {
+            // Console.WriteLine(serviceResponse.Message);
+            _modelModel = new Model();
+            _errorModalMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
+
+            OpenNested();
+        }
+
+        await Task.CompletedTask;
+
+    }
+
+    private async Task GetExternalLaborTime()
+    {
+
+        var serviceResponse = await FailReportService.GetLaborTimeExternal(Useful.userId, PartExternalId);
+        if (serviceResponse.Processed)
+        {
+
+            var data = serviceResponse.Data ?? new LaborTime();
+            _model = new PartExternal()
+            {
+                Id = data.Id,
+                Description = data.Description ?? string.Empty,
+                IsActive = data.IsActive,
+                ModelId = ModelId,
+                SupplierId = Useful.supplierId,
+                Type = "L"
+            };
+
+            await GetModel();
+
+            await Task.Delay(50);
+            StateHasChanged();
+        }
+        else
+        {
+            // Console.WriteLine(serviceResponse.Message);
+            _modelModel = new Model();
+            _errorModalMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
+
+            OpenNested();
+        }
+
+        await Task.CompletedTask;
+
+    }
+
+    private async Task OnValidSubmit()
+    {
+        await form!.Validate();
+
+        if (form.IsValid)
+        {
+            _errorModalMessage = "";
+
+            var serviceResponse = await FailReportService.UpdatePartExternal(_model, Useful.userId);
+            if (serviceResponse.Processed)
+            {
+                if (ActionsModal == ActionsEnum.Create)
+                {
+                    ActionsModal = ActionsEnum.Edit;
+                    var _result = serviceResponse.Data ?? new ActionResult();
+                    if (_result is not null)
+                    {
+                        PartExternalId = _result.LastId;
+                        // await GetExternalPart();
+                    }
+                }
+                _errorModalMessage = MessageEnum.SaveOK.GetStringValue();
+                _successModal = true;
+
+            }
+            else
+            {
+                _successModal = false;
+                _errorModalMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue(); ;
+                // Console.WriteLine(serviceResponse.Message);
+
+            }
+            OpenNested();
+        }
+
+        StateHasChanged();
+        await Task.CompletedTask;
+
+    }
+
+
+
+    private void Cancel()
+    {
+        if (_successModal)
+            MudDialog.Close(DialogResult.Ok(true));
+        else
+        {
+            MudDialog!.Cancel();
+        }
+    }
+
+    private void OpenNested()
+    {
+        StateHasChanged();
+        _nestedModalVisible = true;
+    }
+    
+
+    private async Task CloseNestedModal()
+    {
+        _nestedModalVisible = false;
+        StateHasChanged();
+        await Task.Delay(50);
+        MudDialog.Close(DialogResult.Ok(true));
+        await Task.CompletedTask;
+
+    }
+    
+
+    /// <summary>
+    /// Validacion del formulario 
+    /// </summary>
+    /// <typeparam name="Model"></typeparam>
+    public class ModelValidator : AbstractValidator<PartExternal>
+    {
+        public ModelValidator()
+        {
+
+            RuleFor(x => x.Description)
+                .NotEmpty().WithMessage("Campo requerido")
+                .Length(5, 250).WithMessage("Campo requerido entre 5-250 carácteres");
+
+            RuleFor(x => x.SupplierId)
+                .NotNull()
+                .GreaterThan(0).WithMessage("seleccione una Planta.");
+
+            RuleFor(x => x.ModelId)
+                .NotNull().WithMessage("Campo requerido")
+                .GreaterThan(0).WithMessage("seleccione un Modelo.");
+
+        }
+
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<PartExternal>.CreateWithOptions((PartExternal)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+
+    }
+
+   
+}

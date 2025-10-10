@@ -84,11 +84,11 @@
                 
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn  Title="@(mDetailType.ToString() == "LaborTime" ? "HORAS" : "CANTIDAD")">
+        <TemplateColumn Title="@(mDetailType == ServiceDetailTypeEnum.LaborTime ? "HORAS" : "CANTIDAD")">
             <CellTemplate>
                 <div class="d-flex justify-end">
                     <MudText Typo="Typo.caption" Align="Align.End">
-                        @(context.Item.Quantity?.ToString("N0"))
+                        @(mDetailType == ServiceDetailTypeEnum.LaborTime ? context.Item.Quantity?.ToString("N2") : context.Item.Quantity?.ToString("N0"))
                     </MudText>
                 </div>
             </CellTemplate>

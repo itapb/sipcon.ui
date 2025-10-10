@@ -154,6 +154,42 @@
                                                      For="@(() => _model.Year)"
                                                      Immediate="true" />
 
+                                    <MudSelect @bind-Value="@_model.BrandId"
+                                               Label="Marca"
+                                               Typo="Typo.caption"
+                                               Variant="Variant.Filled"
+                                               AdornmentColor="Color.Default"
+                                               Margin="Margin.Dense"
+                                               Validation="@(new Func<int?, IEnumerable<string>>(OnValidBrand))"
+                                               Immediate="true"
+                                               Disabled="true">
+                                        @foreach (var item in _brandList)
+                                        {
+                                            <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
+                                        }
+                                    </MudSelect>
+
+                                    <MudSelect @bind-Value="@_model.SupplierId"
+                                               Label="Planta"
+                                               Style="max-width: 280px;"
+                                               Typo="Typo.caption"
+                                               Variant="Variant.Filled"
+                                               AdornmentColor="Color.Default"
+                                               Margin="Margin.Dense"
+                                               For="@(() => _model.SupplierId)"
+                                               Immediate="true"
+                                               Disabled="true">
+                                        @foreach (var item in _supplierList)
+                                        {
+                                            <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
+                                        }
+                                    </MudSelect>
+
+                                    
+                                </MudStack>
+
+                                <MudStack Row="true">
+
                                     <MudTextField Typo="Typo.caption" @bind-Value="_model.Plate" 
                                                   Label="Placa" 
                                                   Margin="Margin.Dense" 
@@ -161,9 +197,7 @@
                                                   MaxLength="12"              
                                                   For="@(() => _model.Plate)"
                                                   Immediate="true" />
-                                </MudStack>
 
-                                <MudStack Row="true">
                                     <MudTextField Typo="Typo.caption" @bind-Value="_model.Vin" 
                                                   Label="VIN" 
                                                   Margin="Margin.Dense" 
@@ -183,40 +217,10 @@
 
                                 <MudStack Row="true">
                                     
-                                    <MudSelect @bind-Value="@_model.BrandId" 
-                                               Label="Marca"
-                                               Typo="Typo.caption"
-                                               Variant="Variant.Filled"
-                                               AdornmentColor="Color.Default"
-                                               Margin="Margin.Dense"
-                                               Validation="@(new Func<int?, IEnumerable<string>>(OnValidBrand))"
-                                               Immediate="true"
-                                               Disabled="true">
-                                        @foreach (var item in _brandList)
-                                        {
-                                            <MudSelectItem Value="@item.Value"  >@item.Text</MudSelectItem>
-                                        }
-                                    </MudSelect>
-
-                                    <MudSelect @bind-Value="@_model.SupplierId" 
-                                               Label="Planta"
-                                               Style="max-width: 280px;"
-                                               Typo="Typo.caption"
-                                               Variant="Variant.Filled"
-                                               AdornmentColor="Color.Default"
-                                               Margin="Margin.Dense"
-                                               For="@(() => _model.SupplierId)"
-                                               Immediate="true"
-                                               Disabled="true">
-                                        @foreach (var item in _supplierList)
-                                        {
-                                            <MudSelectItem Value="@item.Value" >@item.Text</MudSelectItem>
-                                        }
-                                    </MudSelect>
-
 
                                     <MudSelect @bind-Value="@_model.ModelId" 
                                                Label="Modelo" 
+                                               Style="max-width: 380px;"
                                                Typo="Typo.caption"
                                                AdornmentColor="Color.Default"
                                                Margin="Margin.Dense"

@@ -534,6 +534,134 @@
 
         }
 
+        public async Task<ApiResponse<Part>> GetPartExternal(int IdUser, int IdPartExternal)
+        {
+            ApiResponse<Part>? result;
+            try
+            {
+                var url = $"api/Service/GetOneItem?userId={IdUser}&itemId={IdPartExternal}&type=P";
+                
+                result = await _http.GetFromJsonAsync<ApiResponse<Part>>(url);
+                result = (result is null) ? new ApiResponse<Part>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos."
+
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<Part>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+            return result;
+        }
+
+        public async Task<ApiResponse<LaborTime>> GetLaborTimeExternal(int IdUser, int IdLaborTimeExternal)
+        {
+            ApiResponse<LaborTime>? result;
+            try
+            {
+                var url = $"api/Service/GetOneItem?userId={IdUser}&itemId={IdLaborTimeExternal}&type=L";
+
+                result = await _http.GetFromJsonAsync<ApiResponse<LaborTime>>(url);
+                result = (result is null) ? new ApiResponse<LaborTime>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos."
+
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<LaborTime>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+            return result;
+        }
+
+        public async Task<ApiResponse<ActionResult>> CreatePartExternal(PartExternal partExternal, int IdUser)
+        {
+            ApiResponse<ActionResult>? result;
+            try
+            {
+                var _Detail = new PartExternalUp()
+                {
+                    Id = partExternal.Id,
+                    Description = partExternal.Description,
+                    Type = partExternal.Type,
+                    SupplierId = partExternal.SupplierId,
+                    IsActive = partExternal.IsActive
+
+                };
+
+
+                var response = await _http.PostAsJsonAsync($"api/Service/PostItem?userId={IdUser}", _Detail);
+
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = "El servidor devolvió una respuesta vacía."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+            return result;
+        }
+
+        public async Task<ApiResponse<ActionResult>> UpdatePartExternal(PartExternal partExternal, int IdUser)
+        {
+            ApiResponse<ActionResult>? result;
+
+            try
+            {
+                var _Detail = new PartExternalUp()
+                {
+                    Id          = partExternal.Id         ,
+                    Description = partExternal.Description,
+                    Type         = partExternal.Type        ,
+                    SupplierId  = partExternal.SupplierId ,
+                    IsActive    = partExternal.IsActive
+
+                };
+
+                var response = await _http.PostAsJsonAsync($"api/Service/PostItem?userId={IdUser}", _Detail);
+
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = "El servidor devolvió una respuesta vacía."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+            return result;
+        }
+
 
     }
 

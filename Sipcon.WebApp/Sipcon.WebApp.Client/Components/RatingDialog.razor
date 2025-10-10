@@ -1,0 +1,191 @@
+﻿@using Sipcon.WebApp.Client.Models
+@using Sipcon.WebApp.Client.Services
+@using Sipcon.WebApp.Client.Utils
+@using FluentValidation
+
+
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+
+<MudForm @ref="@form" >
+    
+    <MudDialog Class="blur dialog-background " ActionsClass="dialog-background-surface">
+
+        <DialogContent>
+
+            <MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
+
+                <MudCard>
+
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudGrid Spacing="0" Justify="Justify.Center">
+                                <MudItem xs="12" sm="4">
+                                    <div class="d-flex justify-left">
+                                    </div>
+                                </MudItem>
+
+                                <MudItem xs="12" sm="2">
+
+                                </MudItem>
+                                <MudItem xs="12" sm="6">
+                                    <div class="d-flex justify-right" style="justify-content: end;">
+
+                                        <MudButton OnClick="Cancel">Cancelar</MudButton>
+                                        <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Aceptar" OnClick="@(async () => await OnValidSubmit())" Color="Color.Info" Size="Size.Small" />
+
+
+                                    </div>
+                                </MudItem>
+                            </MudGrid>
+
+
+                        </CardHeaderContent>
+
+                    </MudCardHeader>
+
+                </MudCard>
+
+            </MudContainer>
+
+            <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
+            <MudGrid Spacing="1" Justify="Justify.Center">
+
+                <MudItem xs="12" sm="12">
+                    <MudCard>
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudStack Row="true">
+                                    <MudIcon Icon="@Icons.Material.Filled._18UpRating" Color="Color.Default" Style="font-size: 1.5rem;"></MudIcon>
+                                        <MudText Typo="Typo.subtitle2">@(string.IsNullOrEmpty(Title) ? "¿ Cual a sido la calificación del Servicio ?" : Title)</MudText>
+                                </MudStack>
+
+                            </CardHeaderContent>
+                            <CardHeaderActions>
+
+                            </CardHeaderActions>
+                        </MudCardHeader>
+                        <MudCardContent Style="padding-top: 3px;">
+                            @* <MudStack Row="true"> *@
+                                <MudFlexBreak />
+                                <div class="d-flex flex-column align-center">
+                                    <MudRating @bind-SelectedValue="selectedVal" HoveredValueChanged="HandleHoveredValueChanged" 
+                                    />
+                                    <MudText Typo="Typo.subtitle2" Class="deep-purple-text mt-2">@LabelText</MudText>
+                                </div>
+                                <MudFlexBreak />
+                                
+                            @* </MudStack> *@
+
+
+                        </MudCardContent>
+                    </MudCard>
+
+
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+
+        </DialogContent>
+
+    </MudDialog>
+</MudForm>
+
+
+<style>
+    .blur {
+    backdrop-filter: blur(10px);
+    }
+
+    .dialog-background {
+    background-color: transparent;
+    }
+
+    .dialog-background-title {
+    background: rgb(from var(--mud-palette-info-lighten) r g b / 50%);
+    color: var(--mud-palette-white);
+    }
+
+    .dialog-background-surface {
+    background: rgb(from var(--mud-palette-surface) r g b / 75%);
+    }
+</style>
+
+@code {
+
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string Title { get; set; } = string.Empty;
+
+    private MudForm? form;
+    private string _errorMessage = string.Empty;
+
+    private int selectedVal = 0;
+    private int? activeVal;
+
+    private void HandleHoveredValueChanged(int? val) => activeVal = val;
+
+    private string LabelText => (activeVal ?? selectedVal) switch
+    {
+        1 => "Muy malo",
+        2 => "Malo",
+        3 => "Suficiente",
+        4 => "Bueno",
+        5 => "¡Genial!",
+        _ => "¡Califica nuestro servicio!"
+    };
+
+    // The validation rules (overkill, I know, but very fluent):
+    SelectValidator<string> _SelectValidator = new SelectValidator<string>(x => x
+        .NotNull().WithMessage("Campo requerido")
+        .NotEmpty().WithMessage("Campo requerido")
+        .Length(10, 500).WithMessage("Campo requerido entre 10-500 carácteres"));
+
+
+    private async Task OnValidSubmit()
+    {
+        await form!.Validate();
+        if (form.IsValid)
+        {
+            if (selectedVal > 0)
+            {
+                MudDialog.Close(DialogResult.Ok(selectedVal));
+            }
+        }
+
+        StateHasChanged();
+        await Task.CompletedTask;
+        
+    }
+
+
+    private void Cancel() => MudDialog.Cancel();
+
+
+    /// <summary>
+    /// Validacion del formulario
+    /// </summary>
+    /// <typeparam name="Vehicle"></typeparam>
+    public class SelectValidator<T> : AbstractValidator<T>
+    {
+       
+        public SelectValidator(Action<IRuleBuilderInitial<T, T>> rule)
+        {
+            rule(RuleFor(x => x));
+        }
+
+
+        private IEnumerable<string> ValidateValue(T arg)
+        {
+            var result = Validate(arg);
+            if (result.IsValid)
+                return new string[0];
+            return result.Errors.Select(e => e.ErrorMessage);
+        }
+
+        public Func<T, IEnumerable<string>> Validation => ValidateValue;
+
+    }
+}

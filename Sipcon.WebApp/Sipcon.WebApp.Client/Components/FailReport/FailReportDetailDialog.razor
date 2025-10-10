@@ -71,7 +71,7 @@
                             <MudStack Row="true">
                                 <MudSpacer />
                                 <MudSwitch @bind-Value="_model.IsTax" Label="Impuesto" LabelPlacement="Placement.End" Color="Color.Success" ReadOnly="@(!_model.IsActive || _isReadOnly)" />
-                                <MudSwitch @bind-Value="_model.IsExternal" @bind-Value:after="AfterSupplierValueChange" Label="Externo" LabelPlacement="Placement.End" Color="Color.Success" ReadOnly="@(!_model.IsActive || _isReadOnly)" />
+                                <MudSwitch @bind-Value="_model.IsExternal" @bind-Value:after="AfterSupplierValueChange" Label="Externo" LabelPlacement="Placement.End" Color="Color.Success" ReadOnly="@(!_model.IsActive)" />
                             </MudStack>
                             
                             <MudStack Row="true">
@@ -100,9 +100,10 @@
                                                  HideSpinButtons="true"
                                                  Format="N2"
                                                  Culture="@CultureInfo.GetCultureInfo("es-VE")"
-                                                 ReadOnly="@(!_model.IsActive || _isReadOnly ||  DetailType.ToString() == "LaborTime")"
+                                                 ReadOnly="@(!_model.IsActive || _isReadOnly )"
                                                  For="@(() => _model.Quantity)"
                                                  Immediate="false" />
+                                             @* ||  DetailType.ToString() == "LaborTime" *@
 
                             <MudNumericField Typo="Typo.caption" T="double?" @bind-Value="_model.UnitPrice" @bind-Value:after="AfterValueChangePrice"
                                              Label="Precio Unitario"
@@ -290,7 +291,7 @@
         form!.ResetValidation();
         DialogOptions options = new() { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
 
-        var parameters = new DialogParameters<LaborTimeCatalog> { { x => x.ModelId, ModelId }, { x => x.Title, "Mano Obra" } };
+        var parameters = new DialogParameters<LaborTimeCatalog> { { x => x.ModelId, ModelId }, { x => x.IsExternal, _model.IsExternal }, { x => x.Title, "Mano Obra" } };
         var dialog = await DialogService.ShowAsync<LaborTimeCatalog>("Mano Obra", parameters, options);
         var result = await dialog.Result;
         if (!result!.Canceled && result.Data != null)
@@ -301,11 +302,11 @@
             _model.ServiceId = IdFailReport;
             _model.ItemName = _detail.Description.ToUpper();
             _model.ItemId = _detail.Id;
-            _model.Reference = _detail.Reference;
+            _model.Reference = _detail.Reference ?? string.Empty;
             _model.Quantity = _detail.Hours;
             _model.UnitPrice = _detail.Price;
-            _mQuantity = _detail.Hours;
-            _mUnitPrice = _detail.Price;
+            _mQuantity = _detail.Hours ?? 0;
+            _mUnitPrice = _detail.Price ?? 0;
             _model.Price = (_model.Quantity ?? 0) * (_model.UnitPrice ?? 0);
             _isReadOnly = false;
 
@@ -323,7 +324,7 @@
         form!.ResetValidation();
         DialogOptions options = new() { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
 
-        var parameters = new DialogParameters<PartsCatalogFailReport> { { x => x.ModelId, ModelId }, { x => x.Title, "Repuestos" } };
+        var parameters = new DialogParameters<PartsCatalogFailReport> { { x => x.ModelId, ModelId }, { x => x.IsExternal, _model.IsExternal }, { x => x.Title, "Repuestos" } };
         var dialog = await DialogService.ShowAsync<PartsCatalogFailReport>("Repuestos", parameters, options);
         var result = await dialog.Result;
 
