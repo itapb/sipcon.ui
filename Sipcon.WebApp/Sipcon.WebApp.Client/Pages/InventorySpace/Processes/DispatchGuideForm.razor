@@ -3,9 +3,14 @@
         <MudItem xs="12" sm="9">
             <MudStack>
                 <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                    <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
                     <MudStack Row="true" Spacing="2">
                         <MudFab StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" Size="Size.Small" Label="Guardar" OnClick="SaveClick" Disabled="@(!IsSentGuide)"></MudFab>
                         <MudButton OnClick="CloseClick">Cerrar</MudButton>
+                    </MudStack>
+                     <MudStack>
+                            <MudFab StartIcon="@Icons.Material.Filled.AttachFile" Color="Color.Info" Size="Size.Small" Label="Archivos" OnClick="AttachmentsClick"></MudFab>
+                     </MudStack>
                     </MudStack>
                 </MudPaper>
                 <MudPaper Elevation="2" Style="height: 100%;">
@@ -207,7 +212,7 @@
         bool result = (GuideDetailsMudDataGrid?.FilteredItems is IEnumerable<GuideDetails> mguidedetails &&  mguidedetails.All(item => (item.Confirmed ?? false)));
         if (!result)
             await DialogService.ShowDialog("Debe confirmar cada elemento de la Guia"!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
-       
+
         return result;        
     }
     private async Task ReceiveClick(MouseEventArgs args)
@@ -234,7 +239,7 @@
         var IsSuccess = false;
         if (await IsConfirmedGuideDetails() && form.IsValid)
         {
-           
+
             var result_MasterGuide = await Http.PostAsync($"api/Guide/PostGuideNumber?userId={Useful.userId}&guideId={MasterGuide!.Id}&guideNumber={MasterGuide.Number}", null);
             if (result_MasterGuide.IsSuccessStatusCode)
             {
@@ -266,7 +271,7 @@
             GuideId = null;
         }
     }
-       
+
     private async Task ClickEditGuideDetails(GuideDetails item)
     {
         GuideDetails mGuideDetails = new GuideDetails
@@ -279,5 +284,8 @@
         var dialogReference = await DialogService.ShowAsync(typeof(PartToDispatchGuideDetails), "", new DialogParameters { ["mGuideDetails"] = mGuideDetails }, options);
         if (!((await dialogReference.Result)!.Canceled)) await GuideDetailsMudDataGrid!.ReloadServerData();
     }
-
+    private async Task AttachmentsClick(MouseEventArgs args)
+    {
+        await DialogService.ShowAsync(typeof(DispatchGuideAttachments), "", new DialogParameters { ["IdRecord"] = GuideId }, options);      
+    }
 }
