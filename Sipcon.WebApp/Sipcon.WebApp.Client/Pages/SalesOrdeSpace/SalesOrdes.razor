@@ -105,7 +105,7 @@ else
         {
             var errorMessage = await response.Content.ReadAsStringAsync();
             Logger.LogError(Useful.TemplateLog(RequisitionTitle, errorMessage));
-            await DialogService.ShowUnexpected();
+            await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
         }
         await Task.CompletedTask;
     }

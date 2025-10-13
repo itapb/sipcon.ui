@@ -190,9 +190,9 @@ else
         }
         else
         {
-            var errorMessage = await result_Post_Actions!.Content.ReadAsStringAsync() ?? "";
+            var errorMessage = await result_Post_Actions!.Content.ReadAsStringAsync();
             Logger.LogError(Useful.TemplateLog(MovementTitle, errorMessage));
-            await DialogService.ShowUnexpected(); ;
+            await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);           
         }
     }
     private async Task ReloadDispatchGuidesGrid()

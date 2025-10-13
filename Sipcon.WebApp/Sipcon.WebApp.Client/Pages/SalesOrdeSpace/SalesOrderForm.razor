@@ -170,6 +170,7 @@
            await SalesOrderDetailsMudDataGrid!.ReloadServerData(); 
 
            SaleOrderTypeSelected = tempSaleOrderTypeSelected;
+           MasterSalesOrder!.TypeId = tempSaleOrderTypeSelected?.Id;
            MasterSalesOrder!.Reference = temReference;
            MasterSalesOrder.Comment = tempComment;
            MasterSalesOrder.VehicleId = tempVehicleId;
@@ -246,6 +247,7 @@
             await SalesOrderDetailsMudDataGrid!.ReloadServerData();
 
             SaleOrderTypeSelected = tempSaleOrderTypeSelected;
+            MasterSalesOrder!.TypeId = tempSaleOrderTypeSelected?.Id;
             MasterSalesOrder!.Reference = temReference;
             MasterSalesOrder.Comment = tempComment;
             MasterSalesOrder.VehicleVin = vin;
@@ -294,7 +296,7 @@
             else
             {
                 var errorMessage = await result_MasterMovement.Content.ReadAsStringAsync();
-                throw new Exception(errorMessage);
+                await DialogService.ShowDialog(errorMessage!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
             }
         }
     }
@@ -337,7 +339,7 @@
             else
             {
                 var errorMessage = await result_MasterSalesOrder.Content.ReadAsStringAsync();
-                throw new Exception(errorMessage);
+                await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
             }
         }
 

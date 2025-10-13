@@ -120,7 +120,7 @@ else
         else
         {
             var errorMessage = await response2.Content.ReadAsStringAsync();
-            throw new Exception(errorMessage);
+            await DialogService.ShowDialog(errorMessage, "Error Zona", "OK", Color.Error, Icons.Material.Filled.Error);
         }
     }
 
@@ -152,7 +152,7 @@ else
            else
            {
                var errorMessage = await result_Post_Zone.Content.ReadAsStringAsync();
-               throw new Exception(errorMessage);
+               await DialogService.ShowDialog(errorMessage, "Error Zona", "OK", Color.Error, Icons.Material.Filled.Error);
            }
         }
         await Task.CompletedTask;

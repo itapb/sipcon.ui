@@ -68,7 +68,8 @@ namespace Sipcon.WebApp.Client.Services
                     }
                     else
                     {
-                        await DialogService.ShowDialog("Carga de archivo fallo!", "Error al cargar", "OK", Color.Error, Icons.Material.Filled.Error);                       
+                        var resultString = await response.Content.ReadAsStringAsync();
+                        await DialogService.ShowDialog(resultString, "Error al cargar", "OK", Color.Error, Icons.Material.Filled.Error);                       
                     }
                     loading = false;
                 }
