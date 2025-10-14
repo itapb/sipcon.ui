@@ -162,7 +162,8 @@ else
         }
         else if (result_Post_Actions is not null)
         {
-            await DialogService.ShowDialog("Actualizacion fallo!", "Error al Actualizar", "OK", Color.Error, Icons.Material.Filled.Error);
+            var errorMessage = await result_Post_Actions.Content.ReadAsStringAsync();
+            await DialogService.ShowDialog(errorMessage, "Error al Actualizar", "OK", Color.Error, Icons.Material.Filled.Error);
         }
         await Task.CompletedTask;
 
@@ -225,7 +226,8 @@ else
                 }
                 else
                 {
-                    await DialogService.ShowDialog("Carga de archivo fallo!", "Error al cargar", "OK", Color.Error, Icons.Material.Filled.Error);
+                    var resultString = await response.Content.ReadAsStringAsync();
+                    await DialogService.ShowDialog(resultString, "Error al cargar", "OK", Color.Error, Icons.Material.Filled.Error);
                     _loading = false;
                 }
             }

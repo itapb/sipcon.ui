@@ -88,6 +88,11 @@ else
                 Logger.LogError(Useful.TemplateLog("Asignar Usuario a Movimiento", conflictContent?.message!));
                 await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
             }
+            else
+            {
+                var errorMessage = await result_Post_Actions.Content.ReadAsStringAsync();
+                await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
         }
     }
     private void CancelClick(MouseEventArgs args) => MudDialog?.Close();

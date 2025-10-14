@@ -293,7 +293,7 @@
             else
             {
                 var errorMessage = await result_MasterMovement.Content.ReadAsStringAsync();
-                throw new Exception(errorMessage);
+                await DialogService.ShowDialog(errorMessage!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);              
             }
         }
     }
@@ -337,7 +337,7 @@
                 else
                 {
                     var errorMessage = await result_MasterMovement.Content.ReadAsStringAsync();
-                    throw new Exception(errorMessage);
+                    await DialogService.ShowDialog(errorMessage!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
                 }
             }
 
@@ -362,8 +362,8 @@
         }
         else
         {
-            var errorMessage = await result_PostMovementActions!.Content.ReadAsStringAsync() ?? "";
-            throw new Exception(errorMessage);
+            var errorMessage = await result_PostMovementActions!.Content.ReadAsStringAsync();
+            await DialogService.ShowDialog(errorMessage!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
         }
     }
 
@@ -383,8 +383,8 @@
         }
         else
         {
-            var errorMessage = await result_Post_Actions!.Content.ReadAsStringAsync() ?? "";
-            throw new Exception(errorMessage);
+            var errorMessage = await result_Post_Actions!.Content.ReadAsStringAsync();
+            await DialogService.ShowDialog(errorMessage!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
         }
     }
     private async Task ClickImportReceptionDetail(MouseEventArgs args)
@@ -427,16 +427,14 @@
                 else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
                 {
                     //var conflictContent = await response.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
-                    var resultString = await response.Content.ReadAsStringAsync();
-                    var IsJson = System.Text.RegularExpressions.Regex.IsMatch(resultString, "(?<json>{(?:[^{}]|(?<Nested>{)|(?<-Nested>}))*(?(Nested)(?!))})"); //? JsonSerializer.Deserialize<WebApiResponse<Object?>>(conflictContent)?.message : conflictContent;
-                                      
-                    var errorMessage = IsJson ? System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(resultString).GetProperty("message").ToString() : resultString;
+                    var errorMessage = await Useful.GetErrorMessageAsync(response);
                     await DialogService.ShowDialog(errorMessage, "Error al cargar", "OK", Color.Error, Icons.Material.Filled.Error); //.message!
                     Loading = false;
                 }
                 else
                 {
-                    await DialogService.ShowDialog("Carga de archivo fallo!", "Error al cargar", "OK", Color.Error, Icons.Material.Filled.Error);
+                    var errorMessage = await response!.Content.ReadAsStringAsync();
+                    await DialogService.ShowDialog(errorMessage!, "Error al cargar", "OK", Color.Error, Icons.Material.Filled.Error);                
                     Loading = false;
                 }
             }
