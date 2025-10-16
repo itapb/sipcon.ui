@@ -137,7 +137,8 @@
         </TemplateColumn>
         <TemplateColumn >
             <CellTemplate>
-                @if (context.Item.EstatusName.ToUpper() == "PARA APROBAR")
+              
+                @if (_statusEdit.Contains(context.Item.EstatusName.ToUpper()))
                 {
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditFailReportDetail(context.Item)" />
                     if (_itemsModules.Where(z => z.ActionName == "DEACTIVATE").ToList().Any())
@@ -162,7 +163,9 @@
     [Parameter] public int mModelId { get; set; } 
     [Parameter] public bool mDisabledAddDetail { get; set; } = false;
     [Parameter] public bool mDisabledActionsDetail { get; set; } = false;
+    [Parameter] public EventCallback onChangeReportDetail { get; set; }
 
+    
     private IEnumerable<FailReportDetail> _FailReportDetails = new List<FailReportDetail>();
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
@@ -179,7 +182,11 @@
     private HashSet<FailReportDetail> _selectedFailReportDetail = new([]);
     private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
 
-
+    List<string> _statusEdit = new List<string>()
+    {
+        "CREADO",
+        "PARA APROBAR"
+    };
 
     private async Task<GridData<FailReportDetail>> LoadGridData(GridState<FailReportDetail> state)
     {
@@ -264,6 +271,7 @@
         var result = await dialog.Result;
         if (!result!.Canceled)
         {
+            await onChangeReportDetail.InvokeAsync();
             await _mudDataGrid!.ReloadServerData();
             StateHasChanged();
         }
@@ -288,6 +296,7 @@
         var result = await dialog.Result;
         if (!result!.Canceled)
         {
+            await onChangeReportDetail.InvokeAsync();
             await _mudDataGrid!.ReloadServerData();
             StateHasChanged();
         }
@@ -506,6 +515,7 @@
                         _success = true;
                         _nestedErrorMessage = MessageEnum.DeleteOK.GetStringValue();
 
+                        
                         await _mudDataGrid!.ReloadServerData();
 
                     }
@@ -562,6 +572,7 @@
             {
                 _success = true;
                 _nestedErrorMessage = MessageEnum.DeleteOK.GetStringValue();
+                await onChangeReportDetail.InvokeAsync();
                 await _mudDataGrid!.ReloadServerData();
             }
             else

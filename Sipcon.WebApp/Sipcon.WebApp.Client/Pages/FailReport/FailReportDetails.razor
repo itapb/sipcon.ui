@@ -557,7 +557,8 @@
                                     mDetailType="ServiceDetailTypeEnum.Parts"
                                     mModelId="@(_model.ModelId ?? 0)"
                                     mDisabledAddDetail="@_disableAddDetail"
-                                    mDisabledActionsDetail="@_disableActionsDetail">
+                                    mDisabledActionsDetail="@_disableActionsDetail"
+                                    onChangeReportDetail="() => GetFailReport()">
             </FailReportDetailCustom>
         </MudTabPanel>
         @* MANO DE OBRA *@
@@ -566,7 +567,8 @@
                                     mDetailType="ServiceDetailTypeEnum.LaborTime"
                                     mModelId="@(_model.ModelId ?? 0)"
                                     mDisabledAddDetail="@_disableAddDetail"
-                                    mDisabledActionsDetail="@_disableActionsDetail">
+                                    mDisabledActionsDetail="@_disableActionsDetail"
+                                    onChangeReportDetail="() => GetFailReport()">
             </FailReportDetailCustom>
         </MudTabPanel>
         @* COMENTARIOS *@
@@ -626,7 +628,7 @@
 
                                     <div class="d-flex align-start ma-2" style="@style">
                                         <MudChat ChatPosition="@position">
-                                            <MudChatHeader Name="@(item.UserName + item.UserLastName)" Time="@item.DateComment.ToString("dd, MMM yyyy")" />
+                                            <MudChatHeader Name="@(item.UserName + item.UserLastName)" Time="@item.DateComment.ToString("dd, MMM yyyy", CultureInfo.GetCultureInfo("es-VE"))" />
                                             <MudAvatar Color="Color.Secondary">@item.UserName.Substring(0, 1)</MudAvatar>
                                             <MudChatBubble Style="min-width:420px">@item.Content</MudChatBubble>
                                             @*  <MudChatFooter Text="Delivered" /> *@
@@ -687,7 +689,7 @@
                                             <MudText Typo="Typo.caption"><b><MudIcon Icon="@Icons.Custom.FileFormats.FileDocument" Color="Color.Inherit" Class="mr-2" />@item.FileName</b></MudText>
                                         </MudItem>
                                         <MudItem xs="12" sm="4">
-                                            <MudText Typo="Typo.caption">@item.DateCreate!.Value.ToString("F")</MudText>
+                                            <MudText Typo="Typo.caption">@item.DateCreate!.Value.ToString("F", CultureInfo.GetCultureInfo("es-VE"))</MudText>
                                         </MudItem>
                                         <MudItem xs="12" sm="4">
                                             <div class="d-flex justify-left">

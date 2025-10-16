@@ -11,6 +11,7 @@
         public Task<ApiResponse<Vehicle>> GetVehicleBy(string Search, int IdUser, SearchByEnum SearchBy, int? IdDealer);
         public Task<ApiResponse<VehicleService>> GetVehicleFullBy(int IdSupplier, int IdUser, string Search, SearchByEnum SearchBy);
         public Task<ApiResponse<Vehicle>> GetVehicleAvailable(string Search, int IdUser, int? IdDealer = null);
+        public Task<ApiResponse<VehicleRecord>> GetRecordVehicle(int IdSupplier, int IdUser, string Vin);
         public Task<ApiResponse<ActionResult>> CreateVehicle(Vehicle Vehicle, int IdUser);
         public Task<ApiResponse<ActionResult>> UpdateVehicle(Vehicle Vehicle, int IdUser);
         public Task<ApiResponse<ActionResult>> ActionsVehicle(List<PostAction> PostActions, int IdUser);

@@ -1,0 +1,141 @@
+﻿@using System.Globalization; 
+
+<MudDataGrid @ref="_serviceRecordGrid"
+             T="ServiceHistory"
+             ServerData="ServerReload"
+             Striped="true"
+             Dense="true"
+             Hover="true"
+             Filterable="false"
+             FixedHeader Height="calc(92vh - 235px)"
+             @bind-CurrentPage="_CurrentPage">
+    <Columns>
+        <TemplateColumn Title="CODIGO">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">
+                    @("#" + context.Item.ReportId.ToString().PadLeft(10, '0'))
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="FECHA">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.ServiceDate?.ToString("ddd dd MMM yyyy", CultureInfo.GetCultureInfo("es-VE")))</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="TIPO">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left">
+                    @(context.Item.ReportTypeName.ToUpper())
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="KM">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left">
+                    @(context.Item.Km.ToString("N0"))
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="CONCESIONARIO">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.DealerServiceCod.ToUpper() + "-" + context.Item.DealerServiceName.ToUpper())</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="ESTATUS">
+            <CellTemplate>
+                <div class="d-flex justify-start">
+                    @if (context.Item.EstatusName != null)
+                    {
+                        string style = "";
+                        if (context.Item.EstatusName.ToUpper() == "CREADO")
+                            style += "";
+                        else if (context.Item.EstatusName.ToUpper() == "VALIDADO")
+                        {
+                            style += "color:#fff";
+                            style += ";background-color:#0099F3";
+                        }
+                        else if (context.Item.EstatusName.ToUpper() == "PROCESADO")
+                        {
+                            style += "color:#fff";
+                            style += ";background-color:#757575";
+                        }
+                        else if (context.Item.EstatusName.ToUpper() == "PARA APROBAR")
+                        {
+                            style += "color:#fff";
+                            style += ";background-color:#757575";
+                        }
+                        
+                        else
+                        {
+                            style += "color:#fff";
+                            style += ";background-color:#FF7043";
+                        }
+                        style += ";font-size: 11px";
+                        style += ";font-style:italic";
+
+                        <MudChip T="string" Style="@style" Label="true" Disabled="true">
+                            @(context.Item.EstatusName.ToUpper())
+                        </MudChip>
+                    }
+
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="SRG">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.SrgNumber)</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="TOTAL">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left">
+                    @(context.Item.InvoiceAmount?.ToString("N2"))
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+        
+</MudDataGrid>
+
+
+
+
+@code {
+
+    [Parameter] public List<ServiceHistory> ServiceRecord { get; set; } = new List<ServiceHistory>();
+    
+    private MudDataGrid<ServiceHistory>? _serviceRecordGrid;
+
+    private string _searchString = string.Empty;
+    private int _CurrentPage = 0;
+    private int _rowCount = 0;
+    private int _rowsTotal = 0;
+
+
+    private async Task<GridData<ServiceHistory>> ServerReload(GridState<ServiceHistory> state)
+    {
+       
+        _rowCount = state.Page * state.PageSize;
+        IEnumerable<ServiceHistory> _details = new List<ServiceHistory>();
+        
+
+        if (ServiceRecord.Count > 0)
+        {
+            _details = ServiceRecord;
+            _rowsTotal = ServiceRecord.Count;
+           
+        }
+        else
+        {
+            _details = new List<ServiceHistory>();
+            _rowsTotal = 0;
+        }
+
+        await Task.CompletedTask;
+
+        return new GridData<ServiceHistory> { TotalItems = _rowsTotal, Items = _details };
+
+    }
+
+   
+}

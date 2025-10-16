@@ -202,6 +202,38 @@
             return result;
         }
 
+        public async Task<ApiResponse<VehicleRecord>> GetRecordVehicle(int IdSupplier, int IdUser, string Vin)
+        {
+            ApiResponse<VehicleRecord>? result;
+
+            try
+            {
+                var url = $"api/Vehicle/GetRecordVehicle?supplierId={IdSupplier}&userId={IdUser}";
+                url = string.IsNullOrEmpty(Vin) ? url : $"{url}&vin={Vin}";
+
+                result = await _http.GetFromJsonAsync<ApiResponse<VehicleRecord>>(url);
+
+
+                result = (result is null) ? new ApiResponse<VehicleRecord>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<VehicleRecord>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+
+        }
+
         public async Task<ApiResponse<ActionResult>> CreateVehicle(Vehicle Vehicle, int IdUser)
         {
             ApiResponse<ActionResult>? result;
