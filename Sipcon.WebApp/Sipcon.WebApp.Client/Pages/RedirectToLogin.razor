@@ -9,7 +9,9 @@
         if (firstRender && !_initialized)
         {
             _initialized = true;
-            Useful.isMobile = navigationManager!.ToBaseRelativePath(navigationManager.Uri).Contains("process-list");
+            var relativePath = navigationManager!.ToBaseRelativePath(navigationManager.Uri);
+            Useful.isMobile = relativePath.Contains("process-list") || 
+                              System.Text.RegularExpressions.Regex.IsMatch(relativePath, @"mobile-*");
 
             navigationManager!.NavigateTo($"{navigationManager.BaseUri}login");
         }

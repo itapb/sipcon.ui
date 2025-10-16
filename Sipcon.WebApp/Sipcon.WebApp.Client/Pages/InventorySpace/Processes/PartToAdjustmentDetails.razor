@@ -86,7 +86,7 @@ else
 
     private async Task LoadLocations()
     {
-        HttpResponseMessage locationResponse = await Http.GetAsync($"api/Location/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&rowfrom=0");
+        HttpResponseMessage locationResponse = await Http.GetAsync($"api/Location/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&filter={newAdjustmentDetail?.LocationName!.Trim()}");
         if (locationResponse.IsSuccessStatusCode)
         {
             var content2 = await locationResponse.Content.ReadFromJsonAsync<WebApiResponse<List<Location>>>();
