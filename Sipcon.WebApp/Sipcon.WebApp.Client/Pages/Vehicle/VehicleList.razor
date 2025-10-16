@@ -133,7 +133,15 @@
         </TemplateColumn>
         <TemplateColumn>
             <CellTemplate>
-                <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditVehicle(context.Item)" />
+                <MudStack Row="true">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditVehicle(context.Item)" />
+                    @if (_statusRecord.Contains(context.Item.EstatusName.ToUpper()))
+                    {
+                        <MudIconButton Icon="@Icons.Material.Filled.Speed" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" Href="@("vehicledetailrecord/" + context.Item.Vin)" />
+                    }
+                    
+                </MudStack>
+                
             </CellTemplate>
         </TemplateColumn>
     </Columns>
@@ -197,6 +205,12 @@
         new("Vehiculos",  href: "vehicles", disabled: false, icon: Icons.Material.Filled.CarRepair),
     ];
 
+    List<string> _statusRecord = new List<string>()
+    {
+        "ASIGNADO",
+        "FACTURADO"
+    };
+
     protected override async Task OnInitializedAsync()
     {
         await AuthenticationStateProvider.RefreshStaticVariables();
@@ -251,7 +265,7 @@
             _success = false;
             _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
            
-            OpenNested();
+            // OpenNested();
         }
 
         _loading = false;
