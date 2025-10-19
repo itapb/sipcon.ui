@@ -4,6 +4,7 @@
 @using System.Collections.Generic
 @using MudBlazor.Utilities
 
+<InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
 <MudDataGrid @ref="@InvoiceTapDataGrid" T="Invoicecontrol"
              ServerData="@ServerReload"
              Hover FixedHeader Groupable Height="calc(100vh - 310px)">
@@ -86,6 +87,7 @@
 </div>
 
 @code {
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
@@ -305,7 +307,11 @@
     }
     private async Task ClickMenuBackOrder(string? actionName)
     {
-        if (actionName == "SINC")
+        if (actionName == "IMPORT")
+        {
+            await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('[type=file]').click()");         
+        }
+        else if (actionName == "SINC")
         {
             DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
             var parameters = new DialogParameters { ["ModuleId"] = Modules?.FirstOrDefault()?.Id };
@@ -351,6 +357,55 @@
     public void Dispose()
     {
         hubEventsService.OnSupplierChanged -= ReloadBackOrderGrid;
+    }
+
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        if (e.FileCount == 1)
+        {
+            var file = e.File;
+            const long maxAllowedSize = 10 * 1024 * 1024; // 10MB
+            if (file.Size == 0)
+            {
+                await DialogService.ShowDialog("Archivo esta vacio", "Error de Archivo", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+            else if (file.Size > maxAllowedSize)
+            {
+                await DialogService.ShowDialog("Tamaño del archivo excede el limite maximo permitido de 10MB.", "Error de Archivo", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+            else
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
+
+                var content = new StreamContent(stream);
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+                // Create a multipart form data content
+                var formData = new MultipartFormDataContent();
+                formData.Add(content, "file", file.Name);
+                _loading = true;
+
+                var response = await Http.PostAsync($"api/InvoiceControl/ImportInvoiceReport?userId={Useful.userId}&supplierId={Useful.supplierId}", formData);
+                if (response.IsSuccessStatusCode)
+                {
+                    await DialogService.ShowDialog("Archivo cargado con exito!.", "FACTURAS", "OK", Color.Info, Icons.Material.Filled.Commit);
+                    await InvoiceTapDataGrid!.ReloadServerData();
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    var conflictContent = await response.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+                    await DialogService.ShowDialog(conflictContent?.message!, "Error al cargar", "OK", Color.Error, Icons.Material.Filled.Error);
+                    _loading = false;
+                }
+                else
+                {
+                    var resultString = await response.Content.ReadAsStringAsync();
+                    await DialogService.ShowDialog(resultString, "Error al cargar", "OK", Color.Error, Icons.Material.Filled.Error);
+                    _loading = false;
+                }
+            }
+        }
+        await Task.CompletedTask;
     }
 
 }
