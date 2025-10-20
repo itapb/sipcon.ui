@@ -7,7 +7,8 @@
 <MudLayout>
    <MudAppBar Elevation="1">      
        <MudText Typo="Typo.h5" Class="ml-3">Sipcon</MudText>
-       <MudSpacer />          
+       <MudSpacer />
+       <AuthorizeView><div Style="font-size: 12px;">@($"{_userActive.Name} {_userActive.LastName}")</div></AuthorizeView>
        <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
          <AuthorizeView>
             <Authorized><MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" OnClick="@LogoutClick" /></Authorized>
@@ -29,10 +30,17 @@
     private bool _drawerOpen = true;
     private bool _isDarkMode = false; // Set to false to start in light mode
     private MudTheme? _theme = null;
+    private User _userActive = new User();
 
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;   
     [Inject] private NavigationManager NavigationManager { get; set; } = null!;
-
+    protected override async Task OnParametersSetAsync()
+    {
+        if  (await AuthenticationStateProvider.IsUserAuthenticated())
+        {
+            _userActive = await AuthenticationStateProvider.GetUserAsync();
+        }
+    }
     protected override void OnInitialized()
     {
         _theme = new()

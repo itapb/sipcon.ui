@@ -38,7 +38,7 @@
                                     <span>@((context.Item.Processed ?? false) ? "Procesado":"No Procesado")</span>
                                  </CellTemplate>
                              </TemplateColumn>
-
+                             <PropertyColumn Property="x => x.PartialTypeName" Title="MOTIVO" Hidden="@(!(MasterMovement?.TypeId?.ToUpper() =="P"))" />                          
 
                             <TemplateColumn StickyRight="true">
                                 <CellTemplate>
@@ -199,7 +199,7 @@
         IEnumerable<MovementDetails> data;
         HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetMovementWithContext?userId={Useful.userId}&movementId={MovementId}");
         if (response.IsSuccessStatusCode)
-        {
+        {            
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterMovementDetails>>();
             totalItems = content2!.total ?? 0;
             var masterMovementDetails = content2!.data ?? new MasterMovementDetails();

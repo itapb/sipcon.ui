@@ -74,5 +74,8 @@ namespace Sipcon.WebApp.Client.Models
 
         public string? PartSize  { get; set; } = string.Empty;
 
+
+        public string? PartialTypeName { get; set; } = string.Empty;
+
     }
 }
