@@ -55,6 +55,7 @@ else
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [Inject] private ILogger<Adjustment> Logger { get; set; } = default!;
     List<BreadcrumbItem> ItemsNavigate = new();
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
     [Parameter]
     public string? TypeId { get; set; }
@@ -68,8 +69,8 @@ else
     DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
     private string searchString = string.Empty;
     string AdjustmentTitle = "";
-   
- 
+
+
 
     private async Task OnSearch(string text)
     {
@@ -194,7 +195,24 @@ else
         }
         else if (mActions?.Count > 0)
         {
-            await PostActionAndReload(mActions, $"api/Adjustment/PostAdjustmentActions?userId={Useful.userId}");
+            if (actionName == "EXPORT")
+            {
+                Loading = true;
+                var ResultZonas = await Http.GetAsync($"/api/Adjustment/Export?filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}");
+                if (ResultZonas.IsSuccessStatusCode)
+                {
+                    var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
+                    var base64File = Convert.ToBase64String(fileContent);
+                    var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+                    await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Ubicaciones.xlsx");
+                }
+                Loading = false;               
+            }
+            else
+            {
+                await PostActionAndReload(mActions, $"api/Adjustment/PostAdjustmentActions?userId={Useful.userId}");
+            }
+            
         }
 
     }
