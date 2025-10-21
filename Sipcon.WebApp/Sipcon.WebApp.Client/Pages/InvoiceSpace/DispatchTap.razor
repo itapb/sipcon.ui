@@ -25,7 +25,7 @@
                 <MudCheckBox @bind-Value="IsAllCheckBoxSelected" @bind-Value:after="AfterAsyncAllCheck" />
             </HeaderTemplate> *@
             <CellTemplate>
-                <MudCheckBox @bind-Value="@context.Item.Mark" @bind-Value:after="@(() =>AfterAsyncCheck(context.Item))" Disabled="@(context.Item.Mark ?? false)" />
+                <MudCheckBox @bind-Value="@context.Item.Mark" @bind-Value:after="@(() =>AfterAsyncCheck(context.Item))" />
             </CellTemplate>
         </TemplateColumn>
 
@@ -46,6 +46,7 @@
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
     private List<Module>? Modules;
     DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
@@ -161,14 +162,39 @@
         }
         await Task.CompletedTask;
     }
+    private async Task ClickTxtExport(int? ControlId)
+    {
+        _loading = true;
+        var ResultZonas = await Http.GetAsync($"api/InvoiceControl/ExportTXT?userId={Useful.userId}&supplierId={Useful.supplierId}&controlId={ControlId}");
+        if (ResultZonas.IsSuccessStatusCode)
+        {
+            await DispatchTapDataGrid!.ReloadServerData();
+            var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
+            var base64File = Convert.ToBase64String(fileContent);
+            var fileUrl = $"data:text/plain;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, $"TXT{ControlId}.txt");
+            //await DialogService.ShowDialog(Useful.OkSavedMessage, "Accion", "OK", Color.Info, Icons.Material.Filled.Commit);
+            
+        }
+        else
+        {
+            var errorMessage = await ResultZonas.Content.ReadAsStringAsync();
+            await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        _loading = false;
+    }
+
     private async Task PostActionAndReload(List<Models.Action>? actions, string requesturi)
     {
         var result_Post_Actions = (actions?.Count > 0) ? await Http.PostAsync(requesturi, new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json")) : null;
         if ((result_Post_Actions?.IsSuccessStatusCode ?? false))
         {
-            var rest = result_Post_Actions.Content.ReadAsStringAsync();
-            await DialogService.ShowDialog(Useful.OkSavedMessage, "Accion", "OK", Color.Info, Icons.Material.Filled.Commit);
-            await DispatchTapDataGrid!.ReloadServerData();
+            var resultAction = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
+            if (resultAction?.data! is ({ insertedRows: > 0 } or { updatedRows: > 0 }))
+            {
+                await ClickTxtExport(resultAction?.data!.lastId);
+            }
+
         }
         else if (result_Post_Actions?.StatusCode == System.Net.HttpStatusCode.Conflict)
         {
@@ -204,7 +230,7 @@
         var result_Post_Action = await Http.PostAsync("api/InvoiceControl/PostInvoiceControl", new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json"));
         if (!result_Post_Action.IsSuccessStatusCode)
         {
-            item.Mark = false; // Revert the checkbox state on error
+            //item.Mark = false; // Revert the checkbox state on error
             var errorMessage = await Useful.GetErrorMessageAsync(result_Post_Action);
             await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
         }

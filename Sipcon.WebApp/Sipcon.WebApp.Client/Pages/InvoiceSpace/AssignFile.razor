@@ -4,10 +4,10 @@
             <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
                 <MudGrid Spacing="2">
                     <MudItem xs="12">
-                        <MudTextField T="int?" Label="NRO TXT" @bind-Value="InvoiceId" Required="true" ErrorText="Campo requerido"></MudTextField>
+                        <MudTextField T="int?" Label="NRO TXT" @bind-Value="ControlId" Required="true" ErrorText="Campo requerido"></MudTextField>
                     </MudItem>
                     <MudItem xs="12">
-                        <MudTextField T="int?" Label="NRO FACT" @bind-Value="ControlId" Required="true" ErrorText="Campo requerido"></MudTextField>
+                        <MudTextField T="int?" Label="NRO FACT" @bind-Value="InvoiceId" Required="true" ErrorText="Campo requerido"></MudTextField>
                     </MudItem>
                     <MudItem xs="12">
                         <MudStack Row="true" Justify="Justify.Center">
@@ -50,7 +50,7 @@
             };
             
             var strSyncItem = System.Text.Json.JsonSerializer.Serialize(SyncItem);
-            var result_newAdjustmentDetail = await Http.PostAsync($"api/InvoiceControl/PostActions?userId={Useful.userId}", new StringContent(strSyncItem, null, "application/json"));
+            var result_newAdjustmentDetail = await Http.PostAsync($"api/InvoiceControl/PostActions?userId={Useful.userId}&supplierId={Useful.supplierId}", new StringContent(strSyncItem, null, "application/json"));
             if (result_newAdjustmentDetail.IsSuccessStatusCode)
             {
                 var sucessContent = await result_newAdjustmentDetail.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
