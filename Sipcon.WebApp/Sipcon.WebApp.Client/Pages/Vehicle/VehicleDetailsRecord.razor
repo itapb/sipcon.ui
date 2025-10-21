@@ -29,7 +29,8 @@
     <MudTabs Elevation="2" Rounded="true" Centered="true" ApplyEffectsToContainer="true" PanelClass="pa-2" Color="Color.Info">
         @* DATOS REPORTE *@
         <MudTabPanel Icon="@Icons.Material.Filled.CarRepair" Text="Vehiculo" >
-            <MudGrid Spacing="1" Justify="Justify.Center">
+            <MudForm @ref="@form" >
+                <MudGrid Spacing="1" Justify="Justify.Center">
    
                 <MudItem xs="12" sm="4">
                     @* Image Vehicle *@
@@ -203,8 +204,14 @@
                                 <MudTextField Typo="Typo.caption" @bind-Value="_model.Vehicle.Vin"
                                               Label="VIN"
                                               Margin="Margin.Dense"
-                                              MaxLength="20"
-                                              ReadOnly="true" />
+                                              OnKeyUp="HandleKeyDownSearchVehicle"
+                                              OnAdornmentClick="() => ClicSearchVehicle()"
+                                              Adornment="Adornment.End"
+                                              AdornmentIcon="@Icons.Material.Filled.Search"
+                                              AdornmentColor="Color.Info"
+                                              Validation="@_SelectValidator.Validation"
+                                              IconSize="Size.Medium"
+                                              MaxLength="20" />
 
                                 <MudTextField Typo="Typo.caption" @bind-Value="_model.Vehicle.EngineSerial"
                                               Label="Serial Motor"
@@ -474,6 +481,7 @@
 
                     
             </MudGrid>
+            </MudForm>
         </MudTabPanel>
 
         @* Servicios *@
@@ -625,13 +633,13 @@
 
 @code {
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
-    
-    [Parameter] public string Vin { get; set; } = string.Empty;
+
+    [Parameter] public string? Vin { get; set; } = null;
 
     private VehicleRecord _model { get; set; } = new VehicleRecord();
-
+    private MudForm? form;
     private string _moduleName = "VEHICLE-HISTORY";
-    
+
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
     string _strComment = string.Empty;
@@ -648,6 +656,10 @@
         new("Vehiculo",  href: "", disabled: false, icon: Icons.Material.Filled.CarRepair),
     ];
 
+    SelectValidator<string> _SelectValidator = new SelectValidator<string>(x => x
+       .NotNull().WithMessage("Campo requerido")
+       .NotEmpty().WithMessage("Campo requerido")
+       .Length(5, 20).WithMessage("Campo requerido entre 5-20 carácteres"));
 
 
     protected override async Task OnInitializedAsync()
@@ -655,7 +667,11 @@
         await AuthenticationStateProvider.RefreshStaticVariables();
         Useful.IsNewOrEdit = true;
 
-        await GeVehicle();
+        if (!string.IsNullOrEmpty(Vin))
+        {
+            await GeVehicle();
+        }
+
 
         StateHasChanged();
         await Task.CompletedTask;
@@ -666,7 +682,7 @@
     private async Task GeVehicle()
     {
 
-        var serviceResponse = await VehicleService.GetRecordVehicle(Useful.supplierId, Useful.userId, Vin);
+        var serviceResponse = await VehicleService.GetRecordVehicle(Useful.supplierId, Useful.userId, Vin ?? string.Empty);
         if (serviceResponse.Processed)
         {
             _model = serviceResponse.Data ?? new VehicleRecord();
@@ -677,18 +693,80 @@
         else
         {
             //Console.WriteLine(serviceResponse.Message);
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
             _model = new VehicleRecord();
-            
+            OpenNested();
+
         }
 
     }
 
+    private async Task HandleKeyDownSearchVehicle(KeyboardEventArgs e)
+    {
+
+        if (e.Key == "Enter")
+        {
+            await form!.Validate();
+            if (form.IsValid)
+            {
+                if (_model.Vehicle.Vin.Length >= 5)
+                {
+                    Vin = _model.Vehicle.Vin;
+                    await GeVehicle();
+
+                    StateHasChanged();
+                    await Task.CompletedTask;
+                    return;
+                }
+            }
+        }
+    }
+
+    private async Task ClicSearchVehicle()
+    {
+        await form!.Validate();
+        if (form.IsValid)
+        {
+            if (_model.Vehicle.Vin.Length >= 5)
+            {
+                Vin = _model.Vehicle.Vin;
+                await GeVehicle();
+
+                StateHasChanged();
+                await Task.CompletedTask;
+                return;
+            }
+        }
+    }
 
 
     private void OpenNested()
     {
         _nestedVisible = true;
         StateHasChanged();
+    }
+
+
+    public class SelectValidator<T> : AbstractValidator<T>
+    {
+
+        public SelectValidator(Action<IRuleBuilderInitial<T, T>> rule)
+        {
+            rule(RuleFor(x => x));
+        }
+
+
+        private IEnumerable<string> ValidateValue(T arg)
+        {
+            var result = Validate(arg);
+            if (result.IsValid)
+                return new string[0];
+            return result.Errors.Select(e => e.ErrorMessage);
+        }
+
+        public Func<T, IEnumerable<string>> Validation => ValidateValue;
+
     }
 
 

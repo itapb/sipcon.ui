@@ -10,14 +10,16 @@
 <MudDialogProvider />
 <MudSnackbarProvider />
 <MudLayout>
-   <MudAppBar Elevation="1">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
-        <MudText Typo="Typo.h5" Class="ml-3">Sipcon</MudText>
+  
        
-            <AuthorizeView>
-                <Authorized>
-                <MudSpacer />
-                <MudSpacer />
+    <AuthorizeView>
+        <Authorized>
+            <MudAppBar Elevation="1">
+                    <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+                    <MudText Typo="Typo.h5" Class="ml-3">Sipcon</MudText>
+
+                    <MudSpacer />
+                    <MudSpacer />
                     <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center">
                        
                         <MudChip T="string" Icon="@Icons.Material.Filled.DomainAdd" Label="true" 
@@ -45,27 +47,16 @@
                  </MudButton>
                 @* <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End"  /> *@
 
+            </MudAppBar>
 
-            </Authorized>
-                <NotAuthorized>
-                    <MudSpacer />
-                    <MudSpacer />
-                    <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center">
-                        <MudButton Href="login">
-                            <MudChat ChatPosition="ChatBubblePosition.Start" Style="max-width: 135px;">
-                                <MudAvatar Color="Color.Dark"> @("U")</MudAvatar>
-                                <MudChatBubble Style="font-size: 12px;">@("Iniciar")</MudChatBubble>
-                            </MudChat>
-                        </MudButton>
-                    </MudStack>
-               
-            </NotAuthorized>
-            </AuthorizeView>
+            <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Variant="DrawerVariant.Mini">
+                <NavMenu Modules="@_UserModules" />
+            </MudDrawer>
+        </Authorized>
+    </AuthorizeView>
        
-   </MudAppBar>
-   <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Variant="DrawerVariant.Mini">
-        <NavMenu Modules="@_UserModules" />
-   </MudDrawer>
+  
+  
     @* //Drawer Right *@
     <MudDrawer @bind-Open="@_open" Anchor="Anchor.End" Elevation="1" Variant="@DrawerVariant.Temporary" OverlayAutoClose="true">
         <AuthorizeView>
