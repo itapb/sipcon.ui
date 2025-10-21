@@ -177,7 +177,22 @@ else
     }
 
     private async Task ClickMenuAdjustment(string? actionName)
-    {       
+    {    
+        if (actionName == "EXPORT" && AdjustmentMudDataGrid?.FilteredItems.Count() > 0)
+        {
+             Loading = true;
+             var ResultZonas = await Http.GetAsync($"api/Adjustment/Export?filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}");
+             if (ResultZonas.IsSuccessStatusCode)
+             {
+                    var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
+                    var base64File = Convert.ToBase64String(fileContent);
+                    var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+                    await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Ajustes.xlsx");
+             }
+             Loading = false;
+             return;
+         }
+
         var mActions = AdjustmentMudDataGrid?.FilteredItems.Where(item => item.IsSelected )
                                                          .Select(item => new Client.Models.Action
                                                          {
@@ -194,25 +209,8 @@ else
             await DialogService.ShowDialog("Accion no permitada, Verificar datos seleccionado(s)", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
         }
         else if (mActions?.Count > 0)
-        {
-            if (actionName == "EXPORT")
-            {
-                Loading = true;
-                var ResultZonas = await Http.GetAsync($"/api/Adjustment/Export?filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}");
-                if (ResultZonas.IsSuccessStatusCode)
-                {
-                    var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
-                    var base64File = Convert.ToBase64String(fileContent);
-                    var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
-                    await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Ubicaciones.xlsx");
-                }
-                Loading = false;               
-            }
-            else
-            {
-                await PostActionAndReload(mActions, $"api/Adjustment/PostAdjustmentActions?userId={Useful.userId}");
-            }
-            
+        { 
+            await PostActionAndReload(mActions, $"api/Adjustment/PostAdjustmentActions?userId={Useful.userId}");                    
         }
 
     }

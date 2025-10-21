@@ -171,6 +171,7 @@
 </div>
 
 @code {
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
@@ -230,7 +231,7 @@
         }
         await BackOrderDataGrid!.ReloadServerData();
         await Task.CompletedTask;
-   }
+    }
     private async Task AfterAsyncAllCheck()
     {
         if (BackOrderDataGrid != null)
@@ -268,7 +269,7 @@
     bool IsAllCheckBoxSelected = false;
     private async Task<GridData<BackOrder>> ServerReload(GridState<BackOrder> state)
     {
-         await AuthenticationStateProvider.RefreshStaticVariables();
+        await AuthenticationStateProvider.RefreshStaticVariables();
 
         IsAllCheckBoxSelected = false;
         _loading = true;
@@ -429,6 +430,21 @@
     }
     private async Task ClickMenuBackOrder(string? actionName)
     {       
+        if (actionName == "EXPORT" && BackOrderDataGrid?.FilteredItems.Count() > 0)
+        {
+            _loading = true;
+            var ResultZonas = await Http.GetAsync($"api/BackOrder/Export?filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}");
+            if (ResultZonas.IsSuccessStatusCode)
+            {
+                var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
+                var base64File = Convert.ToBase64String(fileContent);
+                var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+                await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "BackOrdes.xlsx");
+            }
+            _loading = false;
+            return;
+        }
+
         var mActions = BackOrderDataGrid?.FilteredItems.Where(item => item.IsSelected )
                                                          .Select(item => new Client.Models.Action
                                                          {
@@ -451,7 +467,7 @@
                 string ModuleName = "INVENTARIO-MOVIL-RECOLECCION";
                 var dialogReference = await DialogService.ShowAsync<AssignUserToBackOrder>("", new DialogParameters { ["SelectedActions"] = mActions, ["moduleName"] = ModuleName }, options);
                 if (await Useful.AsyncDialogResultIsOk(dialogReference)) await BackOrderDataGrid!.ReloadServerData();
-            }
+            }           
             else
             {
                 await PostActionAndReload(mActions, $"api/BackOrder/PostActions?userId={Useful.userId}");

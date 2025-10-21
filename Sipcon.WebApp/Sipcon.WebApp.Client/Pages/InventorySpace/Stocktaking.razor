@@ -8,7 +8,12 @@
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s=>OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             <MudSpacer />
         <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshStocktaking"></MudIconButton>
-          
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+            @foreach (var strmodulo in Modules!)
+            {
+                <MudMenuItem Label="@strmodulo.ActionDisplay" Icon="@(strmodulo.ActionDisplay.ToActionIcon())" IconColor="@Color.Info" OnClick="@(() => ClickMenuBackOrder(strmodulo.ActionName))" />
+            }
+        </MudMenu>
         </ToolBarContent>
         <Columns>
             <PropertyColumn Property="x => x.PartInnerCode" title="CODIGO" />
@@ -34,7 +39,7 @@
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
     private int? LocationId;
     List<BreadcrumbItem> ItemsNavigate = [new("Home", href: "", icon: Icons.Material.Filled.Home), new("Inventario", href: "stocktaking", icon: Icons.Material.Filled.Inventory), new("Inventario", href: "stocktaking", icon: Icons.Material.Filled.Inventory2)];
-
+    private List<Module>? Modules;
     string searchString = "";      
     private int LocationCurrentPage = 0;
     bool _loading = true;
@@ -97,6 +102,28 @@
     protected override async Task OnInitializedAsync()
     {       
         hubEventsService.OnSupplierChanged += ReloadStocktakingGrid;
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-INVENTARIO&userId={Useful.userId}");
+        await Task.CompletedTask;
+    }
+    private async Task ClickMenuBackOrder(string? actionName)
+    {
+        if (actionName == "EXPORT" && StocktakingMudDataGrid?.FilteredItems.Count() > 0)
+        {
+            _loading = true;
+            var ResultZonas = await Http.GetAsync($"api/Inventory/Export?filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}");
+            if (ResultZonas.IsSuccessStatusCode)
+            {
+                var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
+                var base64File = Convert.ToBase64String(fileContent);
+                var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+                await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Inventarios.xlsx");
+            }
+            _loading = false;
+        }
+        else
+        {
+            await DialogService.ShowDialog("Accion no permitada, Verificar datos seleccionado(s)", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }        
         await Task.CompletedTask;
     }
 }
