@@ -50,15 +50,16 @@ else
 }
 
 @code {
-        [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
-        [Inject] private HttpClient Http { get; set; } = default!;
-        [Inject] private IDialogService DialogService { get; set; } = default!;
-        [Inject] private ILogger<Movements> Logger { get; set; } = default!;
-        List<BreadcrumbItem> ItemsNavigate = new();    
+    [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private ILogger<Movements> Logger { get; set; } = default!;
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+    List<BreadcrumbItem> ItemsNavigate = new();    
 
-        [Parameter]   
-        public string? TypeId { get; set; } 
-        private int? MovementId = null;    //4
+    [Parameter]   
+    public string? TypeId { get; set; } 
+    private int? MovementId = null;    //4
 
     private bool IsAllCheckBoxSelected = false;
     int ReceptionCurrentPage = 0;
@@ -122,7 +123,7 @@ else
         await LoadDataAsync();
         hubEventsService.OnSupplierChanged += ReloadMovementsGrid;
     }
-    
+
 
     private async Task LoadDataAsync()
     {      
@@ -141,6 +142,7 @@ else
         nameof(Movement.Reference) => o => o.Reference,
         nameof(Movement.StatusName) => o => o.StatusName,
         nameof(Movement.AssignTo) => o => o.AssignTo,
+        nameof(Movement.ContactName) => o => o.ContactName,
         _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto        
     };
 
@@ -179,6 +181,24 @@ else
 
     private async Task ClickMenuMovement(string? actionName)
     {
+        if (actionName == "EXPORT" && (TypeId is "r" or "t") && MovementMudDataGrid?.FilteredItems.Count() > 0)
+        {
+            var segmentPath = TypeId == "r" ? "ReceptionExport" : "RelocationExport";
+            var fileName = TypeId == "r" ? "Recepcion.xlsx" : "Traslado.xlsx";
+
+            Loading = true;
+            var ResultZonas = await Http.GetAsync($"api/Movements/{segmentPath}?filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}");
+            if (ResultZonas.IsSuccessStatusCode)
+            {
+                var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
+                var base64File = Convert.ToBase64String(fileContent);
+                var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+                await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, fileName);
+            }
+            Loading = false;
+            return;
+        }
+
         var strDictionary = new Dictionary<string, string> {{ "ASSIGN", "GENERADO" }, { "UNASSIGN", "ASIGNADO" }, { "GENERATE", "CREADO" }, { "DECLINE", "CREADO,GENERADO" }};
         var mActions = MovementMudDataGrid?.FilteredItems.Where(item => item.IsSelected && strDictionary[actionName!].Contains(item.StatusName.ToUpper()))
                                                          .Select(item => new Client.Models.Action

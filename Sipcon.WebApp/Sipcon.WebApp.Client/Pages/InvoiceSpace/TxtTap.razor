@@ -1,0 +1,383 @@
+﻿@inject HubEventsService hubEventsService
+@implements IDisposable
+
+@using System.Collections.Generic
+@using MudBlazor.Utilities
+
+<MudDataGrid @ref="@TxtTapDataGrid" T="Invoicecontrol"
+             ServerData="@ServerReload"
+             Hover FixedHeader Groupable Height="calc(100vh - 310px)">
+    <ToolBarContent>
+        <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium"></MudTextField>
+        <MudSpacer />
+        <MudCheckBox @bind-Value="@IsPendant" Label="PENDIENTE" @bind-Value:after="OnPendantChanged" />        
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshBackOrder"></MudIconButton>
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+            @foreach (var strmodulo in Modules!)
+            {
+                <MudMenuItem Label="@strmodulo.ActionDisplay" Icon="@(strmodulo.ActionDisplay.ToActionIcon())" IconColor="@Color.Info" OnClick="@(() => ClickMenuBackOrder(strmodulo.ActionName))" />
+            }
+        </MudMenu>
+
+    </ToolBarContent>
+    <Columns>
+        <TemplateColumn>
+            <HeaderTemplate>
+                <MudCheckBox @bind-Value="IsAllCheckBoxSelected" @bind-Value:after="AfterAsyncAllCheck" />
+            </HeaderTemplate>
+            <CellTemplate>
+                <MudCheckBox @bind-Value="@context.Item.IsSelected" />
+            </CellTemplate>
+        </TemplateColumn>
+
+        <PropertyColumn Property="x => x.ControlId" Title="NRO TXT" Groupable="@(_ControlIdGrouping)"
+                        @bind-Grouping="_ControlIdGrouping" GroupBy="_groupBy1"
+                        @bind-GroupByOrder="_ControlIdOrder"
+                        @bind-GroupExpanded="_ControlIdExpanded">
+            <GroupTemplate>
+                @if (_customizeGroupTemplate)
+                {
+                    var color = context.Grouping.Key?.ToString() switch
+                    {
+                        "Healthcare" => Color.Primary,
+                        "Tech" => Color.Secondary,
+                        "Tourism" => Color.Info,
+                        _ => Color.Dark
+                    };
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.TextSnippet" Color="@color" Size="Size.Small" Class="mr-2" />
+                        <span style="font-weight:bold">@context.Grouping.Key</span>
+                        <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
+                            @context.Grouping.Count() TXT
+                        </MudChip>
+                        <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
+                            @context.Grouping.Min(x => x.FiscalName) 
+                        </MudChip>
+                        <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
+                            @context.Grouping.Min(x => x.StatusName)
+                        </MudChip>
+                        <MudIconButton Icon="@Icons.Material.Filled.Download" OnClick="@(() => ClickTxtExport(Convert.ToInt32(@context.Grouping.Key)))"></MudIconButton>
+                    </div>
+                }
+                else
+                {
+                    <span style="font-weight:bold">@(context.Grouping.Key)</span>
+                }
+            </GroupTemplate>
+        </PropertyColumn>
+
+        <PropertyColumn Property="x => x.MovementDetailId" Title="ID DESPACHO" Groupable="false" />
+        <PropertyColumn Property="x => x.SaleOrderNumber" Title="NRO PEDIDO" Groupable="false" />
+        <PropertyColumn Property="x => x.PartInnerCode" Title="COD PARTE" Groupable="false" />
+        <PropertyColumn Property="x => x.PartName" Title="REPUESTO" Groupable="false" />
+        <PropertyColumn Property="x => x.Dispatched" Title="CANT DESP" Groupable="false" />
+        <PropertyColumn Property="x => x.Invoiced" Title="CANT FACT" Groupable="false" />       
+        <PropertyColumn Property="x => x.InvoiceId" Title="NRO FACT" Groupable="false" />       
+
+
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="Invoicecontrol" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+    </PagerContent>
+</MudDataGrid>
+<div class="d-flex flex-wrap mt-4">
+    <MudButton OnClick="@ExpandAllGroupsAsync" Color="@Color.Primary">Expand all</MudButton>
+    <MudButton OnClick="@CollapseAllGroupsAsync" Color="@Color.Primary">Collapse all</MudButton>
+</div>
+
+@code {
+    [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+    string SelectedmGroup = "NRO TXT";
+    string[] mGroups = ["NRO TXT", "PEDIDO"];
+    public bool IsPendant { get; set; } = true;
+    public string customstr { get; set; } = "NRO ORDEN VENTA";
+
+    private List<Module>? Modules;
+    DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
+    // For the Grid
+    private MudDataGrid<Invoicecontrol> TxtTapDataGrid = null!;
+    private string? searchString = string.Empty;
+    // Bound Properties @bind-
+    private bool _customizeGroupTemplate = true;
+    private bool _customizeGroupBy;
+    private bool _customizeGroupStyle;
+
+    private bool _ControlIdGrouping = true;
+    private int _ControlIdOrder;
+
+
+    // Display Options
+    private bool _ControlIdExpanded = false;
+
+
+
+
+    // Primary grouping by industry type
+    private Func<Invoicecontrol, object>? _groupBy1;
+
+    private async Task AfterAsyncAllCheck()
+    {
+        if (TxtTapDataGrid != null)
+            TxtTapDataGrid.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
+        await Task.CompletedTask;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-CONTROLTXT&userId={Useful.userId}");
+        hubEventsService.OnSupplierChanged += ReloadBackOrderGrid;
+    }
+
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+
+        if (firstRender)
+        {
+            // Check if the dataGrid is grouped and update the state accordingly (for IsGrouped)
+            if (TxtTapDataGrid?.IsGrouped == true)
+            {
+                StateHasChanged();
+            }
+        }
+    }
+
+    private int LocationCurrentPage = 0;
+    bool _loading = true;
+    bool IsAllCheckBoxSelected = false;
+    private async Task<GridData<Invoicecontrol>> ServerReload(GridState<Invoicecontrol> state)
+    {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+
+        IsAllCheckBoxSelected = false;
+        _loading = true;
+        var mOffset = state.Page * state.PageSize;
+        var totalItems = 0;
+        IEnumerable<Invoicecontrol> data;
+
+        HttpResponseMessage response = await Http.GetAsync($"api/InvoiceControl/GetDispatchedControlTxt?userId={Useful.userId}&supplierId={Useful.supplierId}&rowfrom={mOffset}&filter={searchString}&pendant={(IsPendant ? "1":"0")}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Invoicecontrol>>>();
+            totalItems = content2!.total ?? 0;
+            data = content2!.data ?? new List<Invoicecontrol>(); ;
+        }
+        else
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
+
+        if (state.SortDefinitions != null && state.SortDefinitions.Any())
+        {
+            // on server or actual API would be IQueryable likely
+            IOrderedEnumerable<Invoicecontrol>? orderedQuery = null;
+            foreach (var sort in state.SortDefinitions)
+            {
+                orderedQuery = data.OrderByDirection(sort.Descending ? SortDirection.Descending : SortDirection.Ascending, obj => GetPropertyValue(obj, sort.SortBy));
+            }
+            data = orderedQuery!.ToList();
+        }
+        _loading = false;
+
+        return new GridData<Invoicecontrol> { TotalItems = totalItems, Items = data };
+    }
+
+    private static string GroupClassFunc(GroupDefinition<Invoicecontrol> item)
+    {
+        var key = item.Grouping.Key?.ToString();
+
+        return item.Title switch
+        {
+            "NRO TXT" => key switch
+            {
+                "Healthcare" => "mud-theme-primary",
+                "Tech" => "mud-theme-secondary",
+                "Tourism" => "mud-theme-info",
+                _ => "mud-theme-dark"
+            },
+            "CONCESIONARIO" => key switch
+            {
+                "Northeast" or "Southeast" => "mud-theme-warning",
+                "West" or "Pacific" => "mud-theme-success",
+                "Midwest" => "mud-theme-info",
+                "Southwest" => "mud-theme-error",
+                _ => string.Empty
+            },
+            _ => key switch
+            {
+                "Continental" => "mud-theme-primary",
+                "Humid Subtropical" => "mud-theme-warning",
+                "Mediterranean" or "Tropical" => "mud-theme-info",
+                "Desert" or "Semi-arid" or "Arid" => "mud-theme-error",
+                _ => string.Empty
+            }
+        };
+    }
+
+    private static string GroupStyleFunc(GroupDefinition<Invoicecontrol> item)
+    {
+        var indent = item.Level * 16; // 16px per level
+        var borderWidth = Math.Max(1, 4 - item.Level); // Decrease border width with depth
+
+        var style = new StyleBuilder()
+            .AddStyle("padding-left", $"{indent}px")
+            .AddStyle("border-left", $"{borderWidth}px solid")
+            .AddStyle("border-color", GetBorderColor(item))
+            .AddStyle("opacity", $"{1 - (item.Level - 1) * 0.2}") // Fade out deeper levels slightly
+            .Build();
+
+        return style;
+    }
+
+    private static string GetBorderColor(GroupDefinition<Invoicecontrol> item)
+    {
+        var key = item.Grouping.Key?.ToString();
+
+        return item.Title switch
+        {
+            // Primary level (Industry)
+            "NRO TXT" => key switch
+            {
+                "Healthcare" => "var(--mud-palette-primary)",
+                "Tech" => "var(--mud-palette-secondary)",
+                "Tourism" => "var(--mud-palette-info)",
+                _ => "var(--mud-palette-dark)"
+            },
+            "CONCESIONARIO" => key switch
+            {
+                "Northeast" or "Southeast" => "var(--mud-palette-warning)",
+                "West" or "Pacific" => "var(--mud-palette-success)",
+                "Midwest" => "var(--mud-palette-info)",
+                "Southwest" => "var(--mud-palette-error)",
+                "Default" => "var(--mud-palette-grey)",
+                _ => "var(--mud-palette-dark)"
+            },
+            "CODIGO" => key switch
+            {
+                "Continental" => "var(--mud-palette-primary)",
+                "Humid Subtropical" => "var(--mud-palette-warning)",
+                "Mediterranean" or "Tropical" => "var(--mud-palette-info)",
+                "Desert" or "Semi-arid" or "Arid" => "var(--mud-palette-error)",
+                "Default" => "var(--mud-palette-grey)",
+                _ => "var(--mud-palette-dark)"
+            },
+            _ => "var(--mud-palette-dark)"
+        };
+    }
+
+    private Task ExpandAllGroupsAsync()
+    {
+        return TxtTapDataGrid.ExpandAllGroupsAsync();
+    }
+
+    private Task CollapseAllGroupsAsync()
+    {
+        return TxtTapDataGrid.CollapseAllGroupsAsync();
+    }
+
+    private async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            _loading = true;
+            searchString = text;
+            await TxtTapDataGrid!.ReloadServerData();
+        }
+    }
+
+    // Add this method to handle the after event for the checkbox
+    private async Task OnPendantChanged()
+    {
+        await TxtTapDataGrid!.ReloadServerData();
+    }
+
+    private static object? GetPropertyValue<TT>(TT obj, string propertyName)
+    {
+        return typeof(TT).GetProperty(propertyName)?.GetValue(obj);
+    }
+
+    private async Task ClickRefreshBackOrder(MouseEventArgs ev)
+    {
+        await TxtTapDataGrid!.ReloadServerData();
+    }
+
+    private async Task ClickTxtExport(int ControlId)
+    {
+        _loading = true;
+        var ResultZonas = await Http.GetAsync($"api/InvoiceControl/ExportTXT?userId={Useful.userId}&supplierId={Useful.supplierId}&controlId={ControlId}");
+        if (ResultZonas.IsSuccessStatusCode)
+        {
+            var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
+            var base64File = Convert.ToBase64String(fileContent);
+            var fileUrl = $"data:text/plain;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, $"TXT{ControlId}.txt");
+        }
+        else
+        {
+            var errorMessage = await ResultZonas.Content.ReadAsStringAsync();
+            await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        _loading = false;       
+    }
+    private async Task ClickMenuBackOrder(string? actionName)
+    {
+        if (actionName == "SINC")
+        {
+            DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+            var parameters = new DialogParameters{ ["ModuleId"] = Modules?.FirstOrDefault()?.Id  };
+            var dialog = await DialogService.ShowAsync<AssignFile>("SINCRONIZAR", parameters, options);
+
+            var result = await dialog.Result;
+            if (!result!.Canceled)
+            {
+                await TxtTapDataGrid!.ReloadServerData();
+            }
+        }
+        
+        await Task.CompletedTask;
+    }
+    private async Task PostActionAndReload(List<Models.Action>? actions, string requesturi)
+    {
+        var result_Post_Actions = (actions?.Count > 0) ? await Http.PostAsync(requesturi, new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json")) : null;
+        if ((result_Post_Actions?.IsSuccessStatusCode ?? false))
+        {
+            var rest = result_Post_Actions.Content.ReadAsStringAsync();
+            await DialogService.ShowDialog(Useful.OkSavedMessage, "Accion", "OK", Color.Info, Icons.Material.Filled.Commit);
+            await TxtTapDataGrid!.ReloadServerData();
+        }
+        else if (result_Post_Actions?.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflictContent = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+            await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        else
+        {
+            var errorMessage = await result_Post_Actions!.Content.ReadAsStringAsync();
+            await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+    }
+
+    private async Task ReloadBackOrderGrid()
+    {
+        if (TxtTapDataGrid != null)
+        {
+            await TxtTapDataGrid.ReloadServerData();
+        }
+    }
+    public void Dispose()
+    {
+        hubEventsService.OnSupplierChanged -= ReloadBackOrderGrid;
+    }
+
+}
+
+
+
+
