@@ -82,7 +82,6 @@
 
 
 @code {
-
     [Parameter] public string? UserName { get; set; }
     private LoginRequest _model = new();
     private MudForm? form;
@@ -92,7 +91,7 @@
     [Inject] private NavigationManager _navigationManager { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT _authenticationStateProvider { get; set; } = null!;
 
-
+    private bool _isAthenticate = false;
     private bool _isShowPassword { get; set; } = false;
     private InputType _passwordInput { get; set; } = InputType.Password;
     private string _passWordInputIcon { get; set; } = Icons.Material.Filled.VisibilityOff;
@@ -100,8 +99,15 @@
     LoginValidator _modelValidator = new LoginValidator();
 
 
-    protected override void OnInitialized()
+    protected override  async void OnInitialized()
     {
+        _isAthenticate = await _authenticationStateProvider.IsUserAuthenticated();
+      
+        if (_isAthenticate)
+        {
+            await _authenticationStateProvider.Logout();
+            _navigationManager.NavigateTo("login");
+        }
 
         _model = new LoginRequest();
         _model.Login = UserName ?? string.Empty;
