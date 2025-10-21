@@ -54,6 +54,7 @@ else
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [Inject] private ILogger<SalesOrdes> Logger { get; set; } = default!;
     List<BreadcrumbItem> ItemsNavigate = new();
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
     [Parameter]
     public string? TypeId { get; set; } = "1";
@@ -183,6 +184,21 @@ else
 
     private async Task ClickMenuSalesOrder(string? actionName)
     {
+        if (actionName == "EXPORT" && SalesOrderMudDataGrid?.FilteredItems.Count() > 0)
+        {
+            Loading = true;
+            var ResultZonas = await Http.GetAsync($"api/SaleOrder/ExportExcelsaleOrder?filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}");
+            if (ResultZonas.IsSuccessStatusCode)
+            {
+                var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
+                var base64File = Convert.ToBase64String(fileContent);
+                var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+                await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Pedidos.xlsx");
+            }
+            Loading = false;
+            return;
+        }
+
         var strDictionary = new Dictionary<string, string> { { "GENERATE", "CREADO" }, { "DECLINE", "CREADO,GENERADO" } };
         var mActions = SalesOrderMudDataGrid?.FilteredItems.Where(item => item.IsSelected && strDictionary[actionName!].Contains(item!.StatusName!.ToUpper()))
                                                          .Select(item => new Client.Models.Action

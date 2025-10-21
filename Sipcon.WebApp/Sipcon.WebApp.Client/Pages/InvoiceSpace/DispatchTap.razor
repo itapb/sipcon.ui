@@ -1,0 +1,245 @@
+﻿@inject HubEventsService hubEventsService
+@implements IDisposable
+
+@using System.Collections.Generic
+@using MudBlazor.Utilities
+
+<MudDataGrid @ref="@DispatchTapDataGrid" T="Invoicecontrol"
+             ServerData="@ServerReload"
+             Hover FixedHeader Groupable Height="calc(100vh - 310px)">
+    <ToolBarContent>
+        <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium"></MudTextField>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshBackOrder"></MudIconButton>
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+            @foreach (var strmodulo in Modules!)
+            {
+                <MudMenuItem Label="@strmodulo.ActionDisplay" Icon="@(strmodulo.ActionDisplay.ToActionIcon())" IconColor="@Color.Info" OnClick="@(() => ClickMenuBackOrder(strmodulo.ActionName))" />
+            }
+        </MudMenu>
+
+    </ToolBarContent>
+    <Columns>
+        <TemplateColumn>
+@*             <HeaderTemplate>
+                <MudCheckBox @bind-Value="IsAllCheckBoxSelected" @bind-Value:after="AfterAsyncAllCheck" />
+            </HeaderTemplate> *@
+            <CellTemplate>
+                <MudCheckBox @bind-Value="@context.Item.Mark" @bind-Value:after="@(() =>AfterAsyncCheck(context.Item))" />
+            </CellTemplate>
+        </TemplateColumn>
+
+        <PropertyColumn Property="x => x.MovementDetailId" Title="ID DESPACHO" Groupable="false" />
+        <PropertyColumn Property="x => x.SaleOrderNumber" Title="NRO PEDIDO" Groupable="false" />
+        <PropertyColumn Property="x => x.FiscalName" Title="CONCESIONARIO" Groupable="false" />
+        <PropertyColumn Property="x => x.PartInnerCode" Title="COD PARTE" Groupable="false" />
+        <PropertyColumn Property="x => x.PartName" Title="RESPUESTO" Groupable="false" />
+        <PropertyColumn Property="x => x.Dispatched" Title="CANTIDAD" Groupable="false" />
+
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="Invoicecontrol" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+
+    private List<Module>? Modules;
+    DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
+    // For the Grid
+    private MudDataGrid<Invoicecontrol> DispatchTapDataGrid = null!;
+    private string? searchString = string.Empty;
+
+
+    private async Task AfterAsyncAllCheck()
+    {
+        if (DispatchTapDataGrid != null)
+            DispatchTapDataGrid.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
+        await Task.CompletedTask;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-CONTROLDESPACHO&userId={Useful.userId}");
+        hubEventsService.OnSupplierChanged += ReloadBackOrderGrid;
+    }
+
+
+
+    private int LocationCurrentPage = 0;
+    bool _loading = true;
+    bool IsAllCheckBoxSelected = false;
+    private async Task<GridData<Invoicecontrol>> ServerReload(GridState<Invoicecontrol> state)
+    {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+
+        IsAllCheckBoxSelected = false;
+        _loading = true;
+        var mOffset = state.Page * state.PageSize;
+        var totalItems = 0;
+        IEnumerable<Invoicecontrol> data;
+
+        HttpResponseMessage response = await Http.GetAsync($"api/InvoiceControl/GetDispatchedControl?userId={Useful.userId}&supplierId={Useful.supplierId}&rowfrom={mOffset}&filter={searchString}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Invoicecontrol>>>();
+            totalItems = content2!.total ?? 0;
+            data = content2!.data ?? new List<Invoicecontrol>();            
+        }
+        else
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            throw new Exception(errorMessage);
+        }
+
+        if (state.SortDefinitions != null && state.SortDefinitions.Any())
+        {
+            // on server or actual API would be IQueryable likely
+            IOrderedEnumerable<Invoicecontrol>? orderedQuery = null;
+            foreach (var sort in state.SortDefinitions)
+            {
+                orderedQuery = data.OrderByDirection(sort.Descending ? SortDirection.Descending : SortDirection.Ascending, obj => GetPropertyValue(obj, sort.SortBy));
+            }
+            data = orderedQuery!.ToList();
+        }
+        _loading = false;
+
+        return new GridData<Invoicecontrol> { TotalItems = totalItems, Items = data };
+    }
+
+
+    private static object? GetPropertyValue<TT>(TT obj, string propertyName)
+    {
+        return typeof(TT).GetProperty(propertyName)?.GetValue(obj);
+    }
+
+
+    private async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            _loading = true;
+            searchString = text;
+            await DispatchTapDataGrid!.ReloadServerData();
+        }
+    }
+
+    // Add this method to handle the after event for the checkbox
+    private async Task OnPendantChanged()
+    {
+        await DispatchTapDataGrid!.ReloadServerData();
+    }
+
+    private async Task ClickRefreshBackOrder(MouseEventArgs ev)
+    {
+        await DispatchTapDataGrid!.ReloadServerData();
+    }
+    private async Task ClickMenuBackOrder(string? actionName)
+    {
+        var mActions = DispatchTapDataGrid?.FilteredItems.Where(item => (item.Mark ?? false))
+                                                         .Select(item => new Client.Models.Action
+                                                         {
+                                                             UserId = Useful.userId,
+                                                             RecordId = item.Id,
+                                                             ModuleId = Modules!.FirstOrDefault()?.Id,
+                                                             actionName = actionName,
+                                                             ActionComment = "",
+                                                             RelatedId = 0
+                                                         }).ToList();
+
+        if (mActions?.Count == 0)
+        {
+            await DialogService.ShowDialog("Accion no permitada, Verificar datos seleccionado(s)", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        else if (mActions?.Count > 0)
+        {
+            await PostActionAndReload(mActions, $"api/InvoiceControl/PostActions?userId={Useful.userId}&supplierId={Useful.supplierId}");
+        }
+        await Task.CompletedTask;
+    }
+    private async Task ClickTxtExport(int? ControlId)
+    {
+        _loading = true;
+        var ResultZonas = await Http.GetAsync($"api/InvoiceControl/ExportTXT?userId={Useful.userId}&supplierId={Useful.supplierId}&controlId={ControlId}");
+        if (ResultZonas.IsSuccessStatusCode)
+        {
+            await DispatchTapDataGrid!.ReloadServerData();
+            var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
+            var base64File = Convert.ToBase64String(fileContent);
+            var fileUrl = $"data:text/plain;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, $"TXT{ControlId}.txt");
+            //await DialogService.ShowDialog(Useful.OkSavedMessage, "Accion", "OK", Color.Info, Icons.Material.Filled.Commit);
+            
+        }
+        else
+        {
+            var errorMessage = await ResultZonas.Content.ReadAsStringAsync();
+            await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        _loading = false;
+    }
+
+    private async Task PostActionAndReload(List<Models.Action>? actions, string requesturi)
+    {
+        var result_Post_Actions = (actions?.Count > 0) ? await Http.PostAsync(requesturi, new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json")) : null;
+        if ((result_Post_Actions?.IsSuccessStatusCode ?? false))
+        {
+            var resultAction = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
+            if (resultAction?.data! is ({ insertedRows: > 0 } or { updatedRows: > 0 }))
+            {
+                await ClickTxtExport(resultAction?.data!.lastId);
+            }
+
+        }
+        else if (result_Post_Actions?.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflictContent = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+            await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        else
+        {
+            var errorMessage = await result_Post_Actions!.Content.ReadAsStringAsync();
+            await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+    }
+
+    private async Task ReloadBackOrderGrid()
+    {
+        if (DispatchTapDataGrid != null)
+        {
+            await DispatchTapDataGrid.ReloadServerData();
+        }
+    }
+    public void Dispose()
+    {
+        hubEventsService.OnSupplierChanged -= ReloadBackOrderGrid;
+    }
+
+    private async Task AfterAsyncCheck(Invoicecontrol item)
+    {        
+        var actions = new List<object>
+        {
+            new { Id = item.Id, IsActive = true, Mark = item.Mark }
+        };
+        var strjson = System.Text.Json.JsonSerializer.Serialize(actions);
+        var result_Post_Action = await Http.PostAsync("api/InvoiceControl/PostInvoiceControl", new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json"));
+        if (!result_Post_Action.IsSuccessStatusCode)
+        {
+            //item.Mark = false; // Revert the checkbox state on error
+            var errorMessage = await Useful.GetErrorMessageAsync(result_Post_Action);
+            await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        await Task.CompletedTask;
+    }
+
+
+}
+
+
+
+

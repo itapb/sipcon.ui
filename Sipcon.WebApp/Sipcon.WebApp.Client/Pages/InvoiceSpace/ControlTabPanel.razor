@@ -1,0 +1,24 @@
+﻿@page "/invoicecontrol"
+<CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
+<MudTabs Elevation="2" Rounded="true" Centered="true" ApplyEffectsToContainer="true" PanelClass="pa-2" Color="Color.Info" >
+        <MudTabPanel Icon="@Icons.Material.Filled.LocalShipping" Text="DESPACHOS" >
+            <DispatchTap />
+        </MudTabPanel>
+       
+       <MudTabPanel Icon="@Icons.Material.Filled.TextSnippet" Text="TXTS">
+           <TxtTap />
+       </MudTabPanel>
+       
+       <MudTabPanel Icon="@Icons.Material.Filled.PointOfSale" Text="FACTURAS">
+           <InvoiceTap />
+       </MudTabPanel>
+    </MudTabs>
+@code {
+    List<BreadcrumbItem> ItemsNavigate = new();
+    protected override void OnInitialized()
+    {
+        string hrefMovement = "invoicecontrol";
+        $"Home,Inventario,Procesos,Control Facturacion".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
+    }
+
+}

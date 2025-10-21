@@ -96,6 +96,8 @@ namespace Sipcon.WebApp.Client.Helper
                 "RECIBIR" => Icons.Material.Filled.CallReceived,
                 "AJUSTE" => @Icons.Material.Filled.Adjust,
                 "PROCESAR" => Icons.Material.Filled.PlayCircle,
+                "CONTROL FACTURACION" => Icons.Material.Filled.ReceiptLong,
+                "SINCRONIZAR" => Icons.Material.Filled.Sync,
                 _ => Icons.Material.Filled.HelpOutline
             };
         }
