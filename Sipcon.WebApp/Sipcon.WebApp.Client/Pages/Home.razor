@@ -1,4 +1,7 @@
 ﻿@page "/"
+@page "/home"
+
+@using Sipcon.WebApp.Client.Repository.Auth
 
 <style>
     .home-background {
@@ -9,3 +12,18 @@
     }
 </style>
 <div class="home-background"></div>
+
+@code {
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        await AuthenticationStateProvider.RefreshStaticVariables();
+        Useful.IsNewOrEdit = false;
+
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+}
