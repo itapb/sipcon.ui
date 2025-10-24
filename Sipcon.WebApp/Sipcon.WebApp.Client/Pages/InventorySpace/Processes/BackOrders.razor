@@ -247,6 +247,7 @@
         $"Home,Inventario,Procesos,BackOrders".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
         Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-BACKORDER&userId={Useful.userId}");
         hubEventsService.OnSupplierChanged += ReloadBackOrderGrid;
+        hubEventsService.OnDealerChanged += ReloadBackOrderGrid;
     }
 
 
@@ -277,7 +278,7 @@
         var totalItems = 0;
         IEnumerable<BackOrder> data;
         string DateRange = (_dateRange is not null && _dateRange.Start.HasValue && _dateRange.End.HasValue) ? $"&startDate={_dateRange.Start.Value.ToString("yyyy-MM-dd")}&endDate={_dateRange.End.Value.ToString("yyyy-MM-dd")}" : string.Empty;
-        HttpResponseMessage response = await Http.GetAsync($"api/BackOrder/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&rowFrom={mOffset}&filter={searchString}" + DateRange);
+        HttpResponseMessage response = await Http.GetAsync($"api/BackOrder/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&dealerId={Useful.dealerId}&rowFrom={mOffset}&filter={searchString}" + DateRange );
 
         if (response.IsSuccessStatusCode)
         {
@@ -506,6 +507,7 @@
     public void Dispose()
     {
         hubEventsService.OnSupplierChanged -= ReloadBackOrderGrid;
+        hubEventsService.OnDealerChanged -= ReloadBackOrderGrid;
     }
 
 }
