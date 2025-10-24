@@ -230,12 +230,12 @@
     private async Task StepOne()
     {
         mStepId = 1;
-        await NextStep();
+        await NextStep();   
     }
     private async Task GetMovementDetailsByUser()
     {
         InitializeFormFields();
-        HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetMovementDetailsByUser?userId={Useful.userId}&movementType={MovementType}&mode={ModeParameter}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetMovementDetailsByUser?userId={Useful.userId}&supplierId={Useful.supplierId}&movementType={MovementType}&mode={ModeParameter}");
         if (response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadFromJsonAsync<WebApiResponse<List<MovementDetails>>>();
