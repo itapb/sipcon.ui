@@ -89,12 +89,7 @@ else
     }
     protected override async Task OnInitializedAsync()
     {
-        await GetClaimReasons();
-        NotReason = mGuideDetails!.Received == mGuideDetails.Quantity;
-        if (!NotReason)
-        {
-            FilterClaimReasons();
-        }
+        await GetClaimReasons();       
     }
     private async Task GetClaimReasons()
     {
@@ -102,6 +97,12 @@ else
         if (GetClaimReasonsResult != null)
         {
             ClaimReasons = GetClaimReasonsResult.data;
+
+            NotReason = mGuideDetails!.Received == mGuideDetails.Quantity;
+            if (!NotReason)
+            {
+                FilterClaimReasons();
+            }
         }
         await Task.CompletedTask;
     }
