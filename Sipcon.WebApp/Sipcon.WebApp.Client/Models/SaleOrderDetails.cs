@@ -30,5 +30,6 @@ namespace Sipcon.WebApp.Client.Models
 
         public decimal? TaxAmount { get; set; }
         public decimal? SubTotal { get; set; }
+        public string? ReasonDescription { get; set; }
     }
 }

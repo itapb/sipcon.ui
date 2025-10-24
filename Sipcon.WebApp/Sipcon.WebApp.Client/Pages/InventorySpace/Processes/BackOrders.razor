@@ -21,6 +21,8 @@
             }
         </MudSelect>
         <MudSpacer />
+        <MudCheckBox @bind-Value="@StockOnly" Label="Con Existencias" @bind-Value:after="OnPendantChanged" />
+        <MudSpacer />
         <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshBackOrder"></MudIconButton>
         <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
             @foreach (var strmodulo in Modules!)
@@ -175,6 +177,7 @@
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
+    public bool StockOnly { get; set; } = false;
     string SelectedmGroup = "NRO ORDEN";
     string[] mGroups = ["NRO ORDEN", "CODIGO PARTE", "TIPO"];
 
@@ -277,7 +280,7 @@
         var totalItems = 0;
         IEnumerable<BackOrder> data;
         string DateRange = (_dateRange is not null && _dateRange.Start.HasValue && _dateRange.End.HasValue) ? $"&startDate={_dateRange.Start.Value.ToString("yyyy-MM-dd")}&endDate={_dateRange.End.Value.ToString("yyyy-MM-dd")}" : string.Empty;
-        HttpResponseMessage response = await Http.GetAsync($"api/BackOrder/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&rowFrom={mOffset}&filter={searchString}" + DateRange);
+        HttpResponseMessage response = await Http.GetAsync($"api/BackOrder/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&dealerId={Useful.dealerId}&rowFrom={mOffset}&stockOnly={StockOnly}&filter={searchString}" + DateRange);
 
         if (response.IsSuccessStatusCode)
         {
@@ -507,5 +510,8 @@
     {
         hubEventsService.OnSupplierChanged -= ReloadBackOrderGrid;
     }
-
+    private async Task OnPendantChanged()
+    {
+        await BackOrderDataGrid!.ReloadServerData();
+    }
 }
