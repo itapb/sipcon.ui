@@ -250,6 +250,7 @@
         $"Home,Inventario,Procesos,BackOrders".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
         Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-BACKORDER&userId={Useful.userId}");
         hubEventsService.OnSupplierChanged += ReloadBackOrderGrid;
+        hubEventsService.OnDealerChanged += ReloadBackOrderGrid;
     }
 
 
@@ -509,6 +510,7 @@
     public void Dispose()
     {
         hubEventsService.OnSupplierChanged -= ReloadBackOrderGrid;
+        hubEventsService.OnDealerChanged -= ReloadBackOrderGrid;
     }
     private async Task OnPendantChanged()
     {

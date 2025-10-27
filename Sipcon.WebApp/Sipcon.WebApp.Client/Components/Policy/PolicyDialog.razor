@@ -419,18 +419,20 @@
 
 									
 									<MudNumericField Typo="Typo.caption" @bind-Value="_model.InvoiceAmount"
+													 T="double?"
 													 Label="Monto"
+													 Min="0.00"
 													 MaxLength="15"
 													 Variant="Variant.Text"
 													 Margin="Margin.Dense"
 													 HideSpinButtons="true"
 													 Format="N2"
-													 Pattern="[0-9,]*"
-													 Culture="@CultureInfo.GetCultureInfo("es-VE")"
+													 Culture="@CultureInfo.GetCultureInfo("en-US")"
+													 Pattern="[0-9.]"
+													 ErrorText="Campo requerido solo digitos [0-9.]"
 													 ReadOnly="@(!_model.IsActive || _isReadOnly)"
 													 For="@(() => _model.InvoiceAmount)"
-													 Immediate="false" />
-
+													 Immediate="true" />
 
 								</MudCardContent>
 
@@ -930,24 +932,23 @@
 				.GreaterThan(0).WithMessage("Seleccione una Forma Pago.");
 
 			RuleFor(x => x.InvoiceAmount)
-				
 				.NotNull().WithMessage("Campo requerido")
 				.NotEmpty().WithMessage("Campo requerido")
 				.GreaterThan(0).WithMessage("Campo requerido.")
 				.Custom((value, context) =>
 				{
 					double number;
-					if (!double.TryParse(value.ToString(), out number))
+					if (!double.TryParse(value.ToString(), CultureInfo.GetCultureInfo("en-US"), out number))
 					{
-						context.AddFailure($"Campo requerido solo digitos [0-9]");
+						context.AddFailure($"Campo formato no valido #.##");
 					}
 				})
 				.Custom((value, context) =>
 				{
 					string s = value.ToString() ?? string.Empty;
-					if (s.Split(',').Length > 1)
+					if (s.Count(c => c == Convert.ToChar(".")) > 1)
 					{
-						context.AddFailure($"Campo requerido solo digitos [0-9]");
+						context.AddFailure($"Campo requerido solo digitos [0-9.]");
 					}
 				});
 

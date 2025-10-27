@@ -665,7 +665,7 @@
                         <MudIconButton Variant="Variant.Filled"
                                        Color="Color.Info"
                                        Icon="@Icons.Material.Filled.AttachFile"
-                                       OnClick="() => ClickUploadFiles()" Disabled="@_disableAddFile">
+                                       OnClick="() => ClickUploadFiles()">
                         </MudIconButton>
                     </CardHeaderActions>
                     
@@ -695,7 +695,7 @@
                                             <div class="d-flex justify-left">
                                                 <MudStack Row="true">
                                                     <MudIconButton Icon="@Icons.Material.Outlined.FileDownload" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickExportAttachment(item.Id, item.FileName)" />
-                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickDeleteAttachment(item.Id)" Disabled="@_disableAddFile" />
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickDeleteAttachment(item.Id)"  />
                                                     
                                                 </MudStack>
                                             </div>
@@ -783,17 +783,6 @@
         "GENERADO"
     };
 
-    private bool _disableAddFile = false;
-    List<string> _statusDisableAddFile = new List<string>()
-    {
-        "VALIDADO",
-        "PARA APROBAR",
-        "PROCESADO",
-        "NO VALIDADO",
-        "RECHAZADO",
-        "GENERADO"
-    };
-
 
     private bool _disableActionsDetail = false;
     List<string> _statusDisableActionsDetail = new List<string>()
@@ -818,8 +807,8 @@
 
     private List<BreadcrumbItem> _itemsNavigate =
                 [
-        new("Home", href: "", icon: Icons.Material.Filled.Home),
-        new("Servicios",href: "", icon: Icons.Material.Filled.Speed),
+        new("Home", href: "home", icon: Icons.Material.Filled.Home),
+        new("Servicios",href: "failreport", icon: Icons.Material.Filled.Speed),
         new("Reporte Falla",  href: "FailReportdetail", disabled: false, icon: Icons.Material.Filled.CarCrash),
     ];
 
@@ -849,7 +838,6 @@
             _model = serviceResponse.Data ?? new FailReport();
             _disableDetail = _statusDisableDetail.Contains(_model.EstatusName.ToUpper());
             _disableAddDetail = _statusDisableAddDetail.Contains(_model.EstatusName.ToUpper());
-            _disableAddFile = _statusDisableAddFile.Contains(_model.EstatusName.ToUpper());
             _disableActionsDetail = _statusDisableActionsDetail.Contains(_model.EstatusName.ToUpper());
 
             await GetVehicle();
