@@ -54,7 +54,7 @@ else
         await form!.Validate();
         if (form.IsValid)
         {
-            var sGuideDetails = new { Id = mGuideDetails?.Id, Received = mGuideDetails?.Received, Observation = mGuideDetails?.Observation, ReasonId = ClaimReasonSelected!.Id };
+            var sGuideDetails = new { Id = mGuideDetails?.Id, Received = mGuideDetails?.Received, Observation = mGuideDetails?.Observation, ReasonId = ClaimReasonSelected?.Id ?? 0 };
 
             var strmGuideDetails = System.Text.Json.JsonSerializer.Serialize(sGuideDetails);
             var result_PostGuideDetail = await Http.PostAsync($"api/Guide/PostGuideDetail?userId={Useful.userId}", new StringContent($"[{strmGuideDetails}]", null, "application/json"));
@@ -102,6 +102,10 @@ else
             if (!NotReason)
             {
                 FilterClaimReasons();
+                if (mGuideDetails.ReasonId.HasValue)
+                {
+                    ClaimReasonSelected = ClaimReasons!.FirstOrDefault(r => r.Id == mGuideDetails.ReasonId.Value);
+                }
             }
         }
         await Task.CompletedTask;
