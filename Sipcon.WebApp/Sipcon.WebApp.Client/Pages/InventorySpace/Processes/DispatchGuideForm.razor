@@ -279,7 +279,8 @@
             Id = item.Id,
             Received = item.Received,
             Observation = item.Observation,
-            Quantity = item.Quantity
+            Quantity = item.Quantity,
+            ReasonId = item.ReasonId
         };
         var dialogReference = await DialogService.ShowAsync(typeof(PartToDispatchGuideDetails), "", new DialogParameters { ["mGuideDetails"] = mGuideDetails }, options);
         if (!((await dialogReference.Result)!.Canceled)) await GuideDetailsMudDataGrid!.ReloadServerData();

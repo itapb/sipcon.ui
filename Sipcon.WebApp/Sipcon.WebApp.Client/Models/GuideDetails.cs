@@ -15,6 +15,7 @@
         public string? Observation  { get; set; }
         public int? SaleOrderId { get; set; }
         public bool? Confirmed { get; set; }
+        public int? ReasonId { get; set; }
 
     }
 }

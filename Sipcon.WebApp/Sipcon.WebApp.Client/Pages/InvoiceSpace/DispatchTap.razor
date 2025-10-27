@@ -227,7 +227,7 @@
             new { Id = item.Id, IsActive = true, Mark = item.Mark }
         };
         var strjson = System.Text.Json.JsonSerializer.Serialize(actions);
-        var result_Post_Action = await Http.PostAsync("api/InvoiceControl/PostInvoiceControl", new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json"));
+        var result_Post_Action = await Http.PostAsync($"api/InvoiceControl/PostInvoiceControl?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json"));
         if (!result_Post_Action.IsSuccessStatusCode)
         {
             //item.Mark = false; // Revert the checkbox state on error

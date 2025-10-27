@@ -103,9 +103,9 @@
                                     }
                                 </MudSelect>
                             </MudItem>
-                            <MudItem xs="6"><MudTextField @bind-Value="SelectedPart.UseQty" Label=" Uso por Unidad" Variant="Variant.Text" Required="true" RequiredError="Campo requerido." Disabled ="@(!SelectedPart.IsActive ?? false)"></MudTextField></MudItem>
-                            <MudItem xs="6"> <MudTextField @bind-Value="SelectedPart.Packing" Label="Empaque" Variant="Variant.Text" Required="true" RequiredError="Campo requerido." Disabled ="@(!SelectedPart.IsActive ?? false)"></MudTextField></MudItem>
-                            <MudItem xs="6"> <MudTextField @bind-Value="SelectedPart.MinSale" Label="Minimo Venta" Variant="Variant.Text" Required="true" RequiredError="Campo requerido." Disabled ="@(!SelectedPart.IsActive ?? false)"></MudTextField></MudItem>
+                            <MudItem xs="6"><MudNumericField HideSpinButtons="true" @bind-Value="SelectedPart.UseQty" Label=" Uso por Unidad" Variant="Variant.Text" Required="true" RequiredError="Campo requerido." Disabled ="@(!SelectedPart.IsActive ?? false)"></MudNumericField></MudItem>
+                            <MudItem xs="6"> <MudNumericField HideSpinButtons="true" @bind-Value="SelectedPart.Packing" Label="Empaque" Variant="Variant.Text" Required="true" RequiredError="Campo requerido." Disabled ="@(!SelectedPart.IsActive ?? false)"></MudNumericField></MudItem>
+                            <MudItem xs="6"> <MudNumericField HideSpinButtons="true" @bind-Value="SelectedPart.MinSale" Label="Minimo Venta" Variant="Variant.Text" Required="true" RequiredError="Campo requerido." Disabled ="@(!SelectedPart.IsActive ?? false)"></MudNumericField></MudItem>
                         </MudGrid>
                     </MudPaper>
                 </MudItem>
@@ -114,8 +114,8 @@
                         <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
                             <MudGrid Spacing="2">
                                 <MudItem xs="12"><MudText Typo="Typo.h6" GutterBottom="true">Precios</MudText></MudItem>
-                                        <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Price" Label="Precio $" Format="N2" Variant="Variant.Text" Required="true" RequiredError="Campo requerido." Disabled="@(!SelectedPart.IsActive ?? false)"></MudTextField></MudItem>
-                                        <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Discount" Label="Dcto" Format="N2"  Variant="Variant.Text" RequiredError="Campo requerido." Disabled="@(!SelectedPart.IsActive ?? false)"></MudTextField></MudItem>
+                                        <MudItem xs="12"><MudNumericField HideSpinButtons="true" @bind-Value="SelectedPart.Price" Label="Precio $" Required="true" RequiredError="Campo requerido." Disabled="@(!SelectedPart.IsActive ?? false)"></MudNumericField></MudItem>
+                                        <MudItem xs="12"><MudNumericField HideSpinButtons="true" @bind-Value="SelectedPart.Discount" Label="Dcto"  RequiredError="Campo requerido." Disabled="@(!SelectedPart.IsActive ?? false)"></MudNumericField></MudItem>
                                 <MudItem xs="12">
                                     <MudSelect T="Tax" Label="Impuesto" Immediate="true" FitContent="true" ToStringFunc="@ConvertTaxFunc" Value="TaxSelected" ValueChanged="OnTaxValueChanged" Required="true" RequiredError="Campo requerido." FullWidth="true" Disabled ="@(!SelectedPart.IsActive ?? false)">
                                         @foreach (var tax in Taxes!)
@@ -124,7 +124,7 @@
                                         }
                                     </MudSelect>
                                 </MudItem>
-                                        <MudItem xs="12"><MudTextField @bind-Value="SelectedPart.Cost" Label="Costo $" Format="N2" Variant="Variant.Text" Required="true" RequiredError="Campo requerido." Disabled="@(!SelectedPart.IsActive ?? false)"></MudTextField></MudItem>
+                                        <MudItem xs="12"><MudNumericField HideSpinButtons="true" @bind-Value="SelectedPart.Cost" Label="Costo $" Required="true" RequiredError="Campo requerido." Disabled="@(!SelectedPart.IsActive ?? false)"></MudNumericField></MudItem>
                             </MudGrid>
                         </MudPaper>
                         <MudPaper Elevation="2" Class="pa-2 mud-text-align-center flex-grow-1" Style="flex: 1 1 auto; min-height: 0;">
