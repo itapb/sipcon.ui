@@ -35,12 +35,18 @@ else
             <PropertyColumn Property="x => x.Created" Title="FECHA" />
             <PropertyColumn Property="x => x.DealerName" Title="CONCESIONARIO" />
             <PropertyColumn Property="x => x.TypeName" Title="TIPO" />
-            <PropertyColumn Property="x => x.StatusName" Title="ESTATUS" />            
+            <PropertyColumn Property="x => x.StatusName" Title="ESTATUS" />
+            <TemplateColumn>
+                <CellTemplate>
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Print" OnClick="() => ClickPrintSalesOrder(context.Item)" />
+                </CellTemplate>
+            </TemplateColumn>
             <TemplateColumn StickyRight="true">
                 <CellTemplate>
                     <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditSalesOrder(context.Item)" />
                 </CellTemplate>
             </TemplateColumn>
+
         </Columns>
         <PagerContent>
             <MudDataGridPager T="SaleOrder" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
@@ -120,7 +126,19 @@ else
         Useful.IsNewOrEdit = true;
         await Task.FromResult(SalesOrderId = item.Id); 
     }
-
+    private async Task ClickPrintSalesOrder(SaleOrder item)
+    {
+        Loading = true;
+        var ResultZonas = await Http.GetAsync($"api/SaleOrder/ExportSaleOrder?saleOrderId={item.Id}&userId={Useful.userId}");
+        if (ResultZonas.IsSuccessStatusCode)
+        {
+            var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
+            var base64File = Convert.ToBase64String(fileContent);
+            var fileUrl = $"data:application/pdf;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, $"Pedido{item.Id}.pdf");
+        }
+        Loading = false;        
+    }
     protected override async Task OnInitializedAsync()    
     {
         await AuthenticationStateProvider.RefreshStaticVariables();

@@ -1,4 +1,4 @@
-﻿@if (mGuideDetails == null)
+﻿@if (mGuideDetails == null || ClaimReasons == null )
 {
     <LoadingForm IsMudDialog="@(MudDialog != null)" />
 }
@@ -10,10 +10,18 @@ else
                 <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
                     <MudGrid Spacing="2">
                         <MudItem xs="12">
-                            <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.LastChild"><MudTextField T="int?" Label="Cantidad Recibida" @bind-Value="mGuideDetails.Received" For="@(() => mGuideDetails.Received)" Required="true" Validation="@(new Func<int?, string>(ValidateInteger))"></MudTextField></MudFocusTrap>
+                            <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.LastChild"><MudTextField T="int?" Label="Cantidad Recibida" @bind-Value="mGuideDetails.Received" For="@(() => mGuideDetails.Received)" Required="true" Validation="@(new Func<int?, string>(ValidateInteger))" @bind-Value:after="AfterAsyncChange"></MudTextField></MudFocusTrap>
                         </MudItem>
-                        <MudItem xs="12">
+@*                         <MudItem xs="12">
                             <MudTextField T="string" Label="Observacion" @bind-Value="mGuideDetails!.Observation" For="@(() => mGuideDetails.Observation)" Required="@(!(mGuideDetails?.Received == mGuideDetails?.Quantity))" RequiredError="Campo requerido"></MudTextField>
+                        </MudItem> *@
+                        <MudItem xs="12" hidden="@(NotReason)">
+                            <MudSelect T="Reason" Label="Observacion" ToStringFunc="@ConvertReasonFunc" Value="ClaimReasonSelected" ValueChanged="OnClaimReasonValueChanged" Required="@(!NotReason)" RequiredError="Campo requerido">
+                                @foreach (var claimreason in FilteredClaimReasons ?? Enumerable.Empty<Reason>())
+                                {
+                                    <MudSelectItem Value="claimreason" />
+                                }
+                            </MudSelect>
                         </MudItem>
                         <MudItem xs="12">
                             <MudStack Row="true" Justify="Justify.Center">
@@ -35,14 +43,19 @@ else
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
     private MudForm? form;
     [Parameter] public GuideDetails? mGuideDetails { get; set; } = default!;
-  
+
+    private Func<Reason?, string> ConvertReasonFunc = reasontype => reasontype?.Description!;
+    private Reason? ClaimReasonSelected;
+    private List<Reason>? ClaimReasons;
+    private List<Reason>? FilteredClaimReasons;
+    private bool NotReason = false;
     private async Task CheckClick(MouseEventArgs args)
     {
         await form!.Validate();
         if (form.IsValid)
         {
-            var sGuideDetails = new { Id = mGuideDetails?.Id, Received = mGuideDetails?.Received, Observation = mGuideDetails?.Observation };
-    
+            var sGuideDetails = new { Id = mGuideDetails?.Id, Received = mGuideDetails?.Received, Observation = mGuideDetails?.Observation, ReasonId = ClaimReasonSelected?.Id ?? 0 };
+
             var strmGuideDetails = System.Text.Json.JsonSerializer.Serialize(sGuideDetails);
             var result_PostGuideDetail = await Http.PostAsync($"api/Guide/PostGuideDetail?userId={Useful.userId}", new StringContent($"[{strmGuideDetails}]", null, "application/json"));
             if (result_PostGuideDetail.IsSuccessStatusCode)
@@ -69,5 +82,56 @@ else
     }
     private void CloseClick(MouseEventArgs args) => MudDialog?.Cancel();
 
-    private string ValidateInteger(int? value) => (value.HasValue && value < 0) ? $"El valor debe ser mayor o igual a cero" : string.Empty;
+    private string ValidateInteger(int? value)
+    {
+        var strmsg = (value.HasValue && value < 0) ? $"El valor debe ser mayor o igual a cero" : string.Empty;       
+        return strmsg;
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        await GetClaimReasons();       
+    }
+    private async Task GetClaimReasons()
+    {
+        var GetClaimReasonsResult = await Http.GetFromJsonAsync<WebApiResponse<List<Reason>>>("api/SaleOrder/GetClaimReasons");
+        if (GetClaimReasonsResult != null)
+        {
+            ClaimReasons = GetClaimReasonsResult.data;
+
+            NotReason = mGuideDetails!.Received == mGuideDetails.Quantity;
+            if (!NotReason)
+            {
+                FilterClaimReasons();
+                if (mGuideDetails.ReasonId.HasValue)
+                {
+                    ClaimReasonSelected = ClaimReasons!.FirstOrDefault(r => r.Id == mGuideDetails.ReasonId.Value);
+                }
+            }
+        }
+        await Task.CompletedTask;
+    }
+
+    private Task OnClaimReasonValueChanged(Reason selectedReason)
+    {
+        ClaimReasonSelected = selectedReason;
+        return Task.CompletedTask;
+    }
+    private void FilterClaimReasons()
+    { 
+        ClaimReasonSelected = null;
+        var strType = mGuideDetails!.Received > mGuideDetails?.Quantity ? "S" : "F";
+        FilteredClaimReasons = ClaimReasons?.Where(f => f.Type!.ToUpper() == strType).ToList();
+    }
+    private async Task AfterAsyncChange()
+    {
+        if (mGuideDetails != null)
+        {
+            NotReason = (mGuideDetails.Received == mGuideDetails.Quantity);
+            if (!NotReason)
+            {
+                FilterClaimReasons();
+            }           
+        }       
+        await Task.CompletedTask;
+    }
 }
