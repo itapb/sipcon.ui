@@ -93,31 +93,32 @@
                                 <MudSpacer />
 
 
-                                <MudNumericField Typo="Typo.caption" T="double?" @bind-Value="_model.Quantity" @bind-Value:after="AfterValueChangePrice"
-                                                 Label="@(DetailType.ToString() == "LaborTime" ? "Horas" : "Cantidad")"
-                                                 HelperText="@(_mQuantity.ToString())"
-                                                 Class="align-right"
-                                                 MaxLength="6"
-                                                 Variant="Variant.Text"
-                                                 Margin="Margin.Dense"
-                                                 HideSpinButtons="true"
-                                                 Format="N2"
-                                                 Culture="@CultureInfo.GetCultureInfo("es-VE")"
-                                                 ReadOnly="@(!_model.IsActive || _isReadOnly )"
-                                                 For="@(() => _model.Quantity)"
-                                                 Immediate="false" />
-                                             @* ||  DetailType.ToString() == "LaborTime" *@
+                            <MudNumericField Typo="Typo.caption" T="double?" @bind-Value="_model.Quantity" @bind-Value:after="AfterValueChangePrice"
+                                             Label="@(DetailType.ToString() == "LaborTime" ? "Horas" : "Cantidad")"
+                                             HelperText="@(_mQuantity.ToString())"
+                                             Class="align-right"
+                                             Min="0.00"
+                                             MaxLength="6"
+                                             Variant="Variant.Text"
+                                             Margin="Margin.Dense"
+                                             HideSpinButtons="true"
+                                             Culture="@CultureInfo.GetCultureInfo("en-US")"
+                                             Pattern="^[0-9.]*$"
+                                             ReadOnly="@(!_model.IsActive || _isReadOnly )"
+                                             For="@(() => _model.Quantity)"
+                                             Immediate="false" />
 
                             <MudNumericField Typo="Typo.caption" T="double?" @bind-Value="_model.UnitPrice" @bind-Value:after="AfterValueChangePrice"
                                              Label="Precio Unitario"
                                              HelperText="@(_mUnitPrice.ToString())"
                                              Class="align-right"
+                                             Min="0.00"
                                              MaxLength="15"
                                              Variant="Variant.Text"
                                              Margin="Margin.Dense"
                                              HideSpinButtons="true"
-                                             Format="N2"
-                                             Culture="@CultureInfo.GetCultureInfo("es-VE")"
+                                             Culture="@CultureInfo.GetCultureInfo("en-US")"
+                                             Pattern="^[0-9.]*$"
                                              ReadOnly="@(!_model.IsActive || _isReadOnly )"
                                              For="@(() => _model.UnitPrice)"
                                              Immediate="false" />
@@ -134,9 +135,9 @@
                                              Margin="Margin.None"
                                              MaxLength="10"
                                              HideSpinButtons="true"
+                                             Culture="@CultureInfo.GetCultureInfo("en-US")"
                                              Pattern="[0-9]*"
-                                             Format="N0"
-                                             Culture="@CultureInfo.GetCultureInfo("es-VE")"/>
+                                             Format="N0"/>
 
                                 <MudNumericField Typo="Typo.caption" T="double" @bind-Value="_model.Price"
                                              Label="Precio"
@@ -145,10 +146,9 @@
                                              Variant="Variant.Filled"
                                              Margin="Margin.Dense"
                                              HideSpinButtons="true"
+                                             Culture="@CultureInfo.GetCultureInfo("en-US")"
                                              Format="N2"
-                                             Culture="@CultureInfo.GetCultureInfo("es-VE")"
-                                             ReadOnly="true"
-                                             Immediate="true" />
+                                             ReadOnly="true"/>
                                 
 
                             </MudStack>
