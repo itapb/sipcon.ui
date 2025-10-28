@@ -421,14 +421,14 @@
 									<MudNumericField Typo="Typo.caption" @bind-Value="_model.InvoiceAmount"
 													 T="double?"
 													 Label="Monto"
+													 Class="align-right"
 													 Min="0.00"
 													 MaxLength="15"
 													 Variant="Variant.Text"
 													 Margin="Margin.Dense"
 													 HideSpinButtons="true"
-													 Format="N2"
 													 Culture="@CultureInfo.GetCultureInfo("en-US")"
-													 Pattern="[0-9.]"
+													 Pattern="^[0-9.]*$"
 													 ErrorText="Campo requerido solo digitos [0-9.]"
 													 ReadOnly="@(!_model.IsActive || _isReadOnly)"
 													 For="@(() => _model.InvoiceAmount)"
@@ -490,6 +490,10 @@
 
 	.dialog-background-surface {
 		background: rgb(from var(--mud-palette-surface) r g b / 75%);
+	}
+
+	.align-right input {
+		text-align: right;
 	}
 </style>
 
