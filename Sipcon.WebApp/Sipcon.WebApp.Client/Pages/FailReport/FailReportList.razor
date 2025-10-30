@@ -44,6 +44,7 @@
         </MudTextField>
         <MudSpacer />
         <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
+        <MudIconButton Icon="@Icons.Custom.FileFormats.FilePdf" Color="Color.Info" OnClick="() => ClickExportReportSRG()"></MudIconButton>
         <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
             @foreach (var module in _itemsModules)
             {
@@ -334,6 +335,29 @@
             _success = false;
             _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
             
+            OpenNested();
+
+        }
+    }
+
+    private async Task ClickExportReportSRG()
+    {
+        var serviceResponse = await FailReportService.ExportReportSRG(Useful.userId, Useful.supplierId, Useful.dealerId);
+        if (serviceResponse.Processed)
+        {
+            _success = true;
+            _nestedErrorMessage = "";
+
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+            var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, $"SRG_Report_{DateTime.Today.ToString("yyyyMMddhhmmss")}.xlsx");
+        }
+        else
+        {
+            // Console.WriteLine(serviceResponse.Message);
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
+
             OpenNested();
 
         }

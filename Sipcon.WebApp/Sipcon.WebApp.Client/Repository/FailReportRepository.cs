@@ -333,7 +333,47 @@
             return result;
         }
 
-       
+
+
+        public async Task<ApiResponse<List<byte>>> ExportReportSRG(int IdUser, int IdSupplier, int IdDealer)
+        {
+            ApiResponse<List<byte>> result;
+            string fileUrl = string.Empty;
+
+            try
+            {
+                var url = $"api/Service/ExportSrgPending?supplierId={IdSupplier}&userId={IdUser}";
+                url = $"{url}&dealerId={IdDealer}";
+                var response = await _http.GetAsync(url);
+
+                var fileContent = await response.Content.ReadAsByteArrayAsync();
+                result = (fileContent is null) ? new ApiResponse<List<byte>>()
+                {
+                    Processed = false,
+                    Message = "Error al Exportar Data.",
+                    Data = []
+                } : new ApiResponse<List<byte>>()
+                {
+                    Processed = true,
+                    Message = "",
+                    Data = fileContent.ToList()
+                };
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<byte>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message),
+                    Data = []
+                };
+            }
+
+            return result;
+        }
+
+
 
         /// <summary>
         /// DETALLES DE REPORTE FALLA
