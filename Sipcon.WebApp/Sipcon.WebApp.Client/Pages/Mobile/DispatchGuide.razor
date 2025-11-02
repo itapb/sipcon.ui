@@ -16,15 +16,11 @@
                         <Columns>
                             <PropertyColumn Property="x => x.Id" Title="" CellClass="d-flex justify-center align-center" />
                         </Columns>
-                        <PagerContent>
-                            <MudStack Row="false" Spacing="2">
-                                <MudPaper Class="pa-3">
-                                    <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Style="height:40px;" />
-                                </MudPaper>
-                            </MudStack>
-                        </PagerContent>
                     </MudDataGrid>
                 </MudText>
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" @bind-Value="searchString" Placeholder="Buscar" HelperId="custom-helper-text" TextUpdateSuppression="@IsTextUpdateSuppression" OnAdornmentClick="OnSearchClicK" HelperText="@mHelpText" OnKeyUp="CodeFieldOnKeyUp" Clearable="true" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Style="height:40px;" />
             </MudItem>
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.Center">
@@ -41,6 +37,12 @@
 <style>
     .hide-datagrid-headers .mud-table-head {
         display: none !important;
+    }
+
+    #custom-helper-text {
+        font-size: 1rem;
+        color: @(IsTextUpdateSuppression ? "red" : "blue");
+        font-style: italic;
     }
 </style>
 @code {
@@ -63,6 +65,8 @@
         }
     }
 
+    bool IsTextUpdateSuppression = true;
+    string mHelpText = "";
 
     bool _loading = true;
     string searchString = "";
@@ -85,23 +89,35 @@
         _loading = true;
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
-        IEnumerable<Models.Guide> data;
+        IEnumerable<Models.Guide> data = new List<Models.Guide>();
         HttpResponseMessage response = await Http.GetAsync($"api/Packing/GetGuides?supplierId={currentDispatch!.SupplierId}&customerId={currentDispatch.CustomerId}&userId={currentDispatch.UserId}");
         if (response.IsSuccessStatusCode)
         {
-            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.Guide>>>();
-            totalItems = content2!.total ?? 0;
-            data = content2!.data ?? new List<Models.Guide>();
+            if (await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.Guide>>>() is WebApiResponse<List<Models.Guide>> content2 && content2?.data is List<Models.Guide> datalist)
+            {
+                if (!String.IsNullOrEmpty(searchString) && datalist.Where(r => (r.Id != null && r.Id.ToString()!.Contains(searchString.Trim(), StringComparison.OrdinalIgnoreCase))).FirstOrDefault() is Models.Guide GuideItem)
+                {
+                    await ClickSelectGuide(GuideItem);
+                }
+                data = datalist;
+                totalItems = data.Count();
+                if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Models.Guide> sortDefinition)
+                    data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
+            }           
+            
         }
         else
         {
             var errorMessage = await response.Content.ReadAsStringAsync();
-            throw new Exception(errorMessage);
+            await DialogService.ShowDialog(errorMessage!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);          
         }
-        if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Models.Guide> sortDefinition)
-        {
-            data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
-        }
+
+     
+        mHelpText = !String.IsNullOrEmpty(searchString) ? $"No se encontro {searchString.TrimEnd()}" : "";
+        searchString = string.Empty;
+        StateHasChanged();
+        IsTextUpdateSuppression = true;
+
         _loading = false;
         return new GridData<Models.Guide> { TotalItems = totalItems, Items = data };
     }
@@ -110,15 +126,7 @@
     {
         await GuidesMudDataGrid!.ReloadServerData();
     }
-    private async Task OnSearch(string text)
-    {
-        if (text.Length == 0 || text.Length >= 3)
-        {
-            _loading = true;
-            searchString = text;
-            await GuidesMudDataGrid!.ReloadServerData();
-        }
-    }
+
     private async Task ClickSelectGuide(Models.Guide item)
     {
         currentDispatch!.GuideId = item.Id ?? 0;
@@ -143,5 +151,26 @@
             }
 
         }
-    }   
+    } 
+    private async Task SearchGuide()
+    {
+        IsTextUpdateSuppression = false;
+        mHelpText = "Espere por favor...";
+        await GuidesMudDataGrid!.ReloadServerData();
+    }
+    private async Task OnSearchClicK(MouseEventArgs args)
+    {
+        if (searchString.Length >= 3)
+        {
+            await SearchGuide();
+        }
+
+    }
+    private async Task CodeFieldOnKeyUp(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter" && searchString.Length >= 3)
+        {
+            await SearchGuide();
+        }
+    }
 }

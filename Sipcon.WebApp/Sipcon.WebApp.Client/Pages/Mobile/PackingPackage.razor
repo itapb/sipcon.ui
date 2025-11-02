@@ -22,20 +22,16 @@
                                     <MudStack Row>
                                         <MudText Class="mr-2">@context.Item.PartName</MudText>
                                         <MudText Class="mr-2">@context.Item.Quantity</MudText>
-                                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Close" OnClick="() => ClickRemovePart(context.Item)" Disabled="@(currentPacking?.PackageClosed ?? false)" />
+                                        <MudIconButton Size="@Size.Small" HelperText="@mHelpText" Icon="@Icons.Material.Outlined.Close" OnClick="() => ClickRemovePart(context.Item)" Disabled="@(currentPacking?.PackageClosed ?? false)" />
                                     </MudStack>
                                 </CellTemplate>
                             </TemplateColumn>
                         </Columns>
-                        <PagerContent>
-                            <MudStack Row="false" Spacing="2">
-                                <MudPaper Class="pa-3">
-                                    <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Style="height:40px;" />
-                                </MudPaper>
-                            </MudStack>
-                        </PagerContent>
                     </MudDataGrid>
                 </MudText>
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" Placeholder="Buscar2" HelperId="custom-helper-text" HelperText="@mHelpText" TextUpdateSuppression="@IsTextUpdateSuppression" OnKeyUp="CodeFieldOnKeyUp" OnAdornmentClick="OnSearchClicK" Clearable="true" Adornment="Adornment.Start" @bind-Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Style="height:40px;" />
             </MudItem>
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.Center">
@@ -53,6 +49,12 @@
 <style>
     .hide-datagrid-headers .mud-table-head {
         display: none !important;
+    }
+
+    #custom-helper-text {
+        font-size: 1rem;
+        color: red;
+        font-style: italic;
     }
 </style>
 @code {
@@ -75,11 +77,11 @@
             }
         }
     }
-
+    bool IsTextUpdateSuppression = true;
     bool _loading = true;
     string searchString = "";
     private int PackageCurrentPage = 0;
-
+    string mHelpText = "";
 
     private MudDataGrid<Models.PackageDetail>? PackageDetailMudDataGrid;
 
@@ -152,7 +154,12 @@
         else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
         {
             var conflictContent = await response.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
-            await DialogService.ShowDialog(conflictContent?.message!, "Error Repuesto", "OK", Color.Error, Icons.Material.Filled.Error);
+           // await DialogService.ShowDialog(conflictContent?.message!, "Error Repuesto", "OK", Color.Error, Icons.Material.Filled.Error);
+            IsTextUpdateSuppression = false;
+            mHelpText = $"{conflictContent?.message!} {searchString.ToUpper()}";
+            searchString = "";
+            StateHasChanged();
+            IsTextUpdateSuppression = true;
         }
         return await Task.FromResult(PackageDetailResut);
     }
@@ -209,6 +216,31 @@
 
         }
         await Task.CompletedTask; ;
+    }
+    private async Task SearchPackages()
+    {
+        if (searchString.Length >= 3 && (await GetPackageDetailByPart(currentPacking!.PackageId, searchString) is Models.PackageDetail MyPackageDetail))
+        {
+            currentPacking.PartId = MyPackageDetail.PartId;
+            currentPacking.PartName = MyPackageDetail.PartName;
+            currentPacking.Pending = MyPackageDetail.Pending;
+            currentPacking.Quantity = null;
+            Packing.PreviousStep = Models.PackingStep.Package;
+            CurrentStep = Models.PackingStep.SetPackage;
+            await Task.CompletedTask;
+            //await PackageMudDataGrid!.ReloadServerData();
+        }
+    }
+    private async Task OnSearchClicK(MouseEventArgs args)
+    {
+        await SearchPackages();       
+    }
+    private async Task CodeFieldOnKeyUp(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter" && searchString.Length >= 3)
+        {
+            await SearchPackages();
+        }
     }
 
 }
