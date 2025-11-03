@@ -64,14 +64,10 @@
 
                         <MudCardContent Style="padding-top: 0px;">
 
-                            
-                            <MudHidden @bind-value="_model.ServiceId" />
-                            <MudHidden @bind-value="_model.ItemId" />
-                            <MudHidden @bind-value="_model.Type" />
                             <MudStack Row="true">
                                 <MudSpacer />
                                 <MudSwitch @bind-Value="_model.IsTax" Label="Impuesto" LabelPlacement="Placement.End" Color="Color.Success" ReadOnly="@(!_model.IsActive || _isReadOnly)" />
-                                <MudSwitch @bind-Value="_model.IsExternal" @bind-Value:after="AfterSupplierValueChange" Label="Externo" LabelPlacement="Placement.End" Color="Color.Success" ReadOnly="@(!_model.IsActive)" />
+                                <MudSwitch @bind-Value="_model.IsExternal" @bind-Value:after="AfterValueChange" Label="Externo" LabelPlacement="Placement.End" Color="Color.Success" ReadOnly="@(!_model.IsActive || ActionsModal == ActionsEnum.Edit)" />
                             </MudStack>
                             
                             <MudStack Row="true">
@@ -241,7 +237,6 @@
             _model.ServiceId = IdFailReport;
             _model.Type = DetailType.ToString() == "LaborTime" ? "L" : "P";
             _isReadOnly = true;
-
             await Task.Delay(50);
         }
         else
@@ -354,20 +349,20 @@
 
     }
 
-    private void AfterSupplierValueChange()
+    private void AfterValueChange()
     {
-        if (!_model.IsExternal)
+        if (ActionsModal == ActionsEnum.Create)
         {
-            _model.Quantity = _mQuantity;
-            _model.UnitPrice = _mUnitPrice;
-        }else
-        {
-            if (DetailType.ToString() == "LaborTime")
-            {
-                _model.Quantity =  1 ;
-            }
-
+            var isExternal = _model.IsExternal;
+            _model = new FailReportDetail();
+            _model.ServiceId = IdFailReport;
+            _model.IsExternal = isExternal;
+            _model.Type = DetailType.ToString() == "LaborTime" ? "L" : "P";
+            _mQuantity = 0;
+            _mUnitPrice = 0;
+            _isReadOnly = true;
         }
+
     }
 
     private void AfterValueChangePrice()
@@ -390,8 +385,6 @@
                 if (ActionsModal == ActionsEnum.Create)
                 {
                     ActionsModal = ActionsEnum.Edit;
-                    // var _results = serviceResponse.Data ?? new List<ActionResult>();
-                    // var _result = _results.FirstOrDefault();
                     var _result = serviceResponse.Data ?? new ActionResult();
                     if (_result is not null)
                     {
@@ -489,19 +482,6 @@
 
             RuleFor(x => x.UnitPrice)
                .NotNull().WithMessage("Campo requerido");
-
-            // RuleFor(x => x.InvoiceNumber)
-            //    .NotNull().WithMessage("Campo requerido.")
-            //    .NotEmpty().WithMessage("Campo requerido ")
-            //    .Length(5, 10).WithMessage("Campo requerido entre 5-10 digitos")
-            //    .Custom((value, context) =>
-            //    {
-            //        long number;
-            //        if (!long.TryParse(value, out number))
-            //        {
-            //            context.AddFailure($"Campo requerido solo digitos [0-9]");
-            //        }
-            //    });
 
         }
 
