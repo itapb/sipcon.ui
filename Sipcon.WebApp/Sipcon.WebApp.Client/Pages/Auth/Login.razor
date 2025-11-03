@@ -9,12 +9,12 @@
         <MudText Typo="Typo.h4" Class="mb-4" Style="text-align: center;">Iniciar Sesión</MudText>
         <MudForm Model="@_model" @ref="@form" Validation="@(_modelValidator.ValidateValue)" ValidationDelay="0">
 
-            <MudIcon Icon="@Icons.Material.Filled.Business" Color="Color.Primary" Size="Size.Large" 
-                     Class="mx-auto d-block mb-2" />
+        
+            <MudImage ObjectFit="ObjectFit.Cover"
+                      ObjectPosition="ObjectPosition.Center"
+                      Height="106" Width="348" Src="@($"images/sipcon_logo.png")"
+                      Alt="logo apb" />
 
-            <MudText Typo="Typo.h4" Color="Color.Primary" Class="mx-auto d-block mb-6">SipCon</MudText>
-            @* <MudText Typo="Typo.h6" Class="text-center mb-6">Iniciar Sesión</MudText> *@
-            
             <MudTextField @bind-Value="_model.Login" Label="Usuario" Variant="Variant.Outlined"
                           MaxLength="15"
                           FullWidth="true" 
@@ -96,13 +96,15 @@
     private InputType _passwordInput { get; set; } = InputType.Password;
     private string _passWordInputIcon { get; set; } = Icons.Material.Filled.VisibilityOff;
 
+    private string passEncrypt { get; set; } = string.Empty;
+
     LoginValidator _modelValidator = new LoginValidator();
 
 
     protected override  async void OnInitialized()
     {
         _isAthenticate = await _authenticationStateProvider.IsUserAuthenticated();
-      
+
         if (_isAthenticate)
         {
             await _authenticationStateProvider.Logout();
@@ -111,7 +113,7 @@
 
         _model = new LoginRequest();
         _model.Login = UserName ?? string.Empty;
-       // _model.Login = "System";
+        // _model.Login = "System";
 
     }
 
@@ -141,7 +143,27 @@
             await form!.Validate();
             if (form.IsValid)
             {
-                await HandleLogin();
+                var url = $"api/Security/GetSalt?Login={_model.Login}";
+                var result = await _httpClient.GetFromJsonAsync<ApiResponse<UserResetPassword>>(url);
+
+                if (result != null)
+                {
+                    if (result.Processed)
+                    {
+                        var salt = result.Data?.Salt ?? string.Empty;
+                        passEncrypt = HelperCryptography.EncryptPasswordSHA(_model.Password, salt);
+
+                        await HandleLogin();
+                    }
+                    else
+                    {
+                        _snackbar.Add(result.Message, MudBlazor.Severity.Error);
+                    }
+                }
+                else
+                {
+                    _snackbar.Add("Error al iniciar sesión. Inténtelo de nuevo.", MudBlazor.Severity.Error);
+                }
             }
 
             StateHasChanged();
@@ -155,7 +177,28 @@
         await form!.Validate();
         if (form.IsValid)
         {
-            await HandleLogin();
+            var url = $"api/Security/GetSalt?Login={_model.Login}";
+            var result = await _httpClient.GetFromJsonAsync<ApiResponse<UserResetPassword>>(url);
+
+            if (result != null)
+            {
+                if (result.Processed)
+                {
+                    var salt = result.Data?.Salt ?? string.Empty;
+                    passEncrypt = HelperCryptography.EncryptPasswordSHA(_model.Password, salt);
+
+                    await HandleLogin();
+                }
+                else
+                {
+                    _snackbar.Add(result.Message, MudBlazor.Severity.Error);
+                }
+            }
+            else
+            {
+                _snackbar.Add("error al iniciar sesión. inténtelo de nuevo.", MudBlazor.Severity.Error);
+            }
+
         }
 
         StateHasChanged();
@@ -167,8 +210,15 @@
     {
         try
         {
-            var url = "api/Security/Auth_User";
-            var response = await _httpClient.PostAsJsonAsync(url, _model);
+            var url = "api/Security/Auth_User2";
+
+            var login = new LoginRequest()
+            {
+                Login = _model.Login,
+                Password = passEncrypt
+            };
+
+            var response = await _httpClient.PostAsJsonAsync(url, login);
 
             if (!response.IsSuccessStatusCode)
             {

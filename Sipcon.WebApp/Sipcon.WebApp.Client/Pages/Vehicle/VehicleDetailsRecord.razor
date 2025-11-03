@@ -1,5 +1,5 @@
-﻿@page "/vehicledetailrecord"
-@page "/vehicledetailrecord/{Vin}"
+﻿@page "/vehicledetailrecord/{Module}"
+@page "/vehicledetailrecord/{Module}/{Vin}"
 
 @using Sipcon.WebApp.Client.Pages
 @using Sipcon.WebApp.Client.Components.Vehicle
@@ -23,7 +23,7 @@
         <CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
         <MudSpacer />
         <MudSpacer />
-        <MudIconButton Icon="@Icons.Material.Outlined.KeyboardReturn" Color="Color.Info" Href="vehicles" />
+        <MudIconButton Icon="@Icons.Material.Outlined.KeyboardReturn" Color="Color.Info" Href="@(string.IsNullOrEmpty(Module) ? "vehicles" : Module == "1" ? "vehicles" : "maintenance")" />
     </MudStack>
 
     <MudTabs Elevation="2" Rounded="true" Centered="true" ApplyEffectsToContainer="true" PanelClass="pa-2" Color="Color.Info">
@@ -635,6 +635,7 @@
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
 
     [Parameter] public string? Vin { get; set; } = null;
+    [Parameter] public string? Module { get; set; } = null;
 
     private VehicleRecord _model { get; set; } = new VehicleRecord();
     private MudForm? form;

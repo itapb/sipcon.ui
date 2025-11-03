@@ -8,4 +8,5 @@ namespace Sipcon.WebApp.Client.Models
         public string Password { get; set; } = string.Empty;
 
     }
+
 }
