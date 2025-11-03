@@ -16,7 +16,7 @@
             </MudItem>
             <MudItem xs="12">
                 <MudText>
-                    <MudDataGrid @ref="PackingListMudDataGrid" T="Models.PackageList" ServerData="ServerReload" Striped="true" Hover="true" Loading="_loading" Filterable="false" FixedHeader  @bind-CurrentPage="GuideCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers" Height="calc(100vh - 320px)">
+                    <MudDataGrid @ref="PackingListMudDataGrid" T="Models.PackageList" ServerData="ServerReload" Striped="true" Hover="true" Loading="_loading" Filterable="false" FixedHeader  @bind-CurrentPage="GuideCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers" >
                         <Columns>
                             <TemplateColumn>
                                 <CellTemplate>
@@ -29,22 +29,20 @@
                                     </MudItem>
                                 </CellTemplate>
                             </TemplateColumn>
-                        </Columns>
-                        <PagerContent>
-                            <MudStack Row="false" Spacing="2">
-                                <MudPaper Class="pa-3">
-                                    <MudTextField T="string" Placeholder="Buscar" @ref="searchStringField" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Style="height:40px;" HelperText="@mHelpText" Variant="Variant.Filled" HelperId="custom-helper-text" />
-                                </MudPaper>
-                            </MudStack>
-                        </PagerContent>
+                        </Columns>                        
                     </MudDataGrid>
                 </MudText>
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" Margin="Margin.Dense" OnAdornmentClick="OnSearchClicK" Clearable="true" TextUpdateSuppression="@IsTextUpdateSuppression" OnKeyUp="CodeFieldOnKeyUp" @bind-Value="searchString" OnClearButtonClick="OnClearClick" Placeholder="Buscar" @ref="searchStringField" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" HelperText="@mHelpText" Variant="Variant.Filled" HelperId="custom-helper-text" />
+                @* <MudTextField T="string" Margin="Margin.Dense"  ValueChanged="@(s => OnSearch(s))" Value="searchString" Placeholder=" Buscar" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" HelperText="@mHelpText" Variant="Variant.Filled" HelperId="custom-helper-text" /> *@
             </MudItem>
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.Center">
                     <MudStack Row="true" Spacing="5">
                         <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" OnClick="ClickRefreshPackingPending" />
                         <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" Href="process-list"  />
+                       @*  <MudFab Color="Color.Tertiary" StartIcon="@Icons.Material.Filled.Scanner" Size="Size.Medium" OnClick="ClickScanner" /> *@
                     </MudStack>
                 </MudStack>
             </MudItem>
@@ -57,7 +55,7 @@
     }
     #custom-helper-text {
         font-size: 1rem;
-        color: red;
+        color: @(IsTextUpdateSuppression ? "red" : "blue");
         font-style: italic;
     }
 </style>
@@ -65,9 +63,10 @@
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
+    bool IsTextUpdateSuppression = true;  
 
     bool _loading = true;
-    string searchString = "";
+    private string searchString { get; set; } ="";    
     private int PackageCurrentPage = 0;
     private MudDataGrid<Models.PackageList>? PackingListMudDataGrid;
     private MudTextField<string>? searchStringField;
@@ -75,6 +74,8 @@
     private string PackingCode = "";
     private string CustomerName = "";
     string mHelpText = "";
+
+
     private async Task ClickRefreshPackingPending(MouseEventArgs ev)
     {
         mHelpText = "";
@@ -85,11 +86,16 @@
     }
     private async Task OnSearch(string text)
     {
-        if (text.Length == 0 || text.Length >= 3)
-        {
+        
+        if (text.Length >= 3)
+        { 
             searchString = text;
-            await PackingListMudDataGrid!.ReloadServerData();
-        }
+            //IsTextUpdateSuppression = false; 
+            mHelpText = "Espere por favor...";
+            //StateHasChanged();
+            await PackingListMudDataGrid!.ReloadServerData(); 
+         
+        }           
     }
     private async Task<GridData<Models.PackageList>> ServerReload(GridState<Models.PackageList> state)
     {
@@ -101,7 +107,7 @@
 
         if (!string.IsNullOrEmpty(searchString))
         {
-            HttpResponseMessage response = await Http.GetAsync($"api/Packing/GetPackingList?supplierId={Useful.supplierId}&packageCode={searchString}");
+            HttpResponseMessage response = await Http.GetAsync($"api/Packing/GetPackingList?supplierId={Useful.supplierId}&packageCode={searchString.TrimEnd()}");
             if (response.IsSuccessStatusCode)
             {
                 var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.PackageList>>>();
@@ -123,11 +129,14 @@
             {
                 data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
             }
-            searchString = "";
+
             _loading = false;
-            mHelpText = totalItems == 0 ? "No se encontraron registros" : "";            
+            mHelpText = totalItems == 0 ? $"No se encontro {searchString.TrimEnd()}" : "";
         }
-  
+        searchString = string.Empty;      
+        StateHasChanged();
+        IsTextUpdateSuppression = true;
+
         return new GridData<Models.PackageList> { TotalItems = totalItems, Items = data ?? new List<Models.PackageList>() };
 
     }
@@ -138,4 +147,38 @@
         nameof(Models.PackageList.Quantity) => o => o.Quantity ?? 0,
         _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto
     };
+
+    private async Task ClickScanner(MouseEventArgs args)
+    {
+        mHelpText = "";
+        searchString = string.Empty;
+        await searchStringField!.FocusAsync();
+        IsTextUpdateSuppression = !IsTextUpdateSuppression;        
+    }
+    private async Task OnSearchClicK(MouseEventArgs args)
+    {
+        if (searchString.Trim().Length > 3)
+        {
+            IsTextUpdateSuppression = false;
+            mHelpText = "Espere por favor...";
+            await PackingListMudDataGrid!.ReloadServerData();
+            await searchStringField!.FocusAsync();
+        }
+
+    }
+    private async Task OnClearClick(MouseEventArgs args)
+    {
+        mHelpText = "";
+        searchString = string.Empty;
+        await Task.CompletedTask;
+    }
+    private async Task CodeFieldOnKeyUp(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter" && searchString.Length >= 3)
+        {
+            IsTextUpdateSuppression = false;
+            mHelpText = "Espere por favor...";
+            await PackingListMudDataGrid!.ReloadServerData();
+        }
+    }
 }

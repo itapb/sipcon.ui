@@ -29,16 +29,12 @@
                                 </CellTemplate>
                             </TemplateColumn>
                         </Columns>
-                        <PagerContent>
-                            <MudStack Row="false" Spacing="2">
-                                <MudPaper Class="pa-3">
-                                    <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Style="height:40px;" />
-                                </MudPaper>
-                            </MudStack>
-                        </PagerContent>
                     </MudDataGrid>
                 </MudText>
             </MudItem>
+             <MudItem xs="12">
+                <MudTextField T="string" Placeholder="Buscar" TextUpdateSuppression="@IsTextUpdateSuppression" HelperId="custom-helper-text" HelperText="@mHelpText" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Style="height:40px;" />
+             </MudItem>
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.Center">
                     <MudStack Row="true" Spacing="5">
@@ -53,6 +49,12 @@
 <style>
     .hide-datagrid-headers .mud-table-head {
         display: none !important;
+    }
+
+    #custom-helper-text {
+        font-size: 1rem;
+        color: @(IsTextUpdateSuppression ? "red" : "blue");
+        font-style: italic;
     }
 </style>
 @code {
@@ -79,6 +81,8 @@
     bool _loading = true;
     string searchString = "";
     private int GuideCurrentPage = 0;
+    bool IsTextUpdateSuppression = true;
+    string mHelpText = "";
 
     private MudDataGrid<Models.PackageDetail>? PartsMudDataGrid;
     private List<Models.PackageDetail>? PendingParts;
@@ -135,6 +139,7 @@
     }
     private async Task OnSearch(string text)
     {
+        searchString = text;
         if (text.Length >= 3 && (await GetPackageDetailByPart(currentPacking!.PackageId, text) is Models.PackageDetail MyPackageDetail))
         {
             currentPacking.PartId = MyPackageDetail.PartId;
@@ -150,6 +155,10 @@
     private async Task<Models.PackageDetail?> GetPackageDetailByPart(int? PackageId, string ScanCode)
     {
         Models.PackageDetail? PackageDetailResut = null;
+        IsTextUpdateSuppression = false;
+        mHelpText = "Espere por favor";
+
+
         HttpResponseMessage response = await Http.GetAsync($"api/Packing/GetPackageDetailByPart?packageId={PackageId}&scanCode={ScanCode}");
         if (response.StatusCode == System.Net.HttpStatusCode.OK)
         {
@@ -158,8 +167,12 @@
         }
         else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
         {
-            var conflictContent = await response.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
-            await DialogService.ShowDialog(conflictContent?.message!, "Error Repuesto", "OK", Color.Error, Icons.Material.Filled.Error);
+            var conflictContent = await response.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();        
+            searchString = string.Empty;
+            mHelpText = $"{conflictContent?.message!} {ScanCode}";
+            StateHasChanged();
+            IsTextUpdateSuppression = true;
+            //await DialogService.ShowDialog(conflictContent?.message!, "Error Repuesto", "OK", Color.Error, Icons.Material.Filled.Error);
         }
         return await Task.FromResult(PackageDetailResut);
     }

@@ -26,16 +26,12 @@
                                 </CellTemplate>
                             </TemplateColumn>
                         </Columns>
-                        <PagerContent>
-                            <MudStack Row="false" Spacing="2">
-                                <MudPaper Class="pa-3">
-                                    <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Style="height:40px;" />
-                                </MudPaper>
-                            </MudStack>
-                        </PagerContent>
                     </MudDataGrid>
                 </MudText>
             </MudItem>
+             <MudItem xs="12">
+                <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" HelperId="custom-helper-text" HelperText="@mHelpText" TextUpdateSuppression="@IsTextUpdateSuppression" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Style="height:40px;" />
+             </MudItem>
             <MudItem xs="12">
                 <MudStack Row="true" Justify="Justify.Center">
                     <MudStack Row="true" Spacing="5">
@@ -52,6 +48,12 @@
 <style>
     .hide-datagrid-headers .mud-table-head {
         display: none !important;
+    }
+
+    #custom-helper-text {
+        font-size: 1rem;
+        color: @(IsTextUpdateSuppression ? "red" : "blue");
+        font-style: italic;
     }
 </style>
 @code {
@@ -78,7 +80,8 @@
     bool _loading = true;
     string searchString = "";
     private int PackageCurrentPage = 0;
-
+    bool IsTextUpdateSuppression = true;
+    string mHelpText = "";
 
     private MudDataGrid<Models.GuideDetails>? GuideDetailslMudDataGrid;
 
@@ -98,7 +101,7 @@
         _loading = true;
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
-        IEnumerable<Models.GuideDetails> data;
+        IEnumerable<Models.GuideDetails> data = new List<Models.GuideDetails>();
         HttpResponseMessage response = await Http.GetAsync($"api/Packing/GetPackagesFromGuide?guideId={currentDispatch?.GuideId}");
         if (response.IsSuccessStatusCode)
         {
@@ -109,7 +112,7 @@
         else
         {
             var errorMessage = await response.Content.ReadAsStringAsync();
-            throw new Exception(errorMessage);
+            await DialogService.ShowDialog(errorMessage!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
         }
         if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Models.GuideDetails> sortDefinition)
         {
@@ -126,7 +129,7 @@
     }
     private async Task OnSearch(string text)
     {
-        if (text.Length == 0 || text.Length >= 3)
+        if (text.Length >= 3)
         {
             searchString = text;
             await AddScannedPackage(text);
@@ -135,18 +138,24 @@
 
     private async Task AddScannedPackage(string? InputCode)
     {
+        IsTextUpdateSuppression = false;
+        mHelpText = "Espere por favor...";
         var result_NewPackage = await AddPackage(InputCode, currentDispatch?.GuideId, currentDispatch?.UserId);
         if (result_NewPackage!.IsSuccessStatusCode)
         {
-            //var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Bulto en Guia", "OK", Color.Info, Icons.Material.Filled.Commit);
-            searchString = "";
+            //var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Bulto en Guia", "OK", Color.Info, Icons.Material.Filled.Commit);     
+            mHelpText = "";
             await GuideDetailslMudDataGrid!.ReloadServerData();
         }
-        else if (result_NewPackage.StatusCode == System.Net.HttpStatusCode.Conflict)
-        {
+        else if (result_NewPackage.StatusCode == System.Net.HttpStatusCode.Conflict)        {
             var conflictContent = await result_NewPackage.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
-            await DialogService.ShowDialog(conflictContent?.message!.Replace("USP_POST_GUIDE_ADDPACKGE : ", ""), "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            mHelpText = $"{conflictContent?.message!.Replace("USP_POST_GUIDE_ADDPACKGE : ", "")} {searchString.ToUpper()}";
+            //await DialogService.ShowDialog(conflictContent?.message!.Replace("USP_POST_GUIDE_ADDPACKGE : ", ""), "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            
         }
+        searchString = "";
+        StateHasChanged();
+        IsTextUpdateSuppression = true;
 
     }
     private async Task<HttpResponseMessage?> AddPackage(string? Code, int? GuideId, int? UserId) => await Http.PostAsync($"api/Packing/AddPackge?packageCode={Code}&guideId={GuideId}&userId={UserId}", null);
