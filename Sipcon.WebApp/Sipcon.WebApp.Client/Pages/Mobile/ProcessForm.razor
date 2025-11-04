@@ -108,7 +108,7 @@
                 if (mStepId == 3) mHelpText = "Escanee el repuesto o codigo de barras";
                 break;
             case 2: //VALIDAR UBICACIÓN DEL MOVIMIENTO EN CURSO                
-                IsValidLocation = await GetValidLocation(InputCode.ToUpper());
+                IsValidLocation = await GetValidLocation(InputCode.Trim().ToUpper());
                 if (IsValidLocation)
                 {
                     mStepId = 3;
@@ -120,7 +120,7 @@
                 break;
             case 3: // VALIDAR REPUESTO DEL MOVIMIENTO EN CURSO                
 
-                IsValidPart = ValidPart(MovementType, InputCode.ToUpper());
+                IsValidPart = ValidPart(MovementType, InputCode.Trim().ToUpper());
                 if (IsValidPart)
                 {
                     if ((MovementType == "T" || MovementType == "P") && InputCode == "0")
@@ -153,16 +153,17 @@
 
                 break;
             case 4: //VALIDAR SERIAL.
-                if (InputCode.Length > 0)            
+                if (InputCode.Trim().Length > 0)            
                 {                     
-                    InputSerial = InputCode; // Store the scanned serial
+                    InputSerial = InputCode.Trim(); // Store the scanned serial
                     mStepId = 5; 
                     mHelpText = "Escanee la cantidad";
                 }
                 break;
             case 5: //VALIDAR CANTIDAD REAL DEL MOVIMIENTO
-                IsValidReal =  ValidReal(MovementType, movementDetails!.TypeId!, int.Parse(InputCode));
-                if (IsValidReal) { mStepId = 6; InputRealQty = int.Parse(InputCode); mHelpText = "Listo, Puede Procesar!"; } else mHelpText = "Invalido cantidad, escanee nuevamente.";
+                int resultQty;
+                IsValidReal = int.TryParse(InputCode.Trim(), out resultQty) && ValidReal(MovementType, movementDetails!.TypeId!, resultQty);
+                if (IsValidReal) { mStepId = 6; InputRealQty = resultQty; mHelpText = "Listo, Puede Procesar!"; } else mHelpText = "Invalida cantidad, intente nuevamente.";
                 break;           
         }
         InputCode = string.Empty; // Reset input code
