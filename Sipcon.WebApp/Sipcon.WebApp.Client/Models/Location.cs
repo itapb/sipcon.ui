@@ -22,5 +22,7 @@ namespace Sipcon.WebApp.Client.Models
         public string? TypeId { get; set; }
         public string? TypeName { get; set; }
 
+        public bool? IsFullActive { get; set; }
+
     }
 }
