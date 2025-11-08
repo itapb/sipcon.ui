@@ -155,6 +155,7 @@
                     
                     </PropertyColumn>
         <PropertyColumn Property="x => x.Stock" Title="EXISTENCIA" Groupable="false" />
+        <PropertyColumn Property="x => x.Arrival" Title="FECHA LLEGADA" Groupable="false" />
             <TemplateColumn>
             <CellTemplate>
                 <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditBackOrder(context.Item)" />
@@ -471,7 +472,16 @@
                 string ModuleName = "INVENTARIO-MOVIL-RECOLECCION";
                 var dialogReference = await DialogService.ShowAsync<AssignUserToBackOrder>("", new DialogParameters { ["SelectedActions"] = mActions, ["moduleName"] = ModuleName }, options);
                 if (await Useful.AsyncDialogResultIsOk(dialogReference)) await BackOrderDataGrid!.ReloadServerData();
-            }           
+            }   
+            else if (actionName == "DECLINE")
+            {
+                var dialogReference = await DialogService.ShowAsync<BackOrderPartDeclineReason>("", new DialogParameters {}, options);
+                if ((await dialogReference.Result) is DialogResult dialogResult && !dialogResult.Canceled && dialogResult.Data is String mActionComment)
+                {
+                    mActions.ToList().ForEach(a => { a.ActionComment = mActionComment; });
+                    await PostActionAndReload(mActions, $"api/BackOrder/PostActions?userId={Useful.userId}");
+                }
+            }
             else
             {
                 await PostActionAndReload(mActions, $"api/BackOrder/PostActions?userId={Useful.userId}");
