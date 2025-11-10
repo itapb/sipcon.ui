@@ -16,7 +16,7 @@
             </MudItem>
             <MudItem xs="12">
                 <MudText>
-                    <MudDataGrid @ref="PackagesMudDataGrid" T="Models.Package" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" Loading="_loading" FixedHeader SelectedItemChanged="ClickSelectPackage" @bind-CurrentPage="GuideCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers">
+                    <MudDataGrid @ref="PackagesMudDataGrid" T="Models.Package" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" Loading="_loading" FixedHeader  @bind-CurrentPage="GuideCurrentPage" ShowColumnOptions="false" Class="hide-datagrid-headers">
                         <Columns>
                             <TemplateColumn CellClass="d-flex justify-center align-center">
                                 <CellTemplate>
@@ -134,14 +134,14 @@
         await PackagesMudDataGrid!.ReloadServerData();
     }
 
-    private async Task ClickSelectPackage(Models.Package item)
-    {
-        currentDispatch!.PackageId = item.Id;
-        currentDispatch!.Code = item.Code;        
-        currentDispatch!.Number = item.Number;
-        CurrentStep = Models.DispatchStep.Package;
-        await Task.CompletedTask;
-    }
+    // private async Task ClickSelectPackage(Models.Package item)
+    // {
+    //     currentDispatch!.PackageId = item.Id;
+    //     currentDispatch!.Code = item.Code;        
+    //     currentDispatch!.Number = item.Number;
+    //     CurrentStep = Models.DispatchStep.Package;
+    //     await Task.CompletedTask;
+    // }
     private void CloseDispatchPackages()
     {
         currentDispatch!.PackageId = 0;
@@ -159,7 +159,10 @@
         {
             //var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Bulto en Guia", "OK", Color.Info, Icons.Material.Filled.Commit);
             mHelpText = "";
-            await PackagesMudDataGrid!.ReloadServerData();
+            if (PackagesMudDataGrid?.FilteredItems.Count() == 1)
+                CloseDispatchPackages();
+            else
+                await PackagesMudDataGrid!.ReloadServerData();
         }else if (result_NewPackage.StatusCode == System.Net.HttpStatusCode.Conflict)
         {
             var conflictContent = await result_NewPackage.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();           
