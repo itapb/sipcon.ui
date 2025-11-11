@@ -16,6 +16,7 @@
         public int? SaleOrderId { get; set; }
         public bool? Confirmed { get; set; }
         public int? ReasonId { get; set; }
+        public string? ReasonDescription { get; set; }
 
     }
 }

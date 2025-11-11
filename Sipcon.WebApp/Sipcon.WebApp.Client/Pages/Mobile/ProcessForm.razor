@@ -4,30 +4,31 @@
 <div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
     <MudPaper Elevation="2" Class="pa-3">      
         <MudGrid Spacing="2">
-            <MudItem xs="12">              
+            <MudItem xs="12">
                 <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">                   
-                    <MudPaper Class="pa-2 mud-theme-info mud-typography-h6">@processName : @TypeName</MudPaper>
-                    <MudPaper Class="pa-2"><MudSwitch @bind-Value="ModeValue" Color="Color.Success" Label="@ModeText" @bind-Value:after="AfterAsyncMode" /></MudPaper>
+                    @* <MudPaper Class="pa-2 mud-theme-info mud-typography-subtitle1">@processName : @TypeName</MudPaper> *@
+                    <MudPaper Class="pa-2 mud-theme-info mud-typography-subtitle1">@processName :</MudPaper>
+                    <MudPaper Class="pa-1"><MudSwitch @bind-Value="ModeValue" Color="Color.Success" Label="@ModeText" @bind-Value:after="AfterAsyncMode" /></MudPaper>
                 </MudStack>
              </MudItem>
             @if (movementDetails != null) {
             <MudItem xs="12">
-                <MudTextField T="string" ReadOnly="true" Label="Ubicacion" @bind-Value="movementDetails.LocationName"></MudTextField>
+                <MudTextField T="string" ReadOnly="true" Adornment="Adornment.Start" AdornmentText="Ubicacion :"  Margin="Margin.Dense" @bind-Value="movementDetails.LocationName"></MudTextField>
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" ReadOnly="true" Label="Repuestos" @bind-Value="movementDetails.PartDescription"></MudTextField>
+                    <MudTextField T="string" ReadOnly="true" Adornment="Adornment.Start" AdornmentText="Repuestos :" Margin="Margin.Dense" @bind-Value="movementDetails.PartDescription"></MudTextField>
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" ReadOnly="true" Label="Serial" @bind-Value="movementDetails.SerialCode"></MudTextField>
+                    <MudTextField T="string" ReadOnly="true" Adornment="Adornment.Start" AdornmentText="Serial :" Margin="Margin.Dense" @bind-Value="movementDetails.SerialCode"></MudTextField>
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="int?" ReadOnly="true" Label="Cantidad Teorica" @bind-Value="movementDetails.RequiredQty"></MudTextField>
+                    <MudTextField T="int?" ReadOnly="true" Adornment="Adornment.Start" AdornmentText="Cantidad Teorica :" Margin="Margin.Dense" @bind-Value="movementDetails.RequiredQty"></MudTextField>
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="int?" ReadOnly="true" Label="Cantidad Real" @bind-Value="InputRealQty"></MudTextField>
+                    <MudTextField T="int?" ReadOnly="true" Adornment="Adornment.Start" AdornmentText="Cantidad Real :" Margin="Margin.Dense" @bind-Value="InputRealQty"></MudTextField>
             </MudItem>
             <MudItem xs="12">
-                    <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.LastChild"><MudTextField @ref="bardCodeField" T="string" OnKeyUp="CodeFieldOnKeyUp" @bind-Value="InputCode" HelperText="@mHelpText" Variant="Variant.Filled" HelperId="custom-helper-text"></MudTextField> </MudFocusTrap>
+                    <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.LastChild"><MudTextField @ref="bardCodeField" T="string" Margin="Margin.Dense" Adornment="Adornment.Start" OnAdornmentClick="OnSearchClicK" Clearable="true" TextUpdateSuppression="@IsTextUpdateSuppression" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" OnKeyUp="CodeFieldOnKeyUp" @bind-Value="InputCode" HelperText="@mHelpText" Variant="Variant.Filled" HelperId="custom-helper-text"></MudTextField> </MudFocusTrap>
             </MudItem>                
             }
             <MudItem xs="12">
@@ -46,7 +47,7 @@
 </div>
 <style>
     #custom-helper-text {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         color: blue;
         font-style: italic;
     }
@@ -58,6 +59,7 @@
     [Inject] private IDialogService DialogService { get; set; } = default!;   
     [Parameter] public string? MovementType { get; set; } = string.Empty;
     MovementDetails? movementDetails;
+    bool IsTextUpdateSuppression = true;
 
     string mHelpText = "";
     bool ModeValue = true;
@@ -106,7 +108,7 @@
                 if (mStepId == 3) mHelpText = "Escanee el repuesto o codigo de barras";
                 break;
             case 2: //VALIDAR UBICACIÓN DEL MOVIMIENTO EN CURSO                
-                IsValidLocation = await GetValidLocation(InputCode.ToUpper());
+                IsValidLocation = await GetValidLocation(InputCode.Trim().ToUpper());
                 if (IsValidLocation)
                 {
                     mStepId = 3;
@@ -118,7 +120,7 @@
                 break;
             case 3: // VALIDAR REPUESTO DEL MOVIMIENTO EN CURSO                
 
-                IsValidPart = ValidPart(MovementType, InputCode.ToUpper());
+                IsValidPart = ValidPart(MovementType, InputCode.Trim().ToUpper());
                 if (IsValidPart)
                 {
                     if ((MovementType == "T" || MovementType == "P") && InputCode == "0")
@@ -151,16 +153,17 @@
 
                 break;
             case 4: //VALIDAR SERIAL.
-                if (InputCode.Length > 0)            
+                if (InputCode.Trim().Length > 0)            
                 {                     
-                    InputSerial = InputCode; // Store the scanned serial
+                    InputSerial = InputCode.Trim(); // Store the scanned serial
                     mStepId = 5; 
                     mHelpText = "Escanee la cantidad";
                 }
                 break;
             case 5: //VALIDAR CANTIDAD REAL DEL MOVIMIENTO
-                IsValidReal =  ValidReal(MovementType, movementDetails!.TypeId!, int.Parse(InputCode));
-                if (IsValidReal) { mStepId = 6; InputRealQty = int.Parse(InputCode); mHelpText = "Listo, Puede Procesar!"; } else mHelpText = "Invalido cantidad, escanee nuevamente.";
+                int resultQty;
+                IsValidReal = int.TryParse(InputCode.Trim(), out resultQty) && ValidReal(MovementType, movementDetails!.TypeId!, resultQty);
+                if (IsValidReal) { mStepId = 6; InputRealQty = resultQty; mHelpText = "Listo, Puede Procesar!"; } else mHelpText = "Invalida cantidad, intente nuevamente.";
                 break;           
         }
         InputCode = string.Empty; // Reset input code
@@ -282,8 +285,8 @@
     private async Task CodeFieldOnKeyUp(KeyboardEventArgs args)
     {
         if (args.Key == "Enter" && InputCode.Length > 0)
-        { 
-            await NextStep();
+        {             
+            await NextStep();            
         }       
     }
     private async Task OnClickCheck(MouseEventArgs args)
@@ -311,5 +314,13 @@
             ResultPartialTypeId = (int)(result.Data ?? 0);
         }
         return ResultPartialTypeId;
+    }
+    private async Task OnSearchClicK(MouseEventArgs args)
+    {
+        if (InputCode.Length > 0)
+        {
+            await NextStep();
+        }      
+
     }
 }

@@ -7,6 +7,8 @@
         <ToolBarContent>            
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s=>OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             <MudSpacer />
+            <MudCheckBox @bind-Value="@withStock" Label="Con Existencias" @bind-Value:after="OnPendantChanged" />
+            <MudSpacer />
         <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshStocktaking"></MudIconButton>
         <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
             @foreach (var strmodulo in Modules!)
@@ -43,7 +45,7 @@
     string searchString = "";      
     private int LocationCurrentPage = 0;
     bool _loading = true;
-
+    public bool withStock { get; set; } = true;
     private MudDataGrid<Inventory>? StocktakingMudDataGrid; 
 
 
@@ -55,7 +57,7 @@
         var mOffset = state.Page * state.PageSize;
         var totalItems = 0;
         IEnumerable<Inventory> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&rowFrom={mOffset}&filter={searchString}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&rowFrom={mOffset}&withStock={withStock}&filter={searchString}");
 
         if (response.IsSuccessStatusCode)
         {            
@@ -125,5 +127,9 @@
             await DialogService.ShowDialog("Accion no permitada, Verificar datos seleccionado(s)", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
         }        
         await Task.CompletedTask;
+    }
+    private async Task OnPendantChanged()
+    {
+        await StocktakingMudDataGrid!.ReloadServerData();
     }
 }

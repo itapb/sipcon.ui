@@ -75,12 +75,16 @@
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Inventory> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetAll?rowFrom={mOffset}&filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetAll?rowFrom={mOffset}&filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}&withStock={false}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Inventory>>>();
             totalItems = content2!.total ?? 0;
             data = content2!.data ?? new List<Inventory>();
+            if (data.Count() > 0)
+            {
+                data = data!.Where(r => r.LocationName != "TRANSITO").ToList();
+            }
         }
         else
         {
@@ -92,6 +96,8 @@
             data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
         }
         _loading = false;
+ 
+       
         return new GridData<Inventory> { TotalItems = totalItems, Items = data };
     }
 

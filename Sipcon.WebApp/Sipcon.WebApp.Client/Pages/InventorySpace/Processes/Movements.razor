@@ -69,7 +69,7 @@ else
     DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
     private string searchString = string.Empty;
     string MovementTitle = "";
-    private Dictionary<string, string> strDictionaryContactName = new Dictionary<string, string> { { "r", "PROVEEDOR" }, { "t", "PLANTA" }, { "p", "CONCESIONARIO" } };
+    private Dictionary<string, string> strDictionaryContactName = new Dictionary<string, string> { { "r", "PROVEEDOR" }, { "t", "PLANTA" }, { "p", "PLANTA" } };
     private string strContactName = "";
 
     private async Task OnSearch(string text)
@@ -131,7 +131,7 @@ else
         string hrefMovement = TypeId switch { "r" => "reception", "t" => "move", "p" => "dispatch", _ => "reception" };
         strContactName = strDictionaryContactName[TypeId!];
 
-        $"Home,Inventario,Procesos,{MovementTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
+        $"Home,Inventario,{MovementTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
         Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-{MovementTitle.ToUpper()}&userId={Useful.userId}");
     }
     Func<Movement, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch

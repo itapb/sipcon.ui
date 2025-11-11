@@ -1,4 +1,5 @@
 ﻿@inherits LayoutComponentBase
+@inject ILogger<MobileLayout> Logger
 
 <MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
@@ -15,7 +16,16 @@
          </AuthorizeView>       
    </MudAppBar>
    <MudMainContent Class="pt-16 pa-4">
-       @Body
+        <ErrorBoundary @ref="errorBoundary">
+            <ChildContent>@Body</ChildContent>
+            <ErrorContent Context="ex">
+                <MudAlert Severity="Severity.Error" Dense="true" Class="my-2">Se ha producido un error. Inténtelo de nuevo más tarde.</MudAlert>
+                @{
+                    OnError(@ex);
+                }
+                <p>@ex.Message</p>
+            </ErrorContent>
+        </ErrorBoundary>
    </MudMainContent>
 </MudLayout>
 
@@ -31,6 +41,7 @@
     private bool _isDarkMode = false; // Set to false to start in light mode
     private MudTheme? _theme = null;
     private User _userActive = new User();
+    private ErrorBoundary? errorBoundary;
 
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;   
     [Inject] private NavigationManager NavigationManager { get; set; } = null!;
@@ -110,4 +121,8 @@
        true => Icons.Material.Rounded.AutoMode,
        false => Icons.Material.Outlined.DarkMode,
    };
+    public void OnError(Exception error)
+    {
+        Logger.LogError(error.Message);
+    }
 }

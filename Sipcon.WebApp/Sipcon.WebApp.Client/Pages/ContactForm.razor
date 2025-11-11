@@ -110,7 +110,7 @@
                             <MudItem xs="4">
                                 <MudTextField @bind-Value="SelectedContact.Phone2" Label="Teléfono Secundario" For="@(() => SelectedContact.Phone2)" MaxLength="13" Disabled ="@(!SelectedContact.IsActive ?? false)" Mask="@(new PatternMask($"0000000000000"))"/>
                             </MudItem>
-                            @if ("JG".IndexOf(SelectedRifType) > -1) {<MudItem xs="4"><MudTextField @bind-Value="SelectedContact.AgentName" Label="Represetante" MaxLength="50" RequiredError="Campo requerido." Required="(SelectedContact.IsDealer ?? false)" ReadOnly="true" Adornment="Adornment.End" OnAdornmentClick="ContactClick" AdornmentIcon="@Icons.Material.Filled.Search" Disabled ="@(!SelectedContact.IsActive ?? false)"/></MudItem> }
+                            @if ("JG".IndexOf(SelectedRifType) > -1) {<MudItem xs="4"><MudTextField @bind-Value="SelectedContact.AgentName" Label="Representante" MaxLength="50" RequiredError="Campo requerido." Required="(SelectedContact.IsDealer ?? false)" ReadOnly="true" Adornment="Adornment.End" OnAdornmentClick="ContactClick" AdornmentIcon="@Icons.Material.Filled.Search" Disabled ="@(!SelectedContact.IsActive ?? false)"/></MudItem> }
                             @if (SelectedContact.IsDealer ?? false)
                             {
                                 <MudItem xs="4">
@@ -121,7 +121,7 @@
                                         }
                                     </MudSelect>
                                 </MudItem>
-                                @* <MudItem xs="4"><MudTextField @bind-Value="SelectedContact.AgentName" Label="Represetante" MaxLength="50" RequiredError="Campo requerido." Required="(SelectedContact.IsDealer ?? false)" ReadOnly="true" Adornment="Adornment.End" OnAdornmentClick="ContactClick" AdornmentIcon="@Icons.Material.Filled.Search" /></MudItem> *@
+                                @* <MudItem xs="4"><MudTextField @bind-Value="SelectedContact.AgentName" Label="Representante" MaxLength="50" RequiredError="Campo requerido." Required="(SelectedContact.IsDealer ?? false)" ReadOnly="true" Adornment="Adornment.End" OnAdornmentClick="ContactClick" AdornmentIcon="@Icons.Material.Filled.Search" /></MudItem> *@
                                 <MudItem xs="4">
                                      <MudSelect T="Models.Group" Label="Tipo" ToStringFunc="@ConvertContactGroupFunc" Value="ContactGroupSelected" ValueChanged="OnContactGroupValueChanged" RequiredError="Campo requerido." Required="(SelectedContact.IsDealer ?? false)" Disabled ="@(!SelectedContact.IsActive ?? false)">
                                         @foreach (var contactgroup in ContactGroups!)

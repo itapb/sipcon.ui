@@ -130,7 +130,7 @@ else
         AdjustmentTitle = "Ajuste" ;
         string hrefAdjustment = "adjustment";       
 
-        $"Home,Inventario,Procesos,{AdjustmentTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefAdjustment), icon: s.ToActionIcon())));
+        $"Home,Inventario,{AdjustmentTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefAdjustment), icon: s.ToActionIcon())));
         Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-{AdjustmentTitle.ToUpper()}&userId={Useful.userId}");
     }
     Func<Models.Adjustment, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
