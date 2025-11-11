@@ -438,7 +438,7 @@
         if (actionName == "EXPORT" && BackOrderDataGrid?.FilteredItems.Count() > 0)
         {
             _loading = true;
-            var ResultZonas = await Http.GetAsync($"api/BackOrder/Export?filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}");
+            var ResultZonas = await Http.GetAsync($"api/BackOrder/Export?filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}&dealerId={Useful.dealerId}");
             if (ResultZonas.IsSuccessStatusCode)
             {
                 var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
