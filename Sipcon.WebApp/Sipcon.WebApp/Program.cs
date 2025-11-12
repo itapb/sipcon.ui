@@ -41,12 +41,26 @@ CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 // FIN: CONFIGURACIÓN DE CULTURA
 // =======================================================
 
+var backEndUrl = "";
+var env = builder.Configuration.GetValue<string>("Environment")!;
+if (env == "DEV")
+{
+    backEndUrl = builder.Configuration.GetValue<string>("BackEndUrlDEV")!;
+}
+if (env == "QA")
+{
+    backEndUrl = builder.Configuration.GetValue<string>("BackEndUrlQA")!;
+}
+if (env == "PROD")
+{
+    backEndUrl = builder.Configuration.GetValue<string>("BackEndUrl")!;
+}
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
-builder.Services.AddHttpClient("ServerAPI", client => client.BaseAddress = new Uri(builder.Configuration["BackEndUrl"]!)); //.AddHttpMessageHandler<TokenHandler>();
+builder.Services.AddHttpClient("ServerAPI", client => client.BaseAddress = new Uri(backEndUrl)); //.AddHttpMessageHandler<TokenHandler>();
 builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("ServerAPI"));
 // Add MudBlazor services
 builder.Services.AddMudServices();
