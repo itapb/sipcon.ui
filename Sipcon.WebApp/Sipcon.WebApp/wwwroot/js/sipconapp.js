@@ -23,3 +23,13 @@ function timerInactivo(dotnetHelper) {
     }
 
 }
+
+function OpenChatBot() {
+    const chatbot = document.querySelector(".coni-bot");
+    chatbot.style.display = 'block';
+}
+
+function CloseChatBot() {
+    const chatbot = document.querySelector(".coni-bot");
+    chatbot.style.display = 'none';
+}

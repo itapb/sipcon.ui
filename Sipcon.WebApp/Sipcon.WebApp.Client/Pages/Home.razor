@@ -1,9 +1,12 @@
 ﻿@page "/"
 @page "/home"
 
-@using Sipcon.WebApp.Client.Repository.Auth
 
+@using Sipcon.WebApp.Client.Repository.Auth
+@inject IJSRuntime JS
+@implements IDisposable
 <style>
+   
     .home-background {
         min-height: 100vh;
         background: url('images/apb_sipcom_1.jpg');
@@ -11,10 +14,12 @@
        /*  opacity: 0.4; */
     }
 </style>
-<div class="home-background"></div>
+
+<div class="home-background"> </div>
 
 @code {
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -22,8 +27,15 @@
         await AuthenticationStateProvider.RefreshStaticVariables();
         Useful.IsNewOrEdit = false;
 
+        await JS.InvokeVoidAsync("OpenChatBot");
         StateHasChanged();
         await Task.CompletedTask;
     }
+
+    public void Dispose()
+    {
+       JS.InvokeVoidAsync("CloseChatBot").ConfigureAwait(false);
+    }
+
 
 }
