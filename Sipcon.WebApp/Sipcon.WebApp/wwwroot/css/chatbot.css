@@ -1,0 +1,612 @@
+/* ============================== 
+   Chatbot CONI - Estilos Optimizados
+   ============================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+* {
+  font-family: 'Roboto', sans-serif;
+}
+
+/* --- Variables y Animaciones --- */
+:root {
+  --primary-color: #6a40d8;
+  --primary-hover: #5b35bd;
+  --background-light: #f6f6ff;
+  --white: #ffffff;
+  --gray-light: #f5f5f5;
+  --gray-border: #ddd;
+  --text-dark: #333;
+  --shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* --- Botón flotante del chatbot --- */
+.chatbot-button {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  width: 110px; /* tamaño*/
+  height: 110px;/*tamaño*/
+  border-radius: 0; /* Sin círculo */
+  background: transparent;
+  border: none;
+  box-shadow: none; /* Sin sombra */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  animation: float 3s ease-in-out infinite;
+  z-index: 1000;
+  overflow: visible; /* Cambiado de hidden */
+  padding: 0;
+}
+
+.chatbot-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* Imagen completa */
+  border-radius: 0; /* Sin círculo */
+  transition: transform 0.3s ease;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)); /* Sombra solo a la imagen */
+}
+
+.chatbot-button:hover img {
+  transform: scale(1.1);
+}
+
+/* --- VENTANA DEL CHAT BOT--- */
+.chatbot-window {
+  position: fixed;
+  bottom: 140px;
+  right: 30px;
+  width: 420px;
+  height: 600px;
+  background: var(--white);
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  transform: scale(0.8);
+  visibility: hidden;
+  transition: all 0.4s ease;
+  z-index: 9999;
+}
+
+.chatbot-window.open {
+  opacity: 1;
+  transform: scale(1);
+  visibility: visible;
+}
+
+/* --- Encabezado del chat --- */
+.chatbot-header {
+  background: var(--primary-color);
+  color: var(--white);
+  text-align: center;
+  padding: 20px 15px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.chatbot-header img {
+  width: 60px;
+  height: 60px;
+  border-radius: 0; /* Sin círculo */
+  object-fit: contain; /* Imagen completa */
+  box-shadow: none; /* Sin sombra */
+}
+
+.chatbot-header h3 {
+  font-size: 18px;
+  margin: 0;
+  font-weight: 700;
+}
+
+.chatbot-close {
+  position: absolute;
+  right: 15px;
+  background: none;
+  border: none;
+  color: var(--white);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 5px;
+}
+
+/* --- Área de mensajes --- */
+.chatbot-body {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+  background: var(--background-light);
+  display: flex;
+  flex-direction: column;
+}
+
+.chatbot-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chatbot-body::-webkit-scrollbar-thumb {
+  background: #c0b8e0;
+  border-radius: 5px;
+}
+
+.message {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.3s ease;
+}
+
+.message.coni { align-items: flex-start; }
+.message.user { align-items: flex-end; }
+
+.bubble {
+  padding: 10px 15px;
+  border-radius: 20px;
+  max-width: 85%;
+  line-height: 1.4;
+  font-size: 14px;
+  word-wrap: break-word;
+}
+
+.bubble.coni {
+  background: var(--primary-color);
+  color: var(--white);
+  border-bottom-left-radius: 5px;
+}
+
+.bubble.user {
+  background: var(--white);
+  border: 1px solid var(--gray-border);
+  color: var(--text-dark);
+  border-bottom-right-radius: 5px;
+}
+
+/* --- Botones de opciones --- */
+.option-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.option-buttons button {
+  background: var(--primary-color);
+  color: var(--white);
+  border: none;
+  border-radius: 15px;
+  padding: 8px 15px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-size: 13px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: left;
+}
+
+.option-buttons button:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.option-buttons button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* --- Campo de entrada --- */
+.chatbot-input {
+  display: flex;
+  border-top: 1px solid var(--gray-border);
+  background: var(--white);
+  padding: 10px;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.chatbot-input input {
+  flex: 1;
+  border: none;
+  padding: 12px;
+  font-size: 14px;
+  outline: none;
+  border-radius: 20px;
+  background: var(--gray-light);
+}
+
+.chatbot-input button.send-button {
+  background: var(--primary-color);
+  border: none;
+  color: var(--white);
+  padding: 0 20px;
+  cursor: pointer;
+  border-radius: 20px;
+  margin-left: 8px;
+  transition: background-color 0.3s ease;
+}
+
+.chatbot-input button.send-button:hover {
+  background: var(--primary-hover);
+}
+
+/* --- MENÚ CIRCULAR --- */
+.menu-button {
+  background: var(--primary-color);
+  color: var(--white);
+  border: none;
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-right: 10px;
+  position: relative;
+  z-index: 1001;
+}
+
+.menu-button.open {
+  background: var(--white);
+  color: var(--primary-color);
+  transform: rotate(180deg);
+}
+
+/* OVERLAY */
+.chatbot-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(5px);
+  background: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 100;
+}
+
+.chatbot-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* MENÚ CIRCULAR */
+.circular-menu {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  max-width: 380px;
+  max-height: 400px;
+  overflow-y: auto;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 101;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 25px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.circular-menu.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* ITEMS DEL MENÚ */
+.menu-item {
+  width: 80px;
+  height: 80px;
+  background: var(--white);
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-color);
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  border: 2px solid transparent;
+}
+
+.menu-item span {
+  font-size: 10px;
+  color: var(--text-dark);
+  margin-top: 6px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.menu-item:hover {
+  transform: scale(1.05);
+  background: var(--primary-color);
+  color: var(--white);
+  border-color: var(--primary-color);
+  box-shadow: 0 8px 25px rgba(106, 64, 216, 0.3);
+}
+
+.menu-item:hover span {
+  color: var(--white);
+}
+
+/* ESTILOS PARA MENÚ DE DOS NIVELES */
+.menu-item.back-item {
+  background: #f8f9fa !important;
+  color: #6c757d !important;
+  font-weight: bold !important;
+  border: 2px solid #dee2e6 !important;
+  grid-column: 1 / -1;
+  width: auto;
+  height: 50px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+
+.menu-item.back-item:hover {
+  background: #e9ecef !important;
+  color: #495057 !important;
+  transform: none;
+}
+
+.menu-item.submenu-item {
+  background: #f8f9fa !important;
+  border: 1px solid #e9ecef !important;
+  font-size: 18px !important;
+}
+
+.menu-item.submenu-item:hover {
+  background: var(--primary-color) !important;
+  color: var(--white) !important;
+}
+
+/* SCROLL MEJORADO */
+.circular-menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.circular-menu::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 10px;
+}
+
+.circular-menu::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+/* --- Mensajes de imagen y Lightbox --- */
+.image-message {
+  margin: 5px 0;
+}
+
+.image-bubble {
+  max-width: 90%;
+  padding: 10px;
+  background: #f8f9fa;
+}
+
+.image-container {
+  text-align: center;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.step-image {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  border: 2px solid #e9ecef;
+}
+
+.step-image:hover {
+  transform: scale(1.02);
+  border-color: #007bff;
+}
+
+.click-hint {
+  font-size: 12px;
+  color: var(--text-dark);
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* --- Lightbox --- */
+.lightbox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease;
+}
+
+.lightbox-content {
+  background: var(--white);
+  border-radius: 12px;
+  max-width: 90%;
+  max-height: 90%;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: scaleIn 0.3s ease;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: #e20b20;
+  color: var(--white);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s ease;
+}
+
+.lightbox-close:hover {
+  background: #c82333;
+}
+
+.lightbox-header {
+  padding: 20px 20px 10px;
+  border-bottom: 1px solid #dee2e6;
+  text-align: center;
+}
+
+.lightbox-header h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.2em;
+}
+
+.lightbox-image-container {
+  padding: 20px;
+  text-align: center;
+  max-height: 70vh;
+  overflow: auto;
+}
+
+.lightbox-image {
+  max-width: 100%;
+  max-height: 65vh;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.lightbox-controls {
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #dee2e6;
+  background: #f8f9fa;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+.lightbox-counter {
+  font-weight: bold;
+  color: #495057;
+}
+
+/* --- Estilos especiales --- */
+.clear-chat-option button {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+  color: var(--white);
+}
+
+.clear-chat-option button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ff5252, #e53935);
+  transform: scale(1.05);
+}
+
+/* ==============================
+   BURBUJA CONI PARA LOGIN - SIN CÍRCULO
+   ============================== */
+#coni-login-bubble {
+  position: fixed;
+  bottom: 120px; /* Posicionado */
+  right: 25px;
+  background: var(--primary-color);
+  color: var(--white);
+  padding: 12px 18px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+  z-index: 1001;
+  width: auto;
+  height: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: visible;
+  transition: opacity 0.3s ease;
+  animation: float 3s ease-in-out infinite;
+  text-align: center;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+#coni-login-bubble img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 0;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+#coni-login-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  right: 20px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid var(--primary-color);
+}
+
+@keyframes loginBubbleAppear {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
