@@ -113,7 +113,12 @@ else
     app.UseHsts();
 }
 app.UsePathBase(AppSettingsHelper.GetAppSetting("pathBase"));//app.UsePathBase("/sipconapp/");
-//app.UseHttpsRedirection();
+
+if (env == "PROD")
+{
+    app.UseHttpsRedirection();
+}
+
 
 // =======================================================
 // APLICAR CULTURA: Debe ir antes de app.UseRouting()
