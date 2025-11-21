@@ -14,7 +14,22 @@ CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("en-US");
 
 
 //builder.Services.AddScoped<TokenHandler>();
-var backEndUrl = builder.Configuration.GetValue<string>("BackEndUrl")!;
+//var backEndUrl = builder.Configuration.GetValue<string>("BackEndUrl")!;
+var backEndUrl = "";
+var env = builder.Configuration.GetValue<string>("Environment")!;
+if (env == "DEV")
+{
+    backEndUrl = builder.Configuration.GetValue<string>("BackEndUrlDEV")!;
+}
+if (env == "QA")
+{
+    backEndUrl = builder.Configuration.GetValue<string>("BackEndUrlQA")!;
+}
+if (env == "PROD")
+{
+    backEndUrl = builder.Configuration.GetValue<string>("BackEndUrl")!;
+}
+
 builder.Services.AddHttpClient("ServerAPI", client => client.BaseAddress = new Uri(backEndUrl)); 
 builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("ServerAPI"));
 builder.Services.AddMudServices();

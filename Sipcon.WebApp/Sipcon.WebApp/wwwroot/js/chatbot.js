@@ -57,39 +57,77 @@ document.addEventListener("DOMContentLoaded", () => {
   // Mostrar burbuja al cargar
   setTimeout(mostrarBurbuja, 100);
 
-  /* --- Abrir/Cerrar chatbot --- */
-  chatbotButton.addEventListener("click", () => {
-    chatbotWindow.classList.toggle("open");
-    if (chatbotWindow.classList.contains("open")) {
-      ocultarBurbuja();
-    } else {
-      mostrarBurbuja();
-    }
-  });
-
-  closeButton.addEventListener("click", () => {
-    chatbotWindow.classList.remove("open");
-    overlay.classList.remove("show");
-    menuButton.classList.remove("open");
-    menuContainer.classList.remove("show");
-    mostrarBurbuja();
-  });
-
-  // Observar cambios en el chatbot por si se cierra de otras formas
-  if (chatbotWindow && bubble) {
-    const observer = new MutationObserver(function(mutations) {
-      mutations.forEach(function(mutation) {
-        if (mutation.attributeName === 'class') {
-          if (!chatbotWindow.classList.contains('open')) {
-            // Chatbot cerrado - mostrar burbuja
-            setTimeout(mostrarBurbuja, 300);
-          }
+    /* --- Abrir/Cerrar chatbot --- */
+    chatbotButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+        chatbotWindow.classList.toggle("open");
+        if (chatbotWindow.classList.contains("open")) {
+            ocultarBurbuja();
+            // Detener la animación del logo
+            const logo = document.querySelector('.chatbot-button');
+            if (logo) {
+                logo.style.animation = 'none';
+                logo.style.transform = 'translate(0, 0)';
+            }
+        } else {
+            mostrarBurbuja();
+            // Reanudar la animación del logo
+            const logo = document.querySelector('.chatbot-button');
+            if (logo) {
+                logo.style.animation = ''; // Restaurar animación por defecto
+                logo.style.transform = '';
+            }
         }
-      });
     });
-    
-    observer.observe(chatbotWindow, { attributes: true });
-  }
+
+    closeButton.addEventListener("click", () => {
+        chatbotWindow.classList.remove("open");
+        overlay.classList.remove("show");
+        menuButton.classList.remove("open");
+        menuContainer.classList.remove("show");
+        mostrarBurbuja();
+    });
+
+    document.addEventListener("click", (e) => {
+        if (!chatbotWindow.contains(e.target) &&
+            !chatbotButton.contains(e.target) &&
+            chatbotWindow.classList.contains("open")) {
+            // Cerrar chat
+            chatbotWindow.classList.remove("open");
+            overlay.classList.remove("show");
+            menuButton.classList.remove("open");
+            menuContainer.classList.remove("show");
+            mostrarBurbuja();
+
+            // Restaurar animación del logo
+            const logo = document.querySelector('.chatbot-button');
+            if (logo) {
+                logo.style.animation = '';
+                logo.style.transform = '';
+            }
+        }
+    });
+
+    chatbotWindow.addEventListener("click", (e) => {
+        e.stopPropagation();
+    });
+
+
+    // Observar cambios en el chatbot por si se cierra de otras formas
+    if (chatbotWindow && bubble) {
+        const observer = new MutationObserver(function (mutations) {
+            mutations.forEach(function (mutation) {
+                if (mutation.attributeName === 'class') {
+                    if (!chatbotWindow.classList.contains('open')) {
+                        // Chatbot cerrado - mostrar burbuja
+                        setTimeout(mostrarBurbuja, 300);
+                    }
+                }
+            });
+        });
+
+        observer.observe(chatbotWindow, { attributes: true });
+    }
 
   /* --- Cargar flujos desde JSON --- */
   async function loadFlows() {
@@ -407,7 +445,12 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     `;
     
-    document.body.appendChild(lightbox);
+      document.body.appendChild(lightbox);
+
+      lightbox.addEventListener("click", (e) => {
+          e.stopPropagation(); // ← Esto previene que el clic llegue al documento
+      });
+
     
     // Cerrar lightbox
     const closeBtn = lightbox.querySelector(".lightbox-close");

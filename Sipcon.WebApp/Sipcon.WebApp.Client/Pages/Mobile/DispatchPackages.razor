@@ -166,7 +166,7 @@
         }else if (result_NewPackage.StatusCode == System.Net.HttpStatusCode.Conflict)
         {
             var conflictContent = await result_NewPackage.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();           
-            mHelpText = $"{conflictContent?.message!.Replace("USP_POST_GUIDE_ADDPACKGE : ", "")} {searchString.ToUpper()}";
+            mHelpText = $"{conflictContent?.message!} {searchString.ToUpper()}";
             //await DialogService.ShowDialog(conflictContent?.message!.Replace("USP_POST_GUIDE_ADDPACKGE : ",""), "Error", "OK", Color.Error, Icons.Material.Filled.Error);
         }
         searchString = "";
@@ -191,6 +191,11 @@
                     await PackagesMudDataGrid!.ReloadServerData();
             }
 
+        } 
+        else if (result_NewPackage.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflictContent = await result_NewPackage.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+            await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
         }
     }   
     private async Task AddPackage()
