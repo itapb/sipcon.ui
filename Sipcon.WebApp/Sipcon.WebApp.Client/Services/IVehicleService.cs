@@ -15,7 +15,7 @@
         public Task<ApiResponse<ActionResult>> CreateVehicle(Vehicle Vehicle, int IdUser);
         public Task<ApiResponse<ActionResult>> UpdateVehicle(Vehicle Vehicle, int IdUser);
         public Task<ApiResponse<ActionResult>> ActionsVehicle(List<PostAction> PostActions, int IdUser);
-        public Task<ApiResponse<List<byte>>> ExportVehicles(int IdSupplier, int IdUser, string Filter = "");
+        public Task<ApiResponse<List<byte>>> ExportVehicles(int IdSupplier, int IdUser, string Filter = "", int? IdDealer = null);
         public Task<ApiResponse<ActionResult>> ImportVehicles(int IdSupplier, int IdUser, MultipartFormDataContent FormData);
 
     }

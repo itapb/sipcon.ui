@@ -332,7 +332,7 @@
 
         }
 
-        public async Task<ApiResponse<List<byte>>> ExportVehicles(int IdSupplier, int IdUser, string Filter = "")
+        public async Task<ApiResponse<List<byte>>> ExportVehicles(int IdSupplier, int IdUser, string Filter = "", int? IdDealer = null)
         {
             ApiResponse<List<byte>> result; 
             string fileUrl = string.Empty;
@@ -340,6 +340,7 @@
             {
                 var url = $"api/Vehicle/Export?supplierId={IdSupplier}&userId={IdUser}";
                 url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
+                url = (IdDealer.HasValue) ? $"{url}&dealerId={IdDealer}" : url;
 
                 var response = await _http.GetAsync(url);
                 
