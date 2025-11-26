@@ -40,8 +40,8 @@
   position: fixed;
   bottom: 25px;
   right: 25px;
-  width: 110px; /* tamaño*/
-  height: 110px;/*tamaño*/
+  width: 95px; /* tamaño horizontal*/
+  height: 95px;/*tamaño vertical*/
   border-radius: 0; /* Sin círculo */
   background: transparent;
   border: none;
@@ -74,8 +74,8 @@
   position: fixed;
   bottom: 140px;
   right: 30px;
-  width: 420px;
-  height: 600px;
+  width: 380px;
+  height: 490px;
   background: var(--white);
   border-radius: 20px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
@@ -99,39 +99,58 @@
 .chatbot-header {
   background: var(--primary-color);
   color: var(--white);
-  text-align: center;
-  padding: 20px 15px;
+  padding: 20px 15px; /* ← Aumenté el padding (antes 15px 10px) */
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
+  gap: 12px; /* ← Aumenté el gap entre logo y texto */
+  justify-content: flex-start;
+  padding-left: 20px; /* ← Más espacio desde el borde izquierdo */
+  min-height: 70px; /* ← Altura mínima para hacerlo más grande */
 }
 
 .chatbot-header img {
-  width: 60px;
-  height: 60px;
-  border-radius: 0; /* Sin círculo */
-  object-fit: contain; /* Imagen completa */
-  box-shadow: none; /* Sin sombra */
+  width: 50px; /* ← Logo más grande */
+  height: 50px;
+  border-radius: 0;
+  object-fit: contain;
 }
 
 .chatbot-header h3 {
-  font-size: 18px;
+  font-size: 25px;
   margin: 0;
-  font-weight: 700;
+  font-weight: 700; /* Más negrita */
+  white-space: nowrap;
+  font-family: "Book Antiqua", Palatino, "Palatino Linotype", "Palatino LT STD", Georgia, serif;
+  
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3); /* ← Sombra de texto */
+  letter-spacing: 0.8px; /* ← Más espaciado entre letras */
+  color: #ffffff; /* ← Blanco puro (más brillante) */
+  filter: brightness(1.1); /* ← Aumentar brillo */
 }
 
 .chatbot-close {
   position: absolute;
-  right: 15px;
+  right: 20px; /* ← Más espacio desde el borde derecho */
   background: none;
   border: none;
   color: var(--white);
-  font-size: 20px;
+  font-size: 24px; /* ← X más grande */
   cursor: pointer;
-  padding: 5px;
+  padding: 8px; /* ← Padding más grande */
+  width: 35px; /* ← Botón más grande */
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.3s ease;
 }
+
+.chatbot-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 
 /* --- Área de mensajes --- */
 .chatbot-body {
@@ -274,8 +293,9 @@
 
 .menu-button.open {
   background: var(--white);
-  color: var(--primary-color);
+  color: #e20b20; /* Color rojo */
   transform: rotate(180deg);
+  border: 2px solid #e20b20; /* Borde rojo opcional */
 }
 
 /* OVERLAY */
@@ -301,7 +321,7 @@
 /* MENÚ CIRCULAR */
 .circular-menu {
   position: absolute;
-  top: 50%;
+  top: 60%;
   left: 50%;
   transform: translate(-50%, -50%) scale(0.8);
   display: grid;
@@ -369,21 +389,26 @@
 
 /* ESTILOS PARA MENÚ DE DOS NIVELES */
 .menu-item.back-item {
-  background: #f8f9fa !important;
-  color: #6c757d !important;
+  background: #ffffff !important;
+  color: #e20b20 !important;
   font-weight: bold !important;
-  border: 2px solid #dee2e6 !important;
+  border: 2px solid #e20b20 !important;
   grid-column: 1 / -1;
   width: auto;
   height: 50px;
   border-radius: 12px;
   margin-bottom: 10px;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(226, 11, 32, 0.2);
+  transition: all 0.3s ease;
 }
 
 .menu-item.back-item:hover {
-  background: #e9ecef !important;
-  color: #495057 !important;
-  transform: none;
+  background: linear-gradient(135deg, #6a40d8, #8c68e0) !important;
+  color: white !important;
+  border-color: #5b35bd !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(106, 64, 216, 0.4);
 }
 
 .menu-item.submenu-item {
