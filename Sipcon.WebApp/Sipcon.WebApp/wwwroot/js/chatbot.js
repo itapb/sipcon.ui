@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentFlow = {};
   let menuNivel = 'principal'; 
   let moduloActual = null;
-  let submoduloActual = null; // ← NUEVA: para rastrear el submódulo actual 
+  let submoduloActual = null; // ← NUEVA: para rastrear el submódulo actual // 
   let moduloSeleccionadoMenu = null;
   let pasoAPasoActivo = false; // ← NUEVA: para controlar si hay un paso a paso en curso
 
@@ -57,13 +57,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /* --- Descargar manual PDF específico del módulo o submódulo --- */
 function downloadManualPDF() {
-  // Mapeo de módulos y submódulos a sus PDFs - USANDO LOS ID CORRECTOS
-  const basePath = 'js/chat_bot/manuales/';
+  console.log('📥 Iniciando descarga manual - Método seguro');
+  
+  // FORZAR que el chat permanezca abierto ANTES de la descarga
+  forzarChatAbierto();
+  
+  // Mapeo de módulos y submódulos a sus PDFs
+  const basePath = 'Resources/coni/manuales/';
   const pdfMap = {
-    // Módulos principales
     'contacto': `${basePath}manual-contactos.pdf`,
-    
-    // Submódulos específicos (usando los ID exactos del JSON)
     'vehiculos-sub': `${basePath}manual-Vehiculos.pdf`,
     'modelos-sub': `${basePath}manual-Modelos.pdf`,
     'mano-obra-sub': `${basePath}manual-Mano de Obra.pdf`,
@@ -85,44 +87,180 @@ function downloadManualPDF() {
     'mantenimiento-sub': `${basePath}manual-Mantenimiento.pdf`,
     'reporte-falla-sub': `${basePath}manual-Reporte de Falla.pdf`,
     'gestion-pedidos': `${basePath}manual-Pedidos.pdf`,
-    'recepcion-pedidos': `${basePath}manual-Recepcion-Pedidos.pdf`
+    'recepcion-pedidos': `${basePath}manual-Recepcion-Pedidos.pdf`,
+    'PDA': `${basePath}manual-PDA.pdf`
   };
   
-  // PRIORIDAD 1: Si hay un submódulo actual, usar su manual
+  // Determinar qué manual descargar
   let pdfUrl;
   let fileName;
   
   if (submoduloActual && submoduloActual.id && pdfMap[submoduloActual.id]) {
     pdfUrl = pdfMap[submoduloActual.id];
     fileName = `manual-${submoduloActual.id}.pdf`;
-    console.log(`📥 Descargando manual del SUBMÓDULO: ${submoduloActual.label} (ID: ${submoduloActual.id})`);
   }
-  // PRIORIDAD 2: Si hay módulo actual pero no submódulo, usar manual del módulo
   else if (moduloActual && moduloActual.id && pdfMap[moduloActual.id]) {
     pdfUrl = pdfMap[moduloActual.id];
     fileName = `manual-${moduloActual.id}.pdf`;
-    console.log(`📥 Descargando manual del MÓDULO: ${moduloActual.label} (ID: ${moduloActual.id})`);
   }
-  // PRIORIDAD 3: Manual por defecto
   else {
-    pdfUrl = 'js/chat_bot/manuales/manual-general.pdf';
+    pdfUrl = 'Resources/coni/manuales/manual-general.pdf';
     fileName = 'manual-general.pdf';
-    console.log('📥 Descargando manual general');
   }
   
-  // Crear enlace temporal para descargar
-  const link = document.createElement('a');
-  link.style.display = 'none';
-  link.href = pdfUrl;
-  link.download = fileName;
+  console.log('📄 Descargando:', pdfUrl);
   
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  // MÉTODO CON IFRAME (mantiene chat abierto) pero con control de duplicados
+  descargaSeguraUnica(pdfUrl, fileName);
   
-  // Mostrar mensaje de confirmación
-  const manualName = submoduloActual ? submoduloActual.label : (moduloActual ? moduloActual.label : 'General');
-  //showMessage(`📄 Descargando manual de: ${manualName}`, "coni");
+  setTimeout(() => {
+    const pdfBtn = document.querySelector('.option-btn');
+    if (pdfBtn && (pdfBtn.textContent.includes('Descargando') || pdfBtn.textContent.includes('📄'))) {
+      pdfBtn.textContent = "✅ Manual Descargado";
+      pdfBtn.style.opacity = "0.7";
+      pdfBtn.disabled = true;
+      console.log('📋 Manual descargado - botón deshabilitado permanentemente');
+    }
+  }, 1000);
+}
+
+/* --- Función de descarga segura MEJORADA - una sola descarga --- */
+let descargaEnProgreso = false;
+
+function descargaSeguraUnica(url, filename) {
+  // Si ya hay una descarga en progreso, ignorar
+  if (descargaEnProgreso) {
+    console.log('🚫 Descarga en progreso, ignorando llamada duplicada');
+    return;
+  }
+  
+  descargaEnProgreso = true;
+  console.log('🎯 Iniciando descarga única con iframe');
+  
+  // Crear un iframe invisible para la descarga (MÉTODO QUE MANTIENE CHAT ABIERTO)
+  const iframe = document.createElement('iframe');
+  iframe.style.display = 'none';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = 'none';
+  iframe.style.position = 'absolute';
+  iframe.style.left = '-9999px';
+  
+  // FORZAR chat abierto también dentro del iframe
+  mantenerChatAbierto();
+  
+  // Cuando el iframe carga, crear el enlace de descarga
+ let iframeEjecutado = false;
+
+ iframe.onload = function() {
+  if (iframeEjecutado) return; // Evita segunda ejecución
+  iframeEjecutado = true;
+
+  try {
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    const link = doc.createElement('a');
+
+    // Agregar timestamp único para evitar caché
+    const timestamp = new Date().getTime();
+    const uniqueUrl = url + (url.includes('?') ? '&' : '?') + '_=' + timestamp;
+
+    link.href = uniqueUrl;
+    link.download = filename;
+    doc.body.appendChild(link);
+    link.click();
+    doc.body.removeChild(link);
+
+    console.log('✅ Descarga única completada');
+  } catch (error) {
+    console.error('Error en descarga segura:', error);
+    // Fallback tradicional
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.target = '_blank';
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } finally {
+    setTimeout(() => {
+      if (document.body.contains(iframe)) {
+        document.body.removeChild(iframe);
+      }
+      setTimeout(() => {
+        descargaEnProgreso = false;
+      }, 2000);
+    }, 1000);
+  }
+};
+  
+  // Agregar el iframe al documento
+  document.body.appendChild(iframe);
+  
+  // Intentar cargar una página vacía primero
+  iframe.src = 'about:blank';
+}
+
+// Función para FORZAR que el chat permanezca abierto
+function forzarChatAbierto() {
+  const chatbotWindow = document.querySelector(".chatbot-window");
+  const overlay = document.querySelector(".chatbot-overlay");
+  const chatbotButton = document.querySelector(".chatbot-button");
+  const bubble = document.getElementById('coni-login-bubble');
+  
+  // FORZAR estado ABIERTO del chat
+  chatbotWindow.classList.add("open");
+  overlay.classList.remove("show"); // Eliminar overlay difuminado
+  
+  // Mantener logo estático
+  if (chatbotButton) {
+    chatbotButton.style.animation = 'none';
+    chatbotButton.style.transform = 'translate(0, 0)';
+  }
+  
+  // Asegurar que la burbuja esté oculta
+  if (bubble) {
+    bubble.style.display = 'none';
+    bubble.style.opacity = '0';
+  }
+  
+  console.log('🔒 Chat forzado a permanecer abierto');
+}
+
+// Función auxiliar para asegurar que el chat permanezca abierto
+function mantenerChatAbierto() {
+  const chatbotWindow = document.querySelector(".chatbot-window");
+  const overlay = document.querySelector(".chatbot-overlay");
+  const chatbotButton = document.querySelector(".chatbot-button");
+  const bubble = document.getElementById('coni-login-bubble');
+  
+  // FORZAR que el chat permanezca completamente abierto
+  chatbotWindow.classList.add("open");
+  overlay.classList.remove("show"); // ← QUITAR el overlay difuminado
+  
+  // Asegurar que el logo NO recupere la animación
+  if (chatbotButton) {
+    chatbotButton.style.animation = 'none';
+    chatbotButton.style.transform = 'translate(0, 0)';
+  }
+  
+  // Asegurar que la burbuja permanezca OCULTA
+  if (bubble) {
+    bubble.style.display = 'none';
+    bubble.style.opacity = '0';
+  }
+  
+  // Mantener el menú en su estado actual si estaba abierto
+  const menuButton = document.querySelector(".menu-button");
+  const menuContainer = document.querySelector(".circular-menu");
+  
+  if (menuButton && menuButton.classList.contains("open")) {
+    // Si el menú estaba abierto, mantenerlo abierto
+    menuContainer.classList.add("show");
+  } else {
+    // Si el menú estaba cerrado, asegurarse de que esté cerrado
+    menuContainer.classList.remove("show");
+  }
 }
 
 /* --- Buscar módulo padre y submódulo actual --- */
@@ -386,21 +524,37 @@ function showStepsSequentially(pasos, images = []) {
         const optionsContainer = document.createElement("div");
         optionsContainer.classList.add("option-buttons");
 
-        // Botón para descargar manual PDF DEL MÓDULO ACTUAL
-        const pdfBtn = document.createElement("button");
-        pdfBtn.textContent = `📄 Descargar Manual ${submoduloActual?.label || moduloActual?.label || 'General'}`;
-        pdfBtn.classList.add("option-btn");
+// Botón para descargar manual PDF DEL MÓDULO ACTUAL
+const pdfBtn = document.createElement("button");
+pdfBtn.textContent = `📄 Descargar Manual ${submoduloActual?.label || moduloActual?.label || 'General'}`;
+pdfBtn.classList.add("option-btn", "pdf-download-btn");
 
-        let pdfHabilitado = true;
-        pdfBtn.addEventListener("click", () => {
-          if (!pdfHabilitado) return;
-          pdfHabilitado = false;
-          pdfBtn.style.opacity = "0.6";
-          pdfBtn.style.cursor = "not-allowed";
-          downloadManualPDF();
-        });
+pdfBtn.addEventListener("click", function(event) {
+  // Prevenir comportamiento por defecto y propagación
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+  
+  console.log('🎯 Evento de descarga capturado');
+  
+  // Deshabilitar el botón inmediatamente
+  pdfBtn.disabled = true;
+  pdfBtn.style.opacity = "0.6";
+  pdfBtn.style.cursor = "not-allowed";
+  pdfBtn.textContent = "⏳ Descargando...";
+  
+  // Forzar chat abierto
+  forzarChatAbierto();
+  
+  // Pequeño delay para asegurar que la UI se actualice
+  setTimeout(() => {
+    downloadManualPDF();
+  }, 50);
+  
+  return false;
+}, { once: true }); // ← ESTA ES LA CLAVE: el evento solo se ejecuta UNA vez
 
-        optionsContainer.appendChild(pdfBtn);
+optionsContainer.appendChild(pdfBtn);
 
         // Mostrar botón de otros flujos si estamos en un submódulo
         if (submoduloActual) {
