@@ -632,6 +632,27 @@ optionsContainer.appendChild(pdfBtn);
           clearChat();
         });
 
+        // Botón de soporte WhatsApp
+        const whatsappBtn = document.createElement("button");
+        whatsappBtn.textContent = "💬 Contactar Soporte WhatsApp";
+        whatsappBtn.classList.add("option-btn");
+
+        let whatsappHabilitado = true;
+        whatsappBtn.addEventListener("click", () => {
+        if (!whatsappHabilitado) return;
+        whatsappHabilitado = false;
+        whatsappBtn.style.opacity = "0.6";
+        whatsappBtn.style.cursor = "not-allowed";
+  
+        // Abrir WhatsApp en nueva ventana
+        const phoneNumber = "584245517504";
+        const message ="¡Hola! Necesito soporte técnico para SIPCON. ¿Podrían ayudarme?";
+        const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+
+        });
+
+        optionsContainer.appendChild(whatsappBtn);
         optionsContainer.appendChild(clearBtn);
         chatbotBody.appendChild(optionsContainer);
         chatbotBody.scrollTop = chatbotBody.scrollHeight;
