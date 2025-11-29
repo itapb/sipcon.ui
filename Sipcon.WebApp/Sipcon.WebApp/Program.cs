@@ -55,7 +55,7 @@ if (env == "PROD")
 {
     backEndUrl = builder.Configuration.GetValue<string>("BackEndUrl")!;
 }
-
+    
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
