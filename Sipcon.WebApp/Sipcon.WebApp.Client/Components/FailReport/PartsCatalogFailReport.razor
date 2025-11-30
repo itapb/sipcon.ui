@@ -121,6 +121,12 @@
             url = $"{url}&rowFrom={ContactCurrentPage}";
             url = string.IsNullOrEmpty(searchString) ? url : $"{url}&filter={searchString}";
         }
+        else
+        {
+            url = $"api/Part/GetByModel?modelId={ModelId}&userId={Useful.userId}&supplierId={Useful.supplierId}";
+            url = $"{url}&rowFrom={ContactCurrentPage}";
+            url = string.IsNullOrEmpty(searchString) ? url : $"{url}&filter={searchString}";
+        }
 
         HttpResponseMessage response = await Http.GetAsync(url);
         if (response.IsSuccessStatusCode)
