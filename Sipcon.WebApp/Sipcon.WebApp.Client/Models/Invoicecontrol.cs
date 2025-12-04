@@ -80,6 +80,8 @@ namespace Sipcon.WebApp.Client.Models
 
         public string? StatusName { get; set; }
 
+        public string? SaleOrderType { get; set; }
+
 
     }
 }

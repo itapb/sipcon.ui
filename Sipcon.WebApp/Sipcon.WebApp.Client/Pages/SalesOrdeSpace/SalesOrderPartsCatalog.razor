@@ -76,7 +76,17 @@ else
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Model>>>();
-            Models = content2!.data ?? new List<Model>();
+            Model _m = new Model();
+            _m.Id = 0;
+            _m.Name = "(TODOS)";
+            List<Model> _list = new List<Model>();
+
+            _list = content2!.data ?? new List<Model>();
+            Models = new List<Model>();
+            Models.Add(_m);
+            Models.AddRange(_list);
+
+            //Models = content2!.data ?? new List<Model>();
             ModelSelected = Models.FirstOrDefault();
         }
         else
