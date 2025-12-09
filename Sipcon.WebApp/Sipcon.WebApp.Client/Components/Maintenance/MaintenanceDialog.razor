@@ -221,7 +221,7 @@
                                             {
                                                 string style = "";
 
-                                                if (_modelPolicy.EstatusName.ToUpper() == "CREADO")
+                                                if (_modelPolicy.EstatusName.ToUpper() == "BORRADOR")
                                                     style += "";
                                                 else if (_modelPolicy.EstatusName.ToUpper() == "ACTIVADO")
                                                 {
@@ -592,7 +592,7 @@
         if (serviceResponse.Processed)
         {
             _model = serviceResponse.Data ?? new Maintenance();
-            _isReadOnly = _model.EstatusName.ToUpper() == "CREADO" || _model.EstatusName.Trim() == string.Empty ? false : true;
+            _isReadOnly = _model.EstatusName.ToUpper() == "BORRADOR" || _model.EstatusName.Trim() == string.Empty ? false : true;
 
             await Task.Delay(50);
             StateHasChanged();

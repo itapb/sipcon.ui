@@ -29,7 +29,7 @@
 									@if (ActionsModal != ActionsEnum.Create)
 									{
 
-										@if (_model.EstatusName.ToUpper() != "CREADO")
+										@if (_model.EstatusName.ToUpper() != "BORRADOR")
 										{
 											<MudIconButton Icon="@Icons.Custom.FileFormats.FilePdf" Variant="Variant.Filled"
 														   Color="Color.Default"
@@ -104,7 +104,7 @@
 											{
 												string style = "";
 
-												if (_model.EstatusName.ToUpper() == "CREADO")
+												if (_model.EstatusName.ToUpper() == "BORRADOR")
 													style += "";
 												else if (_model.EstatusName.ToUpper() == "ACTIVADO")
 												{
@@ -558,7 +558,7 @@
 		if (serviceResponse.Processed)
 		{
 			_model = serviceResponse.Data ?? new Policy();
-			_isReadOnly = _model.EstatusName.ToUpper() == "CREADO" || _model.EstatusName.Trim() == string.Empty ? false : true;
+			_isReadOnly = _model.EstatusName.ToUpper() == "BORRADOR" || _model.EstatusName.Trim() == string.Empty ? false : true;
 			_PayMethodList = await ModuleActionsService.GetPayMethodOption(Useful.userId);
 
 			StateHasChanged();
