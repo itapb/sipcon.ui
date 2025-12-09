@@ -116,14 +116,16 @@
         {
 
             url = $"api/Service/GetItems?userId={Useful.userId}&supplierId={Useful.supplierId}";
-            url = $"{url}&modelId={ModelId}";
+           // url = $"{url}&modelId={ModelId}";
+            url = $"{url}&modelId=0";
             url = $"{url}&type=P";
             url = $"{url}&rowFrom={ContactCurrentPage}";
             url = string.IsNullOrEmpty(searchString) ? url : $"{url}&filter={searchString}";
         }
         else
         {
-            url = $"api/Part/GetByModel?modelId={ModelId}&userId={Useful.userId}&supplierId={Useful.supplierId}";
+            //url = $"api/Part/GetByModel?modelId={ModelId}&userId={Useful.userId}&supplierId={Useful.supplierId}";
+            url = $"api/Part/GetByModel?modelId=0&userId={Useful.userId}&supplierId={Useful.supplierId}";
             url = $"{url}&rowFrom={ContactCurrentPage}";
             url = string.IsNullOrEmpty(searchString) ? url : $"{url}&filter={searchString}";
         }

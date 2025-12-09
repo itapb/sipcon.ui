@@ -174,8 +174,9 @@ namespace Sipcon.WebApp.Client.Repository.Auth
         {
             Useful.IsNewOrEdit = false;
 
-            if (Useful.IsFirstTime)
-            {
+            // se quita es condicion ya que tenemos varios casos en produccion donde no se filtra bien los datos
+            //if (Useful.IsFirstTime)
+            //{
                 int selectedDealer = await GetSelectedDealerAsync();
                 int selectedSupplier = await GetSelectedSupplierAsync();
                 var _userActive = await GetUserAsync();
@@ -183,7 +184,7 @@ namespace Sipcon.WebApp.Client.Repository.Auth
                 Useful.dealerId = selectedDealer;
                 Useful.userId = _userActive.Id;
                 Useful.IsFirstTime = false;
-            }
+            //}
   
         }
 
