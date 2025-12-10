@@ -20,7 +20,34 @@
 }
 
 @code {
-    public Models.Dispatch CurrentDispatch = new() { UserId = Useful.userId, SupplierId = Useful.supplierId, CustomerId = Useful.customerId, GuideId = 0, PartId = 0, PackageId = 0, CustomerName = Useful.customerName, Pending = 0, PartName = "", Code = "" };
-    public Models.DispatchStep CurrentStep = Useful.customerId  == 0 ? Models.DispatchStep.Customer : Models.DispatchStep.Guides;
+    [Inject] private UserSession Session { get; set; } = null!;
+
+    public Models.Dispatch CurrentDispatch { get; set; } = new();
+    public Models.DispatchStep CurrentStep { get; set; }
     public static Models.DispatchStep? PreviousStep;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Inicializar Dispatch con datos de la sesión
+        CurrentDispatch = new Models.Dispatch
+        {
+            UserId = Session.UserId,
+            SupplierId = Session.SupplierId,
+            CustomerId = Useful.customerId,
+            GuideId = 0,
+            PartId = 0,
+            PackageId = 0,
+            CustomerName = Useful.customerName,
+            Pending = 0,
+            PartName = "",
+            Code = ""
+        };
+
+        // Decidir paso inicial
+        CurrentStep = Useful.customerId == 0
+            ? Models.DispatchStep.Customer
+            : Models.DispatchStep.Guides;
+
+        await Task.CompletedTask;
+    }
 }

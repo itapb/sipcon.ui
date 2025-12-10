@@ -10,13 +10,14 @@ using System.Net.Http.Json;
 
 namespace Sipcon.WebApp.Client.Services
 {
-    public class MasterComp<TModel,TCompoment>(IDialogService dialogservice, HttpClient http, IJSRuntime JSRuntime) : IMasterComp<TModel> 
+    public class MasterComp<TModel,TCompoment>(IDialogService dialogservice, HttpClient http, IJSRuntime JSRuntime, UserSession session) : IMasterComp<TModel> 
         where TModel : Record 
         where TCompoment: class, Microsoft.AspNetCore.Components.IComponent
     {
         private string clsModelName = typeof(TModel).Name;
         private readonly IDialogService DialogService = dialogservice;
         public readonly HttpClient Http = http;
+        private readonly UserSession Session = session;
         public MudDataGrid<TModel>? EntityMudDataGrid { get; set; }
         public string? searchString { get; set; }
         public bool loading { get; set; } = true;
@@ -55,7 +56,7 @@ namespace Sipcon.WebApp.Client.Services
                     formData.Add(content, "file", file.Name);
                     loading = true;
 
-                    var response = await Http.PostAsync($"api/{clsModelName}/Import?userId={Useful.userId}&supplierId={Useful.supplierId}", formData);
+                    var response = await Http.PostAsync($"api/{clsModelName}/Import?userId={Session.UserId}&supplierId={Session.SupplierId}", formData);
                     if (response.IsSuccessStatusCode)
                     {
                         await DialogService.ShowDialog("Archivo cargado con exito!.", "Importar", "OK", Color.Info, Icons.Material.Filled.Commit);
@@ -98,7 +99,7 @@ namespace Sipcon.WebApp.Client.Services
             if (actionName == "EXPORT")
             {
                 loading = true;
-                var ResultZonas = await Http.GetAsync($"api/{clsModelName}/Export?filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}");
+                var ResultZonas = await Http.GetAsync($"api/{clsModelName}/Export?filter={searchString}&userId={Session.UserId}&supplierId={Session.SupplierId}");
                 if (ResultZonas.IsSuccessStatusCode)
                 {
                     var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
@@ -118,7 +119,7 @@ namespace Sipcon.WebApp.Client.Services
                                 (EntityMudDataGrid.FilteredItems.Where(item => item.IsSelected)
                                                                  .Select(item => new Client.Models.Action
                                                                  {
-                                                                     UserId = Useful.userId,
+                                                                     UserId = Session.UserId,
                                                                      RecordId = item.Id,
                                                                      ModuleId = Modules!.FirstOrDefault()?.Id,
                                                                      actionName = actionName,
@@ -127,7 +128,7 @@ namespace Sipcon.WebApp.Client.Services
                                                                  }).ToList()
                                  ) : null;
 
-            var result_Post_Actions = (SelectedActions is not null && SelectedActions.Count > 0) ? await Http.PostAsync($"api/{clsModelName}/PostActions?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
+            var result_Post_Actions = (SelectedActions is not null && SelectedActions.Count > 0) ? await Http.PostAsync($"api/{clsModelName}/PostActions?userId={Session.UserId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
             if (result_Post_Actions is not null && result_Post_Actions.IsSuccessStatusCode)
             {
                 var resultAction = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
@@ -152,7 +153,7 @@ namespace Sipcon.WebApp.Client.Services
         public async Task FillModules()
         {
             Modules?.Clear();
-            Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName={clsModelName.GetmoduleName()}&userId={Useful.userId}");           
+            Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName={clsModelName.GetmoduleName()}&userId={Session.UserId}");           
         }
        
     }

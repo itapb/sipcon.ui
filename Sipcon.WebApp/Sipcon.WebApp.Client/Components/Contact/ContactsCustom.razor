@@ -51,7 +51,7 @@
 </MudDataGrid>
 
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
@@ -75,7 +75,7 @@
     protected override async Task OnInitializedAsync()
     { 
         await AuthenticationStateProvider.RefreshStaticVariables();
-        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName={Modulo}&userId={Useful.userId}");
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName={Modulo}&userId={Session.UserId}");
     }
     private async Task<GridData<Contact>> ServerReload(GridState<Contact> state)
     { 
@@ -84,7 +84,7 @@
         IsAllCheckBoxSelected = false;
         _loading = true;
         var mOffset = state.Page * state.PageSize;       
-        IEnumerable<Contact> data = await Http.GetFromJsonAsync<List<Contact>>($"api/Contact/GetAll?filter={searchString}&rowFrom={mOffset}&idUser={Useful.userId}&moduleName={Modulo}") ?? new List<Contact>();
+        IEnumerable<Contact> data = await Http.GetFromJsonAsync<List<Contact>>($"api/Contact/GetAll?filter={searchString}&rowFrom={mOffset}&idUser={Session.UserId}&moduleName={Modulo}") ?? new List<Contact>();
 
         var totalItems = (data.Count()! > 0) ? data.FirstOrDefault()!.Total : 0;
         var sortDefinition = state.SortDefinitions.FirstOrDefault();
@@ -130,7 +130,7 @@
         if (actionName == "EXPORT")
         {
             _loading = true;
-            var ResultZonas = await Http.GetAsync($"api/Contact/GetExport?_filter={searchString}&userId={Useful.userId}&moduleName={Modulo}");
+            var ResultZonas = await Http.GetAsync($"api/Contact/GetExport?_filter={searchString}&userId={Session.UserId}&moduleName={Modulo}");
             if (ResultZonas.IsSuccessStatusCode)
             {
                 var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
@@ -144,12 +144,12 @@
 
         var SelectedActions = (ContactMudDataGrid != null && ("ACTIVATE,DEACTIVATE".IndexOf(actionName!) > -1)) ?
                               (ContactMudDataGrid.FilteredItems.Where(item => item.IsSelected)
-                                                               .Select(item => new Client.Models.Action{UserId = Useful.userId, RecordId = item.Id, 
+                                                               .Select(item => new Client.Models.Action{UserId = Session.UserId, RecordId = item.Id, 
                                                                                                         ModuleId = Modules!.FirstOrDefault()?.Id,actionName = actionName,
                                                                                                         ActionComment = "", RelatedId = 0}).ToList()
                                ) : null;
 
-        var result_Post_Actions = (SelectedActions is not null && SelectedActions.Count > 0) ? await Http.PostAsync($"api/Contact/Post_Actions?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
+        var result_Post_Actions = (SelectedActions is not null && SelectedActions.Count > 0) ? await Http.PostAsync($"api/Contact/Post_Actions?userId={Session.UserId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
         if (result_Post_Actions is not null && result_Post_Actions.IsSuccessStatusCode)
         {
             var rest = result_Post_Actions.Content.ReadAsStringAsync();

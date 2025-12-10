@@ -68,7 +68,7 @@
 </MudGrid>
 
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
 
@@ -111,11 +111,11 @@
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Part> data;
 
-        var url = $"api/Part/GetByModel?modelId={ModelId}&userId={Useful.userId}&supplierId={Useful.supplierId}";
+        var url = $"api/Part/GetByModel?modelId={ModelId}&userId={Session.UserId}&supplierId={Session.SupplierId}";
         if (IsExternal)
         {
 
-            url = $"api/Service/GetItems?userId={Useful.userId}&supplierId={Useful.supplierId}";
+            url = $"api/Service/GetItems?userId={Session.UserId}&supplierId={Session.SupplierId}";
            // url = $"{url}&modelId={ModelId}";
             url = $"{url}&modelId=0";
             url = $"{url}&type=P";
@@ -124,8 +124,8 @@
         }
         else
         {
-            //url = $"api/Part/GetByModel?modelId={ModelId}&userId={Useful.userId}&supplierId={Useful.supplierId}";
-            url = $"api/Part/GetByModel?modelId=0&userId={Useful.userId}&supplierId={Useful.supplierId}";
+            //url = $"api/Part/GetByModel?modelId={ModelId}&userId={Session.UserId}&supplierId={Session.SupplierId}";
+            url = $"api/Part/GetByModel?modelId=0&userId={Session.UserId}&supplierId={Session.SupplierId}";
             url = $"{url}&rowFrom={ContactCurrentPage}";
             url = string.IsNullOrEmpty(searchString) ? url : $"{url}&filter={searchString}";
         }

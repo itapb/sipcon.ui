@@ -143,7 +143,7 @@
     }
 </style>
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
 
 
     [CascadingParameter]
@@ -181,7 +181,7 @@
             await GetModel();
 
             _model.ModelId = _modelModel.Id;
-            _model.SupplierId = Useful.supplierId;
+            _model.SupplierId = Session.SupplierId;
             _model.Type = DetailType.ToString() == "LaborTime" ? "L" : "P";
 
             await Task.Delay(50);
@@ -208,7 +208,7 @@
 
     private async Task GetModel()
     {
-        var serviceResponse = await ModelService.GetModel(ModelId, Useful.userId);
+        var serviceResponse = await ModelService.GetModel(ModelId, Session.UserId);
         if (serviceResponse.Processed)
         {
             _modelModel = serviceResponse.Data ?? new Model();
@@ -232,7 +232,7 @@
     private async Task GetExternalPart()
     {
 
-        var serviceResponse = await FailReportService.GetPartExternal(Useful.userId, PartExternalId);
+        var serviceResponse = await FailReportService.GetPartExternal(Session.UserId, PartExternalId);
         if (serviceResponse.Processed)
         {
 
@@ -268,7 +268,7 @@
     private async Task GetExternalLaborTime()
     {
 
-        var serviceResponse = await FailReportService.GetLaborTimeExternal(Useful.userId, PartExternalId);
+        var serviceResponse = await FailReportService.GetLaborTimeExternal(Session.UserId, PartExternalId);
         if (serviceResponse.Processed)
         {
 
@@ -279,7 +279,7 @@
                 Description = data.Description ?? string.Empty,
                 IsActive = data.IsActive,
                 ModelId = ModelId,
-                SupplierId = Useful.supplierId,
+                SupplierId = Session.SupplierId,
                 Type = "L"
             };
 
@@ -309,7 +309,7 @@
         {
             _errorModalMessage = "";
 
-            var serviceResponse = await FailReportService.UpdatePartExternal(_model, Useful.userId);
+            var serviceResponse = await FailReportService.UpdatePartExternal(_model, Session.UserId);
             if (serviceResponse.Processed)
             {
                 if (ActionsModal == ActionsEnum.Create)

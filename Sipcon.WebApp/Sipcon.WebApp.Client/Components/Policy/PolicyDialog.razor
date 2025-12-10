@@ -497,7 +497,7 @@
 	}
 </style>
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
 
 	[CascadingParameter]
 	private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -536,7 +536,7 @@
 			_model = new Policy();
 			_isReadOnly = false;
 
-			_PayMethodList = await ModuleActionsService.GetPayMethodOption(Useful.userId);
+			_PayMethodList = await ModuleActionsService.GetPayMethodOption(Session.UserId);
 
 			await Task.Delay(100);
 		}
@@ -554,12 +554,12 @@
 
 	private async Task GetPolicy()
 	{
-		var serviceResponse = await PolicyService.GetPolicy(IdPolicy, Useful.userId);
+		var serviceResponse = await PolicyService.GetPolicy(IdPolicy, Session.UserId);
 		if (serviceResponse.Processed)
 		{
 			_model = serviceResponse.Data ?? new Policy();
 			_isReadOnly = _model.EstatusName.ToUpper() == "BORRADOR" || _model.EstatusName.Trim() == string.Empty ? false : true;
-			_PayMethodList = await ModuleActionsService.GetPayMethodOption(Useful.userId);
+			_PayMethodList = await ModuleActionsService.GetPayMethodOption(Session.UserId);
 
 			StateHasChanged();
 			await Task.Delay(50);
@@ -581,7 +581,7 @@
 	{
 		var _vehicle = new Vehicle();
 		form!.ResetValidation();
-		var serviceResponse = await VehicleService.GetVehicleAvailable(_model.Vin, Useful.userId, Useful.dealerId);
+		var serviceResponse = await VehicleService.GetVehicleAvailable(_model.Vin, Session.UserId, Session.DealerId);
 		if (serviceResponse.Processed)
 		{
 			_vehicle = serviceResponse.Data ?? new Vehicle();
@@ -788,7 +788,7 @@
 
 	private async Task ClickExportPdf()
 	{
-		var serviceResponse = await PolicyService.ExportPdfPolicy(Useful.userId, _model.Id);
+		var serviceResponse = await PolicyService.ExportPdfPolicy(Session.UserId, _model.Id);
 		if (serviceResponse.Processed)
 		{
 			_successModal = true;
@@ -836,7 +836,7 @@
 			}
 
 
-			var serviceResponse = await PolicyService.UpdatePolicy(_model, Useful.userId);
+			var serviceResponse = await PolicyService.UpdatePolicy(_model, Session.UserId);
 			if (serviceResponse.Processed)
 			{
 				if (ActionsModal == ActionsEnum.Create)

@@ -50,7 +50,7 @@ else
     </MudDataGrid>
 }
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
@@ -87,7 +87,7 @@ else
     }
     private async Task ClickEditGuide(Mobile.Models.Guide item) 
     {
-        Useful.IsNewOrEdit = true;
+        Session.IsNewOrEdit = true;
         await Task.FromResult(GuideId = item.Id); 
     }
     protected override async Task OnInitializedAsync()   
@@ -104,7 +104,7 @@ else
         string hrefMovement = "dispatchguides";
 
         $"Home,Pedidos,{MovementTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
-        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=PEDIDOS-RECEPCION&userId={Useful.userId}");
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=PEDIDOS-RECEPCION&userId={Session.UserId}");
     }
     Func<Mobile.Models.Guide, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
     {
@@ -125,7 +125,7 @@ else
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Mobile.Models.Guide> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Guide/GetAllGuides?userId={Useful.userId}&supplierId={Useful.supplierId}&dealerId={Useful.dealerId}&rowfrom={mOffset}&filter={searchString}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Guide/GetAllGuides?userId={Session.UserId}&supplierId={Session.SupplierId}&dealerId={Session.DealerId}&rowfrom={mOffset}&filter={searchString}");
 
         if (response.IsSuccessStatusCode)
         {
@@ -142,7 +142,7 @@ else
         {
             data = new List<Mobile.Models.Guide>();
             var errorMessage = await response.Content.ReadAsStringAsync();
-            Logger.LogError(Useful.TemplateLog(MovementTitle, errorMessage));
+            Logger.LogError(Session.TemplateLog(MovementTitle, errorMessage));
             await DialogService.ShowUnexpected();
         }
 
@@ -156,7 +156,7 @@ else
         var mActions = GuidesMudDataGrid?.FilteredItems.Where(item => (item.IsSelected && strDictionary.ContainsKey(actionName!) && (strDictionary[actionName!].Contains(item.StatusName!.ToUpper())) || strDictionary[actionName!] == ""))
                                                      .Select(item => new Client.Models.Action
                                                          {
-                                                             UserId = Useful.userId,
+                                                             UserId = Session.UserId,
                                                              RecordId = item.Id,
                                                              ModuleId = Modules!.FirstOrDefault()?.Id,
                                                              actionName = actionName,
@@ -170,7 +170,7 @@ else
         }
         else if (mActions?.Count > 0)
         {           
-            await PostActionAndReload(mActions, $"api/Guide/PostGuidesActions?userId={Useful.userId}");
+            await PostActionAndReload(mActions, $"api/Guide/PostGuidesActions?userId={Session.UserId}");
         }
 
     }
@@ -191,7 +191,7 @@ else
         else
         {
             var errorMessage = await result_Post_Actions!.Content.ReadAsStringAsync();
-            Logger.LogError(Useful.TemplateLog(MovementTitle, errorMessage));
+            Logger.LogError(Session.TemplateLog(MovementTitle, errorMessage));
             await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);           
         }
     }
@@ -202,7 +202,7 @@ else
     }
     public void Dispose()
     {       
-        Useful.IsNewOrEdit = false;
+        Session.IsNewOrEdit = false;
         hubEventsService.OnSupplierChanged -= ReloadDispatchGuidesGrid;
         hubEventsService.OnDealerChanged -= ReloadDispatchGuidesGrid;
     }

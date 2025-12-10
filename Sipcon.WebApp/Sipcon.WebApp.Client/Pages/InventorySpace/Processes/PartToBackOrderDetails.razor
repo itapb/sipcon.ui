@@ -29,7 +29,7 @@ else
         </div>
     </MudForm>
 }
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -50,7 +50,7 @@ else
         if (form.IsValid && IsArrivalValid)
         {
             var strmBackOrder = System.Text.Json.JsonSerializer.Serialize(mBackOrderItem);
-            var result_newMovementDetail = await Http.PostAsync($"api/BackOrder/PostBackOrder?userId={Useful.userId}", new StringContent(strmBackOrder, null, "application/json"));
+            var result_newMovementDetail = await Http.PostAsync($"api/BackOrder/PostBackOrder?userId={Session.UserId}", new StringContent(strmBackOrder, null, "application/json"));
             if (result_newMovementDetail.IsSuccessStatusCode)
             {
                 var sucessContent = await result_newMovementDetail.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();

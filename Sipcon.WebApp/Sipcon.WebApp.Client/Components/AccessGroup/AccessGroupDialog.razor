@@ -144,7 +144,7 @@
     }
 </style>
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
 
 
     [CascadingParameter]
@@ -212,7 +212,7 @@
         {
             _errorModalMessage = "";
 
-            var serviceResponse = await SecurityService.UpdateAccessGroup(_model!, Useful.userId);
+            var serviceResponse = await SecurityService.UpdateAccessGroup(_model!, Session.UserId);
             if (serviceResponse.Processed)
             {
                 _errorModalMessage = MessageEnum.SaveOK.GetStringValue();

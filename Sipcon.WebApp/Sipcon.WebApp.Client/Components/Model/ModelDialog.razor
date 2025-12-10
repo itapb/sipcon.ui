@@ -178,7 +178,7 @@
     }
 </style>
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
 
 
     [CascadingParameter]
@@ -213,10 +213,10 @@
         {
             _model = new Model();
 
-            _brandList = await ModuleActionsService.GetBrandOption(Useful.supplierId);
+            _brandList = await ModuleActionsService.GetBrandOption(Session.SupplierId);
             _model.BrandId = _model.BrandId ?? _brandList.FirstOrDefault()?.Value ?? 0;
             _model.BrandName = _model.BrandName ?? _brandList.FirstOrDefault()?.Text ?? string.Empty;
-            _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(Useful.supplierId, Useful.userId, _model.BrandId ?? 0);
+            _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(Session.SupplierId, Session.UserId, _model.BrandId ?? 0);
 
 
             await Task.Delay(50);
@@ -235,13 +235,13 @@
 
     private async Task GetModel()
     {
-        var serviceResponse = await ModelService.GetModel(IdModel, Useful.userId);
+        var serviceResponse = await ModelService.GetModel(IdModel, Session.UserId);
         if (serviceResponse.Processed)
         {
             _model = serviceResponse.Data ?? new Model();
 
-            _brandList = await ModuleActionsService.GetBrandOption(Useful.supplierId);
-            _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(Useful.supplierId, Useful.userId, _model.BrandId ?? 0);
+            _brandList = await ModuleActionsService.GetBrandOption(Session.SupplierId);
+            _policyTypeList = await ModuleActionsService.GetPolicyTypeOption(Session.SupplierId, Session.UserId, _model.BrandId ?? 0);
 
             await Task.Delay(50);
             StateHasChanged();
@@ -267,7 +267,7 @@
         {
             _errorModalMessage = "";
 
-            var serviceResponse = await ModelService.UpdateModel(_model, Useful.userId);
+            var serviceResponse = await ModelService.UpdateModel(_model, Session.UserId);
             if (serviceResponse.Processed)
             {
                 if (ActionsModal == ActionsEnum.Create)

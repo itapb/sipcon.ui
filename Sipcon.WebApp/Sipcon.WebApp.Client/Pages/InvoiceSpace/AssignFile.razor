@@ -22,7 +22,7 @@
         </MudPaper>
     </div>
 </MudForm>
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -45,12 +45,12 @@
                     RecordId = ControlId ?? 0,
                     actionName = "SINC",
                     ModuleId = ModuleId,
-                    UserId = Useful.userId
+                    UserId = Session.UserId
                 }
             };
             
             var strSyncItem = System.Text.Json.JsonSerializer.Serialize(SyncItem);
-            var result_newAdjustmentDetail = await Http.PostAsync($"api/InvoiceControl/PostActions?userId={Useful.userId}&supplierId={Useful.supplierId}", new StringContent(strSyncItem, null, "application/json"));
+            var result_newAdjustmentDetail = await Http.PostAsync($"api/InvoiceControl/PostActions?userId={Session.UserId}&supplierId={Session.SupplierId}", new StringContent(strSyncItem, null, "application/json"));
             if (result_newAdjustmentDetail.IsSuccessStatusCode)
             {
                 var sucessContent = await result_newAdjustmentDetail.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();

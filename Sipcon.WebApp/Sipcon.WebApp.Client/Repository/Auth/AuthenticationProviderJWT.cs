@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.Extensions.Primitives;
 using Microsoft.JSInterop;
 using Sipcon.WebApp.Client.Enum;
 using Sipcon.WebApp.Client.Helper;
@@ -12,29 +11,29 @@ using System.Text.Json;
 
 namespace Sipcon.WebApp.Client.Repository.Auth
 {
-    public class AuthenticationProviderJWT(ISessionStorageService jsSessionStorageService, HttpClient httpClient) : AuthenticationStateProvider, IAuthorizeService
+    public class AuthenticationProviderJWT : AuthenticationStateProvider, IAuthorizeService
     {
-       
-        private readonly HttpClient _http = httpClient;
-        
-        private readonly ISessionStorageService _jsSessionStorage = jsSessionStorageService;
-        //public static readonly string TokenKey = "TOKENKEY";
+        private readonly HttpClient _http;
+        private readonly ISessionStorageService _jsSessionStorage;
+        private readonly UserSession _session;
+
         private static AuthenticationState Anonimo => new(new ClaimsPrincipal(new ClaimsIdentity()));
+
+        public AuthenticationProviderJWT(ISessionStorageService jsSessionStorageService, HttpClient httpClient, UserSession session)
+        {
+            _http = httpClient;
+            _jsSessionStorage = jsSessionStorageService;
+            _session = session;
+        }
+
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
             var token = await _jsSessionStorage.GetValue<string>(ValuesKey.TOKENKEY);
-            await Task.CompletedTask;
-            
+
             if (string.IsNullOrEmpty(token))
-            {
                 return Anonimo;
-            }
-           
 
             return BuildAuthenticationState(token);
-
-            //var identity = new ClaimsIdentity();
-            //return await Task.FromResult(new AuthenticationState(new ClaimsPrincipal(identity)));
         }
 
         private AuthenticationState BuildAuthenticationState(string token)
@@ -49,11 +48,12 @@ namespace Sipcon.WebApp.Client.Repository.Auth
             var payload = token.Split('.')[1];
             var jsonBytes = ParseBase64WithoutPadding(payload);
             var keyValuePairs = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonBytes);
+
             claims.AddRange(keyValuePairs!.Select(kvp => new Claim(kvp.Key, kvp.Value.ToString()!)));
+
             if (keyValuePairs!.TryGetValue("role", out var roleValue))
-            {
                 claims.Add(new Claim(ClaimTypes.Role, roleValue.ToString()!));
-            }
+
             return claims;
         }
 
@@ -61,33 +61,36 @@ namespace Sipcon.WebApp.Client.Repository.Auth
         {
             switch (base64.Length % 4)
             {
-                case 2:
-                    base64 += "==";
-                    break;
-                case 3:
-                    base64 += "=";
-                    break;
+                case 2: base64 += "=="; break;
+                case 3: base64 += "="; break;
             }
-
             return Convert.FromBase64String(base64);
         }
 
         public async Task Login(LoginResponse data)
         {
+            // Guardar en SessionStorage
             await _jsSessionStorage.SetValue<string>(ValuesKey.TOKENKEY, data.Token);
             await _jsSessionStorage.SetValue<User>(ValuesKey.USER, data.Users);
             await _jsSessionStorage.SetValue<List<UserType>>(ValuesKey.SUPPLIERS, data.Suppliers);
             await _jsSessionStorage.SetValue<List<UserType>>(ValuesKey.DEALERS, data.Dealers);
             await _jsSessionStorage.SetValue<List<UserModule>>(ValuesKey.MODULES, data.Modules);
-            var selectedSupplier = data.Suppliers.FirstOrDefault() != null ? data.Suppliers.FirstOrDefault()!.Id : 0;
-            var selectedDealer = data.Dealers.Count > 0 ? data.Dealers.Where(s => s.SupplierId == selectedSupplier.ToString()).FirstOrDefault()!.Id : 0;
-           
+
+            var selectedSupplier = data.Suppliers.FirstOrDefault()?.Id ?? 0;
+            var selectedDealer = data.Dealers.FirstOrDefault(d => d.SupplierId == selectedSupplier.ToString())?.Id ?? 0;
+
             await _jsSessionStorage.SetValue<int>(ValuesKey.SELECTEDSUPPLIER, selectedSupplier);
             await _jsSessionStorage.SetValue<int>(ValuesKey.SELECTEDDEALER, selectedDealer);
 
-            Useful.userId = data.Users.Id;
-            Useful.supplierId = selectedSupplier;
-            Useful.dealerId = selectedDealer;
+            // Actualizar UserSession
+            _session.UserId = data.Users.Id;
+            _session.SupplierId = selectedSupplier;
+            _session.DealerId = selectedDealer;
+            _session.UserActive = data.Users;
+            _session.UserSuppliers = data.Suppliers;
+            _session.UserDealer = data.Dealers;
+            _session.UserModules = data.Modules;
+            _session.IsFirstTime = false;
 
             var authState = BuildAuthenticationState(data.Token);
             NotifyAuthenticationStateChanged(Task.FromResult(authState));
@@ -96,74 +99,72 @@ namespace Sipcon.WebApp.Client.Repository.Auth
         public async Task Logout()
         {
             _http.DefaultRequestHeaders.Authorization = null;
-            
             await _jsSessionStorage.ClearAll();
 
-            await Task.CompletedTask;
+            // Resetear UserSession
+            _session.UserId = 0;
+            _session.SupplierId = 0;
+            _session.DealerId = 0;
+            _session.UserActive = new User();
+            _session.UserSuppliers.Clear();
+            _session.UserDealer.Clear();
+            _session.UserModules.Clear();
+            _session.IsFirstTime = true;
+
             NotifyAuthenticationStateChanged(Task.FromResult(Anonimo));
         }
 
         public async Task<bool> IsUserAuthenticated()
         {
             var authState = await GetAuthenticationStateAsync();
-            var user = authState.User;
-            return user.Identity!.IsAuthenticated;
+            return authState.User.Identity!.IsAuthenticated;
         }
 
         public async Task<List<UserModule>> GetUserRoleAsync()
         {
             var data = await _jsSessionStorage.GetValue<List<UserModule>>(ValuesKey.MODULES);
-            var modulos = Check<List<UserModule>>(data);
-            return modulos;
+            return Check<List<UserModule>>(data);
         }
 
         public async Task<List<UserType>> GetUserDealerAsync()
         {
             var data = await _jsSessionStorage.GetValue<List<UserType>>(ValuesKey.DEALERS);
-            var dealers = Check<List<UserType>>(data);
-            return dealers;
+            return Check<List<UserType>>(data);
         }
 
         public async Task<List<UserType>> GetUserSupplierAsync()
         {
             var data = await _jsSessionStorage.GetValue<List<UserType>>(ValuesKey.SUPPLIERS);
-            var supplier = Check<List<UserType>>(data);
-            return supplier;
+            return Check<List<UserType>>(data);
         }
 
         public async Task<User> GetUserAsync()
         {
             var data = await _jsSessionStorage.GetValue<User>(ValuesKey.USER);
-            var user = Check<User>(data);
-            return user;
+            return Check<User>(data);
         }
 
         public async Task<int> GetSelectedDealerAsync()
         {
             var data = await _jsSessionStorage.GetValue<int>(ValuesKey.SELECTEDDEALER);
-            var Item = Check<int>(data);
-            return Item;
+            return Check<int>(data);
         }
 
         public async Task<int> GetSelectedSupplierAsync()
         {
             var data = await _jsSessionStorage.GetValue<int>(ValuesKey.SELECTEDSUPPLIER);
-            var Item = Check<int>(data);
-            return Item;
+            return Check<int>(data);
         }
 
         public async Task SetValueSessionStorage<T>(T data, ValuesKey key)
         {
             await _jsSessionStorage.SetValue<T>(key, data);
-          
         }
 
         public async Task SetTimerInactivo<T>(DotNetObjectReference<T> data) where T : class
         {
             await _jsSessionStorage.SetTimerInactivo<DotNetObjectReference<T>>(data);
-
         }
-
 
         private static T Check<T>(T value) where T : new()
         {
@@ -172,29 +173,25 @@ namespace Sipcon.WebApp.Client.Repository.Auth
 
         public async Task RefreshStaticVariables()
         {
-            Useful.IsNewOrEdit = false;
+            _session.IsNewOrEdit = false;
 
-            // se quita es condicion ya que tenemos varios casos en produccion donde no se filtra bien los datos
-            //if (Useful.IsFirstTime)
-            //{
-                int selectedDealer = await GetSelectedDealerAsync();
-                int selectedSupplier = await GetSelectedSupplierAsync();
-                var _userActive = await GetUserAsync();
-                Useful.supplierId = selectedSupplier;
-                Useful.dealerId = selectedDealer;
-                Useful.userId = _userActive.Id;
-                Useful.IsFirstTime = false;
-            //}
-  
+            int selectedDealer = await GetSelectedDealerAsync();
+            int selectedSupplier = await GetSelectedSupplierAsync();
+            var userActive = await GetUserAsync();
+
+            _session.SupplierId = selectedSupplier;
+            _session.DealerId = selectedDealer;
+            _session.UserId = userActive.Id;
+            _session.IsFirstTime = false;
         }
 
         public async Task RefresMobileStaticVariables()
         {
-            if (Useful.userId == 0)
+            if (_session.UserId == 0)
             {
                 var mUser = await GetUserAsync();
-                Useful.userId = mUser.Id;
-                Useful.supplierId = await GetSelectedSupplierAsync();
+                _session.UserId = mUser.Id;
+                _session.SupplierId = await GetSelectedSupplierAsync();
             }
         }
     }

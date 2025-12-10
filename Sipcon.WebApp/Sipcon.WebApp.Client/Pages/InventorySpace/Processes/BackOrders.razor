@@ -173,7 +173,7 @@
     <MudButton OnClick="@CollapseAllGroupsAsync" Color="@Color.Primary" >Collapse all</MudButton>
 </div>
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
@@ -249,7 +249,7 @@
 
         string hrefMovement = "backorders";
         $"Home,Inventario,BackOrders".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
-        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-BACKORDER&userId={Useful.userId}");
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-BACKORDER&userId={Session.UserId}");
         hubEventsService.OnSupplierChanged += ReloadBackOrderGrid;
         hubEventsService.OnDealerChanged += ReloadBackOrderGrid;
     }
@@ -282,7 +282,7 @@
         var totalItems = 0;
         IEnumerable<BackOrder> data;
         string DateRange = (_dateRange is not null && _dateRange.Start.HasValue && _dateRange.End.HasValue) ? $"&startDate={_dateRange.Start.Value.ToString("yyyy-MM-dd")}&endDate={_dateRange.End.Value.ToString("yyyy-MM-dd")}" : string.Empty;
-        HttpResponseMessage response = await Http.GetAsync($"api/BackOrder/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&dealerId={Useful.dealerId}&rowFrom={mOffset}&stockOnly={StockOnly}&filter={searchString}" + DateRange);
+        HttpResponseMessage response = await Http.GetAsync($"api/BackOrder/GetAll?userId={Session.UserId}&supplierId={Session.SupplierId}&dealerId={Session.DealerId}&rowFrom={mOffset}&stockOnly={StockOnly}&filter={searchString}" + DateRange);
 
         if (response.IsSuccessStatusCode)
         {
@@ -438,7 +438,7 @@
         if (actionName == "EXPORT" && BackOrderDataGrid?.FilteredItems.Count() > 0)
         {
             _loading = true;
-            var ResultZonas = await Http.GetAsync($"api/BackOrder/Export?filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}&dealerId={Useful.dealerId}");
+            var ResultZonas = await Http.GetAsync($"api/BackOrder/Export?filter={searchString}&userId={Session.UserId}&supplierId={Session.SupplierId}&dealerId={Session.DealerId}");
             if (ResultZonas.IsSuccessStatusCode)
             {
                 var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
@@ -453,7 +453,7 @@
         var mActions = BackOrderDataGrid?.FilteredItems.Where(item => item.IsSelected )
                                                          .Select(item => new Client.Models.Action
                                                          {
-                                                             UserId = Useful.userId,
+                                                             UserId = Session.UserId,
                                                              RecordId = item.Id,
                                                              ModuleId = Modules!.FirstOrDefault()?.Id,
                                                              actionName = actionName,
@@ -479,12 +479,12 @@
                 if ((await dialogReference.Result) is DialogResult dialogResult && !dialogResult.Canceled && dialogResult.Data is String mActionComment)
                 {
                     mActions.ToList().ForEach(a => { a.ActionComment = mActionComment; });
-                    await PostActionAndReload(mActions, $"api/BackOrder/PostActions?userId={Useful.userId}");
+                    await PostActionAndReload(mActions, $"api/BackOrder/PostActions?userId={Session.UserId}");
                 }
             }
             else
             {
-                await PostActionAndReload(mActions, $"api/BackOrder/PostActions?userId={Useful.userId}");
+                await PostActionAndReload(mActions, $"api/BackOrder/PostActions?userId={Session.UserId}");
             }
         }
         await Task.CompletedTask;

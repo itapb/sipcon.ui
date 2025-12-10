@@ -156,7 +156,7 @@ else
 {
     <LoadingForm IsMudDialog="@(MudDialog != null)" />
 }
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -227,10 +227,10 @@ else
     }
     private async Task LoadPartContextAsync(int? partId)
     {
-        var response = await Http.GetAsync($"api/Part/GetOneWithContext?partId={partId}&userId={Useful.userId}");
+        var response = await Http.GetAsync($"api/Part/GetOneWithContext?partId={partId}&userId={Session.UserId}");
         if (response.IsSuccessStatusCode && (await response.Content.ReadFromJsonAsync<WebApiResponse<PartDetails>>() is WebApiResponse<PartDetails> content))
         {
-            Suppliers = content.data?.Suppliers?.Where(r => r.Id == Useful.supplierId).ToList();
+            Suppliers = content.data?.Suppliers?.Where(r => r.Id == Session.SupplierId).ToList();
             PartTypes = content.data?.Types;
             RelatedModels = content.data?.Models;
             SubFamilies = content.data?.Subfamilies;
@@ -298,7 +298,7 @@ else
         {
             var mPostPart = new PostPart { Part = SelectedPart, Models = RelatedModels };
             var strJsonPostPart = System.Text.Json.JsonSerializer.Serialize(mPostPart);
-            var result_Post_Part = await Http.PostAsync($"api/Part/PostPart?userId={Useful.userId}", new StringContent(strJsonPostPart, null, "application/json"));
+            var result_Post_Part = await Http.PostAsync($"api/Part/PostPart?userId={Session.UserId}", new StringContent(strJsonPostPart, null, "application/json"));
             if (result_Post_Part.IsSuccessStatusCode)
             {
                 var content = await result_Post_Part.Content.ReadAsStringAsync();

@@ -188,7 +188,7 @@ else
 <LoadingForm IsMudDialog="@(MudDialog != null)" />
 }
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     string AgentName = string.Empty;
     List<PayMethod2>? PayMethods;
     PayMethod2? PayMethodSelected;
@@ -306,7 +306,7 @@ else
     }
     private async Task LoadContact(int contactId)
     {
-        var ContactDetailsResult = await Http.GetFromJsonAsync<ContactDetails>($"api/Contact/GetOne_WithContext?contactId={contactId}&userId={Useful.userId}");
+        var ContactDetailsResult = await Http.GetFromJsonAsync<ContactDetails>($"api/Contact/GetOne_WithContext?contactId={contactId}&userId={Session.UserId}");
         if (ContactDetailsResult != null)
         {
             PayMethods = ContactDetailsResult.PayMethods;
@@ -614,7 +614,7 @@ else
             if (SelectedContact != null && SelectedContact.Male == null) SelectedContact.Male = true;
 
             var strJsonSelectedContact = System.Text.Json.JsonSerializer.Serialize(SelectedContact);
-            var result_Post_Contacts = await Http.PostAsync($"api/Contact/Post_Contacts?userId={Useful.userId}", new StringContent($"[{strJsonSelectedContact}]", null, "application/json"));
+            var result_Post_Contacts = await Http.PostAsync($"api/Contact/Post_Contacts?userId={Session.UserId}", new StringContent($"[{strJsonSelectedContact}]", null, "application/json"));
             if (result_Post_Contacts.IsSuccessStatusCode)
             {
                 var resultString = await result_Post_Contacts.Content.ReadAsStringAsync();

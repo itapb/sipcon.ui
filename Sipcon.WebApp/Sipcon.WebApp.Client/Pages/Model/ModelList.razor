@@ -91,7 +91,7 @@
 
 
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     private IEnumerable<Model> _Models = new List<Model>();
     private string _nestedErrorMessage = string.Empty;
@@ -153,9 +153,9 @@
         _loading = true;
         _Models = new List<Model>();
         _rowsTotal = 0;
-        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
+        _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
 
-        var serviceResponse = await ModelService.GetModels(Useful.supplierId, Useful.userId, _rowCount, _searchString);
+        var serviceResponse = await ModelService.GetModels(Session.SupplierId, Session.UserId, _rowCount, _searchString);
         if (serviceResponse.Processed)
         {
             _Models = serviceResponse.Data;
@@ -309,7 +309,7 @@
                 formData.Add(content, "file", file.Name);
 
 
-                var serviceResponse = await ModelService.ImportModels(Useful.supplierId, Useful.userId, formData);
+                var serviceResponse = await ModelService.ImportModels(Session.SupplierId, Session.UserId, formData);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -334,7 +334,7 @@
 
     private async Task ExportItemsAsync()
     {
-        var serviceResponse = await ModelService.ExportModels(Useful.supplierId, Useful.userId, _searchString);
+        var serviceResponse = await ModelService.ExportModels(Session.SupplierId, Session.UserId, _searchString);
         if (serviceResponse.Processed)
         {
             _success = true;
@@ -387,7 +387,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await ModelService.ActionsModel(ActionList, Useful.userId);
+                var serviceResponse = await ModelService.ActionsModel(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
 
@@ -443,7 +443,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await ModelService.ActionsModel(ActionList, Useful.userId);
+                var serviceResponse = await ModelService.ActionsModel(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;

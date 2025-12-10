@@ -76,7 +76,7 @@
 
 
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
 
     [Parameter] public int? IdAccessGroup { get; set; }
     
@@ -137,7 +137,7 @@
 
     private async Task AfterSupplierValueChange(AccessGroupDetail detail)
     {
-        var serviceResponse = await SecurityService.UpdateAccessGroupDetail(detail, Useful.userId);
+        var serviceResponse = await SecurityService.UpdateAccessGroupDetail(detail, Session.UserId);
         if (!serviceResponse.Processed)
         {
             await _accessGroupDetailGrid!.ReloadServerData();

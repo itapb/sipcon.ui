@@ -17,7 +17,7 @@
 
 <div class="home-background"> </div>
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
 
 
@@ -25,7 +25,7 @@
     {
 
         await AuthenticationStateProvider.RefreshStaticVariables();
-        Useful.IsNewOrEdit = false;
+        Session.IsNewOrEdit = false;
 
         await JS.InvokeVoidAsync("OpenChatBot");
         StateHasChanged();

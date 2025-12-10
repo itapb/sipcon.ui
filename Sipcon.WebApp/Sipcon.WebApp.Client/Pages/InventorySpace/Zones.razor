@@ -53,7 +53,7 @@
 else{
     <ZoneForm @bind-Value="ZoneId" />
 }
-@code {    
+@code { [Inject] private UserSession Session { get; set; } = null!;     
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private MasterComp<Zone, ZoneForm> masterComp { get; set; } = default!;
     private int? ZoneId;
@@ -76,7 +76,7 @@ else{
         var mOffset = state.Page * state.PageSize;
         var totalItems = 0;
         IEnumerable<Zone> data;
-        HttpResponseMessage response = await masterComp.Http.GetAsync($"api/Zone/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&rowFrom={mOffset}&filter={masterComp.searchString}");
+        HttpResponseMessage response = await masterComp.Http.GetAsync($"api/Zone/GetAll?userId={Session.UserId}&supplierId={Session.SupplierId}&rowFrom={mOffset}&filter={masterComp.searchString}");
 
         if (response.IsSuccessStatusCode)
         {
@@ -102,7 +102,7 @@ else{
     }
     public void Dispose()
     {
-        Useful.IsNewOrEdit = false;
+        Session.IsNewOrEdit = false;
         hubEventsService.OnSupplierChanged -= ReloadZonesGrid;
     }
 

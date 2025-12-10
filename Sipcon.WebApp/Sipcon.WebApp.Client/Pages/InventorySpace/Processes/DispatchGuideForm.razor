@@ -86,7 +86,7 @@
         text-align: right;
     }
 </style>
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
@@ -184,7 +184,7 @@
         if (form.IsValid )
         {
             var strMasterMovement = System.Text.Json.JsonSerializer.Serialize(MasterGuide);
-            var result_MasterMovement = await Http.PostAsync($"api/Guide/PostGuideNumber?userId={Useful.userId}&guideId={MasterGuide!.Id}&guideNumber={MasterGuide.Number}", null);
+            var result_MasterMovement = await Http.PostAsync($"api/Guide/PostGuideNumber?userId={Session.UserId}&guideId={MasterGuide!.Id}&guideNumber={MasterGuide.Number}", null);
             if (result_MasterMovement.IsSuccessStatusCode)
             {
                 var sucessContent = await result_MasterMovement.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
@@ -220,7 +220,7 @@
         var SelectedActions = GuideDetailsMudDataGrid?.FilteredItems.Count() > 0 ?
                                new Client.Models.Action
                                {
-                                   UserId = Useful.userId,
+                                   UserId = Session.UserId,
                                    RecordId = MasterGuide!.Id,
                                    ModuleId = 17,
                                    actionName = "RECEIVE",
@@ -240,7 +240,7 @@
         if (await IsConfirmedGuideDetails() && form.IsValid)
         {
 
-            var result_MasterGuide = await Http.PostAsync($"api/Guide/PostGuideNumber?userId={Useful.userId}&guideId={MasterGuide!.Id}&guideNumber={MasterGuide.Number}", null);
+            var result_MasterGuide = await Http.PostAsync($"api/Guide/PostGuideNumber?userId={Session.UserId}&guideId={MasterGuide!.Id}&guideNumber={MasterGuide.Number}", null);
             if (result_MasterGuide.IsSuccessStatusCode)
             {
                 var sucessContent = await result_MasterGuide.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
@@ -263,7 +263,7 @@
             return;
         }
         var strMovementActions = System.Text.Json.JsonSerializer.Serialize(SelectedActions);
-        var result_PostMovementActions = (SelectedActions is not null) ? await Http.PostAsync($"api/Guide/PostGuidesActions?userId={Useful.userId}", new StringContent($"[{strMovementActions}]", null, "application/json")) : null;
+        var result_PostMovementActions = (SelectedActions is not null) ? await Http.PostAsync($"api/Guide/PostGuidesActions?userId={Session.UserId}", new StringContent($"[{strMovementActions}]", null, "application/json")) : null;
         if ((result_PostMovementActions?.IsSuccessStatusCode ?? false))
         {
             var rest = result_PostMovementActions.Content.ReadAsStringAsync();

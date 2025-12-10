@@ -1,11 +1,12 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
+using Sipcon.WebApp.Client.Helper;
 using Sipcon.WebApp.Client.Repository;
 using Sipcon.WebApp.Client.Repository.Auth;
 using Sipcon.WebApp.Client.Services;
 using Sipcon.WebApp.Client.Utils;
+using System.Globalization;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
@@ -39,12 +40,12 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddAuthenticationStateDeserialization();
 
 builder.Services.AddTransient<ISessionStorageService, SessionStorageRepository>();
+builder.Services.AddScoped<UserSession>();
 builder.Services.AddScoped<AuthenticationProviderJWT>();
 builder.Services.AddScoped<AuthenticationStateProvider, AuthenticationProviderJWT>(x => x.GetRequiredService<AuthenticationProviderJWT>());
 builder.Services.AddScoped<IAuthorizeService, AuthenticationProviderJWT>(x => x.GetRequiredService<AuthenticationProviderJWT>());
 
 
-builder.Services.AddScoped<IModelService, ModelRepository>();
 builder.Services.AddScoped<IModelService, ModelRepository>();
 builder.Services.AddScoped<IModuleService, ModuleRepository>();
 builder.Services.AddScoped<IVehicleService, VehicleRepository>();
@@ -64,6 +65,7 @@ builder.Services.AddScoped<ILaborTimeService, LaborTimeRepository>();
 builder.Services.AddScoped<ILicenseService, LicenseRepository>();
 builder.Services.AddScoped<IFailReportService, FailReportRepository>();
 builder.Services.AddScoped<ISecurityService, SecurityRepository>();
+
 
 
 builder.Services.AddTransient<UtilModuleActions>();

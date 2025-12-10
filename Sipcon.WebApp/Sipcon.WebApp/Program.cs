@@ -1,13 +1,14 @@
-using System.Globalization;
-using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Localization;
 using MudBlazor.Services;
 using Sipcon.WebApp;
+using Sipcon.WebApp.Client.Helper;
 using Sipcon.WebApp.Client.Repository;
 using Sipcon.WebApp.Client.Repository.Auth;
 using Sipcon.WebApp.Client.Services;
 using Sipcon.WebApp.Client.Utils;
 using Sipcon.WebApp.Components;
+using System.Globalization;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -67,7 +68,7 @@ builder.Services.AddMudServices();
 
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
-
+builder.Services.AddScoped<UserSession>();
 builder.Services.AddTransient<ISessionStorageService, SessionStorageRepository>();
 builder.Services.AddScoped<AuthenticationProviderJWT>();
 builder.Services.AddScoped<AuthenticationStateProvider,AuthenticationProviderJWT>(x=> x.GetRequiredService<AuthenticationProviderJWT>());

@@ -152,7 +152,7 @@ else
 	</MudForm>
 }
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
 	private int pageSize = 100;
 	private int currentPage = 1;
 
@@ -453,12 +453,12 @@ else
 		}
 	}
     private async Task PerfomLoad()    {
-        contacts = await Http.GetFromJsonAsync<List<Contact>>($"api/Contact/GetAll?rowFrom=0&idUser={Useful.userId}");
+        contacts = await Http.GetFromJsonAsync<List<Contact>>($"api/Contact/GetAll?rowFrom=0&idUser={Session.UserId}");
         await Task.CompletedTask;
     }
 	private async Task PerformSearch()
 	{		
-		contacts = await Http.GetFromJsonAsync<List<Contact>>($"api/Contact/GetAll?filter={_searchString}&rowFrom=0&idUser={Useful.userId}");
+		contacts = await Http.GetFromJsonAsync<List<Contact>>($"api/Contact/GetAll?filter={_searchString}&rowFrom=0&idUser={Session.UserId}");
 		await Task.CompletedTask;
 	}
 	private async Task OnPageChanged(int newPage)

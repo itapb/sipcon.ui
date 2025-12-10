@@ -50,7 +50,7 @@ else
         </div>
     </MudForm>
 }
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -86,7 +86,7 @@ else
 
     private async Task LoadLocations()
     {
-        HttpResponseMessage locationResponse = await Http.GetAsync($"api/Location/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&filter={newAdjustmentDetail?.LocationName!.Trim()}");
+        HttpResponseMessage locationResponse = await Http.GetAsync($"api/Location/GetAll?userId={Session.UserId}&supplierId={Session.SupplierId}&filter={newAdjustmentDetail?.LocationName!.Trim()}");
         if (locationResponse.IsSuccessStatusCode)
         {
             var content2 = await locationResponse.Content.ReadFromJsonAsync<WebApiResponse<List<Location>>>();
@@ -134,7 +134,7 @@ else
         if (form.IsValid)
         {
             var strnewAdjustmenttDetail = System.Text.Json.JsonSerializer.Serialize(newAdjustmentDetail);
-            var result_newAdjustmentDetail = await Http.PostAsync($"api/Adjustment/PostAdjustmentDetails?userId={Useful.userId}", new StringContent($"{strnewAdjustmenttDetail}", null, "application/json"));
+            var result_newAdjustmentDetail = await Http.PostAsync($"api/Adjustment/PostAdjustmentDetails?userId={Session.UserId}", new StringContent($"{strnewAdjustmenttDetail}", null, "application/json"));
             if (result_newAdjustmentDetail.IsSuccessStatusCode)
             {
                 var sucessContent = await result_newAdjustmentDetail.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();

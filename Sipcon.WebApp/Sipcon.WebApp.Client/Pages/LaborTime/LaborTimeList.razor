@@ -103,7 +103,7 @@
                     Title="@("Mano de Obra")" />
 
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     private IEnumerable<LaborTime> _LaborTimes = new List<LaborTime>();
     private string _nestedErrorMessage = string.Empty;
@@ -170,9 +170,9 @@
         _loading = true;
         _LaborTimes = new List<LaborTime>();
         _rowsTotal = 0;
-        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
+        _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
 
-        var serviceResponse = await LaborTimeService.GetLaborTimes(Useful.supplierId, _rowCount, _searchString, _modelIdSelected);
+        var serviceResponse = await LaborTimeService.GetLaborTimes(Session.SupplierId, _rowCount, _searchString, _modelIdSelected);
         if (serviceResponse.Processed)
         {
             _LaborTimes = serviceResponse.Data;
@@ -255,7 +255,7 @@
 
     private async Task ImportItemsAsync()
     {
-        var _modelsList = await ModuleActionsService.GetModelOption(Useful.supplierId, Useful.userId);
+        var _modelsList = await ModuleActionsService.GetModelOption(Session.SupplierId, Session.UserId);
 
         DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
         var parameters = new DialogParameters<SelectItemDialog> { { x => x.SelectList, _modelsList }, { x => x.Title, "Modelos" } };
@@ -303,7 +303,7 @@
 
                     // Indicar el ID Modelo
                     // Verificar si ID Modelo es necesario
-                    var serviceResponse = await LaborTimeService.ImportLaborTimes(Useful.userId, _selectedModel, formData);
+                    var serviceResponse = await LaborTimeService.ImportLaborTimes(Session.UserId, _selectedModel, formData);
                     if (serviceResponse.Processed)
                     {
                         _success = true;
@@ -332,7 +332,7 @@
 
     private async Task ExportItemsAsync()
     {
-        var _modelsList = await ModuleActionsService.GetModelOption(Useful.supplierId, Useful.userId);
+        var _modelsList = await ModuleActionsService.GetModelOption(Session.SupplierId, Session.UserId);
 
         DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
         var parameters = new DialogParameters<SelectItemDialog> { { x => x.SelectList, _modelsList }, { x => x.Title, "Modelos" } };
@@ -345,7 +345,7 @@
         {
             var _selectedModel = (int)(result.Data ?? 0);
 
-            var serviceResponse = await LaborTimeService.ExportLaborTimes(_selectedModel, Useful.supplierId);
+            var serviceResponse = await LaborTimeService.ExportLaborTimes(_selectedModel, Session.SupplierId);
             if (serviceResponse.Processed)
             {
                 _success = true;
@@ -405,7 +405,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await LaborTimeService.ActionsLaborTime(ActionList, Useful.userId);
+                var serviceResponse = await LaborTimeService.ActionsLaborTime(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;

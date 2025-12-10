@@ -60,7 +60,7 @@ else
     <PartForm @bind-Value="PartId" />
 }
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
 
     [Inject] private HttpClient Http { get; set; } = default!;
@@ -82,7 +82,7 @@ else
         if (actionName == "EXPORT")
         {
             _loading = true;          
-            if ((await Http.GetAsync($"api/Part/Export?filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}") is HttpResponseMessage ResultZonas) && ResultZonas.IsSuccessStatusCode)
+            if ((await Http.GetAsync($"api/Part/Export?filter={searchString}&userId={Session.UserId}&supplierId={Session.SupplierId}") is HttpResponseMessage ResultZonas) && ResultZonas.IsSuccessStatusCode)
             {
                 var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
                 var base64File = Convert.ToBase64String(fileContent);
@@ -101,7 +101,7 @@ else
                             (PartMudDataGrid.FilteredItems.Where(item => item.IsSelected)
                                                              .Select(item => new Client.Models.Action
                                                              {
-                                                                 UserId =  Useful.userId ,
+                                                                 UserId =  Session.UserId ,
                                                                  RecordId = item.Id,
                                                                  ModuleId = Modules!.FirstOrDefault()?.Id,
                                                                  actionName = actionName,
@@ -110,7 +110,7 @@ else
                                                              }).ToList()
                              ) : null;
 
-        var result_Post_Actions = (SelectedActions is not null && SelectedActions.Count > 0) ? await Http.PostAsync($"api/Part/PostActions?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
+        var result_Post_Actions = (SelectedActions is not null && SelectedActions.Count > 0) ? await Http.PostAsync($"api/Part/PostActions?userId={Session.UserId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
         if (result_Post_Actions is not null && result_Post_Actions.IsSuccessStatusCode)
         {
             var resultAction = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
@@ -145,7 +145,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         await AuthenticationStateProvider.RefreshStaticVariables();
-        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-REPUESTOS&userId={Useful.userId}");
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-REPUESTOS&userId={Session.UserId}");
         hubEventsService.OnSupplierChanged += ReloadPartsGrid;
     }
     Func<Part, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
@@ -167,7 +167,7 @@ else
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Part> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Part/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&rowFrom={mOffset}&filter={searchString}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Part/GetAll?userId={Session.UserId}&supplierId={Session.SupplierId}&rowFrom={mOffset}&filter={searchString}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Part>>>();
@@ -219,7 +219,7 @@ else
                 formData.Add(content, "file", file.Name);
                 _loading = true;
 
-                var response = await Http.PostAsync($"api/Part/Import?userId={Useful.userId}&supplierId={Useful.supplierId}", formData);
+                var response = await Http.PostAsync($"api/Part/Import?userId={Session.UserId}&supplierId={Session.SupplierId}", formData);
                 if (response.IsSuccessStatusCode)
                 {
                     await DialogService.ShowDialog("Archivo cargado con exito!.", "Resouestos", "OK", Color.Info, Icons.Material.Filled.Commit);
@@ -267,7 +267,7 @@ else
     }
     public void Dispose()
     {
-        Useful.IsNewOrEdit = false;
+        Session.IsNewOrEdit = false;
         hubEventsService.OnSupplierChanged -= ReloadPartsGrid;
     }
 }

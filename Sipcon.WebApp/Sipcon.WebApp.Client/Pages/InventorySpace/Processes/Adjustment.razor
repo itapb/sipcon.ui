@@ -49,7 +49,7 @@ else
     </MudDataGrid>
 }
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
@@ -84,12 +84,12 @@ else
     private async Task ClickRefreshAdjustment(MouseEventArgs args) => await AdjustmentMudDataGrid!.ReloadServerData();
     private async Task ClickNewAdjustment(MouseEventArgs ev)
     {
-        HttpResponseMessage response = await Http.GetAsync($"api/Adjustment/NewAdjustmentWithContext?userId={Useful.userId}&supplierId={Useful.supplierId}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Adjustment/NewAdjustmentWithContext?userId={Session.UserId}&supplierId={Session.SupplierId}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterAdjustmentDetails>>();
             var data = content2!.data ?? new MasterAdjustmentDetails();
-            Useful.IsNewOrEdit = true;
+            Session.IsNewOrEdit = true;
             AdjustmentId = data.Adjustment?.Id;
         }
         else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
@@ -100,7 +100,7 @@ else
         else
         {
             var errorMessage = await response.Content.ReadAsStringAsync();
-            Logger.LogError(Useful.TemplateLog(AdjustmentTitle, errorMessage));
+            Logger.LogError(Session.TemplateLog(AdjustmentTitle, errorMessage));
             await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);                     
         }
         await Task.CompletedTask;
@@ -113,7 +113,7 @@ else
 
     private async Task ClickEdiAdjustment(Models.Adjustment item)
     {
-        Useful.IsNewOrEdit = true;
+        Session.IsNewOrEdit = true;
         await Task.FromResult(AdjustmentId = item.Id);
     }
 
@@ -131,7 +131,7 @@ else
         string hrefAdjustment = "adjustment";       
 
         $"Home,Inventario,{AdjustmentTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefAdjustment), icon: s.ToActionIcon())));
-        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-{AdjustmentTitle.ToUpper()}&userId={Useful.userId}");
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-{AdjustmentTitle.ToUpper()}&userId={Session.UserId}");
     }
     Func<Models.Adjustment, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
     {
@@ -151,7 +151,7 @@ else
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Models.Adjustment> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Adjustment/GetAdjustments?userId={Useful.userId}&supplierId={Useful.supplierId}&rowFrom={mOffset}&filter={searchString}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Adjustment/GetAdjustments?userId={Session.UserId}&supplierId={Session.SupplierId}&rowFrom={mOffset}&filter={searchString}");
 
         if (response.IsSuccessStatusCode)
         {
@@ -168,7 +168,7 @@ else
         {
             data = new List<Models.Adjustment>();
             var errorMessage = await response.Content.ReadAsStringAsync();
-            Logger.LogError(Useful.TemplateLog(AdjustmentTitle, errorMessage));
+            Logger.LogError(Session.TemplateLog(AdjustmentTitle, errorMessage));
             await DialogService.ShowUnexpected();
         }
 
@@ -181,7 +181,7 @@ else
         if (actionName == "EXPORT" && AdjustmentMudDataGrid?.FilteredItems.Count() > 0)
         {
              Loading = true;
-             var ResultZonas = await Http.GetAsync($"api/Adjustment/Export?filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}");
+             var ResultZonas = await Http.GetAsync($"api/Adjustment/Export?filter={searchString}&userId={Session.UserId}&supplierId={Session.SupplierId}");
              if (ResultZonas.IsSuccessStatusCode)
              {
                     var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
@@ -196,7 +196,7 @@ else
         var mActions = AdjustmentMudDataGrid?.FilteredItems.Where(item => item.IsSelected )
                                                          .Select(item => new Client.Models.Action
                                                          {
-                                                             UserId = Useful.userId,
+                                                             UserId = Session.UserId,
                                                              RecordId = item.Id,
                                                              ModuleId = Modules!.FirstOrDefault()?.Id,
                                                              actionName = actionName,
@@ -210,7 +210,7 @@ else
         }
         else if (mActions?.Count > 0)
         { 
-            await PostActionAndReload(mActions, $"api/Adjustment/PostAdjustmentActions?userId={Useful.userId}");                    
+            await PostActionAndReload(mActions, $"api/Adjustment/PostAdjustmentActions?userId={Session.UserId}");                    
         }
 
     }
@@ -231,7 +231,7 @@ else
         else
         {
             var errorMessage = await result_Post_Actions!.Content.ReadAsStringAsync() ?? "";
-            Logger.LogError(Useful.TemplateLog(AdjustmentTitle, errorMessage));
+            Logger.LogError(Session.TemplateLog(AdjustmentTitle, errorMessage));
             await DialogService.ShowUnexpected(); ;
         }
     }
@@ -245,7 +245,7 @@ else
 
     public void Dispose()
     {
-        Useful.IsNewOrEdit = false;
+        Session.IsNewOrEdit = false;
         hubEventsService.OnSupplierChanged -= ReloadAdjustmentGrid;
     }
 }

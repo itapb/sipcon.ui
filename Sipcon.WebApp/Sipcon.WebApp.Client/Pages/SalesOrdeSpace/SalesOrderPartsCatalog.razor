@@ -50,7 +50,7 @@ else
     </MudItem>
 </MudGrid>
 }
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -72,7 +72,7 @@ else
     private int ContactCurrentPage = 0;
     private async Task loadModels()
     {
-        HttpResponseMessage response = await Http.GetAsync($"api/Model/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&rowFrom=0");
+        HttpResponseMessage response = await Http.GetAsync($"api/Model/GetAll?userId={Session.UserId}&supplierId={Session.SupplierId}&rowFrom=0");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Model>>>();
@@ -124,7 +124,7 @@ else
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Part> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Part/GetByModel?rowFrom={mOffset}&filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}&isSell=true&modelId={ModelSelected?.Id}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Part/GetByModel?rowFrom={mOffset}&filter={searchString}&userId={Session.UserId}&supplierId={Session.SupplierId}&isSell=true&modelId={ModelSelected?.Id}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Part>>>();

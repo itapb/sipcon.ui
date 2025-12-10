@@ -458,7 +458,7 @@
     }
 </style>
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
 
 
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -493,7 +493,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _possibleFaultList = await ModuleActionsService.GetPossibleFaultOption(Useful.userId);
+        _possibleFaultList = await ModuleActionsService.GetPossibleFaultOption(Session.UserId);
 
         if (ActionsModal == ActionsEnum.Create)
         {
@@ -520,7 +520,7 @@
     private async Task GetAssistence()
     {
 
-        var serviceResponse = await AssistenceService.GetAssistence(Useful.userId, Useful.dealerId, IdAssistence);
+        var serviceResponse = await AssistenceService.GetAssistence(Session.UserId, Session.DealerId, IdAssistence);
         if (serviceResponse.Processed)
         {
             _model = serviceResponse.Data ?? new Assistence();
@@ -544,7 +544,7 @@
     {
         _modelPolicy = new Models.Policy();
         _isSearchVin = false;
-        var serviceResponse = await PolicyService.GetPolicyBy(Useful.supplierId, Useful.userId, _searchVin, SearchByEnum.Dual);
+        var serviceResponse = await PolicyService.GetPolicyBy(Session.SupplierId, Session.UserId, _searchVin, SearchByEnum.Dual);
         if (serviceResponse.Processed)
         {
             _modelPolicy = serviceResponse.Data ?? new Models.Policy();
@@ -560,7 +560,7 @@
 
         
 
-        _model.DealerId = Useful.dealerId;
+        _model.DealerId = Session.DealerId;
         _model.NumberPolicy = _modelPolicy.Number;
         _model.CustomerId  =  _modelPolicy.CustomerId;
         _model.VehicleId = _modelPolicy.VehicleId;
@@ -657,7 +657,7 @@
         {
             _errorModalMessage = "";
 
-            var serviceResponse = await AssistenceService.UpdateAssistence(_model, Useful.userId);
+            var serviceResponse = await AssistenceService.UpdateAssistence(_model, Session.UserId);
             if (serviceResponse.Processed)
             {
                 if (ActionsModal == ActionsEnum.Create)

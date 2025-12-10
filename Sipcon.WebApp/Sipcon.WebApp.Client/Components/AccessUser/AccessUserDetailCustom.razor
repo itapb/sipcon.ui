@@ -61,7 +61,7 @@
 
 <NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Asignar Usuarios")"/>
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
 
     [Parameter] public int? IdAccessGroup { get; set; } = null;
 
@@ -158,7 +158,7 @@
             AccessUserDetail _detail = (AccessUserDetail?)result?.Data ?? new AccessUserDetail();
             _detail.Assign = true;  
 
-            var serviceResponse = await SecurityService.CreateAccessUserDetail(_detail, Useful.userId);
+            var serviceResponse = await SecurityService.CreateAccessUserDetail(_detail, Session.UserId);
             if (serviceResponse.Processed)
             {
                 await _mudDataGrid!.ReloadServerData();
@@ -202,7 +202,7 @@
         if (confirm == true)
         {
             detail.Assign = false;
-            var serviceResponse = await SecurityService.UpdateAccessUserDetail(detail, Useful.userId);
+            var serviceResponse = await SecurityService.UpdateAccessUserDetail(detail, Session.UserId);
             if (serviceResponse.Processed)
             {
                 _success = true;

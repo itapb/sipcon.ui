@@ -95,7 +95,7 @@
                     Title="@("Usuarios")"/>
 
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient _httpClient { get; set; } = null!;
     private IEnumerable<AccessUserDetail> _accessGroupList = new List<AccessUserDetail>();
@@ -138,7 +138,7 @@
         _loading = true;
         _rowsTotal = 0;
         _accessGroupList = new List<AccessUserDetail>();
-        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
+        _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
 
         var serviceResponse = await SecurityService.GetAccessUserDetails(0, _rowCount, false, _searchString);
         if (serviceResponse.Processed)
@@ -232,7 +232,7 @@
                     UserId = User.UserId,
                     Login = _Login
                 };
-                var url = $"api/Security/Post_CrendentialsUser?userId={Useful.userId}";
+                var url = $"api/Security/Post_CrendentialsUser?userId={Session.UserId}";
                 var response = await _httpClient.PostAsJsonAsync(url, _modelTempory);
                 var result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>() ?? new ApiResponse<ActionResult>()
                 {
@@ -337,7 +337,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await SecurityService.ActionsAccessGroup(ActionList, Useful.userId);
+                var serviceResponse = await SecurityService.ActionsAccessGroup(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -393,7 +393,7 @@
                     ActionList.Add(_action);
                 }
 
-                var serviceResponse = await SecurityService.ActionsAccessGroup(ActionList, Useful.userId);
+                var serviceResponse = await SecurityService.ActionsAccessGroup(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;

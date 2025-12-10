@@ -42,7 +42,7 @@ else
         </div>
     </MudForm>
 }
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
         [Inject] private HttpClient Http { get; set; } = default!;
         [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
         [Inject] private IDialogService DialogService { get; set; } = default!;
@@ -63,7 +63,7 @@ else
 
     private async Task LoadLocations()
     {
-        HttpResponseMessage locationResponse = await Http.GetAsync($"api/Location/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}");
+        HttpResponseMessage locationResponse = await Http.GetAsync($"api/Location/GetAll?userId={Session.UserId}&supplierId={Session.SupplierId}");
         if (locationResponse.IsSuccessStatusCode)
         {
             var content2 = await locationResponse.Content.ReadFromJsonAsync<WebApiResponse<List<Location>>>();
@@ -92,7 +92,7 @@ else
         if (form.IsValid && await UnequalLocations())
         {
             var strnewMovementDetail = System.Text.Json.JsonSerializer.Serialize(newMovementDetail);
-            var result_newMovementDetail = await Http.PostAsync($"api/Movements/PostMovementDetail?userId={Useful.userId}", new StringContent($"[{strnewMovementDetail}]", null, "application/json"));
+            var result_newMovementDetail = await Http.PostAsync($"api/Movements/PostMovementDetail?userId={Session.UserId}", new StringContent($"[{strnewMovementDetail}]", null, "application/json"));
             if (result_newMovementDetail.IsSuccessStatusCode)
             {
                 var sucessContent = await result_newMovementDetail.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();

@@ -138,7 +138,7 @@
 
 
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     private IEnumerable<License> _Licenses = new List<License>();
     private string _nestedErrorMessage = string.Empty;
@@ -200,8 +200,8 @@
         _rowsTotal = 0;
         _Licenses = new List<License>();
 
-        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
-        var serviceResponse = await LicenseService.GetLicenses(Useful.userId, Useful.supplierId, _rowCount, _searchString);
+        _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
+        var serviceResponse = await LicenseService.GetLicenses(Session.UserId, Session.SupplierId, _rowCount, _searchString);
         if (serviceResponse.Processed)
         {
             _Licenses = serviceResponse.Data;
@@ -258,7 +258,7 @@
     {
         DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
 
-        var parameters = new DialogParameters<LicenseDialog> { { x => x.IdLicense, 0 }, { x => x.IdSupplier, Useful.supplierId }, { x => x.ActionsModal, ActionsEnum.Create } };
+        var parameters = new DialogParameters<LicenseDialog> { { x => x.IdLicense, 0 }, { x => x.IdSupplier, Session.SupplierId }, { x => x.ActionsModal, ActionsEnum.Create } };
         var dialog = await DialogService.ShowAsync<LicenseDialog>("License", parameters, options);
         var result = await dialog.Result;
         if (!result!.Canceled)
@@ -327,7 +327,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await LicenseService.ActionsLicense(ActionList, Useful.userId);
+                var serviceResponse = await LicenseService.ActionsLicense(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -383,7 +383,7 @@
                     ActionList.Add(_action);
                 }
 
-                var serviceResponse = await LicenseService.ActionsLicense(ActionList, Useful.userId);
+                var serviceResponse = await LicenseService.ActionsLicense(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;

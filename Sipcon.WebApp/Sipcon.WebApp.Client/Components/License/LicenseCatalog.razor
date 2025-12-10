@@ -96,7 +96,7 @@
 </MudGrid>
 
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
 
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;   
     [Parameter] public string VIN { get; set; } = string.Empty;
@@ -131,7 +131,7 @@
          _searchString = VIN;
         _rowCount = state.Page * state.PageSize;
         IEnumerable<LicenseDetail> _LicenseDetails = new List<LicenseDetail>();
-        var serviceResponse = await LicenseService.GetLicenseDetailsBy(Useful.userId, _searchString);
+        var serviceResponse = await LicenseService.GetLicenseDetailsBy(Session.UserId, _searchString);
 
         if (serviceResponse.Processed)
         {

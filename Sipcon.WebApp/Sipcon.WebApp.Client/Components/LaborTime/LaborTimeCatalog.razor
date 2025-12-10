@@ -81,7 +81,7 @@
 </MudGrid>
 
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
 
@@ -120,12 +120,12 @@
         IEnumerable<LaborTime> _LaborTimes = new List<LaborTime>();
 
 
-        var url = $"api/LaborTime/GetAll?supplierId={Useful.supplierId}&irowfrom={_rowCount}";
+        var url = $"api/LaborTime/GetAll?supplierId={Session.SupplierId}&irowfrom={_rowCount}";
         url = $"{url}&modelId={ModelId}";
         url = string.IsNullOrEmpty(_searchString) ? url : $"{url}&filter={_searchString}";
         if (IsExternal)
         {
-            url = $"api/Service/GetItems?userId={Useful.userId}&supplierId={Useful.supplierId}";
+            url = $"api/Service/GetItems?userId={Session.UserId}&supplierId={Session.SupplierId}";
             url = $"{url}&modelId={ModelId}";
             url = $"{url}&type=L";
             url = $"{url}&rowFrom={_rowCount}";
@@ -151,7 +151,7 @@
             _LaborTimes = _LaborTimes.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
         }
 
-        // var serviceResponse = await LaborTimeService.GetLaborTimes(Useful.supplierId, _rowCount, _searchString, ModelId);
+        // var serviceResponse = await LaborTimeService.GetLaborTimes(Session.SupplierId, _rowCount, _searchString, ModelId);
 
         
         // if (serviceResponse.Processed)

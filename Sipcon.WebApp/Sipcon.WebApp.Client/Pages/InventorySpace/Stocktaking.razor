@@ -33,7 +33,7 @@
     </MudDataGrid>
 
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
 
     [Inject] private HttpClient Http { get; set; } = default!;
@@ -57,7 +57,7 @@
         var mOffset = state.Page * state.PageSize;
         var totalItems = 0;
         IEnumerable<Inventory> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&rowFrom={mOffset}&withStock={withStock}&filter={searchString}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetAll?userId={Session.UserId}&supplierId={Session.SupplierId}&rowFrom={mOffset}&withStock={withStock}&filter={searchString}");
 
         if (response.IsSuccessStatusCode)
         {            
@@ -98,13 +98,13 @@
     }
     public void Dispose()
     {
-        Useful.IsNewOrEdit = false;
+        Session.IsNewOrEdit = false;
         hubEventsService.OnSupplierChanged -= ReloadStocktakingGrid;
     }
     protected override async Task OnInitializedAsync()
     {       
         hubEventsService.OnSupplierChanged += ReloadStocktakingGrid;
-        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-INVENTARIO&userId={Useful.userId}");
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-INVENTARIO&userId={Session.UserId}");
         await Task.CompletedTask;
     }
     private async Task ClickMenuBackOrder(string? actionName)
@@ -112,7 +112,7 @@
         if (actionName == "EXPORT" && StocktakingMudDataGrid?.FilteredItems.Count() > 0)
         {
             _loading = true;
-            var ResultZonas = await Http.GetAsync($"api/Inventory/Export?filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}");
+            var ResultZonas = await Http.GetAsync($"api/Inventory/Export?filter={searchString}&userId={Session.UserId}&supplierId={Session.SupplierId}");
             if (ResultZonas.IsSuccessStatusCode)
             {
                 var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();

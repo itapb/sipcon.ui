@@ -156,7 +156,7 @@
 
 <NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" ErrorMessage="@_nestedErrorMessage" Title="@("Detalle Reporte Falla")" />
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
 
     [Parameter] public int? mFailReportId { get; set; } = null;
     [Parameter] public ServiceDetailTypeEnum mDetailType { get; set; } = ServiceDetailTypeEnum.LaborTime;
@@ -211,7 +211,7 @@
             _FailReportDetails = serviceResponse.Data;
             _rowsTotal = serviceResponse.Total;
         }
-        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
+        _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
 
         await Task.CompletedTask;
         await Task.Delay(50);
@@ -369,7 +369,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await FailReportService.ActionsFailReportDetail(ActionList, Useful.userId);
+                var serviceResponse = await FailReportService.ActionsFailReportDetail(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
 
@@ -437,7 +437,7 @@
                         ActionList.Add(Action);
                     }
 
-                    var serviceResponse = await FailReportService.ActionsFailReportDetail(ActionList, Useful.userId);
+                    var serviceResponse = await FailReportService.ActionsFailReportDetail(ActionList, Session.UserId);
                     if (serviceResponse.Processed)
                     {
 
@@ -508,7 +508,7 @@
                         ActionList.Add(Action);
                     }
 
-                    var serviceResponse = await FailReportService.ActionsFailReportDetail(ActionList, Useful.userId);
+                    var serviceResponse = await FailReportService.ActionsFailReportDetail(ActionList, Session.UserId);
                     if (serviceResponse.Processed)
                     {
 
@@ -567,7 +567,7 @@
             ActionList.Add(Action);
 
 
-            var serviceResponse = await FailReportService.DeleteFailReportDetail(ActionList, Useful.userId);
+            var serviceResponse = await FailReportService.DeleteFailReportDetail(ActionList, Session.UserId);
             if (serviceResponse.Processed)
             {
                 _success = true;

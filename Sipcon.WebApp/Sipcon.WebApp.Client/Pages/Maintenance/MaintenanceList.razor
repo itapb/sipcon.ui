@@ -154,7 +154,7 @@
 
 
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     private IEnumerable<Maintenance> _Maintenances = new List<Maintenance>();
     private string _nestedErrorMessage = string.Empty;
@@ -218,9 +218,9 @@
         _loading = true;
         _Maintenances = new List<Maintenance>();
         _rowsTotal = 0;
-        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
+        _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
 
-        var serviceResponse = await MaintenanceService.GetMaintenances(Useful.supplierId, Useful.userId, _rowCount, _searchString, Useful.dealerId);
+        var serviceResponse = await MaintenanceService.GetMaintenances(Session.SupplierId, Session.UserId, _rowCount, _searchString, Session.DealerId);
         if (serviceResponse.Processed)
         {
             _Maintenances = serviceResponse.Data;
@@ -292,7 +292,7 @@
 
     private async Task ClickExportPdf(Maintenance item)
     {
-        var serviceResponse = await MaintenanceService.ExportPdfMaintenance(Useful.userId, Useful.dealerId, item.Id);
+        var serviceResponse = await MaintenanceService.ExportPdfMaintenance(Session.UserId, Session.DealerId, item.Id);
         if (serviceResponse.Processed)
         {
             _success = true;
@@ -364,7 +364,7 @@
 
     private async Task ExportItemsAsync()
     {
-        var serviceResponse = await MaintenanceService.ExportMaintenances(Useful.supplierId, Useful.userId, _searchString, Useful.dealerId);
+        var serviceResponse = await MaintenanceService.ExportMaintenances(Session.SupplierId, Session.UserId, _searchString, Session.DealerId);
         if (serviceResponse.Processed)
         {
             _success = true;
@@ -418,7 +418,7 @@
                     ActionList.Add(_Action);
                 }
 
-                var serviceResponse = await MaintenanceService.ActionsMaintenance(ActionList, Useful.userId);
+                var serviceResponse = await MaintenanceService.ActionsMaintenance(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
 
@@ -474,7 +474,7 @@
                     ActionList.Add(_Action);
                 }
 
-                var serviceResponse = await MaintenanceService.ActionsMaintenance(ActionList, Useful.userId);
+                var serviceResponse = await MaintenanceService.ActionsMaintenance(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -529,7 +529,7 @@
                     ActionList.Add(_Action);
                 }
 
-                var serviceResponse = await MaintenanceService.ActionsMaintenance(ActionList, Useful.userId);
+                var serviceResponse = await MaintenanceService.ActionsMaintenance(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
