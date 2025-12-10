@@ -200,7 +200,7 @@
     }
 </style>
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
 
 
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -379,7 +379,7 @@
         {
             _errorModalMessage = "";
 
-            var serviceResponse = await FailReportService.UpdateFailReportDetail(_model, Useful.userId);
+            var serviceResponse = await FailReportService.UpdateFailReportDetail(_model, Session.UserId);
             if (serviceResponse.Processed)
             {
                 if (ActionsModal == ActionsEnum.Create)

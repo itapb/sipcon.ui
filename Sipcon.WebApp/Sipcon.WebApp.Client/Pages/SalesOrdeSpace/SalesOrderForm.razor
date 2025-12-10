@@ -102,7 +102,7 @@
         text-align: right;
     }
 </style>
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
@@ -203,7 +203,7 @@
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<SaleOrderDetails> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/SaleOrder/GetOneWithContext?userId={Useful.userId}&saleOrderId={SalesOrderId}");
+        HttpResponseMessage response = await Http.GetAsync($"api/SaleOrder/GetOneWithContext?userId={Session.UserId}&saleOrderId={SalesOrderId}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterSalesOrderDetails>>();
@@ -278,7 +278,7 @@
         if (form.IsValid)
         {           
             var strMasterMovement = System.Text.Json.JsonSerializer.Serialize(MasterSalesOrder);
-            var result_MasterMovement = await Http.PostAsync($"api/SaleOrder/PostSaleOrder?userId={Useful.userId}", new StringContent($"[{strMasterMovement}]", null, "application/json"));
+            var result_MasterMovement = await Http.PostAsync($"api/SaleOrder/PostSaleOrder?userId={Session.UserId}", new StringContent($"[{strMasterMovement}]", null, "application/json"));
             if (result_MasterMovement.IsSuccessStatusCode)
             {
                 var sucessContent = await result_MasterMovement.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
@@ -306,7 +306,7 @@
         var SelectedActions = SalesOrderDetailsMudDataGrid?.FilteredItems.Count() > 0 ?
                               new Client.Models.Action
                               {
-                                  UserId = Useful.userId,
+                                  UserId = Session.UserId,
                                   RecordId = SalesOrderId,
                                   ModuleId = 31,
                                   actionName = "GENERATE",
@@ -326,7 +326,7 @@
         if (form.IsValid)
         {            
             var strMasterSalesOrder = System.Text.Json.JsonSerializer.Serialize(MasterSalesOrder);
-            var result_MasterSalesOrder = await Http.PostAsync($"api/SaleOrder/PostSaleOrder?userId={Useful.userId}", new StringContent($"[{strMasterSalesOrder}]", null, "application/json"));         
+            var result_MasterSalesOrder = await Http.PostAsync($"api/SaleOrder/PostSaleOrder?userId={Session.UserId}", new StringContent($"[{strMasterSalesOrder}]", null, "application/json"));         
             if (result_MasterSalesOrder.IsSuccessStatusCode)
             {
                 var sucessContent = await result_MasterSalesOrder.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
@@ -351,7 +351,7 @@
 
 
         var strMovementActions = System.Text.Json.JsonSerializer.Serialize(SelectedActions);
-        var result_PostMovementActions = (SelectedActions is not null) ? await Http.PostAsync($"api/SaleOrder/PostActions?userId={Useful.userId}", new StringContent($"[{strMovementActions}]", null, "application/json")) : null;
+        var result_PostMovementActions = (SelectedActions is not null) ? await Http.PostAsync($"api/SaleOrder/PostActions?userId={Session.UserId}", new StringContent($"[{strMovementActions}]", null, "application/json")) : null;
         if ((result_PostMovementActions?.IsSuccessStatusCode ?? false))
         {
             var rest = result_PostMovementActions.Content.ReadAsStringAsync();
@@ -370,7 +370,7 @@
 
     private async Task DeleteSalesOrderDetailAction(List<SalesOrderItem>? actions)
     {
-        var result_Post_Actions = (actions?.Count > 0) ? await Http.PostAsync($"api/SaleOrder/DeleteDetails?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json")) : null;
+        var result_Post_Actions = (actions?.Count > 0) ? await Http.PostAsync($"api/SaleOrder/DeleteDetails?userId={Session.UserId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json")) : null;
         if ((result_Post_Actions?.IsSuccessStatusCode ?? false))
         {
             //var rest = result_Post_Actions.Content.ReadAsStringAsync();

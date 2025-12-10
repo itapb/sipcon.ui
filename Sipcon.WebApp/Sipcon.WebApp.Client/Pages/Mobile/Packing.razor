@@ -26,7 +26,28 @@
 }
 
 @code {
-    public Models.Packing CurrentPacking = new() { UserId = Useful.userId, SupplierId = Useful.supplierId, CustomerId = 0, PartId = 0, PackageId = 0, CustomerName = "", Pending = 0, PartName = "", Code = "" };
+    [Inject] private UserSession Session { get; set; } = null!;
+
+    public Models.Packing CurrentPacking { get; set; } = new();
     public Models.PackingStep CurrentStep = Models.PackingStep.Customer;
     public static Models.PackingStep? PreviousStep;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Aquí Session ya está disponible
+        CurrentPacking = new Models.Packing
+        {
+            UserId = Session.UserId,
+            SupplierId = Session.SupplierId,
+            CustomerId = 0,
+            PartId = 0,
+            PackageId = 0,
+            CustomerName = "",
+            Pending = 0,
+            PartName = "",
+            Code = ""
+        };
+
+        await Task.CompletedTask;
+    }
 }

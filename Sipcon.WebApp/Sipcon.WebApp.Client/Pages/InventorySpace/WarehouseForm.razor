@@ -40,7 +40,7 @@ else
     <LoadingForm IsMudDialog="@(MudDialog != null)" />
 }
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -73,7 +73,7 @@ else
     private async Task LoadWarehouse(int warehouseId)
     {
         var request1 = Http.GetAsync($"api/Contact/GetSuppliers");
-        var request2 = Http.GetAsync($"api/Warehouse/GetOne?warehouseId={warehouseId}&userId={Useful.userId}");
+        var request2 = Http.GetAsync($"api/Warehouse/GetOne?warehouseId={warehouseId}&userId={Session.UserId}");
         await Task.WhenAll(request1, request2);
         HttpResponseMessage response1 = request1.Result;
         HttpResponseMessage response2 = request2.Result;
@@ -82,7 +82,7 @@ else
         {
             var SuppliersContent = await response1.Content.ReadFromJsonAsync<List<Contact>>();
             var WarehouseContent = await response2.Content.ReadFromJsonAsync<WebApiResponse<Warehouse>>();
-            Suppliers = SuppliersContent!.Where(r => r.Id == Useful.supplierId).ToList();
+            Suppliers = SuppliersContent!.Where(r => r.Id == Session.SupplierId).ToList();
             SelectedWarehouse = warehouseId > 0 ? WarehouseContent!.data : new Warehouse() { Id = 0, Name = null, IsActive = true, SupplierId = null, SupplierName = null, IsSelected = false };
             SupplierSelected = warehouseId > 0 ? Suppliers!.FirstOrDefault(c => c.Id == SelectedWarehouse!.SupplierId) : null;           
         }
@@ -98,7 +98,7 @@ else
         if (form.IsValid)
         {
             var strJsonSelectedWarehouse = System.Text.Json.JsonSerializer.Serialize(SelectedWarehouse);
-            var result_Post_Warehouse = await Http.PostAsync($"api/Warehouse/PostWarehouses?userId={Useful.userId}", new StringContent($"[{strJsonSelectedWarehouse}]", null, "application/json"));
+            var result_Post_Warehouse = await Http.PostAsync($"api/Warehouse/PostWarehouses?userId={Session.UserId}", new StringContent($"[{strJsonSelectedWarehouse}]", null, "application/json"));
             if (result_Post_Warehouse.IsSuccessStatusCode)
             {
                 var sucessContent = await result_Post_Warehouse.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();

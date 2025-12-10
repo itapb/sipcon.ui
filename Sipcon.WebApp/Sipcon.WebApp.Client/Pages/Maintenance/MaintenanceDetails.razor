@@ -576,7 +576,7 @@
     ErrorMessage="@_nestedErrorMessage" 
     Title="@("Mantenimiento")" />
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Parameter]
     public string IdMaintenance { get; set; } = string.Empty;
@@ -625,7 +625,7 @@
     protected override async Task OnInitializedAsync()
     {
         await AuthenticationStateProvider.RefreshStaticVariables();
-        Useful.IsNewOrEdit = true;
+        Session.IsNewOrEdit = true;
 
         await GetMaintenance();
 
@@ -638,7 +638,7 @@
     private async Task GetMaintenance()
     {
 
-        var serviceResponse = await MaintenanceService.GetMaintenance(Useful.userId, Useful.dealerId, Convert.ToInt32(IdMaintenance));
+        var serviceResponse = await MaintenanceService.GetMaintenance(Session.UserId, Session.DealerId, Convert.ToInt32(IdMaintenance));
         if (serviceResponse.Processed)
         {
             _model = serviceResponse.Data ?? new Maintenance();
@@ -665,7 +665,7 @@
 
         _modelPolicy = new Models.Policy();
         _policyDetail = new List<PolicyDetail>();
-        var serviceResponse = await PolicyService.GetPolicyBy(Useful.supplierId, Useful.userId, _model.Vin, SearchByEnum.VIN);
+        var serviceResponse = await PolicyService.GetPolicyBy(Session.SupplierId, Session.UserId, _model.Vin, SearchByEnum.VIN);
         if (serviceResponse.Processed)
         {
             _modelPolicy = serviceResponse.Data ?? new Models.Policy();
@@ -731,7 +731,7 @@
         if (result == true)
         {
 
-            var serviceResponse = await AttachmentService.DeleteAttachment(IdAttachment, Useful.userId);
+            var serviceResponse = await AttachmentService.DeleteAttachment(IdAttachment, Session.UserId);
             if (serviceResponse.Processed)
             {
                 await GetAttachments();
@@ -755,7 +755,7 @@
 
     private async Task ClickExportAttachment(int IdAttachment, string FileName)
     {
-        var serviceResponse = await AttachmentService.GetAttachment(IdAttachment, Useful.userId);
+        var serviceResponse = await AttachmentService.GetAttachment(IdAttachment, Session.UserId);
         if (serviceResponse.Processed)
         {
             _success = true;
@@ -860,7 +860,7 @@
 
                 if (isFormData)
                 {
-                    var serviceResponse = await AttachmentService.CreateAttachment(_model.Id, _moduleName, Useful.userId, formData);
+                    var serviceResponse = await AttachmentService.CreateAttachment(_model.Id, _moduleName, Session.UserId, formData);
                     if (serviceResponse.Processed)
                     {
                         _success = true;
@@ -918,7 +918,7 @@
             RecordId = _model.Id,
             ModuleName = _moduleName, // Cambia esto por el nombre Modulo
         };
-        var serviceResponse = await CommentService.CreateComment(_mensaje, Useful.userId);
+        var serviceResponse = await CommentService.CreateComment(_mensaje, Session.UserId);
         if (serviceResponse.Processed)
         {
             _success = true;

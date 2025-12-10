@@ -599,7 +599,7 @@
     }
 </style>
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
 
 
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -651,7 +651,7 @@
 
         }
 
-        _FailReportTypeList = await ModuleActionsService.GetFailReportType(Useful.userId);
+        _FailReportTypeList = await ModuleActionsService.GetFailReportType(Session.UserId);
 
        
 
@@ -664,7 +664,7 @@
     private async Task GetFailReport()
     {
 
-        var serviceResponse = await FailReportService.GetFailReport(Useful.userId, Useful.dealerId, IdFailReport);
+        var serviceResponse = await FailReportService.GetFailReport(Session.UserId, Session.DealerId, IdFailReport);
         if (serviceResponse.Processed)
         {
             _model = serviceResponse.Data ?? new FailReport();
@@ -687,7 +687,7 @@
     private async Task GetVehicle()
     {
         _modelVehicle = new VehicleService();
-        var serviceResponse = await VehicleService.GetVehicleFullBy(Useful.supplierId,Useful.userId, _searchVin, SearchByEnum.Dual);
+        var serviceResponse = await VehicleService.GetVehicleFullBy(Session.SupplierId,Session.UserId, _searchVin, SearchByEnum.Dual);
         if (serviceResponse.Processed)
         {
             _modelVehicle = serviceResponse.Data ?? new VehicleService();
@@ -700,7 +700,7 @@
             _errorSearchVehicle = MessageEnum.SearchVehicleNotOK.GetStringValue();
         }
 
-        _model.DealerId = Useful.dealerId;
+        _model.DealerId = Session.DealerId;
         _model.NumberPolicy = _modelVehicle.Number;
         _model.CustomerId = _modelVehicle.CustomerId;
         _model.VehicleId = _modelVehicle.Id;
@@ -809,7 +809,7 @@
         {
             _errorModalMessage = "";
 
-            var serviceResponse = await FailReportService.UpdateFailReport(_model, Useful.userId);
+            var serviceResponse = await FailReportService.UpdateFailReport(_model, Session.UserId);
             if (serviceResponse.Processed)
             {
                 if (ActionsModal == ActionsEnum.Create)

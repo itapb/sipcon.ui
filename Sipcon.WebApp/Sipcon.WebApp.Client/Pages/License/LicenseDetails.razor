@@ -238,7 +238,7 @@
                     Title="@("Licencia")" />
 
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Parameter]
     public string strLicenseId { get; set; } = string.Empty;    
@@ -288,7 +288,7 @@
     private async Task<GridData<LicenseDetail>> LoadGridData(GridState<LicenseDetail> state)
     {
         await AuthenticationStateProvider.RefreshStaticVariables();
-        Useful.IsNewOrEdit = true;
+        Session.IsNewOrEdit = true;
 
         _rowCount = state.Page * state.PageSize;
 
@@ -301,7 +301,7 @@
     private async Task GetLicense()
     {
 
-        var serviceResponse = await LicenseService.GetLicense(Convert.ToInt32(strLicenseId), Useful.userId);
+        var serviceResponse = await LicenseService.GetLicense(Convert.ToInt32(strLicenseId), Session.UserId);
         if (serviceResponse.Processed)
         {
             _model = serviceResponse.Data ?? new License();
@@ -325,7 +325,7 @@
     private async Task GetLicenseDetails()
     {
         _loading = true;
-        var serviceResponse = await LicenseService.GetLicenseDetails(Useful.userId, Convert.ToInt32(strLicenseId), _rowCount, _searchString);
+        var serviceResponse = await LicenseService.GetLicenseDetails(Session.UserId, Convert.ToInt32(strLicenseId), _rowCount, _searchString);
         if (serviceResponse.Processed)
         {
             _LicenseDetails = serviceResponse.Data;
@@ -339,7 +339,7 @@
             _itemsModules = new List<ModuleAction>([]);
         }
 
-        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
+        _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
 
         await Task.Delay(50);
         StateHasChanged();
@@ -402,7 +402,7 @@
                 VIN = _VIN
             };  
             
-            var serviceResponse = await LicenseService.CreateLicenseDetail(_Detail, Useful.userId);
+            var serviceResponse = await LicenseService.CreateLicenseDetail(_Detail, Session.UserId);
             if (serviceResponse.Processed)
             {
                 _success = true;
@@ -452,7 +452,7 @@
 
             ActionList.Add(_Action);
             
-            var serviceResponse = await LicenseService.DeleteLicenseDetail(ActionList, Useful.userId);
+            var serviceResponse = await LicenseService.DeleteLicenseDetail(ActionList, Session.UserId);
             if (serviceResponse.Processed)
             {
                 _success = true;
@@ -558,7 +558,7 @@
                 formData.Add(content, "file", file.Name);
 
 
-                var serviceResponse = await LicenseService.ImportLicenseDetails(Useful.userId, Convert.ToInt32(strLicenseId), formData);
+                var serviceResponse = await LicenseService.ImportLicenseDetails(Session.UserId, Convert.ToInt32(strLicenseId), formData);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -587,7 +587,7 @@
     private async Task ExportItemsAsync()
     {
 
-        var serviceResponse = await LicenseService.ExportLicenseDetails(Useful.userId, Convert.ToInt32(strLicenseId), _searchString);
+        var serviceResponse = await LicenseService.ExportLicenseDetails(Session.UserId, Convert.ToInt32(strLicenseId), _searchString);
         if (serviceResponse.Processed)
         {
             _success = true;
@@ -642,7 +642,7 @@
                     ActionList.Add(_action);
                 }
 
-                var serviceResponse = await LicenseService.ActionsLicenseDetail(ActionList, Useful.userId);
+                var serviceResponse = await LicenseService.ActionsLicenseDetail(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -700,7 +700,7 @@
                     ActionList.Add(_Action);
                 }
 
-                var serviceResponse = await LicenseService.ActionsLicenseDetail(ActionList, Useful.userId);
+                var serviceResponse = await LicenseService.ActionsLicenseDetail(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -755,7 +755,7 @@
                     ActionList.Add(_Action);
                 }
 
-                var serviceResponse = await LicenseService.ActionsLicenseDetail(ActionList, Useful.userId);
+                var serviceResponse = await LicenseService.ActionsLicenseDetail(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -812,7 +812,7 @@
                     ActionList.Add(_Action);
                 }
 
-                var serviceResponse = await LicenseService.ActionsLicenseDetail(ActionList, Useful.userId);
+                var serviceResponse = await LicenseService.ActionsLicenseDetail(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;

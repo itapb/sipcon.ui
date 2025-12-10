@@ -45,7 +45,7 @@ else
 {
     <LoadingForm IsMudDialog="@(MudDialog != null)" />
 }
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -101,8 +101,8 @@ else
     }
     private async Task LoadZone(int zoneId)
     {
-        var request1 = Http.GetAsync($"api/Warehouse/GetAll?rowFrom=0&userId={Useful.userId}&supplierId={Useful.supplierId}");
-        var request2 = Http.GetAsync($"api/Zone/GetOne?ZoneId={zoneId}&userId={Useful.userId}");
+        var request1 = Http.GetAsync($"api/Warehouse/GetAll?rowFrom=0&userId={Session.UserId}&supplierId={Session.SupplierId}");
+        var request2 = Http.GetAsync($"api/Zone/GetOne?ZoneId={zoneId}&userId={Session.UserId}");
         await Task.WhenAll(request1, request2);
         HttpResponseMessage response1 = request1.Result;
         HttpResponseMessage response2 = request2.Result;
@@ -130,7 +130,7 @@ else
         if (form.IsValid)
         {
             var strJsonSelectedZone = System.Text.Json.JsonSerializer.Serialize(SelectedZone);
-            var result_Post_Zone = await Http.PostAsync($"api/Zone/PostZones?userId={Useful.userId}", new StringContent($"[{strJsonSelectedZone}]", null, "application/json"));
+            var result_Post_Zone = await Http.PostAsync($"api/Zone/PostZones?userId={Session.UserId}", new StringContent($"[{strJsonSelectedZone}]", null, "application/json"));
             if (result_Post_Zone.IsSuccessStatusCode)
             {
                 var sucessContent = await result_Post_Zone.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();

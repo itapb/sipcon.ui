@@ -44,7 +44,7 @@
         </MudDataGrid>
     </MudItem>
 </MudGrid>
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private IAttachmentService AttachmentService { get; set; } = default!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
@@ -124,7 +124,7 @@
 
         if (result == true)
         {
-            var serviceResponse = await AttachmentService.DeleteAttachment(IdAttachment, Useful.userId);
+            var serviceResponse = await AttachmentService.DeleteAttachment(IdAttachment, Session.UserId);
             if (serviceResponse.Processed)
             {
                 await AttachmentsMudDataGrid!.ReloadServerData();
@@ -139,7 +139,7 @@
     }
     private async Task ClickExportAttachment(int IdAttachment, string FileName)
     {
-        var serviceResponse = await AttachmentService.GetAttachment(IdAttachment, Useful.userId);
+        var serviceResponse = await AttachmentService.GetAttachment(IdAttachment, Session.UserId);
         if (serviceResponse.Processed)
         {
             var applicationName = string.Empty;
@@ -218,7 +218,7 @@
 
                 if (formData.Count() > 0)
                 {
-                    var serviceResponse = await AttachmentService.CreateAttachment(IdRecord ?? 0, ModuleName, Useful.userId, formData);
+                    var serviceResponse = await AttachmentService.CreateAttachment(IdRecord ?? 0, ModuleName, Session.UserId, formData);
                     if (serviceResponse.Processed)
                     {
                         Messages.AppendLine(MessageEnum.ImportOK.GetStringValue());

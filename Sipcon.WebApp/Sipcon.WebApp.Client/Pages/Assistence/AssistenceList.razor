@@ -165,7 +165,7 @@
 
 
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     private IEnumerable<Assistence> _Assistences = new List<Assistence>();
     private string _nestedErrorMessage = string.Empty;
@@ -229,9 +229,9 @@
         _loading = true;
         _Assistences = new List<Assistence>();
         _rowsTotal = 0;
-        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
+        _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
 
-        var serviceResponse = await AssistenceService.GetAssistences(Useful.supplierId, Useful.userId, _rowCount, _searchString, Useful.dealerId);
+        var serviceResponse = await AssistenceService.GetAssistences(Session.SupplierId, Session.UserId, _rowCount, _searchString, Session.DealerId);
         if (serviceResponse.Processed)
         {
             _Assistences = serviceResponse.Data;
@@ -355,7 +355,7 @@
 
     private async Task ExportItemsAsync()
     {
-        var serviceResponse = await AssistenceService.ExportAssistences(Useful.supplierId, Useful.userId, _searchString, Useful.dealerId);
+        var serviceResponse = await AssistenceService.ExportAssistences(Session.SupplierId, Session.UserId, _searchString, Session.DealerId);
         if (serviceResponse.Processed)
         {
             _success = true;
@@ -410,7 +410,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, Useful.userId);
+                var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
 
@@ -468,7 +468,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, Useful.userId);
+                var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
 
@@ -498,7 +498,7 @@
         Console.WriteLine("Aprobar Asistencia...");
         if (selectedAssistence.Any())
         {
-            var _AssistanceTypeList = await ModuleActionsService.GetAssistanceType(Useful.userId);
+            var _AssistanceTypeList = await ModuleActionsService.GetAssistanceType(Session.UserId);
 
             var option = new DialogOptions
             {
@@ -541,7 +541,7 @@
                         ActionList.Add(VehicleAction);
                     }
 
-                    var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, Useful.userId);
+                    var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, Session.UserId);
                     if (serviceResponse.Processed)
                     {
 
@@ -611,7 +611,7 @@
                         ActionList.Add(Action);
                     }
 
-                    var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, Useful.userId);
+                    var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, Session.UserId);
                     if (serviceResponse.Processed)
                     {
 
@@ -684,7 +684,7 @@
                         ActionList.Add(Action);
                     }
 
-                    var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, Useful.userId);
+                    var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, Session.UserId);
                     if (serviceResponse.Processed)
                     {
                         _success = true;
@@ -756,7 +756,7 @@
                         ActionList.Add(Action);
                     }
 
-                    var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, Useful.userId);
+                    var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, Session.UserId);
                     if (serviceResponse.Processed)
                     {
 
@@ -829,7 +829,7 @@
                         ActionList.Add(ItemAction);
                     }
 
-                    var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, Useful.userId);
+                    var serviceResponse = await AssistenceService.ActionsAssistence(ActionList, Session.UserId);
                     if (serviceResponse.Processed)
                     {
 

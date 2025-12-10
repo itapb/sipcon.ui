@@ -59,7 +59,7 @@
         font-style: italic;
     }
 </style>
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
@@ -107,7 +107,7 @@
 
         if (!string.IsNullOrEmpty(searchString))
         {
-            HttpResponseMessage response = await Http.GetAsync($"api/Packing/GetPackingList?supplierId={Useful.supplierId}&packageCode={searchString.TrimEnd()}");
+            HttpResponseMessage response = await Http.GetAsync($"api/Packing/GetPackingList?supplierId={Session.SupplierId}&packageCode={searchString.TrimEnd()}");
             if (response.IsSuccessStatusCode)
             {
                 var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Models.PackageList>>>();

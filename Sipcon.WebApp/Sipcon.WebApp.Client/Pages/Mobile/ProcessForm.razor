@@ -52,7 +52,7 @@
         font-style: italic;
     }
  </style>
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;   
 
     [Inject] private HttpClient Http { get; set; } = default!;
@@ -209,7 +209,7 @@
         {
             var AnMovementMobile = new movementMobile(Id: movementDetails!.Id, MovementId: movementDetails!.MovementId, PartId: movementDetails.PartId, PartialTypeId: PartialTypeIdInput, LocationId: locationId, RealQty: InputRealQty, SerialCode: InputSerial);
             var strJsonMovementMobile = System.Text.Json.JsonSerializer.Serialize(AnMovementMobile);
-            var result_Post_Zone = await Http.PostAsync($"api/Movements/PostMovementDetailMobile?userId={Useful.userId}", new StringContent($"{strJsonMovementMobile}", null, "application/json"));
+            var result_Post_Zone = await Http.PostAsync($"api/Movements/PostMovementDetailMobile?userId={Session.UserId}", new StringContent($"{strJsonMovementMobile}", null, "application/json"));
             if (result_Post_Zone.IsSuccessStatusCode)
             {
                 await DialogService.ShowDialog("Movimiento Procesado!", "Procesado", "OK", Color.Success, Icons.Material.Filled.Check);
@@ -238,7 +238,7 @@
     private async Task GetMovementDetailsByUser()
     {
         InitializeFormFields();
-        HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetMovementDetailsByUser?userId={Useful.userId}&supplierId={Useful.supplierId}&movementType={MovementType}&mode={ModeParameter}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetMovementDetailsByUser?userId={Session.UserId}&supplierId={Session.SupplierId}&movementType={MovementType}&mode={ModeParameter}");
         if (response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadFromJsonAsync<WebApiResponse<List<MovementDetails>>>();

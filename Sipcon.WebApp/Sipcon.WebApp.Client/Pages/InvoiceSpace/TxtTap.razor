@@ -87,7 +87,7 @@
     <MudButton OnClick="@CollapseAllGroupsAsync" Color="@Color.Primary">Collapse all</MudButton>
 </div>
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
@@ -130,7 +130,7 @@
     protected override async Task OnInitializedAsync()
     {
         await AuthenticationStateProvider.RefreshStaticVariables();
-        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-CONTROLTXT&userId={Useful.userId}");
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-CONTROLTXT&userId={Session.UserId}");
         hubEventsService.OnSupplierChanged += ReloadBackOrderGrid;
     }
 
@@ -162,7 +162,7 @@
         var totalItems = 0;
         IEnumerable<Invoicecontrol> data;
 
-        HttpResponseMessage response = await Http.GetAsync($"api/InvoiceControl/GetDispatchedControlTxt?userId={Useful.userId}&supplierId={Useful.supplierId}&rowfrom={mOffset}&filter={searchString}&pendant={(IsPendant ? "1":"0")}");
+        HttpResponseMessage response = await Http.GetAsync($"api/InvoiceControl/GetDispatchedControlTxt?userId={Session.UserId}&supplierId={Session.SupplierId}&rowfrom={mOffset}&filter={searchString}&pendant={(IsPendant ? "1":"0")}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Invoicecontrol>>>();
@@ -312,7 +312,7 @@
     private async Task ClickTxtExport(int ControlId)
     {
         _loading = true;
-        var ResultZonas = await Http.GetAsync($"api/InvoiceControl/ExportTXT?userId={Useful.userId}&supplierId={Useful.supplierId}&controlId={ControlId}");
+        var ResultZonas = await Http.GetAsync($"api/InvoiceControl/ExportTXT?userId={Session.UserId}&supplierId={Session.SupplierId}&controlId={ControlId}");
         if (ResultZonas.IsSuccessStatusCode)
         {
             var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();

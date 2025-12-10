@@ -49,7 +49,7 @@ else
     </MudDataGrid>
 }
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
@@ -84,12 +84,12 @@ else
     private async Task ClickRefreshMovement(MouseEventArgs args) => await MovementMudDataGrid!.ReloadServerData();
     private async Task ClickNewMovement(MouseEventArgs ev)
     {      
-        HttpResponseMessage response = await Http.GetAsync($"api/Movements/NewMovementWithContext?userId={Useful.userId}&supplierId={Useful.supplierId}&typeId={TypeId!.ToUpper()}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Movements/NewMovementWithContext?userId={Session.UserId}&supplierId={Session.SupplierId}&typeId={TypeId!.ToUpper()}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterMovementDetails>>();
             var data = content2!.data ?? new MasterMovementDetails(); 
-            Useful.IsNewOrEdit = true;
+            Session.IsNewOrEdit = true;
             MovementId = data.Movement?.Id;
         }
         else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
@@ -100,7 +100,7 @@ else
         else
         {
             var errorMessage = await response.Content.ReadAsStringAsync();            
-            Logger.LogError(Useful.TemplateLog(MovementTitle, errorMessage));
+            Logger.LogError(Session.TemplateLog(MovementTitle, errorMessage));
             await DialogService.ShowUnexpected();
         }
         await Task.CompletedTask;
@@ -113,7 +113,7 @@ else
 
     private async Task ClickEditMovement(Movement item) 
     {           
-        Useful.IsNewOrEdit = true;
+        Session.IsNewOrEdit = true;
         await Task.FromResult(MovementId = item.Id); 
     }
 
@@ -132,7 +132,7 @@ else
         strContactName = strDictionaryContactName[TypeId!];
 
         $"Home,Inventario,{MovementTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
-        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-{MovementTitle.ToUpper()}&userId={Useful.userId}");
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-{MovementTitle.ToUpper()}&userId={Session.UserId}");
     }
     Func<Movement, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
     {         
@@ -154,7 +154,7 @@ else
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Movement> data;       
-        HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetMovements?userId={Useful.userId}&supplierId={Useful.supplierId}&typeId={TypeId!.ToUpper()}&rowfrom={mOffset}&filter={searchString}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetMovements?userId={Session.UserId}&supplierId={Session.SupplierId}&typeId={TypeId!.ToUpper()}&rowfrom={mOffset}&filter={searchString}");
 
         if (response.IsSuccessStatusCode)
         {
@@ -171,7 +171,7 @@ else
         {
             data = new List<Movement>();
             var errorMessage = await response.Content.ReadAsStringAsync();
-            Logger.LogError(Useful.TemplateLog(MovementTitle, errorMessage));
+            Logger.LogError(Session.TemplateLog(MovementTitle, errorMessage));
             await DialogService.ShowUnexpected();
         }
 
@@ -187,7 +187,7 @@ else
             var fileName = TypeId == "r" ? "Recepcion.xlsx" : "Traslado.xlsx";
 
             Loading = true;
-            var ResultZonas = await Http.GetAsync($"api/Movements/{segmentPath}?filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}");
+            var ResultZonas = await Http.GetAsync($"api/Movements/{segmentPath}?filter={searchString}&userId={Session.UserId}&supplierId={Session.SupplierId}");
             if (ResultZonas.IsSuccessStatusCode)
             {
                 var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
@@ -203,7 +203,7 @@ else
         var mActions = MovementMudDataGrid?.FilteredItems.Where(item => item.IsSelected && strDictionary[actionName!].Contains(item.StatusName.ToUpper()))
                                                          .Select(item => new Client.Models.Action
                                                                  {
-                                                                     UserId = Useful.userId,
+                                                                     UserId = Session.UserId,
                                                                      RecordId = item.Id,
                                                                      ModuleId = Modules!.FirstOrDefault()?.Id,
                                                                      actionName = actionName,
@@ -225,7 +225,7 @@ else
             }
             else
             {
-                await PostActionAndReload(mActions, $"api/Movements/PostMovementActions?userId={Useful.userId}");
+                await PostActionAndReload(mActions, $"api/Movements/PostMovementActions?userId={Session.UserId}");
             }
         }
 
@@ -247,7 +247,7 @@ else
         else
         {
             var errorMessage = await result_Post_Actions!.Content.ReadAsStringAsync();
-            Logger.LogError(Useful.TemplateLog(MovementTitle, errorMessage));            
+            Logger.LogError(Session.TemplateLog(MovementTitle, errorMessage));            
             await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
         }
     }
@@ -261,7 +261,7 @@ else
           
     public void Dispose()
     { 
-        Useful.IsNewOrEdit = false;
+        Session.IsNewOrEdit = false;
         hubEventsService.OnSupplierChanged -= ReloadMovementsGrid;
     }
 }

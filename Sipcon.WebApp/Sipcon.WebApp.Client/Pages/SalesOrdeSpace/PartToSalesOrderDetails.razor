@@ -26,7 +26,7 @@ else
         </div>
     </MudForm>
 }
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -40,7 +40,7 @@ else
         if (form.IsValid)
         {
             var strnewSaleOrderDetails = System.Text.Json.JsonSerializer.Serialize(newSaleOrderDetails);
-            var result_newMovementDetail = await Http.PostAsync($"api/SaleOrder/PostDetail?userId={Useful.userId}", new StringContent(strnewSaleOrderDetails, null, "application/json"));
+            var result_newMovementDetail = await Http.PostAsync($"api/SaleOrder/PostDetail?userId={Session.UserId}", new StringContent(strnewSaleOrderDetails, null, "application/json"));
             if (result_newMovementDetail.IsSuccessStatusCode)
             {
                 var sucessContent = await result_newMovementDetail.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();

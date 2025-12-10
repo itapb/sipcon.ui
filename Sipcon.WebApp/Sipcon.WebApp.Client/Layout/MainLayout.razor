@@ -178,7 +178,7 @@
    <span class="dismiss">🗙</span>
 </div> *@
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     
     [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
@@ -206,7 +206,7 @@
 
     private void OpenDrawer()
     {
-        if (!Useful.IsNewOrEdit)
+        if (!Session.IsNewOrEdit)
         _open = !_open;
     }
 
@@ -251,9 +251,9 @@
             SelectedSupplierText = _UserSuppliers.Count > 0 ? _UserSuppliers.First(s => s.Id == SelectedSupplierValue).Name : "Planta";
             SelectedDealerText = _UserDealers.Count > 0 ? _UserDealers.First(s => s.Id == SelectedDealerValue).Name : "Concesionario";
 
-            Useful.supplierId = SelectedSupplierValue;
-            Useful.dealerId = SelectedDealerValue;
-            Useful.userId = userActive.Id;
+            Session.SupplierId = SelectedSupplierValue;
+            Session.DealerId = SelectedDealerValue;
+            Session.UserId = userActive.Id;
         }
 
        
@@ -265,7 +265,7 @@
     protected override async Task OnInitializedAsync()
     {
         base.OnInitialized();
-        Useful.IsNewOrEdit = false;
+        Session.IsNewOrEdit = false;
         await AuthenticationStateProvider.SetTimerInactivo(DotNetObjectReference.Create(this));
        
 
@@ -304,7 +304,7 @@
         _expandedSupplier = !_expandedSupplier;
         SelectedSupplierText = _UserSuppliers.FirstOrDefault(x => x.Id == SelectedSupplierValue)?.Name ?? "Planta";
         await AuthenticationStateProvider.SetValueSessionStorage<int>(SelectedSupplierValue, ValuesKey.SELECTEDSUPPLIER);
-        Useful.supplierId = SelectedSupplierValue;
+        Session.SupplierId = SelectedSupplierValue;
 
         _open = false;
 
@@ -314,7 +314,7 @@
         SelectedDealerValue = _UserDealers.Count > 0 ? _UserDealers.FirstOrDefault()!.Id : 0;
         SelectedDealerText = _UserDealers.FirstOrDefault(x => x.Id == SelectedDealerValue)?.Name ?? "Concesionario";
         await AuthenticationStateProvider.SetValueSessionStorage<int>(SelectedDealerValue, ValuesKey.SELECTEDDEALER);
-        Useful.dealerId = SelectedDealerValue;
+        Session.DealerId = SelectedDealerValue;
        
         await hubEventsService.NotifySupplierChangedAsync();
         await Task.CompletedTask;
@@ -325,7 +325,7 @@
         _expandedDealer = !_expandedDealer;
         SelectedDealerText = _UserDealers.FirstOrDefault(x => x.Id == SelectedDealerValue)?.Name ?? "Concesionario";
         await AuthenticationStateProvider.SetValueSessionStorage<int>(SelectedDealerValue, ValuesKey.SELECTEDDEALER);
-        Useful.dealerId = SelectedDealerValue;
+        Session.DealerId = SelectedDealerValue;
 
         _open = false;
         

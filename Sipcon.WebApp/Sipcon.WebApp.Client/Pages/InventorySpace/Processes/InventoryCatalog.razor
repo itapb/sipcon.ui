@@ -37,7 +37,7 @@
 </MudDataGrid>
 </MudItem>
 </MudGrid>
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;   
@@ -74,7 +74,7 @@
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Inventory> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetAll?rowFrom={mOffset}&filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}&withStock=true&locationType=A");
+        HttpResponseMessage response = await Http.GetAsync($"api/Inventory/GetAll?rowFrom={mOffset}&filter={searchString}&userId={Session.UserId}&supplierId={Session.SupplierId}&withStock=true&locationType=A");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Inventory>>>();

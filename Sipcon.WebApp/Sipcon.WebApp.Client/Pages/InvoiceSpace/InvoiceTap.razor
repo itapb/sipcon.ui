@@ -84,7 +84,7 @@
     <MudButton OnClick="@CollapseAllGroupsAsync" Color="@Color.Primary">Collapse all</MudButton>
 </div>
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
@@ -127,7 +127,7 @@
     protected override async Task OnInitializedAsync()
     {
         await AuthenticationStateProvider.RefreshStaticVariables();
-        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-CONTROLFACTURACION&userId={Useful.userId}");
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-CONTROLFACTURACION&userId={Session.UserId}");
         hubEventsService.OnSupplierChanged += ReloadBackOrderGrid;
     }
 
@@ -159,7 +159,7 @@
         var totalItems = 0;
         IEnumerable<Invoicecontrol> data;
 
-        HttpResponseMessage response = await Http.GetAsync($"api/InvoiceControl/GetInvoice?userId={Useful.userId}&supplierId={Useful.supplierId}&rowfrom={mOffset}&filter={searchString}&pendant={(IsPendant ? "1" : "0")}");
+        HttpResponseMessage response = await Http.GetAsync($"api/InvoiceControl/GetInvoice?userId={Session.UserId}&supplierId={Session.SupplierId}&rowfrom={mOffset}&filter={searchString}&pendant={(IsPendant ? "1" : "0")}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Invoicecontrol>>>();
@@ -383,7 +383,7 @@
                 formData.Add(content, "file", file.Name);
                 _loading = true;
 
-                var response = await Http.PostAsync($"api/InvoiceControl/ImportInvoiceReport?userId={Useful.userId}&supplierId={Useful.supplierId}", formData);
+                var response = await Http.PostAsync($"api/InvoiceControl/ImportInvoiceReport?userId={Session.UserId}&supplierId={Session.SupplierId}", formData);
                 if (response.IsSuccessStatusCode)
                 {
                     await DialogService.ShowDialog("Archivo cargado con exito!.", "FACTURAS", "OK", Color.Info, Icons.Material.Filled.Commit);

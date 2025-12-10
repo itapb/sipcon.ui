@@ -37,7 +37,7 @@ else
         </div>
     </MudForm>
 }
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -57,7 +57,7 @@ else
             var sGuideDetails = new { Id = mGuideDetails?.Id, Received = mGuideDetails?.Received, Observation = mGuideDetails?.Observation, ReasonId = ClaimReasonSelected?.Id ?? 0 };
 
             var strmGuideDetails = System.Text.Json.JsonSerializer.Serialize(sGuideDetails);
-            var result_PostGuideDetail = await Http.PostAsync($"api/Guide/PostGuideDetail?userId={Useful.userId}", new StringContent($"[{strmGuideDetails}]", null, "application/json"));
+            var result_PostGuideDetail = await Http.PostAsync($"api/Guide/PostGuideDetail?userId={Session.UserId}", new StringContent($"[{strmGuideDetails}]", null, "application/json"));
             if (result_PostGuideDetail.IsSuccessStatusCode)
             {
                 var sucessContent = await result_PostGuideDetail.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();

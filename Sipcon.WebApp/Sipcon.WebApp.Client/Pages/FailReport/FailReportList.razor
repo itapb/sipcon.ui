@@ -157,7 +157,7 @@
 
 
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     private IEnumerable<FailReport> _FailReports = new List<FailReport>();
     private string _nestedErrorMessage = string.Empty;
@@ -230,9 +230,9 @@
         _FailReports = new List<FailReport>();
         _rowsTotal = 0;
 
-        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
+        _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
 
-        var serviceResponse = await FailReportService.GetFailReports(Useful.supplierId, Useful.userId, _rowCount, _searchString, Useful.dealerId);
+        var serviceResponse = await FailReportService.GetFailReports(Session.SupplierId, Session.UserId, _rowCount, _searchString, Session.DealerId);
         if (serviceResponse.Processed)
         {
             _FailReports = serviceResponse.Data;
@@ -312,7 +312,7 @@
 
     private async Task ClickExportPdfSRG(FailReport item)
     {
-        var serviceResponse = await FailReportService.ExportPdfSRG(Useful.userId, item.Id, Useful.dealerId);
+        var serviceResponse = await FailReportService.ExportPdfSRG(Session.UserId, item.Id, Session.DealerId);
         if (serviceResponse.Processed)
         {
             _success = true;
@@ -342,7 +342,7 @@
 
     private async Task ClickExportReportSRG()
     {
-        var serviceResponse = await FailReportService.ExportReportSRG(Useful.userId, Useful.supplierId, Useful.dealerId);
+        var serviceResponse = await FailReportService.ExportReportSRG(Session.UserId, Session.SupplierId, Session.DealerId);
         if (serviceResponse.Processed)
         {
             _success = true;
@@ -412,7 +412,7 @@
 
     private async Task ExportItemsAsync()
     {
-        var serviceResponse = await FailReportService.ExportFailReports(Useful.supplierId, Useful.userId, _searchString, Useful.dealerId);
+        var serviceResponse = await FailReportService.ExportFailReports(Session.SupplierId, Session.UserId, _searchString, Session.DealerId);
         if (serviceResponse.Processed)
         {
             _success = true;
@@ -466,7 +466,7 @@
                     ActionList.Add(ItemAction);
                 }
 
-                var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Useful.userId);
+                var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
 
@@ -522,7 +522,7 @@
                     ActionList.Add(ItemAction);
                 }
 
-                var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Useful.userId);
+                var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
 
@@ -591,7 +591,7 @@
                         ActionList.Add(ItemAction);
                     }
 
-                    var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Useful.userId);
+                    var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Session.UserId);
                     if (serviceResponse.Processed)
                     {
 
@@ -661,7 +661,7 @@
                         ActionList.Add(ItemAction);
                     }
 
-                    var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Useful.userId);
+                    var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Session.UserId);
                     if (serviceResponse.Processed)
                     {
 
@@ -720,7 +720,7 @@
                     ActionList.Add(ItemAction);
                 }
 
-                var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Useful.userId);
+                var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
 
@@ -789,7 +789,7 @@
                         ActionList.Add(ItemAction);
                     }
 
-                    var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Useful.userId);
+                    var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Session.UserId);
                     if (serviceResponse.Processed)
                     {
 
@@ -860,7 +860,7 @@
                         ActionList.Add(ItemAction);
                     }
 
-                    var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Useful.userId);
+                    var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Session.UserId);
                     if (serviceResponse.Processed)
                     {
 
@@ -934,7 +934,7 @@
                         ActionList.Add(ItemAction);
                     }
 
-                    var serviceResponse = await FailReportService.ActionsFailReportProcess(ActionList, Useful.userId);
+                    var serviceResponse = await FailReportService.ActionsFailReportProcess(ActionList, Session.UserId);
                     if (serviceResponse.Processed)
                     {
 

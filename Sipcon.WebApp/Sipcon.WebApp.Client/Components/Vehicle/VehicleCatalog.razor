@@ -101,7 +101,7 @@
 </MudGrid>
 
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
 
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;   
     [Parameter] public int? Vin { get; set; }
@@ -136,7 +136,7 @@
     {
         _rowCount = state.Page * state.PageSize;
         IEnumerable<Vehicle> _Vehicles = new List<Vehicle>();
-        var serviceResponse = await VehicleService.GetVehiclesAvailables(Useful.userId, _rowCount, _searchString , Useful.dealerId);
+        var serviceResponse = await VehicleService.GetVehiclesAvailables(Session.UserId, _rowCount, _searchString , Session.DealerId);
         if (serviceResponse.Processed)
         {
             _Vehicles = serviceResponse.Data;

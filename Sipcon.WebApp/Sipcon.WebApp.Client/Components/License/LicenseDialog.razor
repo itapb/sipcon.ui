@@ -178,7 +178,7 @@
     }
 </style>
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
 
 
     [CascadingParameter]
@@ -210,7 +210,7 @@
             _model = new License();
             _model.SupplierId = IdSupplier;
 
-            _lisenceTypeList = await ModuleActionsService.GetLicenseTypeOption(Useful.userId);
+            _lisenceTypeList = await ModuleActionsService.GetLicenseTypeOption(Session.UserId);
 
             await Task.Delay(50);
 
@@ -227,12 +227,12 @@
 
     private async Task GetLicense()
     {
-        var serviceResponse = await LicenseService.GetLicense(IdLicense, Useful.userId);
+        var serviceResponse = await LicenseService.GetLicense(IdLicense, Session.UserId);
         if (serviceResponse.Processed)
         {
             _model = serviceResponse.Data ?? new License();
 
-            _lisenceTypeList = await ModuleActionsService.GetLicenseTypeOption(Useful.userId);
+            _lisenceTypeList = await ModuleActionsService.GetLicenseTypeOption(Session.UserId);
             StateHasChanged();
             await Task.Delay(50);
         }
@@ -266,7 +266,7 @@
         {
             _errorModalMessage = "";
 
-            var serviceResponse = await LicenseService.UpdateLicense(_model, Useful.userId);
+            var serviceResponse = await LicenseService.UpdateLicense(_model, Session.UserId);
             if (serviceResponse.Processed)
             {
                 if (ActionsModal == ActionsEnum.Create)

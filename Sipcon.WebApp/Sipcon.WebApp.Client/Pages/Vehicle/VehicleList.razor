@@ -180,7 +180,7 @@
 </style>
 
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     private IEnumerable<Vehicle> _Vehicles = new List<Vehicle>();
     private string _nestedErrorMessage = string.Empty;
@@ -254,9 +254,9 @@
         _loading = true;
         _Vehicles = new List<Vehicle>();
         _rowsTotal = 0;
-        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
+        _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
 
-        var serviceResponse = await VehicleService.GetVehicles(Useful.supplierId, Useful.userId, _rowCount, _searchString, Useful.dealerId);
+        var serviceResponse = await VehicleService.GetVehicles(Session.SupplierId, Session.UserId, _rowCount, _searchString, Session.DealerId);
         if (serviceResponse.Processed)
         {
             _Vehicles = serviceResponse.Data;
@@ -423,7 +423,7 @@
                 formData.Add(content, "file", file.Name);
 
 
-                var serviceResponse = await VehicleService.ImportVehicles(Useful.supplierId, Useful.userId, formData);
+                var serviceResponse = await VehicleService.ImportVehicles(Session.SupplierId, Session.UserId, formData);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -480,7 +480,7 @@
     //             formData.Add(content, "file", file.Name);
            
 
-    //             var serviceResponse = await VehicleService.ImportVehicles(Useful.userId, formData);
+    //             var serviceResponse = await VehicleService.ImportVehicles(Session.UserId, formData);
     //             if (serviceResponse.Processed)
     //             {
     //                 _success = true;
@@ -506,7 +506,7 @@
     private async Task ExportItemsAsync()
     {
 
-        var serviceResponse = await VehicleService.ExportVehicles(Useful.supplierId, Useful.userId, _searchString, Useful.dealerId);
+        var serviceResponse = await VehicleService.ExportVehicles(Session.SupplierId, Session.UserId, _searchString, Session.DealerId);
         if (serviceResponse.Processed)
         {
             _success = true;
@@ -560,7 +560,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, Useful.userId);
+                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -616,7 +616,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, Useful.userId);
+                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -646,7 +646,7 @@
         
         if (_selectedVehicles.Any())
         {
-            var _DealerList = await ModuleActionsService.GetDealerOption(Useful.userId, Useful.supplierId); //cambiar para el idSupplier logueado
+            var _DealerList = await ModuleActionsService.GetDealerOption(Session.UserId, Session.SupplierId); //cambiar para el idSupplier logueado
 
             DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
             var parameters = new DialogParameters<SelectItemDialog> { { x => x.SelectList, _DealerList }, { x => x.Title, "Asignar Concesionario Vehiculo..." } };
@@ -672,7 +672,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, Useful.userId);
+                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -727,7 +727,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, Useful.userId);
+                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -785,7 +785,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, Useful.userId);
+                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -838,7 +838,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, Useful.userId);
+                var serviceResponse = await VehicleService.ActionsVehicle(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;

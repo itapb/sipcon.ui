@@ -111,7 +111,7 @@
                     Title="@("Tipo de Polizas")" />
 
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
 
     private IEnumerable<PolicyType> _PolicyTypes = new List<PolicyType>();
@@ -178,12 +178,12 @@
         _loading = true;
         _PolicyTypes = new List<PolicyType>();
         _rowsTotal = 0;
-        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName) ?? new List<ModuleAction>([]);
+        _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName) ?? new List<ModuleAction>([]);
 
-        _brandList = await ModuleActionsService.GetBrandOption(Useful.supplierId);
+        _brandList = await ModuleActionsService.GetBrandOption(Session.SupplierId);
         _brandId  = _brandList.FirstOrDefault()?.Value ?? 0;
 
-        var serviceResponse = await PolicyTypeService.GetPolicyTypes(Useful.supplierId, Useful.userId, _rowCount, _searchString, _brandId);
+        var serviceResponse = await PolicyTypeService.GetPolicyTypes(Session.SupplierId, Session.UserId, _rowCount, _searchString, _brandId);
         if (serviceResponse.Processed)
         {
             _PolicyTypes = serviceResponse.Data;
@@ -338,7 +338,7 @@
                 formData.Add(content, "file", file.Name);
 
 
-                var serviceResponse = await PolicyTypeService.ImportPolicyTypes(Useful.supplierId, Useful.userId, formData);
+                var serviceResponse = await PolicyTypeService.ImportPolicyTypes(Session.SupplierId, Session.UserId, formData);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -361,7 +361,7 @@
     
     private async Task ExportItemsAsync()
     {
-        var serviceResponse = await PolicyTypeService.ExportPolicyTypes(Useful.supplierId, Useful.userId, _searchString);
+        var serviceResponse = await PolicyTypeService.ExportPolicyTypes(Session.SupplierId, Session.UserId, _searchString);
         if (serviceResponse.Processed)
         {
             _success = true;
@@ -415,7 +415,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await PolicyTypeService.ActionsPolicyType(ActionList, Useful.userId);
+                var serviceResponse = await PolicyTypeService.ActionsPolicyType(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
 
@@ -472,7 +472,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await PolicyTypeService.ActionsPolicyType(ActionList, Useful.userId);
+                var serviceResponse = await PolicyTypeService.ActionsPolicyType(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;

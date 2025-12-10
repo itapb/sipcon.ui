@@ -45,7 +45,7 @@
         font-style: italic;
     }
 </style>
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
@@ -83,8 +83,8 @@
     private async Task<GridData<Models.Guide>> ServerReload(GridState<Models.Guide> state)
     {
         await AuthenticationStateProvider.RefresMobileStaticVariables();
-        currentDispatch!.UserId = Useful.userId;
-        currentDispatch!.SupplierId = Useful.supplierId;
+        currentDispatch!.UserId = Session.UserId;
+        currentDispatch!.SupplierId = Session.SupplierId;
 
         _loading = true;
         var totalItems = 0;

@@ -78,7 +78,8 @@
 
 
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!; 
+    
 
     [Parameter] public int? IdAccessUser { get; set; }
     
@@ -138,7 +139,7 @@
 
     private async Task AfterSupplierValueChange(AccessUserDetail detail)
     {
-        var serviceResponse = await SecurityService.CreateAccessUserDetail(detail, Useful.userId);
+        var serviceResponse = await SecurityService.CreateAccessUserDetail(detail, Session.UserId);
         if (!serviceResponse.Processed)
         {
             await _accessGroupDetailGrid!.ReloadServerData();

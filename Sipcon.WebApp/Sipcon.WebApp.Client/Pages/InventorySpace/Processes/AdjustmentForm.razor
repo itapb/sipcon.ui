@@ -88,7 +88,7 @@
         text-align: right;
     }
 </style>
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
@@ -176,7 +176,7 @@
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Models.AdjustmentDetails> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Adjustment/GetAdjustmentWithContext?userId={Useful.userId}&adjustmentId={AdjustmentId}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Adjustment/GetAdjustmentWithContext?userId={Session.UserId}&adjustmentId={AdjustmentId}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<Models.MasterAdjustmentDetails>>();
@@ -216,7 +216,7 @@
         var mActions = AdjustmentDetailsMudDataGrid?.FilteredItems.Where(item => item.IsSelected)
                                                      .Select(item => new Client.Models.Action
                                                      {
-                                                         UserId = Useful.userId,
+                                                         UserId = Session.UserId,
                                                          RecordId = item.Id,
                                                          ModuleId = 0,
                                                          actionName = "DECLINE",
@@ -239,7 +239,7 @@
         if (form.IsValid)
         {
             var strMasterMovement = System.Text.Json.JsonSerializer.Serialize(MasterAdjustment);
-            var result_MasterMovement = await Http.PostAsync($"api/Adjustment/PostAdjustment?userId={Useful.userId}", new StringContent($"{strMasterMovement}", null, "application/json"));
+            var result_MasterMovement = await Http.PostAsync($"api/Adjustment/PostAdjustment?userId={Session.UserId}", new StringContent($"{strMasterMovement}", null, "application/json"));
             if (result_MasterMovement.IsSuccessStatusCode)
             {
                 var sucessContent = await result_MasterMovement.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
@@ -268,7 +268,7 @@
         var SelectedActions = AdjustmentDetailsMudDataGrid?.FilteredItems.Count() > 0 ?
                               new Client.Models.Action
                               {
-                                  UserId = Useful.userId,
+                                  UserId = Session.UserId,
                                   RecordId = AdjustmentId,
                                   ModuleId = ModuleId ?? 0,
                                   actionName = "PROCESS",
@@ -288,7 +288,7 @@
         if (form.IsValid)
         {
             var strMasterAdjustment = System.Text.Json.JsonSerializer.Serialize(MasterAdjustment);
-            var result_MasterAdjustment = await Http.PostAsync($"api/Adjustment/PostAdjustment?userId={Useful.userId}", new StringContent($"{strMasterAdjustment}", null, "application/json"));
+            var result_MasterAdjustment = await Http.PostAsync($"api/Adjustment/PostAdjustment?userId={Session.UserId}", new StringContent($"{strMasterAdjustment}", null, "application/json"));
             if (result_MasterAdjustment.IsSuccessStatusCode)
             {
                 var sucessContent = await result_MasterAdjustment.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
@@ -324,7 +324,7 @@
 
     private async Task DeleteMovementDetailAction(List<Models.Action>? actions)
     {
-        var result_Post_Actions = (actions?.Count > 0) ? await Http.PostAsync($"api/Adjustment/DeleteAdjustmentDetails?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json")) : null;
+        var result_Post_Actions = (actions?.Count > 0) ? await Http.PostAsync($"api/Adjustment/DeleteAdjustmentDetails?userId={Session.UserId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json")) : null;
         if ((result_Post_Actions?.IsSuccessStatusCode ?? false))
         {
             //var rest = result_Post_Actions.Content.ReadAsStringAsync();

@@ -154,7 +154,7 @@
 
 
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     private IEnumerable<Policy> _Policys = new List<Policy>();
     private string _nestedErrorMessage = string.Empty;
@@ -220,9 +220,9 @@
         _Policys = new List<Policy>();
         _rowsTotal = 0;
 
-        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
+        _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
 
-        var serviceResponse = await PolicyService.GetPolicys(Useful.supplierId, Useful.userId, _rowCount, _searchString, Useful.dealerId);
+        var serviceResponse = await PolicyService.GetPolicys(Session.SupplierId, Session.UserId, _rowCount, _searchString, Session.DealerId);
         if (serviceResponse.Processed)
         {
             _Policys = serviceResponse.Data;
@@ -292,7 +292,7 @@
 
     private async Task ClickExportPdf(Policy item)
     {
-        var serviceResponse = await PolicyService.ExportPdfPolicy(Useful.userId, item.Id);
+        var serviceResponse = await PolicyService.ExportPdfPolicy(Session.UserId, item.Id);
         if (serviceResponse.Processed)
         {
             _success = true;
@@ -369,7 +369,7 @@
 
     private async Task ExportItemsAsync()
     {
-        var serviceResponse = await PolicyService.ExportPolicys(Useful.supplierId, Useful.userId, _searchString, Useful.dealerId);
+        var serviceResponse = await PolicyService.ExportPolicys(Session.SupplierId, Session.UserId, _searchString, Session.DealerId);
         if (serviceResponse.Processed)
         {
             _success = true;
@@ -423,7 +423,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await PolicyService.ActionsPolicy(ActionList, Useful.userId);
+                var serviceResponse = await PolicyService.ActionsPolicy(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
 
@@ -479,7 +479,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await PolicyService.ActionsPolicy(ActionList, Useful.userId);
+                var serviceResponse = await PolicyService.ActionsPolicy(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -534,7 +534,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await PolicyService.ActionsPolicy(ActionList, Useful.userId);
+                var serviceResponse = await PolicyService.ActionsPolicy(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
 
@@ -589,7 +589,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await PolicyService.ActionsPolicy(ActionList, Useful.userId);
+                var serviceResponse = await PolicyService.ActionsPolicy(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;

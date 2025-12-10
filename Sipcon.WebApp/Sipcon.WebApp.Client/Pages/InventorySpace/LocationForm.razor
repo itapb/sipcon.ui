@@ -46,7 +46,7 @@ else
     <LoadingForm IsMudDialog="@(MudDialog != null)" />
 }
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -93,7 +93,7 @@ else
         if (form.IsValid)
         {
             var strJsonSelectedLocation = System.Text.Json.JsonSerializer.Serialize(SelectedLocation);
-            var result_Post_Location = await Http.PostAsync($"api/Location/PostLocations?userId={Useful.userId}", new StringContent($"[{strJsonSelectedLocation}]", null, "application/json"));
+            var result_Post_Location = await Http.PostAsync($"api/Location/PostLocations?userId={Session.UserId}", new StringContent($"[{strJsonSelectedLocation}]", null, "application/json"));
             if (result_Post_Location.IsSuccessStatusCode)
             {
                 var content2 = await result_Post_Location.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
@@ -135,8 +135,8 @@ else
     }
     private async Task LoadLocation(int locationId)
     {
-        var request1 = Http.GetAsync($"api/Zone/GetAll?rowFrom=0&userId={Useful.userId}&supplierId={Useful.supplierId}");
-        var request2 = Http.GetAsync($"api/Location/GetOne?locationId={locationId}&userId={Useful.userId}");
+        var request1 = Http.GetAsync($"api/Zone/GetAll?rowFrom=0&userId={Session.UserId}&supplierId={Session.SupplierId}");
+        var request2 = Http.GetAsync($"api/Location/GetOne?locationId={locationId}&userId={Session.UserId}");
         await Task.WhenAll(request1, request2);
         HttpResponseMessage response1 = request1.Result;
         HttpResponseMessage response2 = request2.Result;

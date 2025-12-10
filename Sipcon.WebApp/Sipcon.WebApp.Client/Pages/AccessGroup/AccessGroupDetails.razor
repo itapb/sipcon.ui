@@ -133,7 +133,7 @@
     }
 </style>
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
 
     [Parameter] public string? IdAccesGroup { get; set; }
@@ -157,7 +157,7 @@
     protected override async Task OnInitializedAsync()
     {
         await AuthenticationStateProvider.RefreshStaticVariables();
-        Useful.IsNewOrEdit = true;
+        Session.IsNewOrEdit = true;
 
         await GetAccessGroup();
 
@@ -180,7 +180,7 @@
 
             if (_accessGroupList.Any())
             {
-                _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
+                _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
             }
             else { _itemsModules = new List<ModuleAction>([]); }
 
@@ -202,7 +202,7 @@
         if (form.IsValid)
         {
 
-            var serviceResponse = await SecurityService.UpdateAccessGroup(_model!, Useful.userId);
+            var serviceResponse = await SecurityService.UpdateAccessGroup(_model!, Session.UserId);
             if (serviceResponse.Processed)
             {
                 await Task.Delay(50);

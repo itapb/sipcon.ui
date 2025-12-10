@@ -45,7 +45,7 @@
         </MudItem>
     </MudGrid>
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -89,7 +89,7 @@
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<ServiceFail> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/SaleOrder/GetReportFail?userId={Useful.userId}&dealerId={Useful.dealerId}&type={ServiceFailType}&rowfrom=0");
+        HttpResponseMessage response = await Http.GetAsync($"api/SaleOrder/GetReportFail?userId={Session.UserId}&dealerId={Session.DealerId}&type={ServiceFailType}&rowfrom=0");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<ServiceFail>>>();

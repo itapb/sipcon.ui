@@ -42,7 +42,7 @@
     </PagerContent>
 </MudDataGrid>
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
@@ -65,7 +65,7 @@
     protected override async Task OnInitializedAsync()
     {
         await AuthenticationStateProvider.RefreshStaticVariables();
-        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-CONTROLDESPACHO&userId={Useful.userId}");
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-CONTROLDESPACHO&userId={Session.UserId}");
         hubEventsService.OnSupplierChanged += ReloadBackOrderGrid;
     }
 
@@ -84,7 +84,7 @@
         var totalItems = 0;
         IEnumerable<Invoicecontrol> data;
 
-        HttpResponseMessage response = await Http.GetAsync($"api/InvoiceControl/GetDispatchedControl?userId={Useful.userId}&supplierId={Useful.supplierId}&rowfrom={mOffset}&filter={searchString}");
+        HttpResponseMessage response = await Http.GetAsync($"api/InvoiceControl/GetDispatchedControl?userId={Session.UserId}&supplierId={Session.SupplierId}&rowfrom={mOffset}&filter={searchString}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Invoicecontrol>>>();
@@ -144,7 +144,7 @@
         var mActions = DispatchTapDataGrid?.FilteredItems.Where(item => (item.Mark ?? false))
                                                          .Select(item => new Client.Models.Action
                                                          {
-                                                             UserId = Useful.userId,
+                                                             UserId = Session.UserId,
                                                              RecordId = item.Id,
                                                              ModuleId = Modules!.FirstOrDefault()?.Id,
                                                              actionName = actionName,
@@ -158,14 +158,14 @@
         }
         else if (mActions?.Count > 0)
         {
-            await PostActionAndReload(mActions, $"api/InvoiceControl/PostActions?userId={Useful.userId}&supplierId={Useful.supplierId}");
+            await PostActionAndReload(mActions, $"api/InvoiceControl/PostActions?userId={Session.UserId}&supplierId={Session.SupplierId}");
         }
         await Task.CompletedTask;
     }
     private async Task ClickTxtExport(int? ControlId)
     {
         _loading = true;
-        var ResultZonas = await Http.GetAsync($"api/InvoiceControl/ExportTXT?userId={Useful.userId}&supplierId={Useful.supplierId}&controlId={ControlId}");
+        var ResultZonas = await Http.GetAsync($"api/InvoiceControl/ExportTXT?userId={Session.UserId}&supplierId={Session.SupplierId}&controlId={ControlId}");
         if (ResultZonas.IsSuccessStatusCode)
         {
             await DispatchTapDataGrid!.ReloadServerData();
@@ -227,7 +227,7 @@
             new { Id = item.Id, IsActive = true, Mark = item.Mark }
         };
         var strjson = System.Text.Json.JsonSerializer.Serialize(actions);
-        var result_Post_Action = await Http.PostAsync($"api/InvoiceControl/PostInvoiceControl?userId={Useful.userId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json"));
+        var result_Post_Action = await Http.PostAsync($"api/InvoiceControl/PostInvoiceControl?userId={Session.UserId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json"));
         if (!result_Post_Action.IsSuccessStatusCode)
         {
             //item.Mark = false; // Revert the checkbox state on error

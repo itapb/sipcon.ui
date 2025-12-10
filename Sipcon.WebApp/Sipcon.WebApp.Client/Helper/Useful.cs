@@ -5,18 +5,10 @@ namespace Sipcon.WebApp.Client.Helper
 {
     internal static class Useful
     { 
-        internal static int userId = 0; //1
-        internal static int supplierId = 0; //4069
-        internal static int dealerId = 0; //5103
+       
         internal static int customerId = 0;
         internal static string customerName = "";
-        internal static bool IsNewOrEdit = false;
-        internal static bool IsFirstTime = true;
         internal static bool isMobile = false;
-        public static User UserActive { get; set; } = new User();
-        public static List<UserType> UserDealer { get; set; } = new List<UserType>();
-        public static List<UserType> UserSuppliers { get; set; } = new List<UserType>();
-        public static List<UserModule> UserModules { get; set; } = new List<UserModule>();
 
         internal static async Task<string> GetErrorMessageAsync(System.Net.Http.HttpResponseMessage response)
         {
@@ -55,10 +47,7 @@ namespace Sipcon.WebApp.Client.Helper
                 _ => ""
             };
         }
-        internal static string TemplateLog(string mTitle, string mMessage)
-        {
-            return $"{mTitle} : Usuario : {userId}  Fecha : {DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}  Mensaje : {mMessage}";            
-        }
+
         internal static string? GetmoduleName(this string? moduleCode)
         {
             return moduleCode switch

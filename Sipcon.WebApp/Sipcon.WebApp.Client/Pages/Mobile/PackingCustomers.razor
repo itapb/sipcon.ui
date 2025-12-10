@@ -35,7 +35,7 @@
         display: none !important;
     }
 </style>
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Parameter] public Models.Packing? currentPacking { get; set; }
@@ -72,8 +72,8 @@
     private async Task<GridData<Customer>> ServerReload(GridState<Customer> state)
     {
         await AuthenticationStateProvider.RefresMobileStaticVariables();
-        currentPacking!.UserId = Useful.userId;
-        currentPacking!.SupplierId = Useful.supplierId;
+        currentPacking!.UserId = Session.UserId;
+        currentPacking!.SupplierId = Session.SupplierId;
 
         _loading = true;
         var totalItems = 0;

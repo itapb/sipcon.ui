@@ -54,7 +54,7 @@ else
     </MudDataGrid>
 }
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
@@ -95,12 +95,12 @@ else
     private async Task ClickRefreshSalesOrder(MouseEventArgs args) => await SalesOrderMudDataGrid!.ReloadServerData();
     private async Task ClickNewSalesOrder(MouseEventArgs ev)
     {
-        HttpResponseMessage response = await Http.GetAsync($"api/SaleOrder/NewSaleOrderWithContext?userId={Useful.userId}&dealerId={Useful.dealerId}&supplierId={Useful.supplierId}&typeId={TypeId!.ToUpper()}");
+        HttpResponseMessage response = await Http.GetAsync($"api/SaleOrder/NewSaleOrderWithContext?userId={Session.UserId}&dealerId={Session.DealerId}&supplierId={Session.SupplierId}&typeId={TypeId!.ToUpper()}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterSalesOrderDetails>>();
             var data = content2!.data ?? new MasterSalesOrderDetails();    
-            Useful.IsNewOrEdit = true;
+            Session.IsNewOrEdit = true;
             SalesOrderId = data.SaleOrder?.Id;
         }
         else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
@@ -111,7 +111,7 @@ else
         else
         {
             var errorMessage = await response.Content.ReadAsStringAsync();
-            Logger.LogError(Useful.TemplateLog(RequisitionTitle, errorMessage));
+            Logger.LogError(Session.TemplateLog(RequisitionTitle, errorMessage));
             await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
         }
         await Task.CompletedTask;
@@ -123,13 +123,13 @@ else
     }
     private async Task ClickEditSalesOrder(SaleOrder item) 
     {
-        Useful.IsNewOrEdit = true;
+        Session.IsNewOrEdit = true;
         await Task.FromResult(SalesOrderId = item.Id); 
     }
     private async Task ClickPrintSalesOrder(SaleOrder item)
     {
         Loading = true;
-        var ResultZonas = await Http.GetAsync($"api/SaleOrder/ExportSaleOrder?saleOrderId={item.Id}&userId={Useful.userId}");
+        var ResultZonas = await Http.GetAsync($"api/SaleOrder/ExportSaleOrder?saleOrderId={item.Id}&userId={Session.UserId}");
         if (ResultZonas.IsSuccessStatusCode)
         {
             var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
@@ -153,7 +153,7 @@ else
         string hrefMovement =  "salesorder";       
 
         $"Home,{RequisitionTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
-        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=PEDIDOS-PEDIDOS&userId={Useful.userId}");
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=PEDIDOS-PEDIDOS&userId={Session.UserId}");
         await LoadSaleOrderTypes();
     }
     Func<SaleOrder, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
@@ -169,13 +169,13 @@ else
     private async Task<GridData<SaleOrder>> ServerReload(GridState<SaleOrder> state)
     {  
         await AuthenticationStateProvider.RefreshStaticVariables();
-        Useful.IsNewOrEdit = false;
+        Session.IsNewOrEdit = false;
         IsAllCheckBoxSelected = false;
         Loading = true;
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<SaleOrder> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/SaleOrder/GetAll?userId={Useful.userId}&supplierId={Useful.supplierId}&dealerId={Useful.dealerId}&rowfrom={mOffset}&filter={searchString}");
+        HttpResponseMessage response = await Http.GetAsync($"api/SaleOrder/GetAll?userId={Session.UserId}&supplierId={Session.SupplierId}&dealerId={Session.DealerId}&rowfrom={mOffset}&filter={searchString}");
 
         if (response.IsSuccessStatusCode)
         {
@@ -192,7 +192,7 @@ else
         {
             data = new List<SaleOrder>();
             var errorMessage = await response.Content.ReadAsStringAsync();
-            Logger.LogError(Useful.TemplateLog(RequisitionTitle, errorMessage));
+            Logger.LogError(Session.TemplateLog(RequisitionTitle, errorMessage));
             await DialogService.ShowUnexpected();
         }
 
@@ -205,7 +205,7 @@ else
         if (actionName == "EXPORT" && SalesOrderMudDataGrid?.FilteredItems.Count() > 0)
         {
             Loading = true;
-            var ResultZonas = await Http.GetAsync($"api/SaleOrder/ExportExcelsaleOrder?filter={searchString}&userId={Useful.userId}&supplierId={Useful.supplierId}");
+            var ResultZonas = await Http.GetAsync($"api/SaleOrder/ExportExcelsaleOrder?filter={searchString}&userId={Session.UserId}&supplierId={Session.SupplierId}");
             if (ResultZonas.IsSuccessStatusCode)
             {
                 var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
@@ -221,7 +221,7 @@ else
         var mActions = SalesOrderMudDataGrid?.FilteredItems.Where(item => item.IsSelected && strDictionary[actionName!].Contains(item!.StatusName!.ToUpper()))
                                                          .Select(item => new Client.Models.Action
                                                          {
-                                                             UserId = Useful.userId,
+                                                             UserId = Session.UserId,
                                                              RecordId = item.Id,
                                                              ModuleId = Modules!.FirstOrDefault()?.Id,
                                                              actionName = actionName,
@@ -235,7 +235,7 @@ else
         }
         else if (mActions?.Count > 0)
         {
-            await PostActionAndReload(mActions, $"api/SaleOrder/PostActions?userId={Useful.userId}");           
+            await PostActionAndReload(mActions, $"api/SaleOrder/PostActions?userId={Session.UserId}");           
         }
 
     }
@@ -256,7 +256,7 @@ else
         else
         {
             var errorMessage = await result_Post_Actions!.Content.ReadAsStringAsync() ?? "";
-            Logger.LogError(Useful.TemplateLog(RequisitionTitle, errorMessage));
+            Logger.LogError(Session.TemplateLog(RequisitionTitle, errorMessage));
             await DialogService.ShowUnexpected(); ;
         }
     }
@@ -269,7 +269,7 @@ else
     }
     public void Dispose()
     {
-        Useful.IsNewOrEdit = false;
+        Session.IsNewOrEdit = false;
         hubEventsService.OnDealerChanged -= ReloadSalesOrderGrid;
         hubEventsService.OnSupplierChanged -= ReloadSalesOrderGrid;
     }

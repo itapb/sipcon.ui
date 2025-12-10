@@ -89,7 +89,7 @@
                     Title="@("Roles")"/>
 
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     private IEnumerable<AccessGroup> _accessGroupList = new List<AccessGroup>();
     private string _nestedErrorMessage = string.Empty;
@@ -131,7 +131,7 @@
         _loading = true;
         _accessGroupList = new List<AccessGroup>();
         _rowsTotal = 0;
-        _itemsModules = await ModuleActionsService.GetModuleActions(Useful.userId, _moduleName);
+        _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
 
         var serviceResponse = await SecurityService.GetAccessGroups(_rowCount, _searchString);
         if (serviceResponse.Processed)
@@ -258,7 +258,7 @@
                     ActionList.Add(VehicleAction);
                 }
 
-                var serviceResponse = await SecurityService.ActionsAccessGroup(ActionList, Useful.userId);
+                var serviceResponse = await SecurityService.ActionsAccessGroup(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;
@@ -314,7 +314,7 @@
                     ActionList.Add(_action);
                 }
 
-                var serviceResponse = await SecurityService.ActionsAccessGroup(ActionList, Useful.userId);
+                var serviceResponse = await SecurityService.ActionsAccessGroup(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     _success = true;

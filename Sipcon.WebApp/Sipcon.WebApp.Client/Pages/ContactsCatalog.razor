@@ -43,7 +43,7 @@
     </MudDataGrid>
     </MudItem>
 </MudGrid>
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;   
@@ -78,7 +78,7 @@
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Contact> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/Contact/GetByContactType?rowFrom={mOffset}&filter={searchString}&userId={Useful.userId}&contactType={ContactType}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Contact/GetByContactType?rowFrom={mOffset}&filter={searchString}&userId={Session.UserId}&contactType={ContactType}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Contact>>>();

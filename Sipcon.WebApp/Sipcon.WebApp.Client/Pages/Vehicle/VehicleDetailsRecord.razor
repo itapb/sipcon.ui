@@ -631,7 +631,7 @@
     ErrorMessage="@_nestedErrorMessage" 
     Title="@("Vehiculo Historico")" />
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
 
     [Parameter] public string? Vin { get; set; } = null;
@@ -666,7 +666,7 @@
     protected override async Task OnInitializedAsync()
     {
         await AuthenticationStateProvider.RefreshStaticVariables();
-        Useful.IsNewOrEdit = true;
+        Session.IsNewOrEdit = true;
 
         if (!string.IsNullOrEmpty(Vin))
         {
@@ -683,7 +683,7 @@
     private async Task GeVehicle()
     {
 
-        var serviceResponse = await VehicleService.GetRecordVehicle(Useful.supplierId, Useful.userId, Vin ?? string.Empty);
+        var serviceResponse = await VehicleService.GetRecordVehicle(Session.SupplierId, Session.UserId, Vin ?? string.Empty);
         if (serviceResponse.Processed)
         {
             _model = serviceResponse.Data ?? new VehicleRecord();

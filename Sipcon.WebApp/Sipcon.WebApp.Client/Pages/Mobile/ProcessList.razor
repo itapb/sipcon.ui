@@ -39,6 +39,7 @@
 </div>
 
 @code{
+    [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
 
     private Func<UserType?, string> ConvertCityFunc = usertype => usertype?.Name!;
@@ -52,16 +53,16 @@
         _UserSuppliers = await AuthenticationStateProvider.GetUserSupplierAsync();
         Modules = await AuthenticationStateProvider.GetUserRoleAsync();       
         _ModuleNames = Modules.Select(s => s.Name).ToList(); 
-        Useful.supplierId = await AuthenticationStateProvider.GetSelectedSupplierAsync();
+        Session.SupplierId = await AuthenticationStateProvider.GetSelectedSupplierAsync();
 
-        UserTypeSelected = _UserSuppliers.FirstOrDefault(u => u.Id == Useful.supplierId);
+        UserTypeSelected = _UserSuppliers.FirstOrDefault(u => u.Id == Session.SupplierId);
         Useful.customerId = 0;
         Useful.customerName = "";        
     }
     private async Task OnUserTypeValueChanged(UserType selectedUserType)
     {
         UserTypeSelected = selectedUserType;
-        Useful.supplierId = selectedUserType.Id;
+        Session.SupplierId = selectedUserType.Id;
         await AuthenticationStateProvider.SetValueSessionStorage<int>(selectedUserType.Id, ValuesKey.SELECTEDSUPPLIER);       
     }
    

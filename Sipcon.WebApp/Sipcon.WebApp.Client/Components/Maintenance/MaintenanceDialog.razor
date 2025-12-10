@@ -526,7 +526,7 @@
     }
 </style>
 
-@code {
+@code { [Inject] private UserSession Session { get; set; } = null!;
 
 
     [CascadingParameter]
@@ -588,7 +588,7 @@
     private async Task GetMaintenance()
     {
 
-        var serviceResponse = await MaintenanceService.GetMaintenance(Useful.userId, Useful.dealerId, IdMaintenance);
+        var serviceResponse = await MaintenanceService.GetMaintenance(Session.UserId, Session.DealerId, IdMaintenance);
         if (serviceResponse.Processed)
         {
             _model = serviceResponse.Data ?? new Maintenance();
@@ -615,7 +615,7 @@
         _policyDetail = new List<PolicyDetail>();
         _modelPolicyDetail = new PolicyDetail();
         _isSearchVin = false;
-        var serviceResponse = await PolicyService.GetPolicyBy(Useful.supplierId, Useful.userId, _searchVin, SearchByEnum.Dual);
+        var serviceResponse = await PolicyService.GetPolicyBy(Session.SupplierId, Session.UserId, _searchVin, SearchByEnum.Dual);
         if (serviceResponse.Processed)
         {
             _modelPolicy = serviceResponse.Data ?? new Models.Policy();
@@ -647,7 +647,7 @@
         _model.NumberPolicy = _modelPolicy.Number;
 
 
-        _model.DealerId = Useful.dealerId;
+        _model.DealerId = Session.DealerId;
         @* 
         _model.DealerId  =  _modelPolicy.;
         _model.DealerServiceName  =  _modelPolicy.;
@@ -759,7 +759,7 @@
         {
             _errorModalMessage = "";
 
-            var serviceResponse = await MaintenanceService.UpdateMaintenance(_model, Useful.userId);
+            var serviceResponse = await MaintenanceService.UpdateMaintenance(_model, Session.UserId);
             if (serviceResponse.Processed)
             {
                 if (ActionsModal == ActionsEnum.Create)
