@@ -128,7 +128,7 @@ else
     private async Task LoadDataAsync()
     {      
         MovementTitle = TypeId switch { "r" => "Recepcion", "t" => "Traslado", "p" => "Recoleccion", _ => "Recepcion" };
-        string hrefMovement = TypeId switch { "r" => "reception", "t" => "move", "p" => "dispatch", _ => "reception" };
+        string hrefMovement = TypeId switch { "r" => "reception", "t" => "move", "p" => "collection", _ => "reception" };
         strContactName = strDictionaryContactName[TypeId!];
 
         $"Home,Inventario,{MovementTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
