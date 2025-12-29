@@ -58,6 +58,7 @@
                             @context.Grouping.Min(x => x.StatusName)
                         </MudChip>
                         <MudIconButton Icon="@Icons.Material.Filled.Download" OnClick="@(() => ClickTxtExport(Convert.ToInt32(@context.Grouping.Key)))"></MudIconButton>
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(() => ClickTxtRemove(Convert.ToInt32(@context.Grouping.Key)))"></MudIconButton>
                     </div>
                 }
                 else
@@ -87,7 +88,8 @@
     <MudButton OnClick="@CollapseAllGroupsAsync" Color="@Color.Primary">Collapse all</MudButton>
 </div>
 
-@code { [Inject] private UserSession Session { get; set; } = null!;
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
@@ -309,6 +311,28 @@
         await TxtTapDataGrid!.ReloadServerData();
     }
 
+    private async Task ClickTxtRemove(int ControlId)
+    {
+        DialogOptions mOptions = new() { MaxWidth = MaxWidth.ExtraLarge, BackdropClick = false, NoHeader = false };
+        bool? result = await DialogService.ShowMessageBox("Eliminar", "Confirmar accion para este registro?", yesText: "SI", cancelText: "NO", options: mOptions);
+        if ((result ?? false))
+        {
+            var mActions = TxtTapDataGrid.FilteredItems.Where(x => x.ControlId == ControlId)
+           .Select(x => new Models.Action
+           {
+               actionName = "DECLINE",
+               ActionComment = null,
+               ModuleId = Modules?.FirstOrDefault()?.Id ?? 0,
+               UserId = Session.UserId,
+               RecordId = x.ControlId,
+               RelatedId = 1
+
+           })
+           .ToList();
+            await PostActionAndReload(mActions, $"api/InvoiceControl/PostActions?userId={Session.UserId}&supplierId={Session.SupplierId}");
+        }
+       
+    }
     private async Task ClickTxtExport(int ControlId)
     {
         _loading = true;
@@ -350,7 +374,7 @@
         if ((result_Post_Actions?.IsSuccessStatusCode ?? false))
         {
             var rest = result_Post_Actions.Content.ReadAsStringAsync();
-            await DialogService.ShowDialog(Useful.OkSavedMessage, "Accion", "OK", Color.Info, Icons.Material.Filled.Commit);
+            await DialogService.ShowDialog("Solicitud ejecutada con exito", "Accion", "OK", Color.Info, Icons.Material.Filled.Commit);
             await TxtTapDataGrid!.ReloadServerData();
         }
         else if (result_Post_Actions?.StatusCode == System.Net.HttpStatusCode.Conflict)
