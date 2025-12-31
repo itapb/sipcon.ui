@@ -77,5 +77,7 @@ namespace Sipcon.WebApp.Client.Models
 
         public string? PartialTypeName { get; set; } = string.Empty;
 
+        public int? PrintQty { get; set; } = 1;
+
     }
 }
