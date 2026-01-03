@@ -16,7 +16,10 @@
                             <MudIconButton Icon="@Icons.Material.Filled.PlaylistRemove" Size="Size.Medium" OnClick="ClickRemoveMovementDetails" Color="Color.Info" Disabled="@(!IsCreatedMovement)"></MudIconButton>
                             <MudSpacer />
                             <MudIconButton Icon="@Icons.Material.Filled.Upload" Size="Size.Medium" OnClick="ClickImportReceptionDetail" Color="Color.Info" Disabled="@(!IsCreatedMovement)"></MudIconButton>
-                            <MudIconButton Icon="@Icons.Material.Filled.Print" Size="Size.Medium" OnClick="ClickPrintReceptionDetail" Color="Color.Info" ></MudIconButton>
+                            @if (IsReception)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Print" Size="Size.Medium" OnClick="ClickPrintReceptionDetail" Color="Color.Info"></MudIconButton>
+                            }
                         </ToolBarContent>
                         <Columns>
                             <TemplateColumn>
@@ -463,4 +466,5 @@
 
     // New property to avoid inline quoting inside markup (resolves HTML0209)
     private bool IsPartialTypeHidden => !(MasterMovement?.TypeId?.ToUpper() == "P");
+    private bool IsReception => MasterMovement?.TypeId?.ToUpper() == "R";
 }
