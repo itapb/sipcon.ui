@@ -14,6 +14,8 @@ else
             @if( TypeId != "p") { <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="ClickNewMovement"></MudIconButton> }
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             <MudSpacer />
+            <MudCheckBox @bind-Value="@IsPendant" Label="PENDIENTE" @bind-Value:after="OnPendantChanged" />
+            <MudSpacer />
             <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshMovement"></MudIconButton>
             <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
                 @foreach (var strmodulo in Modules!)
@@ -33,7 +35,7 @@ else
             </TemplateColumn>
              <PropertyColumn Property="x => x.Id" Title="ID" />
             <PropertyColumn Property="x => x.MovementId" Title="NRO RECOLECCION" />
-            <PropertyColumn Property="x => x.UpdatedDate" Title="FECHA" />
+            <PropertyColumn Property="x => x.GeneratedDate" Title="FECHA" />
             <PropertyColumn Property="x => x.SaleOrderId" Title="NRO PEDIDO" />
             <PropertyColumn Property="x => x.DealerName" Title="CONCESIONARIO" />
             <PropertyColumn Property="x => x.PartInnerCode" Title="CODIGO PARTE" />
@@ -67,6 +69,7 @@ else
     [Parameter]   
     public string? TypeId { get; set; } 
     private int? MovementId = null;    //4
+    public bool IsPendant { get; set; } = true;
 
     private bool IsAllCheckBoxSelected = false;
     int ReceptionCurrentPage = 0;
@@ -145,7 +148,7 @@ else
     {  
         nameof(CollectionMovementDetails.Id) => o => o.Id ?? 0,
         nameof(CollectionMovementDetails.MovementId)  => o => o.MovementId ?? 0,
-        nameof(CollectionMovementDetails.UpdatedDate)  => o => o.UpdatedDate,
+        nameof(CollectionMovementDetails.GeneratedDate)  => o => o.GeneratedDate ?? DateTime.UtcNow.ToString(),
         nameof(CollectionMovementDetails.SaleOrderId)  => o => o.SaleOrderId ?? "",
         nameof(CollectionMovementDetails.DealerName) => o => o.DealerName ?? "",
         nameof(CollectionMovementDetails.PartInnerCode)  => o => o.PartInnerCode ?? "",
@@ -167,7 +170,7 @@ else
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<CollectionMovementDetails> data;       
-        HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetMovementDetailsPicking?userId={Session.UserId}&supplierId={Session.SupplierId}&rowfrom={mOffset}&filter={searchString}&pending=false");
+        HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetMovementDetailsPicking?userId={Session.UserId}&supplierId={Session.SupplierId}&rowfrom={mOffset}&filter={searchString}&pending={IsPendant.ToString()}");
 
         if (response.IsSuccessStatusCode)
         {
@@ -276,6 +279,10 @@ else
     { 
         Session.IsNewOrEdit = false;
         hubEventsService.OnSupplierChanged -= ReloadMovementsGrid;
+    }
+    private async Task OnPendantChanged()
+    {
+        await MovementMudDataGrid!.ReloadServerData();
     }
 }
 

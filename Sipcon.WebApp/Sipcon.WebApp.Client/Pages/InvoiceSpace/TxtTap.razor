@@ -58,7 +58,8 @@
                             @context.Grouping.Min(x => x.StatusName)
                         </MudChip>
                         <MudIconButton Icon="@Icons.Material.Filled.Download" OnClick="@(() => ClickTxtExport(Convert.ToInt32(@context.Grouping.Key)))"></MudIconButton>
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(() => ClickTxtRemove(Convert.ToInt32(@context.Grouping.Key)))"></MudIconButton>
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(() => ClickTxtRemove(Convert.ToInt32(@context.Grouping.Key)))" 
+                        Disabled ="@(!context.Grouping.All(x => string.Equals(x.StatusName, "BORRADOR", StringComparison.OrdinalIgnoreCase)))" ></MudIconButton>
                     </div>
                 }
                 else

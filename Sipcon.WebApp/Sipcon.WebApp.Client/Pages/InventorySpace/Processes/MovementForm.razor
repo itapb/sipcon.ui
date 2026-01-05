@@ -400,7 +400,12 @@
     }
     private async Task ClickPrintReceptionDetail(MouseEventArgs args)
     {
-        await DialogService.ShowAsync(typeof(PrintReceptionDetail), "", new DialogParameters { ["masterMovementDetails"] = masterMovementDetails }, options2);
+       var masterMovementDistinctDetails = new MasterMovementDetails
+        {
+            Movement = masterMovementDetails?.Movement,
+            Details = masterMovementDetails?.Details?.DistinctBy(d => new { d.PartInnerCode}).ToList()
+        };
+        await DialogService.ShowAsync(typeof(PrintReceptionDetail), "", new DialogParameters { ["masterMovementDetails"] = masterMovementDistinctDetails }, options2);
     }
     private async Task OnInputFileChange(InputFileChangeEventArgs e)
     {

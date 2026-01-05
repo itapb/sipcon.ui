@@ -6,7 +6,8 @@
                 <MudStack Row="true">
                     <MudText Typo="Typo.h6" Color="Color.Info">Detalles de Recepcion</MudText>
                 </MudStack>
-                <MudStack>
+                <MudStack Row="true" Spacing="2">
+                        <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Print" Size="Size.Small" OnClick="() => ClickPrintReceptionDetail()" />
                     <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="CloseClick" />
                 </MudStack>
             </MudStack>
@@ -22,11 +23,7 @@
                         <MudNumericField @bind-Value="context.Item.PrintQty" Variant="Variant.Outlined" Min="1" Max="10" />
                     </CellTemplate>
                  </TemplateColumn>                 
-                 <TemplateColumn StickyRight="true">
-                     <CellTemplate>
-                         <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Print" OnClick="() => ClickPrintReceptionDetail(context.Item)" />
-                     </CellTemplate>
-                 </TemplateColumn>
+
              </Columns>
          </MudDataGrid>
      </MudItem>
@@ -62,19 +59,22 @@
         nameof(MovementDetails.PrintQty) => o => o.PrintQty ?? 1,
         _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto
     };
-    private async Task ClickPrintReceptionDetail(MovementDetails item)
+    private async Task ClickPrintReceptionDetail()
     {
         List<Models.Printqueue> mActions = new();
-       
+        foreach (var item in masterMovementDetails!.Details!)
+        {
             mActions.Add(new Models.Printqueue
             {
-                 RecordId = item.Id,
-                 Type = item.TypeId!,
-                 PrintedDate = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}",
-                 Code = item.PartInnerCode ?? "",
-                 Description = item.PartDescription ?? "",                 
-                 Quantity = item.PrintQty ?? 1,  
+                RecordId = item.Id,
+                Type = item.TypeId!,
+                PrintedDate = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}",
+                Code = item.PartInnerCode ?? "",
+                Description = item.PartDescription ?? "",
+                Quantity = item.PrintQty ?? 1,
             });
+
+        }
        
 
         await PostPrintQueue(mActions, $"api/Print/PostPrintQueue?userId={Session.UserId}");
