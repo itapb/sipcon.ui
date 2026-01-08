@@ -114,5 +114,8 @@ namespace Sipcon.WebApp.Client.Models
     
         public string? DealerName { get; set; }
         public String? GeneratedDate { get; set; }
+
+        public String? StatusName { get; set; }
+        
     }
 }
