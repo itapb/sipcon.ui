@@ -205,7 +205,10 @@ else
         if (actionName == "EXPORT" && SalesOrderMudDataGrid?.FilteredItems.Count() > 0)
         {
             Loading = true;
-            var ResultZonas = await Http.GetAsync($"api/SaleOrder/ExportExcelsaleOrder?filter={searchString}&userId={Session.UserId}&supplierId={Session.SupplierId}");
+            // var ResultZonas = await Http.GetAsync($"api/SaleOrder/ExportExcelsaleOrder?filter={searchString}&userId={Session.UserId}&supplierId={Session.SupplierId}");
+
+            var ResultZonas = await Http.GetAsync($"api/SaleOrder/GetExportResume?userId={Session.UserId}&supplierId={Session.SupplierId}&dealerId={Session.DealerId}");
+
             if (ResultZonas.IsSuccessStatusCode)
             {
                 var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
