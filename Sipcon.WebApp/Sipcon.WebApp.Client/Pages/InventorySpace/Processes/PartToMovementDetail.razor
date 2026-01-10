@@ -21,12 +21,13 @@ else
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="12">
-                    <MudSelect T="Location" Label="Ubicacion Destino" ToStringFunc="@ConvertLocationFunc" Value="TargetLocationSelected" ValueChanged="OnTargetLocationValueChanged" >
+@*                     <MudSelect T="Location" Label="Ubicacion DestinoRecepcion" ToStringFunc="@ConvertLocationFunc" Value="TargetLocationSelected" ValueChanged="OnTargetLocationValueChanged" >
                         @foreach (var location in TargetLocations!)
                         {
                             <MudSelectItem Value="location" />
                         }
-                    </MudSelect>
+                    </MudSelect> *@
+                    <MudTextField T="string"  Label="Ubicacion Destino"  @bind-Value="TargetLocationText" For="@(() => TargetLocationText)" OnBlur="OnBlurTargetLocation" />
                 </MudItem>
                 <MudItem xs="12">
                     <MudStack Row="true" Justify="Justify.Center">
@@ -59,6 +60,7 @@ else
     List<Location>? TargetLocations;
     [Parameter] public NewMovementDetail? newMovementDetail { get; set; } = default!;
     private Func<Location?, string> ConvertLocationFunc = location => location?.Name!;
+    private string TargetLocationText { get; set; } = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -77,6 +79,8 @@ else
             TargetLocations = Locations!.Where(r => r.TypeId == TypeIdTarget && r.IsFullActive == true).ToList();
             SourceLocationSelected = SourceLocations!.FirstOrDefault(r => r.Id == newMovementDetail!.LocationId);
             TargetLocationSelected = TargetLocations!.FirstOrDefault(r => r.Id == newMovementDetail!.DestinationId);
+
+            TargetLocationText = TargetLocationSelected?.Name ?? string.Empty;
         }
     }
     private Task OnSourceLocationValueChanged(Location selectedSourceLocation)
@@ -126,5 +130,21 @@ else
         var Uresult = SourceLocationSelected?.Id != TargetLocationSelected?.Id;
         if (!Uresult) await DialogService.ShowDialog("Las ubicaciones deben ser diferentes!", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
         return Uresult;
+    }
+    private async Task OnBlurTargetLocation(FocusEventArgs args)
+    {
+        var TargetLocationResult = TargetLocations?.FirstOrDefault(r => TargetLocationText.Length == 8 && r.Name!.Equals(TargetLocationText, StringComparison.OrdinalIgnoreCase));
+        if (TargetLocationResult != null)
+        {
+            TargetLocationSelected = TargetLocationResult;
+            newMovementDetail!.DestinationId = TargetLocationResult.Id;
+        }
+        else
+        {
+            TargetLocationSelected = null;
+            newMovementDetail!.DestinationId = null;
+            TargetLocationText = string.Empty;
+        }
+        await Task.CompletedTask;
     }
 }
