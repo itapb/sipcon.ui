@@ -3,6 +3,7 @@
 @code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject]
     public NavigationManager? navigationManager { get; set; }
+    [Inject] private Repository.Auth.AuthenticationProviderJWT _authenticationStateProvider { get; set; } = null!;
     private bool _initialized;
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -12,6 +13,7 @@
             var relativePath = navigationManager!.ToBaseRelativePath(navigationManager.Uri);
             Useful.isMobile = relativePath.Contains("process-list") || 
                               System.Text.RegularExpressions.Regex.IsMatch(relativePath, @"mobile-*");
+            await _authenticationStateProvider.SetValueSessionStorage<bool>(Useful.isMobile, ValuesKey.ISMOBILE);
 
             navigationManager!.NavigateTo($"{navigationManager.BaseUri}login");
         }

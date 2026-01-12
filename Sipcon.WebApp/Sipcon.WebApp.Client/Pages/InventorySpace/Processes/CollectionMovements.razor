@@ -9,10 +9,12 @@
 }
 else
 {
-    <MudDataGrid @ref="MovementMudDataGrid" T="Movement" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" FixedHeader Height="calc(100vh - 240px)" Loading="Loading" @bind-CurrentPage="ReceptionCurrentPage">
+    <MudDataGrid @ref="MovementMudDataGrid" T="CollectionMovementDetails" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" FixedHeader Height="calc(100vh - 240px)" Loading="Loading" @bind-CurrentPage="ReceptionCurrentPage">
         <ToolBarContent>
             @if( TypeId != "p") { <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="ClickNewMovement"></MudIconButton> }
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudSpacer />
+            <MudCheckBox @bind-Value="@IsPendant" Label="PENDIENTE" @bind-Value:after="OnPendantChanged" />
             <MudSpacer />
             <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshMovement"></MudIconButton>
             <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
@@ -31,12 +33,19 @@ else
                     <MudCheckBox @bind-Value="context.Item.IsSelected" />
                 </CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.Id" Title="NRO" />
-            <PropertyColumn Property="x => x.Created" Title="FECHA" />
-            <PropertyColumn Property="x => x.ContactName" Title="@strContactName" />
-            <PropertyColumn Property="x => x.Reference" Title="REFERENCIA" />
+            <PropertyColumn Property="x => x.MovementId" Title="NRO RECOLECCION" />
+            <PropertyColumn Property="x => x.GeneratedDate" Title="FECHA" />
+            <PropertyColumn Property="x => x.SaleOrderId" Title="NRO PEDIDO" />
+            <PropertyColumn Property="x => x.DealerName" Title="CONCESIONARIO" />
+            <PropertyColumn Property="x => x.PartInnerCode" Title="CODIGO PARTE" />
+            <PropertyColumn Property="x => x.PartDescription" Title="DESCRIPCION" />
+            <PropertyColumn Property="x => x.LocationName" Title="UBICACION" />
+            <PropertyColumn Property="x => x.RequiredQty" Title="TEORICO" />
+            <PropertyColumn Property="x => x.RealQty" Title="REAL" />
+            <PropertyColumn Property="x => x.TypeName" Title="TIPO" />
             <PropertyColumn Property="x => x.StatusName" Title="ESTATUS" />
-            <PropertyColumn Property="x => x.AssignTo" Title="USUARIO" />
+            @* <TemplateColumn Title="ESTATUS"><CellTemplate><span>@((context.Item.Processed ?? false) ? "Procesado":"No Procesado")</span></CellTemplate></TemplateColumn> *@
+            <PropertyColumn Property="x => x.UserName" Title="USUARIO" />
             <TemplateColumn StickyRight="true">
                 <CellTemplate>
                     <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditMovement(context.Item)" />
@@ -44,7 +53,7 @@ else
             </TemplateColumn>
         </Columns>
         <PagerContent>
-            <MudDataGridPager T="Movement" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+            <MudDataGridPager T="CollectionMovementDetails" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
         </PagerContent>
     </MudDataGrid>
 }
@@ -53,18 +62,19 @@ else
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
-    [Inject] private ILogger<Movements> Logger { get; set; } = default!;
+    [Inject] private ILogger<CollectionMovements> Logger { get; set; } = default!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
     List<BreadcrumbItem> ItemsNavigate = new();    
 
     [Parameter]   
     public string? TypeId { get; set; } 
     private int? MovementId = null;    //4
+    public bool IsPendant { get; set; } = true;
 
     private bool IsAllCheckBoxSelected = false;
     int ReceptionCurrentPage = 0;
     bool Loading = false;
-    private MudDataGrid<Movement>? MovementMudDataGrid;
+    private MudDataGrid<CollectionMovementDetails>? MovementMudDataGrid;
     private List<Module>? Modules;
     DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
     private string searchString = string.Empty;
@@ -111,10 +121,10 @@ else
         await Task.CompletedTask;
     }
 
-    private async Task ClickEditMovement(Movement item) 
+    private async Task ClickEditMovement(CollectionMovementDetails item) 
     {           
         Session.IsNewOrEdit = true;
-        await Task.FromResult(MovementId = item.Id); 
+        await Task.FromResult(MovementId = item.MovementId); 
     }
 
     protected override async Task OnInitializedAsync()
@@ -134,49 +144,55 @@ else
         $"Home,Inventario,{MovementTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
         Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-{MovementTitle.ToUpper()}&userId={Session.UserId}");
     }
-    Func<Movement, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
-    {         
-        nameof(Movement.Id) => o => o.Id ?? 0,
-        nameof(Movement.Created) => o => o.Created,
-        nameof(Movement.TypeName) => o => o.TypeName,
-        nameof(Movement.Reference) => o => o.Reference,
-        nameof(Movement.StatusName) => o => o.StatusName,
-        nameof(Movement.AssignTo) => o => o.AssignTo,
-        nameof(Movement.ContactName) => o => o.ContactName,
+    Func<CollectionMovementDetails, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    {  
+        nameof(CollectionMovementDetails.Id) => o => o.Id ?? 0,
+        nameof(CollectionMovementDetails.MovementId)  => o => o.MovementId ?? 0,
+        nameof(CollectionMovementDetails.GeneratedDate)  => o => o.GeneratedDate ?? DateTime.UtcNow.ToString(),
+        nameof(CollectionMovementDetails.SaleOrderId)  => o => o.SaleOrderId ?? "",
+        nameof(CollectionMovementDetails.DealerName) => o => o.DealerName ?? "",
+        nameof(CollectionMovementDetails.PartInnerCode)  => o => o.PartInnerCode ?? "",
+        nameof(CollectionMovementDetails.PartDescription) => o => o.PartDescription ?? "",
+        nameof(CollectionMovementDetails.LocationName) => o => o.LocationName,
+        nameof(CollectionMovementDetails.RequiredQty) => o => o.RequiredQty ?? 0,
+        nameof(CollectionMovementDetails.RealQty) => o => o.RealQty ?? 0,
+        nameof(CollectionMovementDetails.TypeName) => o => o.TypeName,
+        nameof(CollectionMovementDetails.Processed) => o => o.Processed ?? false,
+        nameof(CollectionMovementDetails.UserName) => o => o.UserName,
         _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto        
     };
 
-    private async Task<GridData<Movement>> ServerReload(GridState<Movement> state)
+    private async Task<GridData<CollectionMovementDetails>> ServerReload(GridState<CollectionMovementDetails> state)
     { 
         await AuthenticationStateProvider.RefreshStaticVariables();
         IsAllCheckBoxSelected = false;
         Loading = true;
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
-        IEnumerable<Movement> data;       
-        HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetMovements?userId={Session.UserId}&supplierId={Session.SupplierId}&typeId={TypeId!.ToUpper()}&rowfrom={mOffset}&filter={searchString}");
+        IEnumerable<CollectionMovementDetails> data;       
+        HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetMovementDetailsPicking?userId={Session.UserId}&supplierId={Session.SupplierId}&rowfrom={mOffset}&filter={searchString}&pending={IsPendant.ToString()}");
 
         if (response.IsSuccessStatusCode)
         {
-            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Movement>>>();
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<CollectionMovementDetails>>>();
             totalItems = content2!.total ?? 0;
-            data = content2!.data ?? new List<Movement>();
+            data = content2!.data ?? new List<CollectionMovementDetails>();
 
-            if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Movement> sortDefinition)
+            if (state.SortDefinitions.FirstOrDefault() is SortDefinition<CollectionMovementDetails> sortDefinition)
             {
                 data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
             }
         }
         else
         {
-            data = new List<Movement>();
+            data = new List<CollectionMovementDetails>();
             var errorMessage = await response.Content.ReadAsStringAsync();
             Logger.LogError(Session.TemplateLog(MovementTitle, errorMessage));
             await DialogService.ShowUnexpected();
         }
 
         Loading = false;
-        return new GridData<Movement> { TotalItems = totalItems, Items = data };
+        return new GridData<CollectionMovementDetails> { TotalItems = totalItems, Items = data };
     }
 
     private async Task ClickMenuMovement(string? actionName)
@@ -199,8 +215,8 @@ else
             return;
         }
 
-        var strDictionary = new Dictionary<string, string> { { "ASSIGN", "GENERADO" }, { "UNASSIGN", "ASIGNADO" }, { "GENERATE", "BORRADOR" }, { "DECLINE", "BORRADOR,GENERADO" } };
-        var mActions = MovementMudDataGrid?.FilteredItems.Where(item => item.IsSelected && strDictionary[actionName!].Contains(item.StatusName.ToUpper()))
+        //var strDictionary = new Dictionary<string, string> { { "ASSIGN", "GENERADO" }, { "UNASSIGN", "ASIGNADO" }, { "GENERATE", "BORRADOR" }, { "DECLINE", "BORRADOR,GENERADO" } };
+        var mActions = MovementMudDataGrid?.FilteredItems.Where(item => item.IsSelected && !(item.Processed ?? false))  //strDictionary[actionName!].Contains(item.StatusName.ToUpper())
                                                          .Select(item => new Client.Models.Action
                                                                  {
                                                                      UserId = Session.UserId,
@@ -225,7 +241,9 @@ else
             }
             else
             {
-                await PostActionAndReload(mActions, $"api/Movements/PostMovementActions?userId={Session.UserId}");
+                // await PostActionAndReload(mActions, $"api/Movements/PostMovementActions?userId={Session.UserId}");
+                await PostActionAndReload(mActions, $"api/Movements/PostMovementDetailsPickingActions?userId={Session.UserId}");
+                
             }
         }
 
@@ -264,4 +282,9 @@ else
         Session.IsNewOrEdit = false;
         hubEventsService.OnSupplierChanged -= ReloadMovementsGrid;
     }
+    private async Task OnPendantChanged()
+    {
+        await MovementMudDataGrid!.ReloadServerData();
+    }
 }
+

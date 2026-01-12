@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Authorization;
+﻿using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
 using Sipcon.WebApp.Client.Enum;
 using Sipcon.WebApp.Client.Helper;
@@ -193,6 +192,11 @@ namespace Sipcon.WebApp.Client.Repository.Auth
                 _session.UserId = mUser.Id;
                 _session.SupplierId = await GetSelectedSupplierAsync();
             }
+        }
+
+        public async Task<bool> GetIsMobile()
+        {
+          return Check<bool>(await _jsSessionStorage.GetValue<bool>(ValuesKey.ISMOBILE));
         }
     }
 }

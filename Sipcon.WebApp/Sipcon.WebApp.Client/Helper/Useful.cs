@@ -87,6 +87,7 @@ namespace Sipcon.WebApp.Client.Helper
                 "PROCESAR" => Icons.Material.Filled.PlayCircle,
                 "CONTROL FACTURACION" => Icons.Material.Filled.ReceiptLong,
                 "SINCRONIZAR" => Icons.Material.Filled.Sync,
+                "PRIORIZAR" => Icons.Material.Filled.PriorityHigh,
                 _ => Icons.Material.Filled.HelpOutline
             };
         }
