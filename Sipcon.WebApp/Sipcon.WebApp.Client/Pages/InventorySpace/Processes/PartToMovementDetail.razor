@@ -27,7 +27,7 @@ else
                             <MudSelectItem Value="location" />
                         }
                     </MudSelect> *@
-                    <MudTextField T="string"  Label="Ubicacion Destino"  @bind-Value="TargetLocationText" For="@(() => TargetLocationText)" OnBlur="OnBlurTargetLocation" />
+                            <MudTextField T="string" Label="Ubicacion Destino" @bind-Value="TargetLocationText" @ref="TargetLocationMudTextField" />
                 </MudItem>
                 <MudItem xs="12">
                     <MudStack Row="true" Justify="Justify.Center">
@@ -43,7 +43,8 @@ else
     </div>
     </MudForm>
 }
-@code { [Inject] private UserSession Session { get; set; } = null!;
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;    
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -61,7 +62,7 @@ else
     [Parameter] public NewMovementDetail? newMovementDetail { get; set; } = default!;
     private Func<Location?, string> ConvertLocationFunc = location => location?.Name!;
     private string TargetLocationText { get; set; } = string.Empty;
-
+    private MudTextField<string>? TargetLocationMudTextField;
     protected override async Task OnInitializedAsync()
     {
         // await Task.Delay(3000); // Simulate a delay for loading
@@ -98,7 +99,7 @@ else
     private async Task CheckClick(MouseEventArgs args)
     {
         await form!.Validate();
-        if (form.IsValid && await UnequalLocations())
+        if (form.IsValid && await ValidateTargetLocation() && await UnequalLocations())
         {
             var strnewMovementDetail = System.Text.Json.JsonSerializer.Serialize(newMovementDetail);
             var result_newMovementDetail = await Http.PostAsync($"api/Movements/PostMovementDetail?userId={Session.UserId}", new StringContent($"[{strnewMovementDetail}]", null, "application/json"));
@@ -131,20 +132,25 @@ else
         if (!Uresult) await DialogService.ShowDialog("Las ubicaciones deben ser diferentes!", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
         return Uresult;
     }
-    private async Task OnBlurTargetLocation(FocusEventArgs args)
+    private async Task<bool> ValidateTargetLocation()
     {
+        var vResult = true;
         var TargetLocationResult = TargetLocations?.FirstOrDefault(r => TargetLocationText.Length == 8 && r.Name!.Equals(TargetLocationText, StringComparison.OrdinalIgnoreCase));
         if (TargetLocationResult != null)
         {
             TargetLocationSelected = TargetLocationResult;
-            newMovementDetail!.DestinationId = TargetLocationResult.Id;
+            newMovementDetail!.DestinationId = TargetLocationResult.Id;        
         }
         else
         {
             TargetLocationSelected = null;
             newMovementDetail!.DestinationId = null;
-            TargetLocationText = string.Empty;
+            vResult = String.IsNullOrWhiteSpace(TargetLocationText.ToString());
+            if (!vResult) {
+                await TargetLocationMudTextField!.FocusAsync();
+                await DialogService.ShowDialog("Invalida Ubicacion Destino!", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
         }
-        await Task.CompletedTask;
+        return vResult;
     }
 }
