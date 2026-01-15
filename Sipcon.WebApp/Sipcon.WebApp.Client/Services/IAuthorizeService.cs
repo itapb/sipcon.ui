@@ -17,5 +17,6 @@
         public Task SetValueSessionStorage<T>(T data, ValuesKey key);
         public Task RefreshStaticVariables();
         public Task RefresMobileStaticVariables();
+        public Task<Boolean> GetIsMobile();
     }
 }

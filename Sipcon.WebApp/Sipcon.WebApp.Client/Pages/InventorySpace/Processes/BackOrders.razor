@@ -12,7 +12,7 @@
     <ToolBarContent>        
         <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" ></MudTextField>
         <MudSpacer /> 
-        <MudDateRangePicker @bind-DateRange="_dateRange" PickerVariant="PickerVariant.Inline" AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.TopCenter" PickerPaperStylename="z-index: 5;" PlaceholderStart="Desde" PlaceholderEnd="Hasta" @bind-DateRange:after="AfterDateRangeAsync" />
+        <MudDateRangePicker @bind-DateRange="_dateRange" PickerVariant="PickerVariant.Inline" AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.TopCenter" PickerPaperStylename="z-index: 5;" PlaceholderStart="Desde" PlaceholderEnd="Hasta" Clearable="true" ClearIcon="@Icons.Material.Filled.Close" AdornmentIcon="@Icons.Material.Filled.Event" @bind-DateRange:after="AfterDateRangeAsync" />
         <MudSpacer />
         <MudSelect T="string" @bind-Value="SelectedmGroup" Immediate="true" FitContent="true" @bind-Value:after="AfterAsync">
             @foreach (var mgroup in mGroups)
@@ -42,7 +42,7 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <PropertyColumn Property="x => x.SaleOrderNumber" Title="NRO ORDEN" Groupable="@(_saleOrderNumberGrouping)"
+        <PropertyColumn Property="x => x.SaleOrderNumber" Title="NRO PEDIDO" Groupable="@(_saleOrderNumberGrouping)"
                         @bind-Grouping="_saleOrderNumberGrouping" GroupBy="_groupBy1"
                         @bind-GroupByOrder="_saleOrderNumberOrder"
                         @bind-GroupExpanded="_saleOrderNumberExpanded">
@@ -60,10 +60,13 @@
                         <MudIcon Icon="@Icons.Material.Filled.Business" Color="@color" Size="Size.Small" Class="mr-2" />
                         <span style="font-weight:bold">@context.Grouping.Key</span>
                         <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
-                            @context.Grouping.Count() Orden
+                            @context.Grouping.Count() Repuesto
                         </MudChip>
                         <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
-                            @context.Grouping.Sum(x => x.Quantity) Cantidad
+                            @context.Grouping.Select(x => x.DealerName).FirstOrDefault()?.ToString()
+                        </MudChip>
+                        <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
+                            @context.Grouping.Sum(x => x.Quantity) Unidad
                         </MudChip>
                     </div>
                 }
@@ -105,7 +108,7 @@
                         <MudIcon Icon="@Icons.Material.Filled.Hardware" Color="@color" Size="Size.Small" Class="mr-2" />
                         <span style="font-weight:bold">@context.Grouping.Key</span>
                         <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
-                            @context.Grouping.Count() Concesionario 
+                            @context.Grouping.Select(x => x.DealerName).Distinct().Count() Concesionario
                         </MudChip>
                         <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
                             @context.Grouping.Sum(x => x.Quantity) Cantidad
@@ -140,7 +143,7 @@
                         <MudIcon Icon="@Icons.Material.Filled.Bloodtype" Color="@color" Size="Size.Small" Class="mr-2" />
                         <span style="font-weight:bold">@context.Grouping.Key</span>
                         <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
-                            @context.Grouping.Count() Tipo
+                            @context.Grouping.Select(x => x.DealerName).Distinct().Count() Concesionario
                         </MudChip>
                         <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
                             @context.Grouping.Sum(x => x.Quantity) Cantidad
@@ -179,8 +182,8 @@
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     public bool StockOnly { get; set; } = false;
-    string SelectedmGroup = "NRO ORDEN";
-    string[] mGroups = ["NRO ORDEN", "CODIGO PARTE", "TIPO"];
+    string SelectedmGroup = "NRO PEDIDO";
+    string[] mGroups = ["NRO PEDIDO", "CODIGO PARTE", "TIPO"];
 
     public string customstr { get; set; } = "NRO ORDEN VENTA";
     List<BreadcrumbItem> ItemsNavigate = new();
@@ -223,7 +226,7 @@
         _typeIdCodeGrouping = false;
         switch (SelectedmGroup)
         {
-            case "NRO ORDEN":
+            case "NRO PEDIDO":
                 _saleOrderNumberGrouping = true;
                 break;
             case "CODIGO PARTE":

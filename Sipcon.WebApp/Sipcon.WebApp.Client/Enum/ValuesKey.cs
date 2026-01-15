@@ -9,6 +9,7 @@
         SUPPLIERS,
         DEALERS,
         SELECTEDSUPPLIER,
-        SELECTEDDEALER
+        SELECTEDDEALER,
+        ISMOBILE,
     }
 }

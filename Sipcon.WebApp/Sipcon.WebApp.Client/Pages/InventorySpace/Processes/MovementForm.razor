@@ -16,6 +16,10 @@
                             <MudIconButton Icon="@Icons.Material.Filled.PlaylistRemove" Size="Size.Medium" OnClick="ClickRemoveMovementDetails" Color="Color.Info" Disabled="@(!IsCreatedMovement)"></MudIconButton>
                             <MudSpacer />
                             <MudIconButton Icon="@Icons.Material.Filled.Upload" Size="Size.Medium" OnClick="ClickImportReceptionDetail" Color="Color.Info" Disabled="@(!IsCreatedMovement)"></MudIconButton>
+                            @if (IsReception)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Print" Size="Size.Medium" OnClick="ClickPrintReceptionDetail" Color="Color.Info"></MudIconButton>
+                            }
                         </ToolBarContent>
                         <Columns>
                             <TemplateColumn>
@@ -38,7 +42,7 @@
                                     <span>@((context.Item.Processed ?? false) ? "Procesado":"No Procesado")</span>
                                  </CellTemplate>
                              </TemplateColumn>
-                             <PropertyColumn Property="x => x.PartialTypeName" Title="MOTIVO" Hidden="@(!(MasterMovement?.TypeId?.ToUpper() =="P"))" />                          
+                             <PropertyColumn Property="x => x.PartialTypeName" Title="MOTIVO" Hidden="@IsPartialTypeHidden" />                          
 
                             <TemplateColumn StickyRight="true">
                                 <CellTemplate>
@@ -97,7 +101,8 @@
         text-align: right;
     }
 </style>
-@code { [Inject] private UserSession Session { get; set; } = null!;
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;   
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
@@ -106,7 +111,7 @@
     [Parameter] public int? ModuleId { get; set; }
 
     DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
-
+    DialogOptions options2 = new DialogOptions { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
     string TempReference = "";
     int PartCurrentPage = 0;
     bool IsCreatedMovement = false;    
@@ -134,6 +139,7 @@
 
     private bool IsAllCheckBoxSelected = false;
     bool Loading = false;
+    private MasterMovementDetails? masterMovementDetails;
     private Movement? MasterMovement;
     private MudDataGrid<MovementDetails>? MovementDetailsMudDataGrid = new();
     private MudForm? form;
@@ -202,7 +208,7 @@
         {            
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterMovementDetails>>();
             totalItems = content2!.total ?? 0;
-            var masterMovementDetails = content2!.data ?? new MasterMovementDetails();
+            masterMovementDetails = content2!.data ?? new MasterMovementDetails();
             MasterMovement = masterMovementDetails.Movement;
             data = masterMovementDetails.Details!;
             IsCreatedMovement = (MasterMovement!.StatusName.ToUpper() == "BORRADOR");
@@ -392,6 +398,15 @@
         await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('[type=file]').click()");
         return;
     }
+    private async Task ClickPrintReceptionDetail(MouseEventArgs args)
+    {
+       var masterMovementDistinctDetails = new MasterMovementDetails
+        {
+            Movement = masterMovementDetails?.Movement,
+            Details = masterMovementDetails?.Details?.DistinctBy(d => new { d.PartInnerCode}).ToList()
+        };
+        await DialogService.ShowAsync(typeof(PrintReceptionDetail), "", new DialogParameters { ["masterMovementDetails"] = masterMovementDistinctDetails }, options2);
+    }
     private async Task OnInputFileChange(InputFileChangeEventArgs e)
     {
         if (e.FileCount == 1)
@@ -453,4 +468,8 @@
         }
         
     }
+
+    // New property to avoid inline quoting inside markup (resolves HTML0209)
+    private bool IsPartialTypeHidden => !(MasterMovement?.TypeId?.ToUpper() == "P");
+    private bool IsReception => MasterMovement?.TypeId?.ToUpper() == "R";
 }

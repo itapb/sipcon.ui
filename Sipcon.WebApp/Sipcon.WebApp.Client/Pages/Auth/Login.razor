@@ -236,8 +236,8 @@
                 if (result.Processed)
                 {
                     await _authenticationStateProvider.Login(result.Data);
-                 
 
+                    Useful.isMobile = await _authenticationStateProvider.GetIsMobile();
                     _navigationManager.NavigateTo(Useful.isMobile ? "process-list" : "");
                 }else
                 {
