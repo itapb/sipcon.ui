@@ -89,6 +89,8 @@ namespace Sipcon.WebApp.Client.Helper
                 "SINCRONIZAR" => Icons.Material.Filled.Sync,
                 "PRIORIZAR" => Icons.Material.Filled.PriorityHigh,
                 "RECLAMO" => Icons.Material.Filled.ReportProblem,
+                "APROBAR" => Icons.Material.Filled.ThumbUpAlt,
+                "PARA APROBAR" => Icons.Material.Filled.ThumbUpOffAlt,
                 _ => Icons.Material.Filled.HelpOutline
             };
         }
