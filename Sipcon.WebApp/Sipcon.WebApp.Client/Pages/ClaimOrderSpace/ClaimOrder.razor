@@ -3,22 +3,22 @@
 @implements IDisposable
 
 <CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
-@if (SalesOrderId != null)
+@if (ClaimOrderId != null)
 {
-    <ClaimOrderForm @bind-Value="SalesOrderId" SaleOrderTypes="SaleOrderTypes" />
+    <ClaimOrderForm @bind-Value="ClaimOrderId" SaleOrderTypes="SaleOrderTypes" />
 }
 else
 {
     <MudDataGrid @ref="ClaimOrderMudDataGrid" T="Models.ClaimPart" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" FixedHeader Height="calc(100vh - 240px)" Loading="Loading" @bind-CurrentPage="ReceptionCurrentPage">
         <ToolBarContent>
-            <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="ClickNewSalesOrder"></MudIconButton>
+            <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="ClickNewClaimOrder"></MudIconButton>
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             <MudSpacer />
-            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshSalesOrder"></MudIconButton>
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshClaimOrder"></MudIconButton>
             <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
                 @foreach (var strmodulo in Modules!)
                 {
-                    <MudMenuItem Label="@strmodulo.ActionDisplay" Icon="@(strmodulo.ActionDisplay.ToActionIcon())" IconColor="@Color.Info" OnClick="@(() => ClickMenuSalesOrder(strmodulo.ActionName))" />
+                    <MudMenuItem Label="@strmodulo.ActionDisplay" Icon="@(strmodulo.ActionDisplay.ToActionIcon())" IconColor="@Color.Info" OnClick="@(() => ClickMenuClaimOrder(strmodulo.ActionName))" />
                 }
             </MudMenu>
         </ToolBarContent>
@@ -38,12 +38,12 @@ else
             <PropertyColumn Property="x => x.StatusName" Title="ESTATUS" />
             <TemplateColumn>
                 <CellTemplate>
-                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Print" OnClick="() => ClickPrintSalesOrder(context.Item)" />
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Print" OnClick="() => ClickPrintClaimOrder(context.Item)" />
                 </CellTemplate>
             </TemplateColumn>
             <TemplateColumn StickyRight="true">
                 <CellTemplate>
-                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditSalesOrder(context.Item)" />
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditClaimOrder(context.Item)" />
                 </CellTemplate>
             </TemplateColumn>
 
@@ -64,7 +64,7 @@ else
 
     [Parameter]
     public string? TypeId { get; set; } = "1";
-    private int? SalesOrderId = null;    //4
+    private int? ClaimOrderId = null;    //4
 
     private bool IsAllCheckBoxSelected = false;
     int ReceptionCurrentPage = 0;
@@ -92,8 +92,8 @@ else
             await ClaimOrderMudDataGrid!.ReloadServerData();
         }
     }
-    private async Task ClickRefreshSalesOrder(MouseEventArgs args) => await ClaimOrderMudDataGrid!.ReloadServerData();
-    private async Task ClickNewSalesOrder(MouseEventArgs ev)
+    private async Task ClickRefreshClaimOrder(MouseEventArgs args) => await ClaimOrderMudDataGrid!.ReloadServerData();
+    private async Task ClickNewClaimOrder(MouseEventArgs ev)
     {
         HttpResponseMessage response = await Http.GetAsync($"api/SaleOrder/NewSaleOrderWithContext?userId={Session.UserId}&dealerId={Session.DealerId}&supplierId={Session.SupplierId}&typeId={TypeId!.ToUpper()}");
         if (response.IsSuccessStatusCode)
@@ -101,7 +101,7 @@ else
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterSalesOrderDetails>>();
             var data = content2!.data ?? new MasterSalesOrderDetails();    
             Session.IsNewOrEdit = true;
-            SalesOrderId = data.SaleOrder?.Id;
+            ClaimOrderId = data.SaleOrder?.Id;
         }
         else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
         {
@@ -121,12 +121,12 @@ else
         ClaimOrderMudDataGrid?.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
         await Task.CompletedTask;
     }
-    private async Task ClickEditSalesOrder(Models.ClaimPart item)
+    private async Task ClickEditClaimOrder(Models.ClaimPart item)
     {
         Session.IsNewOrEdit = true;
-        await Task.FromResult(SalesOrderId = item.Id); 
+        await Task.FromResult(ClaimOrderId = item.Id); 
     }
-    private async Task ClickPrintSalesOrder(Models.ClaimPart item)
+    private async Task ClickPrintClaimOrder(Models.ClaimPart item)
     {
         Loading = true;
         var ResultZonas = await Http.GetAsync($"api/SaleOrder/ExportSaleOrder?saleOrderId={item.Id}&userId={Session.UserId}");
@@ -152,8 +152,8 @@ else
         RequisitionTitle = "Reclamo";
         string hrefMovement =  "claimorder";       
 
-        $"Home,{RequisitionTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
-        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=PEDIDOS-PEDIDOS&userId={Session.UserId}");
+        $"Home,Pedidos,{RequisitionTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=PEDIDOS-RECLAMOS&userId={Session.UserId}");
         await LoadSaleOrderTypes();
     }
     Func<Models.ClaimPart, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
@@ -175,7 +175,7 @@ else
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
         IEnumerable<Models.ClaimPart> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/SaleOrder/GetAll?userId={Session.UserId}&supplierId={Session.SupplierId}&dealerId={Session.DealerId}&rowfrom={mOffset}&filter={searchString}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Claim/GetAllClaims?userId={Session.UserId}&supplierId={Session.SupplierId}&dealerId={Session.DealerId}&rowfrom={mOffset}&filter={searchString}");
 
         if (response.IsSuccessStatusCode)
         {
@@ -200,7 +200,7 @@ else
         return new GridData<Models.ClaimPart> { TotalItems = totalItems, Items = data };
     }
 
-    private async Task ClickMenuSalesOrder(string? actionName)
+    private async Task ClickMenuClaimOrder(string? actionName)
     {
         if (actionName == "EXPORT" && ClaimOrderMudDataGrid?.FilteredItems.Count() > 0)
         {
@@ -265,7 +265,7 @@ else
     }
     private async Task ReloadSalesOrderGrid()
     {
-        if (ClaimOrderMudDataGrid != null && SalesOrderId == null)
+        if (ClaimOrderMudDataGrid != null && ClaimOrderId == null)
         {
             await ClaimOrderMudDataGrid.ReloadServerData();
         }
