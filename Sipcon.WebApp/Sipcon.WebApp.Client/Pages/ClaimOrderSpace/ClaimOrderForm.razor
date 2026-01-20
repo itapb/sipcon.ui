@@ -153,11 +153,12 @@
 
         NewClaimOrderDetails AnewClaimOrderrDetail = new NewClaimOrderDetails
         {
-            Id = item.Id,
+            Id = item.Id ?? 0,
+            ReplacementPartId = 0,
             PartId = item.PartId,                                            
             Quantity = item.Quantity ,
             IsActive = item.IsActive ?? false,
-            ClaimOrderId = ClaimOrderId
+            ClaimId = ClaimOrderId
 
         };
         var dialogReference = await DialogService.ShowAsync(typeof(PartToClaimOrderDetails), "", new DialogParameters { ["newClaimOrderDetails"] = AnewClaimOrderrDetail }, options);

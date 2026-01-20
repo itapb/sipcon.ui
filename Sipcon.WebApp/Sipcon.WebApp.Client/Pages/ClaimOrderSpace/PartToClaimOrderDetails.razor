@@ -1,4 +1,4 @@
-﻿@if (newClaimOrderDetails == null)
+﻿@if ( Reasons== null || newClaimOrderDetails == null )
 {
     <LoadingForm IsMudDialog="@(MudDialog != null)" />
 }
@@ -13,7 +13,7 @@ else
                             <MudTextField T="int?" Label="Cantidad" @bind-Value="newClaimOrderDetails.Quantity" For="@(() => newClaimOrderDetails.Quantity)" Required="true" Validation="@(new Func<int?, string>(ValidateInteger))"></MudTextField>
                         </MudItem>
                         <MudItem xs="12">
-                        <MudSelect T="Reason" Label="MOTVIO" ToStringFunc="@ConvertReasonFunc" ValueChanged="OnReasonValueChanged" Value="ReasonSelected" Class="d-flex align-center justify-center" Required="true" RequiredError="Campo requerido">
+                        <MudSelect T="Reason" Label="MOTVIO" ToStringFunc="@ConvertReasonFunc" ValueChanged="OnReasonValueChanged" Value="ReasonSelected" Required="true" RequiredError="Campo requerido">
                             @foreach (var reason in Reasons!)
                             {
                                 <MudSelectItem Value="reason" />
@@ -49,6 +49,7 @@ else
     {
         ReasonSelected = selectedReason;
         newClaimOrderDetails?.ReasonId = ReasonSelected.Id;
+        newClaimOrderDetails?.ReasonDescription = ReasonSelected.Description;
         return Task.CompletedTask;
     }
      protected override async Task OnInitializedAsync()
@@ -70,7 +71,7 @@ else
         await form!.Validate();
         if (form.IsValid)
         {
-            var strnewSaleOrderDetails = System.Text.Json.JsonSerializer.Serialize(newClaimOrderDetails);
+            var strnewSaleOrderDetails = $"[{System.Text.Json.JsonSerializer.Serialize(newClaimOrderDetails)}]";
             var result_newMovementDetail = await Http.PostAsync($"api/Claim/PostClaimDetail?userId={Session.UserId}", new StringContent(strnewSaleOrderDetails, null, "application/json"));
             if (result_newMovementDetail.IsSuccessStatusCode)
             {
