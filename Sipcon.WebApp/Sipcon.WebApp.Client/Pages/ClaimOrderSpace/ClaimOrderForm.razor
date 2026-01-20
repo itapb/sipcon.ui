@@ -158,8 +158,8 @@
             PartId = item.PartId,                                            
             Quantity = item.Quantity ,
             IsActive = item.IsActive ?? false,
-            ClaimId = ClaimOrderId
-
+            ClaimId = ClaimOrderId,
+            ReasonId = item.ReasonId
         };
         var dialogReference = await DialogService.ShowAsync(typeof(PartToClaimOrderDetails), "", new DialogParameters { ["newClaimOrderDetails"] = AnewClaimOrderrDetail }, options);
         if (!((await dialogReference.Result)!.Canceled))
