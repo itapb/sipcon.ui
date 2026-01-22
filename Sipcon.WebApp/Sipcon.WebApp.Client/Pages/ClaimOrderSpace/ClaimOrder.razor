@@ -54,7 +54,8 @@ else
     </MudDataGrid>
 }
 
-@code { [Inject] private UserSession Session { get; set; } = null!;
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
@@ -95,13 +96,13 @@ else
     private async Task ClickRefreshClaimOrder(MouseEventArgs args) => await ClaimOrderMudDataGrid!.ReloadServerData();
     private async Task ClickNewClaimOrder(MouseEventArgs ev)
     {
-        HttpResponseMessage response = await Http.GetAsync($"api/SaleOrder/NewSaleOrderWithContext?userId={Session.UserId}&dealerId={Session.DealerId}&supplierId={Session.SupplierId}&typeId={TypeId!.ToUpper()}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Claim/NewClaimWithContext?userId={Session.UserId}&dealerId={Session.DealerId}"); //&supplierId={Session.SupplierId}&typeId={TypeId!.ToUpper()}
         if (response.IsSuccessStatusCode)
         {
-            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterSalesOrderDetails>>();
-            var data = content2!.data ?? new MasterSalesOrderDetails();    
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterClaimOrderDetails>>();
+            var data = content2!.data ?? new MasterClaimOrderDetails();    
             Session.IsNewOrEdit = true;
-            ClaimOrderId = data.SaleOrder?.Id;
+            ClaimOrderId = data.Claim?.Id;
         }
         else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
         {
@@ -220,7 +221,7 @@ else
             return;
         }
 
-        var strDictionary = new Dictionary<string, string> { { "TOAPPROVE", "PARA VALIDAR" }, { "DECLINE", "BORRADOR,PARA VALIDAR" }, { "(APPROVE", "PARA APROBAR" } };
+        var strDictionary = new Dictionary<string, string> { { "TOAPPROVE", "BORRADOR" }, { "PROCESS", "APROBADO" }, { "DECLINE", "BORRADOR,PARA APROBAR" }, { "(APPROVE", "PARA APROBAR" } };
         var mActions = ClaimOrderMudDataGrid?.FilteredItems.Where(item => item.IsSelected && strDictionary[actionName!].Contains(item!.StatusName!.ToUpper()))
                                                          .Select(item => new Client.Models.Action
                                                          {
@@ -238,7 +239,7 @@ else
         }
         else if (mActions?.Count > 0)
         {
-            await PostActionAndReload(mActions, $"api/SaleOrder/PostActions?userId={Session.UserId}");           
+            await PostActionAndReload(mActions, $"api/Claim/PostActionsClaim?userId={Session.UserId}");
         }
 
     }

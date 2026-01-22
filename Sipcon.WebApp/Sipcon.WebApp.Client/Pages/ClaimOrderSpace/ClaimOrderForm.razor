@@ -27,12 +27,14 @@
                                 </CellTemplate>
                             </TemplateColumn>
                             <PropertyColumn Property="x => x.PartInnerCode" Title="CODIGO" />
-                            <PropertyColumn Property="x => x.PartName" Title="DESCRIPCION" />                           
+                            <PropertyColumn Property="x => x.PartName" Title="DESCRIPCION" />
+                            <PropertyColumn Property="x => x.Price" Title="PRECIO $" />
                             <PropertyColumn Property="x => x.Quantity" Title="CANTIDAD" />
                             <PropertyColumn Property="x => x.ReasonDescription" Title="MOTIVO" />
                             <PropertyColumn Property="x => x.StatusName" Title="ESTADO" />
                             <PropertyColumn Property="x => x.RemplacemetInnerCode" Title="COD PARTE REEMPLAZAR" />
                             <PropertyColumn Property="x => x.ReplacemetName" Title="NOMBRE PARTE REEMPLAZAR" />
+                            <PropertyColumn Property="x => x.RemplacemetPrice" Title="PRECIO PARTE REEMPLAZAR $" />
                             <PropertyColumn Property="x => x.IApproved" Title="CANTIDAD APROBADA" />
                             <PropertyColumn Property="x => x.Comment" Title="COMENTARIO" />
                             <TemplateColumn StickyRight="true">
@@ -326,7 +328,7 @@
         if (form.IsValid)
         {            
             var strMasterClaimOrder = System.Text.Json.JsonSerializer.Serialize(MasterClaimOrder);
-            var result_MasterSalesOrder = await Http.PostAsync($"api/SaleOrder/PostSaleOrder?userId={Session.UserId}", new StringContent($"[{strMasterClaimOrder}]", null, "application/json"));         
+            var result_MasterSalesOrder = await Http.PostAsync($"api/Claim/PostClaim?userId={Session.UserId}", new StringContent($"[{strMasterClaimOrder}]", null, "application/json"));
             if (result_MasterSalesOrder.IsSuccessStatusCode)
             {
                 var sucessContent = await result_MasterSalesOrder.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
@@ -351,7 +353,7 @@
 
 
         var strMovementActions = System.Text.Json.JsonSerializer.Serialize(SelectedActions);
-        var result_PostMovementActions = (SelectedActions is not null) ? await Http.PostAsync($"api/SaleOrder/PostActions?userId={Session.UserId}", new StringContent($"[{strMovementActions}]", null, "application/json")) : null;
+        var result_PostMovementActions = (SelectedActions is not null) ? await Http.PostAsync($"/api/Claim/PostActionsClaim?userId={Session.UserId}", new StringContent($"[{strMovementActions}]", null, "application/json")) : null;
         if ((result_PostMovementActions?.IsSuccessStatusCode ?? false))
         {
             var rest = result_PostMovementActions.Content.ReadAsStringAsync();

@@ -44,5 +44,9 @@ namespace Sipcon.WebApp.Client.Models
         public int? IApproved { get; set; }
 
         public decimal? SubTotal { get; set; }
+
+        public decimal? Price { get; set; }
+        public decimal? RemplacemetPrice { get; set; }
+
     }
 }
