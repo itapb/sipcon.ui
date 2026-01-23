@@ -65,10 +65,10 @@
                                 <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterClaimOrder.Login" Adornment="Adornment.Start" AdornmentText="Login :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
                                 <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterClaimOrder.StatusName" Adornment="Adornment.Start" AdornmentText="Estatus :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
 
-                                <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterClaimOrder.Reference" Label="Guia de Reclamo" Variant="Variant.Text" RequiredError="Campo requerido." Required="true" /></MudItem>
-                                <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterClaimOrder.Invoice" Label="Nro de Factura" Variant="Variant.Text" RequiredError="Campo requerido." Required="true" /></MudItem>
-                                <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterClaimOrder.Guide" Label="Guia de Nota de Credito" Variant="Variant.Text" RequiredError="Campo requerido." Required="true" /></MudItem>
-                                <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterClaimOrder.Note" Label="Nota de Credito" Variant="Variant.Text" RequiredError="Campo requerido." Required="true" /></MudItem>
+                                <MudItem xs="12"><MudTextField ReadOnly="false" @bind-Value="MasterClaimOrder.Reference" Label="Guia de Reclamo" Variant="Variant.Text" RequiredError="Campo requerido." Required="false" /></MudItem>
+                                <MudItem xs="12"><MudTextField ReadOnly="false" @bind-Value="MasterClaimOrder.Invoice" Label="Nro de Factura" Variant="Variant.Text" RequiredError="Campo requerido." Required="false" /></MudItem>
+                                <MudItem xs="12"><MudTextField ReadOnly="false" @bind-Value="MasterClaimOrder.Guide" Label="Guia de Nota de Credito" Variant="Variant.Text" RequiredError="Campo requerido." Required="false" /></MudItem>
+                                <MudItem xs="12"><MudTextField ReadOnly="false" @bind-Value="MasterClaimOrder.Note" Label="Nota de Credito" Variant="Variant.Text" RequiredError="Campo requerido." Required="false" /></MudItem>
                                 <MudItem xs="12"><MudTextField ReadOnly="@(!IsCreatedClaimOrder)" @bind-Value="MasterClaimOrder.Comment" Label="Comentario" Variant="Variant.Text" /></MudItem>
                             }
 
@@ -279,11 +279,11 @@
         await form!.Validate();
         if (form.IsValid)
         {           
-            var strMasterMovement = System.Text.Json.JsonSerializer.Serialize(MasterClaimOrder);
-            var result_MasterMovement = await Http.PostAsync($"api/SaleOrder/PostSaleOrder?userId={Session.UserId}", new StringContent($"[{strMasterMovement}]", null, "application/json"));
-            if (result_MasterMovement.IsSuccessStatusCode)
+            var strMasterClaimOrder = System.Text.Json.JsonSerializer.Serialize(MasterClaimOrder);
+            var result_MasterClaimOrder = await Http.PostAsync($"api/Claim/PostClaim?userId={Session.UserId}", new StringContent($"[{strMasterClaimOrder}]", null, "application/json"));
+            if (result_MasterClaimOrder.IsSuccessStatusCode)
             {
-                var sucessContent = await result_MasterMovement.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
+                var sucessContent = await result_MasterClaimOrder.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
                 if (sucessContent?.data! is ({ insertedRows: 1 } or { updatedRows: 1 }))
                 {
                     var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Guardar", "OK", Color.Info, Icons.Material.Filled.Commit);
@@ -291,14 +291,14 @@
                         ClaimOrderId = null;                    
                 }
             }
-            else if (result_MasterMovement.StatusCode == System.Net.HttpStatusCode.Conflict)
+            else if (result_MasterClaimOrder.StatusCode == System.Net.HttpStatusCode.Conflict)
             {
-                var conflictContent = await result_MasterMovement.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+                var conflictContent = await result_MasterClaimOrder.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
                 await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
             }
             else
             {
-                var errorMessage = await result_MasterMovement.Content.ReadAsStringAsync();
+                var errorMessage = await result_MasterClaimOrder.Content.ReadAsStringAsync();
                 await DialogService.ShowDialog(errorMessage!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
             }
         }
@@ -310,7 +310,7 @@
                               {
                                   UserId = Session.UserId,
                                   RecordId = ClaimOrderId,
-                                  ModuleId = 31,
+                                  ModuleId = 32,
                                   actionName = "GENERATE",
                                   ActionComment = "",
                                   RelatedId = 0
