@@ -8,7 +8,8 @@
                         <MudFab StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" Size="Size.Small" Label="Guardar" OnClick="SaveClick" Disabled="@(!IsCreatedClaimOrder)"></MudFab>
                         <MudButton OnClick="CloseClick">Cerrar</MudButton>
                     </MudStack>
-
+                        <MudFab StartIcon="@Icons.Material.Filled.ThumbUpAlt" Color="Color.Info" Size="Size.Small" Label="Aprobar" OnClick="ClaimApproveClick"></MudFab>
+                        <MudFab StartIcon="@Icons.Material.Filled.PlayCircle" Color="Color.Info" Size="Size.Small" Label="Procesar" OnClick="ClaimDeclineClick"></MudFab>
                     </MudStack>
                 </MudPaper>
                 <MudPaper Elevation="2" Style="height: 100%;">
@@ -39,7 +40,11 @@
                             <PropertyColumn Property="x => x.Comment" Title="COMENTARIO" />
                             <TemplateColumn StickyRight="true">
                                 <CellTemplate>
-                                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditClaimOrderDetail(context.Item)" Disabled="@(!IsCreatedClaimOrder)" />
+                                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditClaimOrderDetail(context.Item)" Disabled="@(!IsCreatedClaimOrder)" />                                    
+                                    <MudStack Row="true" Spacing="2">  
+                                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Filled.ThumbUp" OnClick="() => ClickApproveClaimOrderDetail(context.Item)" Disabled="@(!(context.Item!.StatusName == "BORRADOR"))" />
+                                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Filled.ThumbDown" OnClick="() => ClickDeclineClaimOrderDetail(context.Item)" Disabled="@(!(context.Item!.StatusName == "BORRADOR"))" />
+                                    </MudStack>
                                 </CellTemplate>
                             </TemplateColumn>
                         </Columns>
@@ -142,9 +147,83 @@
         ClaimOrderDetailsMudDataGrid?.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
         await Task.CompletedTask;
     }
+
+    private async Task ClickApproveClaimOrderDetail(Models.ClaimDetails item)
+    {
+        var temReference = MasterClaimOrder!.Reference;
+        var tempComment = MasterClaimOrder.Comment;
+
+        var tempInvoice = MasterClaimOrder.Invoice;
+        var tempGuide = MasterClaimOrder.Guide;
+        var tempNote = MasterClaimOrder.Note;
+
+
+        NewClaimOrderDetails AnewClaimOrderrDetail = new NewClaimOrderDetails
+        {
+            Id = item.Id ?? 0,
+            ReplacementPartId = 0,
+            PartId = item.PartId,
+            Quantity = item.Quantity,
+            IsActive = item.IsActive ?? false,
+            ClaimId = ClaimOrderId,
+            ReasonId = item.ReasonId
+        };
+        var dialogReference = await DialogService.ShowAsync(typeof(ClaimItemApprove), "", new DialogParameters { ["newClaimOrderDetails"] = AnewClaimOrderrDetail }, options);
+        if (!((await dialogReference.Result)!.Canceled))
+        {
+            await ClaimOrderDetailsMudDataGrid!.ReloadServerData();
+
+
+
+            MasterClaimOrder!.Reference = temReference;
+            MasterClaimOrder.Comment = tempComment;
+            MasterClaimOrder.Invoice = tempInvoice;
+            MasterClaimOrder.Guide = tempGuide;
+            MasterClaimOrder.Note = tempNote;
+        }
+
+        await Task.CompletedTask;
+    }
+    private async Task ClickDeclineClaimOrderDetail(Models.ClaimDetails item)
+    {
+        var temReference = MasterClaimOrder!.Reference;
+        var tempComment = MasterClaimOrder.Comment;
+
+        var tempInvoice = MasterClaimOrder.Invoice;
+        var tempGuide = MasterClaimOrder.Guide;
+        var tempNote = MasterClaimOrder.Note;
+
+
+        NewClaimOrderDetails AnewClaimOrderrDetail = new NewClaimOrderDetails
+        {
+            Id = item.Id ?? 0,
+            ReplacementPartId = 0,
+            PartId = item.PartId,
+            Quantity = item.Quantity,
+            IsActive = item.IsActive ?? false,
+            ClaimId = ClaimOrderId,
+            ReasonId = item.ReasonId
+        };
+        var dialogReference = await DialogService.ShowAsync(typeof(ClaimItemDecline), "", new DialogParameters { ["newClaimOrderDetails"] = AnewClaimOrderrDetail }, options);
+        if (!((await dialogReference.Result)!.Canceled))
+        {
+            await ClaimOrderDetailsMudDataGrid!.ReloadServerData();
+
+
+
+            MasterClaimOrder!.Reference = temReference;
+            MasterClaimOrder.Comment = tempComment;
+            MasterClaimOrder.Invoice = tempInvoice;
+            MasterClaimOrder.Guide = tempGuide;
+            MasterClaimOrder.Note = tempNote;
+        }
+
+        await Task.CompletedTask;
+    }
+
     private async Task ClickEditClaimOrderDetail(Models.ClaimDetails item)
     {
-       
+
         var temReference = MasterClaimOrder!.Reference;
         var tempComment = MasterClaimOrder.Comment;
 
@@ -168,8 +247,8 @@
         {
             await ClaimOrderDetailsMudDataGrid!.ReloadServerData(); 
 
-       
-            
+
+
             MasterClaimOrder!.Reference = temReference;
             MasterClaimOrder.Comment = tempComment;
             MasterClaimOrder.Invoice = tempInvoice;
@@ -218,7 +297,7 @@
             TempReference = MasterClaimOrder!.Reference ?? "";           
             getTotals(data);
 
-            
+
         }
         else
         {
@@ -232,6 +311,14 @@
         Loading = false;
         StateHasChanged();
         return new GridData<Models.ClaimDetails> { TotalItems = totalItems, Items = data };
+    }
+    private void ClaimApproveClick()
+    {
+        
+    }
+    private void ClaimDeclineClick()
+    {
+
     }
 
     private void CloseClick() => ClaimOrderId = null;

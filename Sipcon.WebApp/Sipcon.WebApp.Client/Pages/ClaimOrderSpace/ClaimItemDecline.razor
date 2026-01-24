@@ -1,0 +1,39 @@
+﻿<MudForm @ref="form">
+    <div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
+        <MudPaper Elevation="2" Class="pa-3">
+            <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
+                <MudGrid Spacing="2">
+                     <MudItem xs="12">
+                        <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.LastChild"><MudTextField T="string" Label="Motivo de Rechazo" @bind-Value="ActionComment"></MudTextField></MudFocusTrap>
+                     </MudItem>
+                    <MudItem xs="12">
+                        <MudStack Row="true" Justify="Justify.Center">
+                            <MudStack Row="true" Spacing="4">
+                                <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="CheckClick" />
+                                <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="CloseClick" />
+                            </MudStack>
+                        </MudStack>
+                    </MudItem>
+                </MudGrid>
+            </MudFocusTrap>
+        </MudPaper>
+    </div>
+</MudForm>
+
+@code { [Inject] private UserSession Session { get; set; } = null!;
+        [Inject] private IDialogService DialogService { get; set; } = default!;
+        [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+        [Parameter] public NewClaimOrderDetails? newClaimOrderDetails { get; set; } = default!;
+
+        private String? ActionComment { get; set; } = default!;
+        private MudForm? form;
+        private void CloseClick(MouseEventArgs args) => MudDialog?.Cancel();
+    private async Task CheckClick(MouseEventArgs args)
+    {
+        await form!.Validate();
+        if (form.IsValid)
+        {
+            MudDialog?.Close(DialogResult.Ok(ActionComment));
+        }
+    }
+}
