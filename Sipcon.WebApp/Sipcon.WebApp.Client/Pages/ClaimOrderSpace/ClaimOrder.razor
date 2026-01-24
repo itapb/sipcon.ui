@@ -36,7 +36,7 @@ else
             <PropertyColumn Property="x => x.DealerName" Title="CONCESIONARIO" />
             <PropertyColumn Property="x => x.Login" Title="LOGIN" />
             <PropertyColumn Property="x => x.StatusName" Title="ESTATUS" />
-@*             <TemplateColumn>
+            @*             <TemplateColumn>
                 <CellTemplate>
                     <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Print" OnClick="() => ClickPrintClaimOrder(context.Item)" />
                 </CellTemplate>
@@ -100,7 +100,7 @@ else
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterClaimOrderDetails>>();
-            var data = content2!.data ?? new MasterClaimOrderDetails();    
+            var data = content2!.data ?? new MasterClaimOrderDetails();
             Session.IsNewOrEdit = true;
             ClaimOrderId = data.Claim?.Id;
         }
@@ -125,7 +125,7 @@ else
     private async Task ClickEditClaimOrder(Models.ClaimPart item)
     {
         Session.IsNewOrEdit = true;
-        await Task.FromResult(ClaimOrderId = item.Id); 
+        await Task.FromResult(ClaimOrderId = item.Id);
     }
     private async Task ClickPrintClaimOrder(Models.ClaimPart item)
     {
@@ -138,9 +138,9 @@ else
             var fileUrl = $"data:application/pdf;base64,{base64File}";
             await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, $"Pedido{item.Id}.pdf");
         }
-        Loading = false;        
+        Loading = false;
     }
-    protected override async Task OnInitializedAsync()    
+    protected override async Task OnInitializedAsync()
     {
         await AuthenticationStateProvider.RefreshStaticVariables();
         await LoadDataAsync();
@@ -151,7 +151,7 @@ else
     private async Task LoadDataAsync()
     {
         RequisitionTitle = "Reclamo";
-        string hrefMovement =  "claimorder";       
+        string hrefMovement = "claimorder";
 
         $"Home,Pedidos,{RequisitionTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
         Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=PEDIDOS-RECLAMOS&userId={Session.UserId}");
@@ -168,7 +168,7 @@ else
     };
 
     private async Task<GridData<Models.ClaimPart>> ServerReload(GridState<Models.ClaimPart> state)
-    {  
+    {
         await AuthenticationStateProvider.RefreshStaticVariables();
         Session.IsNewOrEdit = false;
         IsAllCheckBoxSelected = false;
@@ -224,18 +224,26 @@ else
         var strDictionary = new Dictionary<string, string> { { "TOAPPROVE", "BORRADOR" }, { "PROCESS", "APROBADO" }, { "DECLINE", "BORRADOR,PARA APROBAR" }, { "(APPROVE", "PARA APROBAR" } };
         var mActions = ClaimOrderMudDataGrid?.FilteredItems.Where(item => item.IsSelected && strDictionary[actionName!].Contains(item!.StatusName!.ToUpper()))
                                                          .Select(item => new Client.Models.Action
-                                                         {
-                                                             UserId = Session.UserId,
-                                                             RecordId = item.Id,
-                                                             ModuleId = Modules!.FirstOrDefault()?.Id,
-                                                             actionName = actionName,
-                                                             ActionComment = "",
-                                                             RelatedId = 0
-                                                         }).ToList();
+                                                             {
+                                                                 UserId = Session.UserId,
+                                                                 RecordId = item.Id,
+                                                                 ModuleId = Modules!.FirstOrDefault()?.Id,
+                                                                 actionName = actionName,
+                                                                 ActionComment = "",
+                                                                 RelatedId = 0
+                                                             }).ToList();
 
-        if (mActions?.Count == 0)
+        if (mActions?.Count == 0 || (actionName == "PROCESS" && mActions?.Count > 1))
         {
-            await DialogService.ShowDialog("Accion no permitada, Verificar datos seleccionado(s)", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            await DialogService.ShowDialog("Accion no permitida, Verificar datos seleccionado(s)", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        else if (actionName == "PROCESS" && mActions?.Count == 1)
+        {
+            var dialogReference = await DialogService.ShowAsync(typeof(ClaimOrderProcess), "", new DialogParameters { }, options);
+            if (!((await dialogReference.Result)!.Canceled))
+            {
+                await PostActionAndReload(mActions, $"api/Claim/PostActionsClaim?userId={Session.UserId}");
+            }
         }
         else if (mActions?.Count > 0)
         {

@@ -8,8 +8,8 @@
                         <MudFab StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" Size="Size.Small" Label="Guardar" OnClick="SaveClick" Disabled="@(!IsCreatedClaimOrder)"></MudFab>
                         <MudButton OnClick="CloseClick">Cerrar</MudButton>
                     </MudStack>
-                        <MudFab StartIcon="@Icons.Material.Filled.ThumbUpAlt" Color="Color.Info" Size="Size.Small" Label="Aprobar" OnClick="ClaimApproveClick"></MudFab>
-                        <MudFab StartIcon="@Icons.Material.Filled.PlayCircle" Color="Color.Info" Size="Size.Small" Label="Procesar" OnClick="ClaimDeclineClick"></MudFab>
+                        <MudFab StartIcon="@Icons.Material.Filled.ThumbUpAlt" Color="Color.Info" Size="Size.Small" Label="Aceptar" OnClick="ClaimAcceptClick" Disabled="@(!(MasterClaimOrder?.StatusName == "PARA APROBAR"))"></MudFab>
+                        <MudFab StartIcon="@Icons.Material.Filled.PlayCircle" Color="Color.Info" Size="Size.Small" Label="Procesar" OnClick="ClaimProcessClick" Disabled="@(!(MasterClaimOrder?.StatusName == "APROBADO"))"></MudFab>
                     </MudStack>
                 </MudPaper>
                 <MudPaper Elevation="2" Style="height: 100%;">
@@ -39,12 +39,18 @@
                             <PropertyColumn Property="x => x.IApproved" Title="CANTIDAD APROBADA" />
                             <PropertyColumn Property="x => x.Comment" Title="COMENTARIO" />
                             <TemplateColumn StickyRight="true">
-                                <CellTemplate>
-                                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditClaimOrderDetail(context.Item)" Disabled="@(!IsCreatedClaimOrder)" />                                    
-                                    <MudStack Row="true" Spacing="2">  
-                                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Filled.ThumbUp" OnClick="() => ClickApproveClaimOrderDetail(context.Item)" Disabled="@(!(context.Item!.StatusName == "BORRADOR"))" />
-                                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Filled.ThumbDown" OnClick="() => ClickDeclineClaimOrderDetail(context.Item)" Disabled="@(!(context.Item!.StatusName == "BORRADOR"))" />
-                                    </MudStack>
+                                <CellTemplate>                                  
+                                    @if (MasterClaimOrder?.StatusName == "BORRADOR")
+                                    {
+                                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditClaimOrderDetail(context.Item)" Disabled="@(!IsCreatedClaimOrder)" />
+                                    }
+                                    else if (MasterClaimOrder?.StatusName == "PARA APROBAR")
+                                    {
+                                        <MudStack Row="true" Spacing="2">
+                                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Filled.ThumbUp" OnClick="() => ClickApproveClaimOrderDetail(context.Item)" Disabled="@(!(context.Item!.StatusName == "BORRADOR"))" />
+                                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Filled.ThumbDown" OnClick="() => ClickDeclineClaimOrderDetail(context.Item)" Disabled="@(!(context.Item!.StatusName == "BORRADOR"))" />
+                                        </MudStack>
+                                    }
                                 </CellTemplate>
                             </TemplateColumn>
                         </Columns>
@@ -72,8 +78,8 @@
 
                                 <MudItem xs="12"><MudTextField ReadOnly="false" @bind-Value="MasterClaimOrder.Reference" Label="Guia de Reclamo" Variant="Variant.Text" RequiredError="Campo requerido." Required="false" /></MudItem>
                                 <MudItem xs="12"><MudTextField ReadOnly="false" @bind-Value="MasterClaimOrder.Invoice" Label="Nro de Factura" Variant="Variant.Text" RequiredError="Campo requerido." Required="false" /></MudItem>
-                                <MudItem xs="12"><MudTextField ReadOnly="false" @bind-Value="MasterClaimOrder.Guide" Label="Guia de Nota de Credito" Variant="Variant.Text" RequiredError="Campo requerido." Required="false" /></MudItem>
-                                <MudItem xs="12"><MudTextField ReadOnly="false" @bind-Value="MasterClaimOrder.Note" Label="Nota de Credito" Variant="Variant.Text" RequiredError="Campo requerido." Required="false" /></MudItem>
+                                <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterClaimOrder.Guide" Label="Guia de Nota de Credito" Variant="Variant.Text" RequiredError="Campo requerido." Required="false" /></MudItem>
+                                <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterClaimOrder.Note" Label="Nota de Credito" Variant="Variant.Text" RequiredError="Campo requerido." Required="false" /></MudItem>
                                 <MudItem xs="12"><MudTextField ReadOnly="@(!IsCreatedClaimOrder)" @bind-Value="MasterClaimOrder.Comment" Label="Comentario" Variant="Variant.Text" /></MudItem>
                             }
 
@@ -312,11 +318,11 @@
         StateHasChanged();
         return new GridData<Models.ClaimDetails> { TotalItems = totalItems, Items = data };
     }
-    private void ClaimApproveClick()
+    private void ClaimAcceptClick()
     {
         
     }
-    private void ClaimDeclineClick()
+    private void ClaimProcessClick()
     {
 
     }
