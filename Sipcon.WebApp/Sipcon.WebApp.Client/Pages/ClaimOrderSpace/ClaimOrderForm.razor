@@ -8,7 +8,7 @@
                         <MudFab StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" Size="Size.Small" Label="Guardar" OnClick="SaveClick" Disabled="@(!IsCreatedClaimOrder)"></MudFab>
                         <MudButton OnClick="CloseClick">Cerrar</MudButton>
                     </MudStack>
-                        <MudFab StartIcon="@Icons.Material.Filled.ThumbUpAlt" Color="Color.Info" Size="Size.Small" Label="Aceptar" OnClick="ClaimAcceptClick" Disabled="@(!(MasterClaimOrder?.StatusName == "PARA APROBAR"))"></MudFab>
+                        <MudFab StartIcon="@Icons.Material.Filled.ThumbUpAlt" Color="Color.Info" Size="Size.Small" Label="Aceptar" OnClick="ClaimAcceptClick" Disabled="@(!(MasterClaimOrder?.StatusName == "PARA APROBAR" && IsReadyClaimDetails()))"></MudFab>
                         <MudFab StartIcon="@Icons.Material.Filled.PlayCircle" Color="Color.Info" Size="Size.Small" Label="Procesar" OnClick="ClaimProcessClick" Disabled="@(!(MasterClaimOrder?.StatusName == "APROBADO"))"></MudFab>
                     </MudStack>
                 </MudPaper>
@@ -118,7 +118,7 @@
     [Parameter] public EventCallback<int?> ValueChanged { get; set; }
     [Parameter] public List<SaleOrderType>? ClaimOrderTypes { get; set; }
     DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
-
+    [Inject] private ILogger<ClaimOrderForm> Logger { get; set; } = default!;
     string TempReference = "";
     int PartCurrentPage = 0;
     bool IsCreatedClaimOrder = false;
@@ -156,72 +156,46 @@
 
     private async Task ClickApproveClaimOrderDetail(Models.ClaimDetails item)
     {
-        var temReference = MasterClaimOrder!.Reference;
-        var tempComment = MasterClaimOrder.Comment;
-
-        var tempInvoice = MasterClaimOrder.Invoice;
-        var tempGuide = MasterClaimOrder.Guide;
-        var tempNote = MasterClaimOrder.Note;
-
-
-        NewClaimOrderDetails AnewClaimOrderrDetail = new NewClaimOrderDetails
+        var mActions = new List<Client.Models.Action>();
+        mActions.Add(new Client.Models.Action
         {
-            Id = item.Id ?? 0,
-            ReplacementPartId = 0,
-            PartId = item.PartId,
-            Quantity = item.Quantity,
-            IsActive = item.IsActive ?? false,
-            ClaimId = ClaimOrderId,
-            ReasonId = item.ReasonId
-        };
-        var dialogReference = await DialogService.ShowAsync(typeof(ClaimItemApprove), "", new DialogParameters { ["newClaimOrderDetails"] = AnewClaimOrderrDetail }, options);
+            UserId = Session.UserId,
+            RecordId = item.Id,
+            ModuleId = 43,
+            actionName = "APPROVE",
+            ActionComment = "",
+            RelatedId = 0
+        }
+        );
+       
+        var dialogReference = await DialogService.ShowAsync(typeof(ClaimItemApprove), "", new DialogParameters { ["mAction"] = mActions.FirstOrDefault() }, options);
         if (!((await dialogReference.Result)!.Canceled))
         {
-            await ClaimOrderDetailsMudDataGrid!.ReloadServerData();
-
-
-
-            MasterClaimOrder!.Reference = temReference;
-            MasterClaimOrder.Comment = tempComment;
-            MasterClaimOrder.Invoice = tempInvoice;
-            MasterClaimOrder.Guide = tempGuide;
-            MasterClaimOrder.Note = tempNote;
+            await PostActionAndReload(mActions, $"api/Claim/PostActionsClaimDetail?userId={Session.UserId}");
+            await ClaimOrderDetailsMudDataGrid!.ReloadServerData();          
         }
 
         await Task.CompletedTask;
     }
     private async Task ClickDeclineClaimOrderDetail(Models.ClaimDetails item)
     {
-        var temReference = MasterClaimOrder!.Reference;
-        var tempComment = MasterClaimOrder.Comment;
-
-        var tempInvoice = MasterClaimOrder.Invoice;
-        var tempGuide = MasterClaimOrder.Guide;
-        var tempNote = MasterClaimOrder.Note;
-
-
-        NewClaimOrderDetails AnewClaimOrderrDetail = new NewClaimOrderDetails
+        var mActions = new List<Client.Models.Action>();
+        mActions.Add(new Client.Models.Action
         {
-            Id = item.Id ?? 0,
-            ReplacementPartId = 0,
-            PartId = item.PartId,
-            Quantity = item.Quantity,
-            IsActive = item.IsActive ?? false,
-            ClaimId = ClaimOrderId,
-            ReasonId = item.ReasonId
-        };
-        var dialogReference = await DialogService.ShowAsync(typeof(ClaimItemDecline), "", new DialogParameters { ["newClaimOrderDetails"] = AnewClaimOrderrDetail }, options);
+            UserId = Session.UserId,
+            RecordId = item.Id,
+            ModuleId = 43,
+            actionName = "DECLINE",
+            ActionComment = "",
+            RelatedId = 0
+        }
+        );
+
+        var dialogReference = await DialogService.ShowAsync(typeof(ClaimItemDecline), "", new DialogParameters { ["mAction"] = mActions.FirstOrDefault() }, options);
         if (!((await dialogReference.Result)!.Canceled))
         {
+            await PostActionAndReload(mActions, $"api/Claim/PostActionsClaimDetail?userId={Session.UserId}");
             await ClaimOrderDetailsMudDataGrid!.ReloadServerData();
-
-
-
-            MasterClaimOrder!.Reference = temReference;
-            MasterClaimOrder.Comment = tempComment;
-            MasterClaimOrder.Invoice = tempInvoice;
-            MasterClaimOrder.Guide = tempGuide;
-            MasterClaimOrder.Note = tempNote;
         }
 
         await Task.CompletedTask;
@@ -318,13 +292,39 @@
         StateHasChanged();
         return new GridData<Models.ClaimDetails> { TotalItems = totalItems, Items = data };
     }
-    private void ClaimAcceptClick()
+    private async Task ClaimAcceptClick()
     {
-        
+        var mActions = new List<Client.Models.Action>();
+        mActions.Add(new Client.Models.Action
+        {
+            UserId = Session.UserId,
+            RecordId = ClaimOrderId,
+            ModuleId = 32,
+            actionName = (ClaimOrderDetailsMudDataGrid?.FilteredItems.Any(r => r.StatusName == "APROBADO") ?? false) ? "APPROVE" : "DECLINE",
+            ActionComment = "",
+            RelatedId = 0
+        }
+        );
+        await PostActionAndReload(mActions, $"api/Claim/PostActionsClaim?userId={Session.UserId}");
     }
-    private void ClaimProcessClick()
-    {
 
+    private async Task ClaimProcessClick()
+    {
+        var mActions = new List<Client.Models.Action>();
+        mActions.Add( new Client.Models.Action{
+                UserId = Session.UserId,
+                RecordId = ClaimOrderId,
+                ModuleId = 32,
+                actionName = "PROCESS",
+                ActionComment = "",
+                RelatedId = 0
+            }
+        );
+        var dialogReference = await DialogService.ShowAsync(typeof(ClaimOrderProcess), "", new DialogParameters { ["mAction"] = mActions.FirstOrDefault() }, options);
+        if (!((await dialogReference.Result)!.Canceled))
+        {
+            await PostActionAndReload(mActions, $"api/Claim/PostActionsClaim?userId={Session.UserId}");
+        }
     }
 
     private void CloseClick() => ClaimOrderId = null;
@@ -337,13 +337,13 @@
         var invoice = MasterClaimOrder.Invoice;
         var guide = MasterClaimOrder.Guide;
         var note = MasterClaimOrder.Note;
-    
+
         var dialogReference = await DialogService.ShowAsync(typeof(ClaimOrderPartsCatalog), "", new DialogParameters { ["ClaimOrderId"] = MasterClaimOrder!.Id }, options);
         if ((await dialogReference.Result) is DialogResult dialogResult && !dialogResult.Canceled)
         {
             await ClaimOrderDetailsMudDataGrid!.ReloadServerData();
 
-                       
+
             MasterClaimOrder!.Reference = temReference;
             MasterClaimOrder.Comment = tempComment;
             MasterClaimOrder.Invoice = invoice;
@@ -458,11 +458,31 @@
             var conflictContent = await result_PostMovementActions.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
             await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
         }
-       
+
 
 
     }
-
+    private async Task PostActionAndReload(List<Models.Action>? actions, string requesturi)
+    {
+        var result_Post_Actions = (actions?.Count > 0) ? await Http.PostAsync(requesturi, new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json")) : null;
+        if ((result_Post_Actions?.IsSuccessStatusCode ?? false))
+        {
+            var rest = result_Post_Actions.Content.ReadAsStringAsync();
+            await DialogService.ShowDialog(Useful.OkSavedMessage, "Accion", "OK", Color.Info, Icons.Material.Filled.Commit);
+            await ClaimOrderDetailsMudDataGrid!.ReloadServerData();
+        }
+        else if (result_Post_Actions?.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflictContent = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+            await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        else
+        {
+            var errorMessage = await result_Post_Actions!.Content.ReadAsStringAsync() ?? "";
+            Logger.LogError(Session.TemplateLog("Reclamo", errorMessage));
+            await DialogService.ShowUnexpected(); ;
+        }
+    }
     private async Task DeleteClaimOrderDetailAction(List<ClaimOrderItem>? actions)
     {
         var result_Post_Actions = (actions?.Count > 0) ? await Http.PostAsync($"api/Claim/DeleteClaimDetails?userId={Session.UserId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json")) : null;
@@ -483,5 +503,9 @@
             throw new Exception(errorMessage);
         }
     }
-
+    private bool IsReadyClaimDetails()
+    {
+        var DraftResult = ClaimOrderDetailsMudDataGrid?.FilteredItems.Count(r => r.StatusName == "BORRADOR");
+        return (ClaimOrderDetailsMudDataGrid?.FilteredItems.Any() ?? false) && (DraftResult ?? 0) > 0;
+    }
 }

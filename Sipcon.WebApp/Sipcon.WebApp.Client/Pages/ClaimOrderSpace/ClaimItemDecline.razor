@@ -4,7 +4,7 @@
             <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
                 <MudGrid Spacing="2">
                      <MudItem xs="12">
-                        <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.LastChild"><MudTextField T="string" Label="Motivo de Rechazo" @bind-Value="ActionComment"></MudTextField></MudFocusTrap>
+                        <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.LastChild"><MudTextField T="string" Label="Motivo de Rechazo" @bind-Value="mAction!.ActionComment"></MudTextField></MudFocusTrap>
                      </MudItem>
                     <MudItem xs="12">
                         <MudStack Row="true" Justify="Justify.Center">
@@ -23,17 +23,17 @@
 @code { [Inject] private UserSession Session { get; set; } = null!;
         [Inject] private IDialogService DialogService { get; set; } = default!;
         [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
-        [Parameter] public NewClaimOrderDetails? newClaimOrderDetails { get; set; } = default!;
+        [Parameter] public Models.Action? mAction { get; set; } = default!;
 
         private String? ActionComment { get; set; } = default!;
         private MudForm? form;
         private void CloseClick(MouseEventArgs args) => MudDialog?.Cancel();
-    private async Task CheckClick(MouseEventArgs args)
-    {
-        await form!.Validate();
-        if (form.IsValid)
+        private async Task CheckClick(MouseEventArgs args)
         {
-            MudDialog?.Close(DialogResult.Ok(ActionComment));
+            await form!.Validate();
+            if (form.IsValid)
+            {
+                MudDialog?.Close(DialogResult.Ok(true));
+            }
         }
-    }
 }

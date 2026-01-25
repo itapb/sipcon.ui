@@ -5,8 +5,8 @@
                 <MudGrid Spacing="2">
                      <MudItem xs="12">
                         <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.LastChild">
-                            <MudTextField T="string" Label="NOTA DE CREDITO DE GUIA" @bind-Value="Guide"></MudTextField>
-                            <MudTextField T="string" Label="NOTA DE CREDITO" @bind-Value="Note"></MudTextField>
+                            <MudNumericField T="int" HideSpinButtons="true" Label="NOTA DE CREDITO DE GUIA" @bind-Value="mAction!.RelatedId" RequiredError="Campo requerido." Required="true"></MudNumericField>
+                            <MudTextField T="string" Label="NOTA DE CREDITO" @bind-Value="mAction.ActionComment" RequiredError="Campo requerido." Required="true"></MudTextField>
                         </MudFocusTrap>
                      </MudItem>
                     <MudItem xs="12">
@@ -23,13 +23,12 @@
     </div>
 </MudForm>
 
-@code { [Inject] private UserSession Session { get; set; } = null!;
-        [Inject] private IDialogService DialogService { get; set; } = default!;
-        [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
-        [Parameter] public NewClaimOrderDetails? newClaimOrderDetails { get; set; } = default!;
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;        
+    [Parameter] public Models.Action? mAction { get; set; } = default!;
 
-        private String? Guide { get; set; } = default!;
-        private String? Note { get; set; } = default!;
         private MudForm? form;
         private void CloseClick(MouseEventArgs args) => MudDialog?.Cancel();
     private async Task CheckClick(MouseEventArgs args)

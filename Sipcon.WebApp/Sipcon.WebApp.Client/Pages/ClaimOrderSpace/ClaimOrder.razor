@@ -238,8 +238,8 @@ else
             await DialogService.ShowDialog("Accion no permitida, Verificar datos seleccionado(s)", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
         }
         else if (actionName == "PROCESS" && mActions?.Count == 1)
-        {
-            var dialogReference = await DialogService.ShowAsync(typeof(ClaimOrderProcess), "", new DialogParameters { }, options);
+        {          
+            var dialogReference = await DialogService.ShowAsync(typeof(ClaimOrderProcess), "", new DialogParameters { ["mAction"] = mActions.FirstOrDefault()}, options);
             if (!((await dialogReference.Result)!.Canceled))
             {
                 await PostActionAndReload(mActions, $"api/Claim/PostActionsClaim?userId={Session.UserId}");
