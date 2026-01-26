@@ -76,8 +76,8 @@
                                 <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterClaimOrder.Login" Adornment="Adornment.Start" AdornmentText="Login :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
                                 <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterClaimOrder.StatusName" Adornment="Adornment.Start" AdornmentText="Estatus :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
 
-                                <MudItem xs="12"><MudTextField ReadOnly="false" @bind-Value="MasterClaimOrder.Reference" Label="Guia de Reclamo" Variant="Variant.Text" RequiredError="Campo requerido." Required="false" /></MudItem>
-                                <MudItem xs="12"><MudNumericField ReadOnly="false" HideSpinButtons="true" @bind-Value="MasterClaimOrder.Invoice" Label="Nro de Factura" Variant="Variant.Text" RequiredError="Campo requerido." Required="true" /></MudItem>
+                                <MudItem xs="12"><MudTextField ReadOnly="false" @bind-Value="MasterClaimOrder.Reference" Label="Guia de Reclamo" Variant="Variant.Text" RequiredError="Campo puede ser requerido." Required="@(!AnyValidFields())" /></MudItem>
+                                <MudItem xs="12"><MudNumericField ReadOnly="false" HideSpinButtons="true" @bind-Value="MasterClaimOrder.Invoice" Label="Nro de Factura" Variant="Variant.Text" RequiredError="Campo puede ser requerido." Required="@(!AnyValidFields())" /></MudItem>
                                 <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterClaimOrder.Guide" Label="Guia de Nota de Credito" Variant="Variant.Text" RequiredError="Campo requerido." Required="false" /></MudItem>
                                 <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterClaimOrder.Note" Label="Nota de Credito" Variant="Variant.Text" RequiredError="Campo requerido." Required="false" /></MudItem>
                                 <MudItem xs="12"><MudTextField ReadOnly="@(!IsCreatedClaimOrder)" @bind-Value="MasterClaimOrder.Comment" Label="Comentario" Variant="Variant.Text" /></MudItem>
@@ -122,7 +122,7 @@
     string TempReference = "";
     int PartCurrentPage = 0;
     bool IsCreatedClaimOrder = false;
-
+    
 
     private int? ClaimOrderId
     {
@@ -446,7 +446,7 @@
 
 
         var strMovementActions = System.Text.Json.JsonSerializer.Serialize(SelectedActions);
-        var result_PostMovementActions = (SelectedActions is not null) ? await Http.PostAsync($"/api/Claim/PostActionsClaim?userId={Session.UserId}", new StringContent($"[{strMovementActions}]", null, "application/json")) : null;
+        var result_PostMovementActions = (SelectedActions is not null) ? await Http.PostAsync($"api/Claim/PostActionsClaim?userId={Session.UserId}", new StringContent($"[{strMovementActions}]", null, "application/json")) : null;
         if ((result_PostMovementActions?.IsSuccessStatusCode ?? false))
         {
             var rest = result_PostMovementActions.Content.ReadAsStringAsync();
@@ -457,6 +457,11 @@
         {
             var conflictContent = await result_PostMovementActions.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
             await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        else
+        {
+            var errorMessage = await result_PostMovementActions!.Content.ReadAsStringAsync();
+            await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
         }
 
 
@@ -506,6 +511,10 @@
     private bool IsReadyClaimDetails()
     {
         var DraftResult = ClaimOrderDetailsMudDataGrid?.FilteredItems.Count(r => r.StatusName == "BORRADOR");
-        return (ClaimOrderDetailsMudDataGrid?.FilteredItems.Any() ?? false) && ((DraftResult ?? 0) > 0);
+        return (ClaimOrderDetailsMudDataGrid?.FilteredItems.Any() ?? false) && ((DraftResult ?? 0) == 0);
+    }
+    private bool AnyValidFields()
+    {
+        return !string.IsNullOrEmpty(MasterClaimOrder?.Reference) || !string.IsNullOrEmpty(MasterClaimOrder?.Invoice);
     }
 }
