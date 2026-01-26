@@ -77,7 +77,7 @@
                                 <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterClaimOrder.StatusName" Adornment="Adornment.Start" AdornmentText="Estatus :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
 
                                 <MudItem xs="12"><MudTextField ReadOnly="false" @bind-Value="MasterClaimOrder.Reference" Label="Guia de Reclamo" Variant="Variant.Text" RequiredError="Campo requerido." Required="false" /></MudItem>
-                                <MudItem xs="12"><MudTextField ReadOnly="false" @bind-Value="MasterClaimOrder.Invoice" Label="Nro de Factura" Variant="Variant.Text" RequiredError="Campo requerido." Required="false" /></MudItem>
+                                <MudItem xs="12"><MudNumericField ReadOnly="false" HideSpinButtons="true" @bind-Value="MasterClaimOrder.Invoice" Label="Nro de Factura" Variant="Variant.Text" RequiredError="Campo requerido." Required="true" /></MudItem>
                                 <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterClaimOrder.Guide" Label="Guia de Nota de Credito" Variant="Variant.Text" RequiredError="Campo requerido." Required="false" /></MudItem>
                                 <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterClaimOrder.Note" Label="Nota de Credito" Variant="Variant.Text" RequiredError="Campo requerido." Required="false" /></MudItem>
                                 <MudItem xs="12"><MudTextField ReadOnly="@(!IsCreatedClaimOrder)" @bind-Value="MasterClaimOrder.Comment" Label="Comentario" Variant="Variant.Text" /></MudItem>
@@ -163,7 +163,7 @@
             RecordId = item.Id,
             ModuleId = 43,
             actionName = "APPROVE",
-            ActionComment = "",
+            ActionComment = "", //item.Quantity.ToString()
             RelatedId = 0
         }
         );
@@ -506,6 +506,6 @@
     private bool IsReadyClaimDetails()
     {
         var DraftResult = ClaimOrderDetailsMudDataGrid?.FilteredItems.Count(r => r.StatusName == "BORRADOR");
-        return (ClaimOrderDetailsMudDataGrid?.FilteredItems.Any() ?? false) && (DraftResult ?? 0) > 0;
+        return (ClaimOrderDetailsMudDataGrid?.FilteredItems.Any() ?? false) && ((DraftResult ?? 0) > 0);
     }
 }

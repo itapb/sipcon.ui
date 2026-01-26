@@ -6,7 +6,7 @@
                     <MudItem xs="12">
                         <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.LastChild">
                             <MudTextField T="string" Placeholder="CODIGO" Adornment="Adornment.Start" OnAdornmentClick="OnSearchClicK" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Variant="Variant.Filled" @bind-Value="PartInnerCode" ReadOnly="true"></MudTextField>
-                            <MudNumericField T="int?" HideSpinButtons="true" Label="CANTIDAD" @bind-Value="Quantity"></MudNumericField>
+                            <MudNumericField T="int?" HideSpinButtons="true" Label="CANTIDAD" @bind-Value="Quantity" @ref="QuantityMudNumericField"></MudNumericField>
                             <MudTextField T="string" Label="COMENTARIO" @bind-Value="Comment"></MudTextField>
                          </MudFocusTrap>
                     </MudItem>
@@ -29,25 +29,34 @@
         [Inject] private IDialogService DialogService { get; set; } = default!;
         [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
         [Parameter] public Models.Action? mAction { get; set; } = default!;
+
         DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
-        private int? PartId { get; set; } = default!;
-        private String? PartInnerCode { get; set; } = default!;
-        private int? Quantity { get; set; } = default!;
-        private String? Comment { get; set; } = default!;
-        private MudForm? form;
-        private void CloseClick(MouseEventArgs args) => MudDialog?.Cancel();
+    private int? PartId { get; set; } = default!;
+    private String? PartInnerCode { get; set; } = default!;
+    private int? Quantity { get; set; } = default!;
+    private String? Comment { get; set; } = default!;
+    private MudForm? form;
+    private MudNumericField<int?>? QuantityMudNumericField;
+    private void CloseClick(MouseEventArgs args) => MudDialog?.Cancel();
     private async Task CheckClick(MouseEventArgs args)
     {
         await form!.Validate();
         if (form.IsValid)
         {
-            mAction?.ActionComment = Quantity.ToString();
+            if (Quantity > 0) mAction?.ActionComment = Quantity.ToString();
             mAction?.RelatedId = PartId ?? 0 ;
             MudDialog?.Close(DialogResult.Ok(true)); //ActionComment
         }
     }
     private async Task OnSearchClicK(MouseEventArgs args)
     {
-        var dialogReference = await DialogService.ShowAsync(typeof(ClaimOrderReplacementPartsCatalog), "", new DialogParameters { ["PartId"] = PartId, ["PartInnerCode"] = PartInnerCode }, options);
+        var dialogReference = await DialogService.ShowAsync(typeof(ClaimOrderReplacementPartsCatalog), "", new DialogParameters {}, options);
+        if ((await dialogReference.Result) is DialogResult dialogResult && !dialogResult.Canceled && dialogResult.Data is not null)
+        {
+            dynamic contactData = dialogResult.Data;
+            PartId = contactData.PartId;
+            PartInnerCode = contactData.PartInnerCode;
+            await QuantityMudNumericField!.FocusAsync();
+        }
     }
 }

@@ -55,8 +55,6 @@ else
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
 
-    [Parameter] public int? PartId { get; set; } = default!; 
-    [Parameter] public String? PartInnerCode { get; set; } = default!;
 
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
     // [Parameter] public int? ClaimOrderId { get; set; }
@@ -154,9 +152,7 @@ else
     }
     private async Task ClickAddPart(Part item)
     {
-        PartId = item.Id;
-        PartInnerCode = item.InnerCode;
-        MudDialog?.Close(DialogResult.Ok(true));        
+        MudDialog?.Close(DialogResult.Ok( new { PartId = item.Id, PartInnerCode = item.InnerCode }));
     }
     private void CloseClick(MouseEventArgs args)
     {
