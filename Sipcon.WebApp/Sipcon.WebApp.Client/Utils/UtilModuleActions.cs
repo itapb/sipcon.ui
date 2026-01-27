@@ -18,7 +18,9 @@ namespace Sipcon.WebApp.Client.Utils
         IPayMethodService PayMethodService,
         ILicenseService LicenseService,
         IFailReportService FailReportService,
-        IAssistenceService AssistenceService
+        IAssistenceService AssistenceService,
+        IReportDMSService ReportDMSService,
+        IReportingService ReportingService
         ) 
     {
 
@@ -138,6 +140,44 @@ namespace Sipcon.WebApp.Client.Utils
                 {
                     _List = _List.Where(x => x.BrandId == IdBrand).ToList();
                 }
+
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Id, item.Name));
+                }
+            }
+            return _itemsSelect;
+
+        }
+
+        public async Task<List<SelectOption>> GetReportType(int IdSupplier)
+        {
+            List<SelectOption> _itemsSelect = new([]);
+
+
+            var moduleResponse = await ReportDMSService.GetImportType(IdSupplier);
+            if (moduleResponse.Processed)
+            {
+                List<ReportingType> _List = moduleResponse.Data ?? new List<ReportingType>();
+                
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Id, item.Name));
+                }
+            }
+            return _itemsSelect;
+
+        }
+
+        public async Task<List<SelectOption>> GetReportingType(int IdSupplier)
+        {
+            List<SelectOption> _itemsSelect = new([]);
+
+
+            var moduleResponse = await ReportingService.GetReportingType(IdSupplier, 0);
+            if (moduleResponse.Processed)
+            {
+                List<ReportingType> _List = moduleResponse.Data ?? new List<ReportingType>();
 
                 foreach (var item in _List.ToList())
                 {

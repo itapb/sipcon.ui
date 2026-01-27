@@ -64,6 +64,10 @@
                     {
                         <MudNavLink Href="failreport">Reporte Falla</MudNavLink>
                     }
+                    @if (_ModuleNames.Contains("SERVICIOS-CONCILIACION SRG"))
+                    {
+                        <MudNavLink Href="reportdms">Conciliación SRG</MudNavLink>
+                    }
                 </MudNavGroup>
             }
             @if (_ModuleNames.Any(s => s.Contains("INVENTARIO-")))
@@ -172,6 +176,17 @@
                         <MudNavLink Href="accessgroup">Roles</MudNavLink>
                     }
                    
+                </MudNavGroup>
+            }
+
+             @if (_ModuleNames.Any(s => s.Contains("REPORTES-")))
+            {
+                <MudNavGroup Title="Reportes" Icon="@Icons.Material.Filled.ReportProblem" IconColor="Color.Info">
+
+                    @if (_ModuleNames.Contains("REPORTES-REPORTES"))
+                    {
+                        <MudNavLink Href="reporting">Reportes</MudNavLink>
+                    }
                 </MudNavGroup>
             }
 
