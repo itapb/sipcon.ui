@@ -118,34 +118,44 @@
                 </MudText>
             </CellTemplate>
         </TemplateColumn> *@
-        <TemplateColumn  Title="CODIGO DMS">
+        <TemplateColumn Title="SRG">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.Srg)</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn  Title="COD.DMS">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.CodDms.ToUpper()</MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn  Title="CODIGO ITEM">
+        <TemplateColumn  Title="COD.ITEM">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Style="font-weight:bold;">@context.Item.CodItem.ToUpper()</MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn Title="DESCRIPCION">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Left">@context.Item.Description.ToUpper()</MudText>
+                <MudText Typo="Typo.caption" Align="Align.Left" Style="min-width: 180px">@context.Item.Description.ToUpper()</MudText>
             </CellTemplate>
         </TemplateColumn>
-         <TemplateColumn Title="SRG">
+        <TemplateColumn Title="F.APROBACION" CellStyle="min-width: 120px">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.Srg)</MudText>
+                <MudText Typo="Typo.caption" Align="Align.Left" Style="min-width: 100px">@(context.Item.PreApprovalDate?.ToString("dd MMM yy", CultureInfo.GetCultureInfo("es-VE")))</MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn  Title="F.APROBACION">
+        <TemplateColumn Title="F.PAGO" CellStyle="min-width: 120px">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.PreApprovalDate?.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("es-VE")))</MudText>
+                <MudText Typo="Typo.caption" Align="Align.Left" Style="min-width: 100px">@(context.Item.PreApprovalDate?.ToString("dd MMM yy", CultureInfo.GetCultureInfo("es-VE")))</MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn  Title="F.PAGO">
+        <TemplateColumn Title="M.BASE">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.PreApprovalDate?.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("es-VE")))</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Align="Align.Left">@context.Item.BaseAmount?.ToString("N2")</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="M.PAGO">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Color="Color.Info" Align="Align.Left">@context.Item.PaidAmount?.ToString("N2")</MudText>
             </CellTemplate>
         </TemplateColumn>
          <TemplateColumn  Title="ESTATUS">
@@ -188,13 +198,13 @@
                 </div>
             </CellTemplate>
         </TemplateColumn>
-         <TemplateColumn  Title="ACTIVO">
+        @*  <TemplateColumn  Title="ACTIVO">
             <CellTemplate>
                 <div class="d-flex justify-center">
                     <MudIcon Icon="@(context.Item.IsActive ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.IsActive ? Color.Success : Color.Error)" Size="Size.Medium" />
                 </div>
             </CellTemplate>
-        </TemplateColumn>
+        </TemplateColumn> *@
     </Columns>
 
     <PagerContent>
