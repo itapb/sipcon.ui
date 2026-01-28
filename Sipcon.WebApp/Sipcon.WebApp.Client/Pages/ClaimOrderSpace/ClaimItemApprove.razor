@@ -5,8 +5,8 @@
                 <MudGrid Spacing="2">
                     <MudItem xs="12">
                         <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.LastChild">
-                            <MudTextField T="string" Placeholder="CODIGO" Adornment="Adornment.Start" OnAdornmentClick="OnSearchClicK" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Variant="Variant.Filled" @bind-Value="PartInnerCode" ReadOnly="true"></MudTextField>
-                            <MudNumericField T="int?" HideSpinButtons="true" Label="CANTIDAD" @bind-Value="Quantity" @ref="QuantityMudNumericField"></MudNumericField>
+                            <MudTextField T="string" Placeholder="CODIGO" Adornment="Adornment.Start" OnAdornmentClick="OnSearchClicK" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Variant="Variant.Filled" @bind-Value="PartInnerCode" ></MudTextField>
+                            <MudNumericField T="int?" HideSpinButtons="true" Label="CANTIDAD" @bind-Value="Quantity" @ref="QuantityMudNumericField" RequiredError="Campo requerido" Required="@IsRequiredQuantity()"></MudNumericField>
                             <MudTextField T="string" Label="COMENTARIO" @bind-Value="Comment"></MudTextField>
                          </MudFocusTrap>
                     </MudItem>
@@ -34,17 +34,18 @@
     private int? PartId { get; set; } = default!;
     private String? PartInnerCode { get; set; } = default!;
     private int? Quantity { get; set; } = default!;
-    private String? Comment { get; set; } = default!;
+    private String? Comment { get; set; } = "";
     private MudForm? form;
     private MudNumericField<int?>? QuantityMudNumericField;
     private void CloseClick(MouseEventArgs args) => MudDialog?.Cancel();
+    private bool IsRequiredQuantity() => PartId.HasValue && PartId > 1;
     private async Task CheckClick(MouseEventArgs args)
     {
         await form!.Validate();
         if (form.IsValid)
         {
-            if (Quantity > 0) mAction?.ActionComment = Quantity.ToString();
-            mAction?.RelatedId = PartId ?? 0 ;
+            mAction?.RelatedId = PartId ?? 1;
+            mAction?.ActionComment = (PartId is not null) ? Quantity.ToString() : Comment;            
             MudDialog?.Close(DialogResult.Ok(true)); //ActionComment
         }
     }
@@ -59,4 +60,5 @@
             await QuantityMudNumericField!.FocusAsync();
         }
     }
+}
 }

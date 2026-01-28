@@ -76,8 +76,8 @@
                                 <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterClaimOrder.Login" Adornment="Adornment.Start" AdornmentText="Login :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
                                 <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterClaimOrder.StatusName" Adornment="Adornment.Start" AdornmentText="Estatus :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
 
-                                <MudItem xs="12"><MudTextField ReadOnly="false" @bind-Value="MasterClaimOrder.Reference" Label="Guia de Reclamo" Variant="Variant.Text" RequiredError="Campo puede ser requerido." Required="@(!AnyValidFields())" /></MudItem>
-                                <MudItem xs="12"><MudNumericField ReadOnly="false" HideSpinButtons="true" @bind-Value="MasterClaimOrder.Invoice" Label="Nro de Factura" Variant="Variant.Text" RequiredError="Campo puede ser requerido." Required="@(!AnyValidFields())" /></MudItem>
+                                <MudItem xs="12"><MudTextField ReadOnly="false" @bind-Value="MasterClaimOrder.Reference" Label="Guia de Reclamo" Variant="Variant.Text" RequiredError="Campo opcionalmente requerido." Required="@(!AnyValidFields())" /></MudItem>
+                                <MudItem xs="12"><MudNumericField ReadOnly="false" HideSpinButtons="true" @bind-Value="MasterClaimOrder.Invoice" Label="Nro de Factura" Variant="Variant.Text" RequiredError="Campo opcionalmente requerido." Required="@(!AnyValidFields())" /></MudItem>
                                 <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterClaimOrder.Guide" Label="Guia de Nota de Credito" Variant="Variant.Text" RequiredError="Campo requerido." Required="false" /></MudItem>
                                 <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterClaimOrder.Note" Label="Nota de Credito" Variant="Variant.Text" RequiredError="Campo requerido." Required="false" /></MudItem>
                                 <MudItem xs="12"><MudTextField ReadOnly="@(!IsCreatedClaimOrder)" @bind-Value="MasterClaimOrder.Comment" Label="Comentario" Variant="Variant.Text" /></MudItem>
@@ -161,17 +161,17 @@
         {
             UserId = Session.UserId,
             RecordId = item.Id,
-            ModuleId = 43,
+            ModuleId = 32,
             actionName = "APPROVE",
             ActionComment = "", //item.Quantity.ToString()
-            RelatedId = 0
+            RelatedId = 1
         }
         );
        
         var dialogReference = await DialogService.ShowAsync(typeof(ClaimItemApprove), "", new DialogParameters { ["mAction"] = mActions.FirstOrDefault() }, options);
         if (!((await dialogReference.Result)!.Canceled))
         {
-            await PostActionAndReload(mActions, $"api/Claim/PostActionsClaimDetail?userId={Session.UserId}");
+            await PostActionAndReload(mActions, $"api/Claim/PostActionsClaimDetails?userId={Session.UserId}");
             await ClaimOrderDetailsMudDataGrid!.ReloadServerData();          
         }
 
@@ -184,17 +184,17 @@
         {
             UserId = Session.UserId,
             RecordId = item.Id,
-            ModuleId = 43,
+            ModuleId = 32,
             actionName = "DECLINE",
             ActionComment = "",
-            RelatedId = 0
+            RelatedId = 1
         }
         );
 
         var dialogReference = await DialogService.ShowAsync(typeof(ClaimItemDecline), "", new DialogParameters { ["mAction"] = mActions.FirstOrDefault() }, options);
         if (!((await dialogReference.Result)!.Canceled))
         {
-            await PostActionAndReload(mActions, $"api/Claim/PostActionsClaimDetail?userId={Session.UserId}");
+            await PostActionAndReload(mActions, $"api/Claim/PostActionsClaimDetails?userId={Session.UserId}");
             await ClaimOrderDetailsMudDataGrid!.ReloadServerData();
         }
 
@@ -302,7 +302,7 @@
             ModuleId = 32,
             actionName = (ClaimOrderDetailsMudDataGrid?.FilteredItems.Any(r => r.StatusName == "APROBADO") ?? false) ? "APPROVE" : "DECLINE",
             ActionComment = "",
-            RelatedId = 0
+            RelatedId = 1
         }
         );
         await PostActionAndReload(mActions, $"api/Claim/PostActionsClaim?userId={Session.UserId}");
@@ -317,7 +317,7 @@
                 ModuleId = 32,
                 actionName = "PROCESS",
                 ActionComment = "",
-                RelatedId = 0
+                RelatedId = 1
             }
         );
         var dialogReference = await DialogService.ShowAsync(typeof(ClaimOrderProcess), "", new DialogParameters { ["mAction"] = mActions.FirstOrDefault() }, options);
@@ -406,7 +406,7 @@
                                   ModuleId = 32,
                                   actionName = "GENERATE",
                                   ActionComment = "",
-                                  RelatedId = 0
+                                  RelatedId = 1
                               }
                               : null;
 

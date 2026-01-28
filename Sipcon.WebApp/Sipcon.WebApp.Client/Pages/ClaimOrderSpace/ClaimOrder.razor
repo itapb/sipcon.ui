@@ -155,7 +155,7 @@ else
 
         $"Home,Pedidos,{RequisitionTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
         Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=PEDIDOS-RECLAMOS&userId={Session.UserId}");
-        await LoadSaleOrderTypes();
+        //await LoadSaleOrderTypes();
     }
     Func<Models.ClaimPart, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
     {
@@ -221,7 +221,7 @@ else
             return;
         }
 
-        var strDictionary = new Dictionary<string, string> { { "TOAPPROVE", "BORRADOR" }, { "PROCESS", "APROBADO" }, { "DECLINE", "BORRADOR,PARA APROBAR" }, { "(APPROVE", "PARA APROBAR" } };
+        var strDictionary = new Dictionary<string, string> { { "TOAPPROVE", "BORRADOR" }, { "PROCESS", "APROBADO" }, { "DECLINE", "BORRADOR,PARA APROBAR" }, { "APPROVE", "PARA APROBAR" } };
         var mActions = ClaimOrderMudDataGrid?.FilteredItems.Where(item => item.IsSelected && strDictionary[actionName!].Contains(item!.StatusName!.ToUpper()))
                                                          .Select(item => new Client.Models.Action
                                                              {
@@ -230,7 +230,7 @@ else
                                                                  ModuleId = Modules!.FirstOrDefault()?.Id,
                                                                  actionName = actionName,
                                                                  ActionComment = "",
-                                                                 RelatedId = 0
+                                                                 RelatedId = 1
                                                              }).ToList();
 
         if (mActions?.Count == 0 || (actionName == "PROCESS" && mActions?.Count > 1))
