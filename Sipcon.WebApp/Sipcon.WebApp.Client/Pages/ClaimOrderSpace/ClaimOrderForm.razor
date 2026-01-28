@@ -164,7 +164,7 @@
             ModuleId = 32,
             actionName = "APPROVE",
             ActionComment = "", //item.Quantity.ToString()
-            RelatedId = 1
+            RelatedId = 0
         }
         );
        
@@ -187,7 +187,7 @@
             ModuleId = 32,
             actionName = "DECLINE",
             ActionComment = "",
-            RelatedId = 1
+            RelatedId = 0
         }
         );
 
@@ -356,7 +356,15 @@
     private async Task ClickRemoveClaimOrderDetails(MouseEventArgs ev)
     {
         var mActions = ClaimOrderDetailsMudDataGrid?.FilteredItems.Where(item => item.IsSelected)
-                                                     .Select(item => new ClaimOrderItem(item.Id)).ToList();
+                                         .Select(item => new Client.Models.Action
+                                                  {
+                                                      UserId = Session.UserId,
+                                                      RecordId = item.Id,
+                                                      ModuleId = 32, //Modules!.FirstOrDefault()?.Id,
+                                                      actionName = "DELETE",
+                                                      ActionComment = "",
+                                                      RelatedId = 1
+                                                  }).ToList();
         if (mActions?.Count > 0)
             await DeleteClaimOrderDetailAction(mActions);
     }
@@ -488,13 +496,13 @@
             await DialogService.ShowUnexpected(); ;
         }
     }
-    private async Task DeleteClaimOrderDetailAction(List<ClaimOrderItem>? actions)
+    private async Task DeleteClaimOrderDetailAction(List<Models.Action>? actions)
     {
         var result_Post_Actions = (actions?.Count > 0) ? await Http.PostAsync($"api/Claim/DeleteClaimDetails?userId={Session.UserId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json")) : null;
         if ((result_Post_Actions?.IsSuccessStatusCode ?? false))
         {
             //var rest = result_Post_Actions.Content.ReadAsStringAsync();
-            await DialogService.ShowDialog(MessageEnum.DeclineOK.GetStringValue(), "Remover", "OK", Color.Info, Icons.Material.Filled.Commit);
+            await DialogService.ShowDialog(MessageEnum.DeleteOK.GetStringValue(), "Remover", "OK", Color.Info, Icons.Material.Filled.Commit);
             await ClaimOrderDetailsMudDataGrid!.ReloadServerData();
         }
         else if (result_Post_Actions?.StatusCode == System.Net.HttpStatusCode.Conflict)

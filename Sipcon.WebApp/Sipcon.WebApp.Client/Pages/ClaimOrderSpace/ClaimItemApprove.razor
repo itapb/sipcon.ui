@@ -44,7 +44,7 @@
         await form!.Validate();
         if (form.IsValid)
         {
-            mAction?.RelatedId = PartId ?? 1;
+            mAction?.RelatedId = PartId ?? 0;
             mAction?.ActionComment = (PartId is not null) ? Quantity.ToString() : Comment;            
             MudDialog?.Close(DialogResult.Ok(true)); //ActionComment
         }
@@ -60,5 +60,4 @@
             await QuantityMudNumericField!.FocusAsync();
         }
     }
-}
 }
