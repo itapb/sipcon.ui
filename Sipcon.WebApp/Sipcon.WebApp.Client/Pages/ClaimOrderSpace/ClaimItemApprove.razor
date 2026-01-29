@@ -7,7 +7,7 @@
                         <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.LastChild">
                             <MudTextField T="string" Placeholder="CODIGO" Adornment="Adornment.Start" OnAdornmentClick="OnSearchClicK" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Variant="Variant.Filled" @bind-Value="PartInnerCode" ></MudTextField>
                             <MudNumericField T="int?" HideSpinButtons="true" Label="CANTIDAD" @bind-Value="Quantity" @ref="QuantityMudNumericField" RequiredError="Campo requerido" Required="@IsRequiredQuantity()"></MudNumericField>
-                            <MudTextField T="string" Label="COMENTARIO" @bind-Value="Comment"></MudTextField>
+                            <MudTextField T="string" Label="COMENTARIO" @bind-Value="Comment" Disabled="@(PartId is not null)"></MudTextField>
                          </MudFocusTrap>
                     </MudItem>
                     <MudItem xs="12">
@@ -25,12 +25,12 @@
 </MudForm>
 
 @code {
-        [Inject] private UserSession Session { get; set; } = null!;
-        [Inject] private IDialogService DialogService { get; set; } = default!;
-        [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
-        [Parameter] public Models.Action? mAction { get; set; } = default!;
+    [Inject] private UserSession Session { get; set; } = null!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public Models.Action? mAction { get; set; } = default!;
 
-        DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
+    DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
     private int? PartId { get; set; } = default!;
     private String? PartInnerCode { get; set; } = default!;
     private int? Quantity { get; set; } = default!;
@@ -39,6 +39,7 @@
     private MudNumericField<int?>? QuantityMudNumericField;
     private void CloseClick(MouseEventArgs args) => MudDialog?.Cancel();
     private bool IsRequiredQuantity() => PartId.HasValue && PartId > 1;
+
     private async Task CheckClick(MouseEventArgs args)
     {
         await form!.Validate();
@@ -57,6 +58,7 @@
             dynamic contactData = dialogResult.Data;
             PartId = contactData.PartId;
             PartInnerCode = contactData.PartInnerCode;
+            Comment = "";
             await QuantityMudNumericField!.FocusAsync();
         }
     }
