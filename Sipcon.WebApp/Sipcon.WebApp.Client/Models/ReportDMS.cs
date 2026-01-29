@@ -11,10 +11,10 @@ namespace Sipcon.WebApp.Client.Models
         /// </summary>
         public int Id { get; set; } = 0;
         public string Srg { get; set; } = string.Empty;
-        public string CodDms { get; set; } = string.Empty;
-        public string CodItem { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public string PreApproval { get; set; } = string.Empty;
+        public string? CodDms { get; set; } = string.Empty;
+        public string? CodItem { get; set; } = string.Empty;
+        public string? Description { get; set; } = string.Empty;
+        public string? PreApproval { get; set; } = string.Empty;
         public decimal? PaidAmount { get; set; } = 0.0M;
         public double? BaseAmount { get; set; } = 0.0;
         public int? SupplierId { get; set; } = null;
@@ -27,14 +27,14 @@ namespace Sipcon.WebApp.Client.Models
         public int? EstatusId { get; set; } = null;
         public string? Estatus { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
+        public List<PaidDetails> PaidDetailsDms { get; set; } = new List<PaidDetails>();
+    }
+
+    public class PaidDetails
+    { 
+        public int DMSId { get; set; } 
+        public DateTime Date { get; set; } 
+        public double? Amount { get; set; } = 0.0;
         
-
-
-
-           
-           
-           
-           
-       
     }
 }

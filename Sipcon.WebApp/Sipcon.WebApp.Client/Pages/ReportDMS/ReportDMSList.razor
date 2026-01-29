@@ -31,6 +31,7 @@
              Dense="true"
              Striped="true"
              Hover="true"
+             ExpandSingleRow="false"
             @bind-CurrentPage="_CurrentPage">
     <ToolBarContent>
         <MudTextField @bind-Value="_searchString" 
@@ -110,14 +111,10 @@
         </MudMenu>
     </ToolBarContent>
     <Columns>
+        <HierarchyColumn T="ReportDMS" ButtonDisabledFunc="@(x => x.PaidDetailsDms.Count == 0)" EnableHeaderToggle="false" />
+
         <SelectColumn  />
-       @*  <TemplateColumn  Title="CODIGO">
-            <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">
-                    @("#" + context.Item.Id.ToString().PadLeft(10, '0'))
-                </MudText>
-            </CellTemplate>
-        </TemplateColumn> *@
+       
         <TemplateColumn Title="SRG">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.Srg)</MudText>
@@ -125,27 +122,27 @@
         </TemplateColumn>
         <TemplateColumn  Title="COD.DMS">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.CodDms.ToUpper()</MudText>
+                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@(string.IsNullOrEmpty(context.Item.CodDms) ? string.Empty : context.Item.CodDms.ToUpper())</MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn  Title="COD.ITEM">
+        <TemplateColumn Title="COD.APROBACION">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Style="font-weight:bold;">@context.Item.CodItem.ToUpper()</MudText>
+                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Style="font-weight:bold;">@(string.IsNullOrEmpty(context.Item.PreApproval) ? string.Empty : context.Item.PreApproval.ToUpper()) </MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn Title="DESCRIPCION">
+        <TemplateColumn Title="DESCRIPCION" Style="min-width: 250px">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Left" Style="min-width: 180px">@context.Item.Description.ToUpper()</MudText>
+                <MudText Typo="Typo.caption" Align="Align.Left" >@(context.Item.Description?.ToUpper() ?? string.Empty) </MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn Title="F.APROBACION" CellStyle="min-width: 120px">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Left" Style="min-width: 100px">@(context.Item.PreApprovalDate?.ToString("dd MMM yy", CultureInfo.GetCultureInfo("es-VE")))</MudText>
+                <MudText Typo="Typo.caption" Align="Align.Left" >@(context.Item.PreApprovalDate?.ToString("dd MMM yy", CultureInfo.GetCultureInfo("es-VE")))</MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn Title="F.PAGO" CellStyle="min-width: 120px">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Left" Style="min-width: 100px">@(context.Item.PreApprovalDate?.ToString("dd MMM yy", CultureInfo.GetCultureInfo("es-VE")))</MudText>
+                <MudText Typo="Typo.caption" Align="Align.Left" >@(context.Item.PreApprovalDate?.ToString("dd MMM yy", CultureInfo.GetCultureInfo("es-VE")))</MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn Title="M.BASE">
@@ -206,6 +203,27 @@
             </CellTemplate>
         </TemplateColumn> *@
     </Columns>
+
+    <ChildRowRenderer>
+
+        @foreach (var item in context.Item.PaidDetailsDms)
+        {
+            <tr class="mud-table-row">
+                <td class="mud-table-cell mud-table-child-content"></td>
+                <td class="mud-table-cell mud-table-child-content"></td>
+                <td class="mud-table-cell mud-table-child-content" colspan="5">
+                    Pago Efectuado
+                </td>
+                <td class="mud-table-cell mud-table-child-content" colspan="2">
+                    <MudText Typo="Typo.caption" Align="Align.Left">@(item.Date.ToString("dd MMMM yyyy", CultureInfo.GetCultureInfo("es-VE")))</MudText>
+                </td>
+                <td class="mud-table-cell mud-table-child-content">
+                    <MudText Typo="Typo.caption" Color="Color.Info" Align="Align.Left">@item.Amount?.ToString("N2")</MudText>
+                </td>
+            </tr>
+        }
+        
+    </ChildRowRenderer>
 
     <PagerContent>
         <MudDataGridPager  PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
