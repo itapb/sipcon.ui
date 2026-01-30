@@ -1,0 +1,623 @@
+﻿@page "/reportdms"
+
+@using System.Globalization
+@using System.Text.Json
+@using Sipcon.WebApp.Client.Repository.Auth
+
+
+@inject IReportDMSService ReportDMSService
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager UriHelper
+@inject HubEventsService hubEventsService
+@implements IDisposable
+
+
+<PageTitle>Reporte de Falla</PageTitle>
+<CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
+
+<MudDataGrid @ref="_mudDataGrid"
+             T="ReportDMS"
+             ServerData="LoadGridData"
+             SelectedItems="@selectedReportDMS"
+             SortMode="SortMode.Multiple"
+             FixedHeader Height="calc(92vh - 235px)"
+             MultiSelection="true" 
+             Loading="_loading"
+             Filterable="true"
+             Hideable="true"
+             Bordered="false"
+             Dense="true"
+             Striped="true"
+             Hover="true"
+             ExpandSingleRow="false"
+            @bind-CurrentPage="_CurrentPage">
+    <ToolBarContent>
+        <MudTextField @bind-Value="_searchString" 
+                      Style="font-size: 14px;line-height: 0.8rem;"
+                    Placeholder="buscar" 
+                    Adornment="Adornment.Start" 
+                    Immediate="true"
+                    Typo="Typo.caption"
+                    AdornmentIcon="@Icons.Material.Filled.Search"
+                    OnAdornmentClick="() => ClickSearch()"
+                    IconSize="Size.Medium" Class="mt-0" 
+                    OnKeyUp="HandleKeyDownSearch">
+        </MudTextField>
+        <MudSpacer />
+        <div id="scroll_section" class="mx-auto" style="max-width: 400px">
+            <MudExpansionPanels Outlined="false" Elevation="0">
+                <MudExpansionPanel @bind-Expanded="@_open" HideIcon="true">
+                    <TitleContent>
+                        <div class="d-flex">
+                            <MudText>Filtrar por: </MudText>
+                            <MudIcon Icon="@(_open? Icons.Material.Filled.FilterAltOff  : Icons.Material.Filled.FilterAlt)" Color="Color.Info"></MudIcon>
+                        </div>
+                    </TitleContent>
+                    <ChildContent>
+                        <MudStack Row="true">
+                            <MudDatePicker @ref="_picker"
+                                           @bind-Date="_dateFrom"
+                                           Style="font-size: 14px;line-height: 0.8rem;min-width: 100px;"
+                                           Adornment="Adornment.Start"
+                                           AdornmentColor="Color.Info"
+                                           Class="align-right"
+                                           Placeholder="Fecha Desde"
+                                           Variant="Variant.Text"
+                                           PickerVariant="PickerVariant.Inline"
+                                           Margin="Margin.None"
+                                           DateFormat="dd/MM/yyyy"
+                                           AutoClose="true">
+                                <PickerActions>
+                                    <MudButton Class="mr-auto align-self-start" OnClick="@(() => _picker.ClearAsync())">Borrar</MudButton>
+                                    <MudButton OnClick="@(() => _picker.CloseAsync(false))">Cancelar</MudButton>
+                                </PickerActions>
+                            </MudDatePicker>
+
+                            <MudDatePicker @ref="_pickerTo"
+                                           @bind-Date="_dateTo"
+                                           Style="font-size: 14px;line-height: 0.8rem;min-width: 100px;"
+                                           Adornment="Adornment.Start"
+                                           AdornmentColor="Color.Info"
+                                           Class="align-right"
+                                           Placeholder="Fecha Hasta"
+                                           Variant="Variant.Text"
+                                           PickerVariant="PickerVariant.Inline"
+                                           Margin="Margin.None"
+                                           DateFormat="dd/MM/yyyy"
+                                           AutoClose="true">
+                                <PickerActions>
+                                    <MudButton Class="mr-auto align-self-start" OnClick="@(() => _pickerTo.ClearAsync())">Borrar</MudButton>
+                                    <MudButton OnClick="@(() => _pickerTo.CloseAsync(false))">Cancelar</MudButton>
+                                </PickerActions>
+                            </MudDatePicker>
+
+                        </MudStack>
+                    </ChildContent>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+
+        </div>
+        <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Info" OnClick="() => ClickSearch()"></MudIconButton>
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+            @foreach (var module in _itemsModules)
+            {
+                <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
+                Label="@module.Text"
+                OnClick="() => HandleMenuClick(module)" />
+            }
+        </MudMenu>
+    </ToolBarContent>
+    <Columns>
+        <HierarchyColumn T="ReportDMS" ButtonDisabledFunc="@(x => x.PaidDetailsDms.Count == 0)" EnableHeaderToggle="false" />
+
+        <SelectColumn  />
+       
+        <TemplateColumn Title="SRG">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.Srg)</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn  Title="COD.DMS">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@(string.IsNullOrEmpty(context.Item.CodDms) ? string.Empty : context.Item.CodDms.ToUpper())</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="COD.APROBACION">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Style="font-weight:bold;">@(string.IsNullOrEmpty(context.Item.PreApproval) ? string.Empty : context.Item.PreApproval.ToUpper()) </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="DESCRIPCION" Style="min-width: 250px">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left" >@(context.Item.Description?.ToUpper() ?? string.Empty) </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="F.APROBACION" CellStyle="min-width: 120px">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left" >@(context.Item.PreApprovalDate?.ToString("dd MMM yy", CultureInfo.GetCultureInfo("es-VE")))</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="F.PAGO" CellStyle="min-width: 120px">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left" >@(context.Item.PreApprovalDate?.ToString("dd MMM yy", CultureInfo.GetCultureInfo("es-VE")))</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="M.BASE">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Align="Align.Left">@context.Item.BaseAmount?.ToString("N2")</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="M.PAGO">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Color="Color.Info" Align="Align.Left">@context.Item.PaidAmount?.ToString("N2")</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+         <TemplateColumn  Title="ESTATUS">
+            <CellTemplate>
+                <div class="d-flex justify-start">
+                    @if (context.Item.Estatus != null)
+                    {
+                        string style = "";
+
+                        if (context.Item.Estatus.ToUpper() == "BORRADOR")
+                            style += "";
+                        else if (context.Item.Estatus.ToUpper() == "PROCESADO PARCIAL")
+                        {
+                            style += "color:#fff";
+                            style += ";background-color:#0099F3";
+                        }
+                        else if (context.Item.Estatus.ToUpper() == "PARA VALIDAR")
+                        {
+                            style += "color:#fff";
+                            style += ";background-color:#0099F3";
+                        }
+                        else if (context.Item.Estatus.ToUpper() == "PROCESADO")
+                        {
+                            style += "color:#fff";
+                            style += ";background-color:#757575";
+                        }
+                        else
+                        {
+                            style += "color:#fff";
+                            style += ";background-color:#FF7043";
+                        }
+                        style += ";font-size: 11px";
+                        style += ";font-style:italic";
+
+                        <MudChip T="string" Style="@style" Label="true" Disabled="true">
+                            @(context.Item.Estatus.ToUpper())
+                        </MudChip>
+                    }
+                   
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
+        @*  <TemplateColumn  Title="ACTIVO">
+            <CellTemplate>
+                <div class="d-flex justify-center">
+                    <MudIcon Icon="@(context.Item.IsActive ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.IsActive ? Color.Success : Color.Error)" Size="Size.Medium" />
+                </div>
+            </CellTemplate>
+        </TemplateColumn> *@
+    </Columns>
+
+    <ChildRowRenderer>
+
+        @foreach (var item in context.Item.PaidDetailsDms)
+        {
+            <tr class="mud-table-row">
+                <td class="mud-table-cell mud-table-child-content"></td>
+                <td class="mud-table-cell mud-table-child-content"></td>
+                <td class="mud-table-cell mud-table-child-content" colspan="5">
+                    Pago Efectuado
+                </td>
+                <td class="mud-table-cell mud-table-child-content" colspan="2">
+                    <MudText Typo="Typo.caption" Align="Align.Left">@(item.Date.ToString("dd MMMM yyyy", CultureInfo.GetCultureInfo("es-VE")))</MudText>
+                </td>
+                <td class="mud-table-cell mud-table-child-content">
+                    <MudText Typo="Typo.caption" Color="Color.Info" Align="Align.Left">@item.Amount?.ToString("N2")</MudText>
+                </td>
+            </tr>
+        }
+        
+    </ChildRowRenderer>
+
+    <PagerContent>
+        <MudDataGridPager  PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+    </PagerContent>
+</MudDataGrid>
+
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" 
+                    onCloseNested="() => _nestedVisible = false"
+                    ErrorMessage="@_nestedErrorMessage" 
+                    Title="@("Reporte de Falla")"/>
+
+
+
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
+    private IEnumerable<ReportDMS> _ReportDMS = new List<ReportDMS>();
+    private string _nestedErrorMessage = string.Empty;
+    private bool _nestedVisible;
+    bool _success = false;
+    bool _open;
+
+    private int _CurrentPage = 0;
+    private int _rowCount = 0;
+    private int _rowsTotal = 0; 
+
+    private string _searchString = string.Empty;
+    private DateTime? _dateFrom { get; set; } = null;
+    private DateTime? _dateTo { get; set; } = null;
+    private bool _loading = true;
+    private string _moduleName = "SERVICIOS-CONCILIACION SRG";
+
+
+    IMask maskDate = new DateMask("dd/MM/yyyy");
+
+    private MudDatePicker _picker = new MudDatePicker();
+    private MudDatePicker _pickerTo = new MudDatePicker();
+    private MudDataGrid<ReportDMS>? _mudDataGrid;
+    private HashSet<ReportDMS> selectedReportDMS = new([]);
+    private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
+
+    private List<BreadcrumbItem> _itemsNavigate =
+                [
+        new("Home", href: "", icon: Icons.Material.Filled.Home),
+        new("Servicios",href: "", icon: Icons.Material.Filled.Speed),
+        new("Conciliación SRG",  href: "reportdms", disabled: false, icon: Icons.Material.Filled.ReportProblem),
+    ];
+
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+
+        hubEventsService.OnSupplierChanged += ReloadServerData;
+        hubEventsService.OnDealerChanged += ReloadServerData;
+        await Task.CompletedTask;
+    }
+
+    private async Task ReloadServerData()
+    {
+        if (_mudDataGrid != null)
+        {
+            _open = false;
+            StateHasChanged();
+            await _mudDataGrid!.ReloadServerData();
+        }
+    }
+
+    public void Dispose()
+    {
+        hubEventsService.OnDealerChanged -= ReloadServerData;
+        hubEventsService.OnSupplierChanged -= ReloadServerData;
+    }
+
+
+    private async Task<GridData<ReportDMS>> LoadGridData(GridState<ReportDMS> state)
+    {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+        _rowCount = state.Page * state.PageSize;
+
+        await GetReportDMS();
+
+        return new GridData<ReportDMS> { TotalItems = _rowsTotal, Items = _ReportDMS };
+    }
+
+    private async Task GetReportDMS()
+    {
+        _loading = true;
+        _ReportDMS = new List<ReportDMS>();
+        _rowsTotal = 0;
+
+        _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
+        string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
+        string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
+        
+        var serviceResponse = await ReportDMSService.GetReportDMS(Session.UserId, Session.SupplierId,  _rowCount, _searchString, _dateFromStr, _dateToStr);
+        if (serviceResponse.Processed)
+        {
+            _ReportDMS = serviceResponse.Data;
+            _rowsTotal = serviceResponse.Total;
+        }
+        else
+        {
+            // Console.WriteLine($"Error: {serviceResponse.Message}");
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
+
+            OpenNested();
+
+        }
+       
+        _loading = false;
+        StateHasChanged();
+    }
+
+
+    private async Task HandleKeyDownSearch(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            if (_searchString.Length >= 3 || _searchString == string.Empty)
+            {
+                Console.WriteLine($"Buscando: {_searchString}");
+                await _mudDataGrid!.ReloadServerData();
+            }
+
+        }
+    }
+
+    private async Task ClickSearch()
+    {
+
+        // if (_searchString.Length >= 3 )
+        // {
+            Console.WriteLine($"Buscando: {_searchString}");
+            await _mudDataGrid!.ReloadServerData();
+        // }
+
+    }
+
+
+    private async Task HandleOnClickRefresh()
+    {
+        _searchString = string.Empty;
+        _dateFrom = null;
+        _dateTo = null;
+        await _picker.ClearAsync();
+        await _pickerTo.ClearAsync();
+        _open = false;
+        StateHasChanged();
+        await _mudDataGrid!.ReloadServerData();
+    }
+
+    private void OpenNested()
+    {
+        _nestedVisible = true;
+        StateHasChanged();
+    }
+
+
+    private async Task HandleMenuClick(ModuleAction module)
+    {
+        switch (module.ActionName)
+        {
+            case "EXPORT":
+                await ExportItemsAsync();
+                break;
+            case "DECLINE":
+                await DeclineItemsAsync(module.IdAction, module.ActionName);
+                break;
+            case "IMPORT":
+                await ImportItemsAsync();
+                break;
+            case "PROCESS":
+                await ProcessItemsAsync(module.IdAction, module.ActionName);
+                break;
+            default:
+                Console.WriteLine($"{MessageEnum.ActionsError.GetStringValue()}: {module.ActionName}");
+                break;
+        }
+    }
+
+    private async Task ExportItemsAsync()
+    {
+        string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
+        string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
+
+        var serviceResponse = await ReportDMSService.ExportReportDMS(Session.UserId, Session.SupplierId, _rowCount, _searchString, _dateFromStr, _dateToStr);
+        if (serviceResponse.Processed)
+        {
+            _success = true;
+            _nestedErrorMessage = "";
+
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+            var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "ConciliacionSRG.xlsx");
+        
+        }
+        else
+        {
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
+            OpenNested();
+        }
+    }
+
+    private async Task ImportItemsAsync()
+    {
+        var _importTypeList = await ModuleActionsService.GetReportType(Session.SupplierId);
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+        var parameters = new DialogParameters<SelectItemDialog> { { x => x.SelectList, _importTypeList }, { x => x.Title, "Tipos" } };
+        var dialog = await DialogService.ShowAsync<SelectItemDialog>("Importar Conciliacion SRG", parameters, options);
+
+        StateHasChanged();
+
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            var typeId = (int)(result.Data ?? 0);
+
+            options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+            var fileparameters = new DialogParameters<ImporItemDialog> { { x => x.Title, "Conciliacion SRG" } };
+            var filedialog = await DialogService.ShowAsync<ImporItemDialog>("Importar Conciliacion SRG", fileparameters, options);
+
+            result = await filedialog.Result;
+            if (!result!.Canceled)
+            {
+
+                IBrowserFile file = (IBrowserFile)(result.Data ?? string.Empty);
+                const long maxAllowedSize = 10 * 1024 * 1024; // 10MB
+                if (file.Size == 0)
+                {
+                    _success = false;
+                    _nestedErrorMessage = MessageEnum.ImportError.GetStringValue();
+                    OpenNested();
+                }
+                else if (file.Size > maxAllowedSize)
+                {
+                    _success = false;
+                    _nestedErrorMessage = MessageEnum.ImportErrorMaxByte.GetStringValue();
+                    OpenNested();
+                }
+                else
+                {
+                    using var stream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
+
+                    var content = new StreamContent(stream);
+                    content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+                    // Create a multipart form data content
+                    var formData = new MultipartFormDataContent();
+                    formData.Add(content, "file", file.Name);
+
+                    
+                    var serviceResponse = await ReportDMSService.ImportReportDMS(Session.UserId, Session.SupplierId, typeId, formData);
+                    if (serviceResponse.Processed)
+                    {
+                        _success = true;
+                        _nestedErrorMessage = MessageEnum.ImportOK.GetStringValue();
+
+                        await _mudDataGrid!.ReloadServerData();
+                    }
+                    else
+                    {
+                        _success = false;
+                        _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ImportNotOK.GetStringValue();
+
+                    }
+                    OpenNested();
+                }
+
+            }
+        }
+        await Task.CompletedTask;
+    }
+
+    private async Task DeclineItemsAsync(int moduleId, string moduleActionName)
+    {
+        Console.WriteLine("Rechazar Conciliacion SRG...");
+        if (selectedReportDMS.Any())
+        {
+
+            DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+            var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Rechazar Conciliacion SRG..." } };
+            var dialog = await DialogService.ShowAsync<TextItemDialog>("Conciliacion SRG", parameters, options);
+
+            StateHasChanged();
+
+            var result = await dialog.Result;
+            if (!result!.Canceled)
+            {
+                var _observacion = (string)(result.Data ?? string.Empty);
+                List<PostAction> ActionList = ([]);
+
+                foreach (var item in selectedReportDMS)
+                {
+                    var _Action = new PostAction
+                    {
+                        RecordId = item.Id,
+                        ModuleId = moduleId,
+                        ActionName = moduleActionName,
+                        ActionComment = _observacion
+                    };
+                    ActionList.Add(_Action);
+                }
+
+                var serviceResponse = await ReportDMSService.ActionsReportDMS(ActionList, Session.UserId);
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = MessageEnum.DeclineOK.GetStringValue();
+
+                    await _mudDataGrid!.ReloadServerData();
+
+                }
+                else
+                {
+                    //Console.WriteLine(serviceResponse.Message);
+                    _success = false;
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.DeclineNotOK.GetStringValue();
+                }
+                OpenNested();
+
+            }
+
+        }
+
+        selectedReportDMS = new([]);
+        await Task.CompletedTask;
+    }
+
+    private async Task ProcessItemsAsync(int moduleId, string moduleActionName)
+    {
+        Console.WriteLine("Procesar Conciliacion SRG...");
+        if (selectedReportDMS.Any())
+        {
+            var option = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false
+            };
+            bool? confir = await DialogService.ShowMessageBox(
+                "Procesar Conciliacion SRG ",
+                $"Seguro de Procesar? ",
+                yesText: "Si", noText: "No", "", option);
+
+            if (confir == true)
+            {
+
+                List<PostAction> ActionList = ([]);
+
+                foreach (var Item in selectedReportDMS)
+                {
+                    var ItemAction = new PostAction
+                    {
+                        RecordId = Item.Id,
+                        ModuleId = moduleId,
+                        ActionName = moduleActionName,
+                        ActionComment = ""
+                    };
+                    ActionList.Add(ItemAction);
+                }
+
+                var serviceResponse = await ReportDMSService.ActionsReportDMS(ActionList, Session.UserId);
+                if (serviceResponse.Processed)
+                {
+
+                    _success = true;
+                    _nestedErrorMessage = MessageEnum.ApproveOK.GetStringValue();
+
+                    await _mudDataGrid!.ReloadServerData();
+                }
+                else
+                {
+                    // Console.WriteLine(serviceResponse.Message);
+                    _success = false;
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ApproveNotOK.GetStringValue();
+
+                }
+                OpenNested();
+
+            }
+
+        }
+
+        selectedReportDMS = new([]);
+        await Task.CompletedTask;
+    }
+
+
+
+}
