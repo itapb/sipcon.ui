@@ -171,6 +171,7 @@
     private MudDataGrid<Policy>? _mudDataGrid;
     private HashSet<Policy> selectedPolicy = new([]);
     private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
+    private List<ActionModule> _actions = new List<ActionModule>([]);
 
     private List<BreadcrumbItem> _itemsNavigate =
                 [
@@ -221,6 +222,7 @@
         _rowsTotal = 0;
 
         _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
+        _actions = await ModuleActionsService.GetAction(Session.UserId, _moduleName);
 
         var serviceResponse = await PolicyService.GetPolicys(Session.SupplierId, Session.UserId, _rowCount, _searchString, Session.DealerId);
         if (serviceResponse.Processed)

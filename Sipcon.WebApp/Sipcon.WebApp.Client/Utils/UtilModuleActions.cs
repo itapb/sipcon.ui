@@ -393,5 +393,18 @@ namespace Sipcon.WebApp.Client.Utils
 
         }
 
+        public async Task<List<ActionModule>> GetAction(int IdUser, string ModuleName)
+        {
+            List<ActionModule> _List = new([]);
+
+            var moduleResponse = await ModuleService.GetAction(IdUser, ModuleName);
+            if (moduleResponse.Processed)
+            {
+                _List = moduleResponse.Data ?? new List<ActionModule>();
+            }
+            return _List;
+
+        }
+
     }
 }
