@@ -4,8 +4,8 @@ namespace Sipcon.WebApp.Client.Models
 {
     public class ActionModule
     {           
-        public int? Id { get; set; }
-        public string? actionName { get; set; }
+        public int actionId { get; set; }
+        public string actionName { get; set; }
 
     }
 }
