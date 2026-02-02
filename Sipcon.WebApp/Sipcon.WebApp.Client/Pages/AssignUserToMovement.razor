@@ -92,6 +92,26 @@ else
                     await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
                 }
             }
+
+         //////////////////Traslado usa PostMovementDetailsTransferActions//////////////////////////
+        else if (moduleName == "INVENTARIO-MOVIL-TRASLADO")
+        {
+            var result_Post_Actions = (SelectedActions?.Count > 0) ? await Http.PostAsync($"api/Movements/PostMovementDetailsTransferActions?userId={Session.UserId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
+            if ((result_Post_Actions?.IsSuccessStatusCode ?? false))
+            {
+                var rest = result_Post_Actions.Content.ReadAsStringAsync();
+                await DialogService.ShowDialog(Useful.OkSavedMessage, "Asignar", "OK", Color.Info, Icons.Material.Filled.Commit);
+                MudDialog?.Close(DialogResult.Ok(true));
+            }
+            else if (result_Post_Actions?.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                var conflictContent = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+                Logger.LogError(Session.TemplateLog("Asignar Usuario a Movimiento", conflictContent?.message!));
+                await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+        }
+        /////////////////////////////////////////////////////////////////////////////////
+         
             else
             {
                 var result_Post_Actions = (SelectedActions?.Count > 0) ? await Http.PostAsync($"api/Movements/PostMovementActions?userId={Session.UserId}", new StringContent(System.Text.Json.JsonSerializer.Serialize(SelectedActions), null, "application/json")) : null;
