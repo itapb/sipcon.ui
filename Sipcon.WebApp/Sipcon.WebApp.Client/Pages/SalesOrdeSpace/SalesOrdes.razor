@@ -1,6 +1,7 @@
 ﻿@page "/salesorder"
 @inject HubEventsService hubEventsService
 @implements IDisposable
+@inject UtilModuleActions ModuleActionsService
 
 <CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
 @if (SalesOrderId != null)
@@ -10,18 +11,102 @@
 else
 {
     <MudDataGrid @ref="SalesOrderMudDataGrid" T="SaleOrder" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" FixedHeader Height="calc(100vh - 240px)" Loading="Loading" @bind-CurrentPage="ReceptionCurrentPage">
+        
         <ToolBarContent>
-            <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="ClickNewSalesOrder"></MudIconButton>
-            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudTextField T="string"
+                           Value="searchString"
+                           ValueChanged="@(s => OnSearch(s))"
+                           Placeholder="buscar"
+                           Adornment="Adornment.Start"
+                           IconSize="Size.Medium"
+                           Class="mt-0"
+                           Style="font-size: 14px; line-height: 0.8rem;"
+                           Immediate="true"
+                           Typo="Typo.caption">
+            </MudTextField>
             <MudSpacer />
-            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshSalesOrder"></MudIconButton>
+            <div id="scroll_section" class="mx-auto" style="max-width: 650px">
+                <MudExpansionPanels Outlined="false" Elevation="0">
+                    <MudExpansionPanel @bind-Expanded="@_open" HideIcon="true">
+                        <TitleContent>
+                            <div class="d-flex">
+                                <MudText>Filtrar por: </MudText>
+                                <MudIcon Icon="@(_open? Icons.Material.Filled.FilterAltOff  : Icons.Material.Filled.FilterAlt)" Color="Color.Info"></MudIcon>
+                            </div>
+                        </TitleContent>
+                        <ChildContent>
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4">
+                                <MudDatePicker @ref="_picker"
+                                               @bind-Date="_dateFrom"
+                                               Style="font-size: 14px;line-height: 0.8rem;min-width: 120px;"
+                                               Adornment="Adornment.Start"
+                                               AdornmentColor="Color.Info"
+                                               Class="align-right"
+                                               Placeholder="Fecha Desde"
+                                               Variant="Variant.Text"
+                                               PickerVariant="PickerVariant.Inline"
+                                               Margin="Margin.None"
+                                               DateFormat="dd/MM/yyyy"
+                                               AutoClose="true">
+                                    <PickerActions>
+                                        <MudButton Class="mr-auto align-self-start" OnClick="@(() => _picker.ClearAsync())">Borrar</MudButton>
+                                        <MudButton OnClick="@(() => _picker.CloseAsync(false))">Cancelar</MudButton>
+                                    </PickerActions>
+                                </MudDatePicker>
+
+                                <MudDatePicker @ref="_pickerTo"
+                                               @bind-Date="_dateTo"
+                                               Style="font-size: 14px;line-height: 0.8rem;min-width: 120px;"
+                                               Adornment="Adornment.Start"
+                                               AdornmentColor="Color.Info"
+                                               Class="align-right"
+                                               Placeholder="Fecha Hasta"
+                                               Variant="Variant.Text"
+                                               PickerVariant="PickerVariant.Inline"
+                                               Margin="Margin.None"
+                                               DateFormat="dd/MM/yyyy"
+                                               AutoClose="true">
+                                    <PickerActions>
+                                        <MudButton Class="mr-auto align-self-start" OnClick="@(() => _pickerTo.ClearAsync())">Borrar</MudButton>
+                                        <MudButton OnClick="@(() => _pickerTo.CloseAsync(false))">Cancelar</MudButton>
+                                    </PickerActions>
+                                </MudDatePicker>
+
+                                <MudSelect T="SelectOption"
+                                           @bind-Value="_selectedAction"
+                                           ToStringFunc="@(e => e?.Text)"
+                                           Placeholder="ESTATUS"
+                                           AdornmentIcon="@Icons.Material.Filled.FilterList"
+                                           AdornmentColor="Color.Info"
+                                           Style="font-size: 14px; width: 160px;"
+                                           Variant="Variant.Text"
+                                           Clearable="true"
+                                           Dense="true">
+                                    @if (_actions != null)
+                                    {
+                                        @foreach (var action in _actions)
+                                        {
+                                            @* T debe ser SelectOption *@
+                                            <MudSelectItem T="SelectOption" Value="@action">@action.Text</MudSelectItem>
+                                        }
+                                    }
+                                </MudSelect>
+                            </MudStack>
+                        </ChildContent>
+                    </MudExpansionPanel>
+                </MudExpansionPanels>
+
+            </div>
+            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Info" OnClick="ClickRefreshSalesOrder"></MudIconButton>
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshSalesOrder" />
             <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
-                @foreach (var strmodulo in Modules!)
+                 @foreach (var strmodulo in Modules!)
                 {
                     <MudMenuItem Label="@strmodulo.ActionDisplay" Icon="@(strmodulo.ActionDisplay.ToActionIcon())" IconColor="@Color.Info" OnClick="@(() => ClickMenuSalesOrder(strmodulo.ActionName))" />
                 }
             </MudMenu>
         </ToolBarContent>
+       
         <Columns>
             <TemplateColumn>
                 <HeaderTemplate>
@@ -31,7 +116,7 @@ else
                     <MudCheckBox @bind-Value="context.Item.IsSelected" />
                 </CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.Id" Title="NRO" />
+            <PropertyColumn Property="x => x.Id" Title="NRO DE PEDIDO" />
             <PropertyColumn Property="x => x.Created" Title="FECHA" />
             <PropertyColumn Property="x => x.DealerName" Title="CONCESIONARIO" />
             <PropertyColumn Property="x => x.TypeName" Title="TIPO" />
@@ -74,6 +159,15 @@ else
     DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
     private string searchString = string.Empty;
     string RequisitionTitle = "";
+    //Fechas y filtrados po estatus
+    bool _open;
+    IMask maskDate = new DateMask("dd/MM/yyyy");
+    private DateTime? _dateFrom { get; set; } = null;
+    private DateTime? _dateTo { get; set; } = null;
+    private MudDatePicker _picker = new MudDatePicker();
+    private MudDatePicker _pickerTo = new MudDatePicker();
+    private List<SelectOption> _actions = new List<SelectOption>();
+    private SelectOption? _selectedAction;
 
     public List<SaleOrderType>? SaleOrderTypes;
 
@@ -174,8 +268,17 @@ else
         Loading = true;
         var totalItems = 0;
         var mOffset = state.Page * state.PageSize;
+
+        //fechas y filtros
+        _actions = await ModuleActionsService.GetAction(Session.UserId, "PEDIDOS-PEDIDOS");
+        int? idRespaldado = _selectedAction?.Value;
+        if (idRespaldado.HasValue && _actions != null) { _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
+        int? _estatusid = _selectedAction?.Value;
+        string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
+        string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
+
         IEnumerable<SaleOrder> data;
-        HttpResponseMessage response = await Http.GetAsync($"api/SaleOrder/GetAll?userId={Session.UserId}&supplierId={Session.SupplierId}&dealerId={Session.DealerId}&rowfrom={mOffset}&filter={searchString}");
+        HttpResponseMessage response = await Http.GetAsync($"api/SaleOrder/GetAll?userId={Session.UserId}&supplierId={Session.SupplierId}&dealerId={Session.DealerId}&rowfrom={mOffset}&filter={searchString}&fromDate={_dateFromStr}&upToDate={_dateToStr}&estatusId={_estatusid}");
 
         if (response.IsSuccessStatusCode)
         {
@@ -202,12 +305,20 @@ else
 
     private async Task ClickMenuSalesOrder(string? actionName)
     {
+        //fechas y filtros
+        _actions = await ModuleActionsService.GetAction(Session.UserId, "PEDIDOS-PEDIDOS");
+        int? idRespaldado = _selectedAction?.Value;
+        if (idRespaldado.HasValue && _actions != null) { _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
+        int? _estatusid = _selectedAction?.Value;
+        string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
+        string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
+
         if (actionName == "EXPORT" && SalesOrderMudDataGrid?.FilteredItems.Count() > 0)
         {
             Loading = true;
             // var ResultZonas = await Http.GetAsync($"api/SaleOrder/ExportExcelsaleOrder?filter={searchString}&userId={Session.UserId}&supplierId={Session.SupplierId}");
 
-            var ResultZonas = await Http.GetAsync($"api/SaleOrder/GetExportResume?userId={Session.UserId}&supplierId={Session.SupplierId}&dealerId={Session.DealerId}");
+            var ResultZonas = await Http.GetAsync($"api/SaleOrder/GetExportResume?userId={Session.UserId}&supplierId={Session.SupplierId}&dealerId={Session.DealerId}&fromDate={_dateFromStr}&upToDate={_dateToStr}&estatusId={_estatusid}");
 
             if (ResultZonas.IsSuccessStatusCode)
             {

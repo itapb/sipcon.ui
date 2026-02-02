@@ -34,19 +34,17 @@
              ExpandSingleRow="false"
             @bind-CurrentPage="_CurrentPage">
     <ToolBarContent>
-        <MudTextField @bind-Value="_searchString" 
+        <MudTextField @bind-Value="_searchString"
                       Style="font-size: 14px;line-height: 0.8rem;"
-                    Placeholder="buscar" 
-                    Adornment="Adornment.Start" 
-                    Immediate="true"
-                    Typo="Typo.caption"
-                    AdornmentIcon="@Icons.Material.Filled.Search"
-                    OnAdornmentClick="() => ClickSearch()"
-                    IconSize="Size.Medium" Class="mt-0" 
-                    OnKeyUp="HandleKeyDownSearch">
+                      Placeholder="buscar"
+                      Adornment="Adornment.Start"
+                      Immediate="true"
+                      Typo="Typo.caption"
+                      IconSize="Size.Medium" Class="mt-0"
+                      OnKeyUp="HandleKeyDownSearch">
         </MudTextField>
         <MudSpacer />
-        <div id="scroll_section" class="mx-auto" style="max-width: 400px">
+        <div id="scroll_section" class="mx-auto" style="max-width: 650px">
             <MudExpansionPanels Outlined="false" Elevation="0">
                 <MudExpansionPanel @bind-Expanded="@_open" HideIcon="true">
                     <TitleContent>
@@ -56,10 +54,10 @@
                         </div>
                     </TitleContent>
                     <ChildContent>
-                        <MudStack Row="true">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4">
                             <MudDatePicker @ref="_picker"
                                            @bind-Date="_dateFrom"
-                                           Style="font-size: 14px;line-height: 0.8rem;min-width: 100px;"
+                                           Style="font-size: 14px;line-height: 0.8rem;min-width: 120px;"
                                            Adornment="Adornment.Start"
                                            AdornmentColor="Color.Info"
                                            Class="align-right"
@@ -77,7 +75,7 @@
 
                             <MudDatePicker @ref="_pickerTo"
                                            @bind-Date="_dateTo"
-                                           Style="font-size: 14px;line-height: 0.8rem;min-width: 100px;"
+                                           Style="font-size: 14px;line-height: 0.8rem;min-width: 120px;"
                                            Adornment="Adornment.Start"
                                            AdornmentColor="Color.Info"
                                            Class="align-right"
@@ -93,6 +91,25 @@
                                 </PickerActions>
                             </MudDatePicker>
 
+                            <MudSelect T="SelectOption"
+                                       @bind-Value="_selectedAction"
+                                       ToStringFunc="@(e => e?.Text)"
+                                       Placeholder="ESTATUS"
+                                       AdornmentIcon="@Icons.Material.Filled.FilterList"
+                                       AdornmentColor="Color.Info"
+                                       Style="font-size: 14px; width: 160px;"
+                                       Variant="Variant.Text"
+                                       Clearable="true"
+                                       Dense="true">
+                                @if (_actions != null)
+                                {
+                                    @foreach (var action in _actions)
+                                    {
+                                        @* T debe ser SelectOption *@
+                                        <MudSelectItem T="SelectOption" Value="@action">@action.Text</MudSelectItem>
+                                    }
+                                }
+                            </MudSelect>
                         </MudStack>
                     </ChildContent>
                 </MudExpansionPanel>
@@ -105,8 +122,8 @@
             @foreach (var module in _itemsModules)
             {
                 <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
-                Label="@module.Text"
-                OnClick="() => HandleMenuClick(module)" />
+                             Label="@module.Text"
+                             OnClick="() => HandleMenuClick(module)" />
             }
         </MudMenu>
     </ToolBarContent>
@@ -256,6 +273,10 @@
     private bool _loading = true;
     private string _moduleName = "SERVICIOS-CONCILIACION SRG";
 
+    //Fechas y filtrados po estatus
+    private List<SelectOption> _actions = new List<SelectOption>();
+    private SelectOption? _selectedAction;
+
 
     IMask maskDate = new DateMask("dd/MM/yyyy");
 
@@ -318,10 +339,15 @@
         _rowsTotal = 0;
 
         _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
+        _actions = await ModuleActionsService.GetAction(Session.UserId, _moduleName);
+
+        int? idRespaldado = _selectedAction?.Value;
+        if (idRespaldado.HasValue && _actions != null) { _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
+        int? _estatusid = _selectedAction?.Value;
         string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
         string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
         
-        var serviceResponse = await ReportDMSService.GetReportDMS(Session.UserId, Session.SupplierId,  _rowCount, _searchString, _dateFromStr, _dateToStr);
+        var serviceResponse = await ReportDMSService.GetReportDMS(Session.UserId, Session.SupplierId, _rowCount, _searchString, _dateFromStr, _dateToStr, _estatusid);
         if (serviceResponse.Processed)
         {
             _ReportDMS = serviceResponse.Data;
@@ -346,11 +372,11 @@
     {
         if (e.Key == "Enter")
         {
-            if (_searchString.Length >= 3 || _searchString == string.Empty)
-            {
+          //  if (_searchString.Length >= 3 || _searchString == string.Empty)
+         //   {
                 Console.WriteLine($"Buscando: {_searchString}");
                 await _mudDataGrid!.ReloadServerData();
-            }
+//}
 
         }
     }
@@ -372,6 +398,7 @@
         _searchString = string.Empty;
         _dateFrom = null;
         _dateTo = null;
+        _selectedAction = null;
         await _picker.ClearAsync();
         await _pickerTo.ClearAsync();
         _open = false;
@@ -412,8 +439,11 @@
     {
         string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
         string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
+        int? idRespaldado = _selectedAction?.Value;
+        if (idRespaldado.HasValue && _actions != null) { _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
+        int? _estatusid = _selectedAction?.Value;
 
-        var serviceResponse = await ReportDMSService.ExportReportDMS(Session.UserId, Session.SupplierId, _rowCount, _searchString, _dateFromStr, _dateToStr);
+        var serviceResponse = await ReportDMSService.ExportReportDMS(Session.UserId, Session.SupplierId, _rowCount, _searchString, _dateFromStr, _dateToStr, _estatusid);
         if (serviceResponse.Processed)
         {
             _success = true;
