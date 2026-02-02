@@ -393,5 +393,23 @@ namespace Sipcon.WebApp.Client.Utils
 
         }
 
+        public async Task<List<SelectOption>> GetAction(int IdUser, string ModuleName)
+        {
+            List<SelectOption> _itemsSelect = new([]);
+
+            var moduleResponse = await ModuleService.GetAction(IdUser, ModuleName);
+            if (moduleResponse.Processed)
+            {
+                List<ActionModule> _List = moduleResponse.Data ?? new List<ActionModule>();
+
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.actionId, item.actionName));
+                }
+            }
+            return _itemsSelect;
+
+        }
+
     }
 }

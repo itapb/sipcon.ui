@@ -45,7 +45,7 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<ReportDMS>>> GetReportDMS(int IdUser, int Idsupplier, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "")
+        public async Task<ApiResponse<List<ReportDMS>>> GetReportDMS(int IdUser, int Idsupplier, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "", int? EstatusId = null)
         {
             ApiResponse<List<ReportDMS>>? result;
 
@@ -55,6 +55,7 @@
                 url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
                 url = string.IsNullOrEmpty(DateFrom) ? url : $"{url}&fromDate={DateFrom}";
                 url = string.IsNullOrEmpty(DateTo) ? url : $"{url}&upToDate={DateTo}";
+                url = (EstatusId.HasValue) ? $"{url}&estatusId={EstatusId}" : url;
 
                 result = await _http.GetFromJsonAsync<ApiResponse<List<ReportDMS>>>(url);
 
@@ -135,7 +136,7 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<byte>>> ExportReportDMS(int IdUser, int Idsupplier, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "")
+        public async Task<ApiResponse<List<byte>>> ExportReportDMS(int IdUser, int Idsupplier, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "", int? EstatusId = null)
         {
             ApiResponse<List<byte>> result;
             string fileUrl = string.Empty;
@@ -146,6 +147,7 @@
                 url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
                 url = string.IsNullOrEmpty(DateFrom) ? url : $"{url}&fromDate={DateFrom}";
                 url = string.IsNullOrEmpty(DateTo) ? url : $"{url}&upToDate={DateTo}";
+                url = (EstatusId.HasValue) ? $"{url}&estatusId={EstatusId}" : url;
 
                 var response = await _http.GetAsync(url);
 
