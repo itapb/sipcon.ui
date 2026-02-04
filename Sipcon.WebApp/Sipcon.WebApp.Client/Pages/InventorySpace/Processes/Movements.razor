@@ -30,7 +30,6 @@ else
                     <MudExpansionPanel @bind-Expanded="@_open" HideIcon="true">
                         <TitleContent>
                             <div class="d-flex">
-                                <MudText>Filtrar por: </MudText>
                                 <MudIcon Icon="@(_open? Icons.Material.Filled.FilterAltOff  : Icons.Material.Filled.FilterAlt)" Color="Color.Info"></MudIcon>
                             </div>
                         </TitleContent>
@@ -249,7 +248,7 @@ else
         var totalItems = 0;
 
         //fechas y filtros
-        _actions = await ModuleActionsService.GetAction(Session.UserId, "PEDIDOS-PEDIDOS");
+        _actions = await ModuleActionsService.GetAction(Session.UserId, $"INVENTARIO-PROCESOS-{MovementTitle.ToUpper()}");
         int? idRespaldado = _selectedAction?.Value;
         if (idRespaldado.HasValue && _actions != null) { _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
         int? _estatusid = _selectedAction?.Value;

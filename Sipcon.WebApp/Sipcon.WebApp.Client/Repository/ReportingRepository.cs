@@ -42,7 +42,7 @@
         }
 
 
-        public async Task<ApiResponse<List<ExpandoObject>>> GetReports(int IdReporting, int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "", int? IdDealer = null)
+        public async Task<ApiResponse<List<ExpandoObject>>> GetReports(int IdReporting, int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "", int? IdDealer = null , int? EstatusId = null)
         {
             ApiResponse<List<ExpandoObject>>? result;
 
@@ -53,6 +53,7 @@
                 url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
                 url = string.IsNullOrEmpty(DateFrom) ? url : $"{url}&fromDate={DateFrom}";
                 url = string.IsNullOrEmpty(DateTo) ? url : $"{url}&upToDate={DateTo}";
+                url = (EstatusId.HasValue) ? $"{url}&estatusId={EstatusId}" : url;
 
                 result = await _http.GetFromJsonAsync<ApiResponse<List<ExpandoObject>>>(url);
 
@@ -65,6 +66,7 @@
                 {
                     Processed = false,
                     Message = "La respuesta del servidor no contiene datos.",
+
                 } : result;
 
             }
@@ -82,7 +84,7 @@
         }
 
        
-        public async Task<ApiResponse<List<byte>>> Export(int IdReporting, int IdSupplier, int IdUser, string Filter = "", string DateFrom = "", string DateTo = "", int? IdDealer = null)
+        public async Task<ApiResponse<List<byte>>> Export(int IdReporting, int IdSupplier, int IdUser, string Filter = "", string DateFrom = "", string DateTo = "", int? IdDealer = null, int? EstatusId = null)
         {
             ApiResponse<List<byte>> result;
             string fileUrl = string.Empty;
@@ -94,6 +96,7 @@
                 url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
                 url = string.IsNullOrEmpty(DateFrom) ? url : $"{url}&fromDate={DateFrom}";
                 url = string.IsNullOrEmpty(DateTo) ? url : $"{url}&upToDate={DateTo}";
+                url = (EstatusId.HasValue) ? $"{url}&estatusId={EstatusId}" : url;
 
                 var response = await _http.GetAsync(url);
                     
