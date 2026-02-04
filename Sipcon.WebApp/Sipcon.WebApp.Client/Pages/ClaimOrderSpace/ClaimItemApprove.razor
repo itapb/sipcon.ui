@@ -1,15 +1,15 @@
-﻿<MudForm @ref="form">
+﻿
     <div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
         <MudPaper Elevation="2" Class="pa-3">
             <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
                 <MudGrid Spacing="2">
                     <MudItem xs="12">
-                        <MudTextField T="string" ReadOnly="true"  Label="CODIGO" @bind-Value="ClaimItem?.PartInnerCode"></MudTextField>
-                        <MudTextField T="string" ReadOnly="true"  Label="DESCRIPCION" @bind-Value="ClaimItem?.PartName"></MudTextField>
+                        <MudTextField T="string" ReadOnly="true" Variant="Variant.Filled" Label="CODIGO" @bind-Value="ClaimItem?.PartInnerCode"></MudTextField>
+                        <MudTextField T="string" ReadOnly="true" Variant="Variant.Filled" Label="DESCRIPCION" @bind-Value="ClaimItem?.PartName"></MudTextField>
                         <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
                             <MudStack Row="true" Spacing="2">
-                                <MudNumericField T="int?" HideSpinButtons="true" Label="@TransactionQuantityTitle" @bind-Value="ApproveQuantity" @ref="QuantityMudNumericField"></MudNumericField>
-                                <MudNumericField T="int?" HideSpinButtons="true" Label="@ApproveQuantityTitle" @bind-Value="TransactionQuantity" @ref="QuantityMudNumericField2"></MudNumericField>
+                                <MudNumericField T="int?" HideSpinButtons="true" Label="@TransactionQuantityTitle" @bind-Value="ApproveQuantity" @ref="TransactionQuantityMudNumericField"></MudNumericField>
+                                <MudNumericField T="int?" HideSpinButtons="true" Label="@ApproveQuantityTitle" @bind-Value="TransactionQuantity"></MudNumericField>
                             </MudStack>
                             
                             <MudTextField T="string" Label="COMENTARIO" @bind-Value="Comment" ></MudTextField>
@@ -27,7 +27,7 @@
             </MudFocusTrap>
         </MudPaper>
     </div>
-</MudForm>
+
 
 @code {
     [Inject] private UserSession Session { get; set; } = null!;
@@ -46,21 +46,24 @@
     private String? TransactionQuantityTitle { get; set; } = default!;
     private String? ApproveQuantityTitle { get; set; } = default!;
     private String? Comment { get; set; } = "";
-    private MudForm? form;
-    private MudNumericField<int?>? QuantityMudNumericField;
-    private MudNumericField<int?>? QuantityMudNumericField2;
+ 
+    private MudNumericField<int?>? TransactionQuantityMudNumericField;
+
     private void CloseClick(MouseEventArgs args) => MudDialog?.Cancel();    
 
     private async Task CheckClick(MouseEventArgs args)
-    {
-        await form!.Validate();
-        if (form.IsValid)
+    {       
+        if (IsQuantityValid())
         {
             mAction?.RelatedId = ClaimItem?.PartId ?? 0;
             mAction?.ActionComment = Comment;
-            mAction?.ApproveQuantity = ApproveQuantity;
-            mAction?.TransactionQuantity = TransactionQuantity;
+            mAction?.ApproveQuantity = ApproveQuantity ?? 0;
+            mAction?.TransactionQuantity = TransactionQuantity ?? 0;
             MudDialog?.Close(DialogResult.Ok(true)); //ActionComment
+        }else
+        {
+            await TransactionQuantityMudNumericField!.FocusAsync();
+            await DialogService.ShowDialog($"Suma {TransactionQuantityTitle} mas {ApproveQuantityTitle} debe ser igual {(ClaimItem?.Quantity ?? 0)}", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
         }
     }
     private void SetTitle()
@@ -83,5 +86,9 @@
         SetTitle();
         base.OnInitialized();
     } 
-
+    private bool IsQuantityValid()
+    {       
+        var QuantitySum = (ApproveQuantity ?? 0) + (TransactionQuantity ?? 0);
+        return (QuantitySum > 0 && QuantitySum == (ClaimItem?.Quantity ?? 0));         
+    }
 }
