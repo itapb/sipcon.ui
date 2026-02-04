@@ -4,10 +4,15 @@
             <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
                 <MudGrid Spacing="2">
                     <MudItem xs="12">
+                        <MudTextField T="string" Placeholder="CODIGO" Variant="Variant.Filled" @bind-Value="ClaimItem?.PartInnerCode"></MudTextField>
+                        <MudTextField T="string" Placeholder="DESCRIPCION" Variant="Variant.Filled" @bind-Value="ClaimItem?.PartName"></MudTextField>
                         <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.LastChild">
-                            <MudTextField T="string" Placeholder="CODIGO" Adornment="Adornment.Start" OnAdornmentClick="OnSearchClicK" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Variant="Variant.Filled" @bind-Value="PartInnerCode" ></MudTextField>
-                            <MudNumericField T="int?" HideSpinButtons="true" Label="CANTIDAD" @bind-Value="Quantity" @ref="QuantityMudNumericField" RequiredError="Campo requerido" Required="@IsRequiredQuantity()"></MudNumericField>
-                            <MudTextField T="string" Label="COMENTARIO" @bind-Value="Comment" Disabled="@(PartId is not null)"></MudTextField>
+                            <MudStack Row="true" Spacing="2">
+                                <MudNumericField T="int?" HideSpinButtons="true" Label="@(TransactionQuantityTitle)" @bind-Value="ApproveQuantity" @ref="QuantityMudNumericField"></MudNumericField>
+                                <MudNumericField T="int?" HideSpinButtons="true" Label="@(ApproveQuantityTitle)" @bind-Value="TransactionQuantity" @ref="QuantityMudNumericField2"></MudNumericField>
+                            </MudStack>
+                            
+                            <MudTextField T="string" Label="COMENTARIO" @bind-Value="Comment" ></MudTextField>
                          </MudFocusTrap>
                     </MudItem>
                     <MudItem xs="12">
@@ -30,36 +35,64 @@
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public Models.Action? mAction { get; set; } = default!;
 
+
+    [Parameter] public Models.ClaimDetails? ClaimItem { get; set; } = default!;
+
     DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
-    private int? PartId { get; set; } = default!;
-    private String? PartInnerCode { get; set; } = default!;
-    private int? Quantity { get; set; } = default!;
+
+    private int? TransactionQuantity { get; set; } = default!;
+    private int? ApproveQuantity { get; set; } = default!;
+
+    private String? TransactionQuantityTitle { get; set; } = default!;
+    private String? ApproveQuantityTitle { get; set; } = default!;
     private String? Comment { get; set; } = "";
     private MudForm? form;
     private MudNumericField<int?>? QuantityMudNumericField;
-    private void CloseClick(MouseEventArgs args) => MudDialog?.Cancel();
-    private bool IsRequiredQuantity() => PartId.HasValue && PartId > 1;
+    private MudNumericField<int?>? QuantityMudNumericField2;
+    private void CloseClick(MouseEventArgs args) => MudDialog?.Cancel();    
 
     private async Task CheckClick(MouseEventArgs args)
     {
         await form!.Validate();
         if (form.IsValid)
         {
-            mAction?.RelatedId = PartId ?? 0;
-            mAction?.ActionComment = (PartId is not null) ? Quantity.ToString() : Comment;            
+            mAction?.RelatedId = ClaimItem?.PartId ?? 0;
+            mAction?.ActionComment = Comment;
+            mAction?.ApproveQuantity = ApproveQuantity;
+            mAction?.TransactionQuantity = TransactionQuantity;
             MudDialog?.Close(DialogResult.Ok(true)); //ActionComment
         }
     }
-    private async Task OnSearchClicK(MouseEventArgs args)
+    private void SetTitle()
     {
-        var dialogReference = await DialogService.ShowAsync(typeof(ClaimOrderReplacementPartsCatalog), "", new DialogParameters {}, options);
-        if ((await dialogReference.Result) is DialogResult dialogResult && !dialogResult.Canceled && dialogResult.Data is not null)
+
+        if ("SOBRANTE,NO SOLICTADO".Contains(ClaimItem?.StatusName ?? ""))
+        {            
+            TransactionQuantityTitle = "CANT. INGRESAR";
+            ApproveQuantityTitle = "CANT. FACTURAR";
+        }        
+        else if ("FALTANTE,MAL ESTADO".Contains(ClaimItem?.StatusName ?? ""))
         {
-            dynamic contactData = dialogResult.Data;
-            PartId = contactData.PartId;
-            PartInnerCode = contactData.PartInnerCode;
-            Comment = "";
-            await QuantityMudNumericField!.FocusAsync();
+            TransactionQuantityTitle = "CANT. REPONER";
+            ApproveQuantityTitle = "CANT. NOTA";            
         }
+
     }
+    protected override void OnInitialized()
+    {
+        SetTitle();
+        base.OnInitialized();
+    } 
+    // private async Task OnSearchClicK(MouseEventArgs args)
+    // {
+    //     var dialogReference = await DialogService.ShowAsync(typeof(ClaimOrderReplacementPartsCatalog), "", new DialogParameters {}, options);
+    //     if ((await dialogReference.Result) is DialogResult dialogResult && !dialogResult.Canceled && dialogResult.Data is not null)
+    //     {
+    //         dynamic contactData = dialogResult.Data;
+    //         PartId = contactData.PartId;
+    //         PartInnerCode = contactData.PartInnerCode;
+    //         Comment = "";
+    //         await QuantityMudNumericField!.FocusAsync();
+    //     }
+    // }
 }

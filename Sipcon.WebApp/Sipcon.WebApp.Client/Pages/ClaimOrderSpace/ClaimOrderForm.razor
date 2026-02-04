@@ -168,8 +168,8 @@
             RelatedId = 0
         }
         );
-       
-        var dialogReference = await DialogService.ShowAsync(typeof(ClaimItemApprove), "", new DialogParameters { ["mAction"] = mActions.FirstOrDefault() }, options);
+
+        var dialogReference = await DialogService.ShowAsync(typeof(ClaimItemApprove), "", new DialogParameters { ["mAction"] = mActions.FirstOrDefault(), ["ClaimItem"] = item }, options);
         if (!((await dialogReference.Result)!.Canceled))
         {
             await PostActionAndReload(mActions, $"api/Claim/PostActionsClaimDetails?userId={Session.UserId}");
