@@ -8,10 +8,10 @@
 <InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
 @if (PartId == null)
 {
-@*     <MudText Typo="Typo.h5" GutterBottom="true">Respuestos</MudText> *@
+    @*     <MudText Typo="Typo.h5" GutterBottom="true">Respuestos</MudText> *@
     <MudDataGrid @ref="PartMudDataGrid" T="Part" ServerData="ServerReload" Filterable="false" FixedHeader Height="calc(100vh - 260px)" Loading="_loading" @bind-CurrentPage="PartCurrentPage">
         <ToolBarContent>
-            
+
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             <MudSpacer />
             <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshPart"></MudIconButton>
@@ -31,15 +31,19 @@
                     <MudCheckBox @bind-Value="@context.Item.IsSelected" />
                 </CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.InnerCode" Title="CODIGO PARTE" Sortable="false" Filterable="false" />            
-            <PropertyColumn Property="x => x.Description" title="DESCRIPCION" />            
+            <PropertyColumn Property="x => x.InnerCode" Title="CODIGO PARTE" Sortable="false" Filterable="false" />
+            <PropertyColumn Property="x => x.Description" title="DESCRIPCION" />
             <PropertyColumn Property="x => x.Price" title="PRECIO $" Format="N2" />
             <TemplateColumn>
                 <HeaderTemplate>
-                    <MudText>ESTATUS</MudText>
+                    <MudText>EXISTENCIA</MudText>
                 </HeaderTemplate>
                 <CellTemplate>
-                    <MudIcon Icon="@(context.Item.IsActive ?? false ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" Color="@(context.Item.IsActive ?? false ? Color.Success : Color.Error)" Size="Size.Medium" />
+                    @{
+                        var stock = context.Item.Stock ?? 0;
+                        var hasStock = stock > 0;
+                    }
+                    <MudIcon Icon="@(hasStock? Icons.Material.Filled.Brightness1 : Icons.Material.Filled.Error)" Color="@(hasStock ? Color.Success : Color.Error)" Size="Size.Medium" />
                 </CellTemplate>
             </TemplateColumn>
 
@@ -54,7 +58,8 @@ else
     <PartForm @bind-Value="PartId" />
 }
 
-@code { [Inject] private UserSession Session { get; set; } = null!;
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
 
     [Inject] private HttpClient Http { get; set; } = default!;
@@ -68,14 +73,14 @@ else
     string searchString = "";
     private MudDataGrid<Part>? PartMudDataGrid;
     private List<Module>? Modules;
-    
+
 
     private async Task ClickMenuPart(string? actionName)
     {
         actionName = actionName?.ToUpper();
         if (actionName == "EXPORT")
         {
-            _loading = true;          
+            _loading = true;
             if ((await Http.GetAsync($"api/Part/Export?filter={searchString}&userId={Session.UserId}&supplierId={Session.SupplierId}") is HttpResponseMessage ResultZonas) && ResultZonas.IsSuccessStatusCode)
             {
                 var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
@@ -95,7 +100,7 @@ else
                             (PartMudDataGrid.FilteredItems.Where(item => item.IsSelected)
                                                              .Select(item => new Client.Models.Action
                                                              {
-                                                                 UserId =  Session.UserId ,
+                                                                 UserId = Session.UserId,
                                                                  RecordId = item.Id,
                                                                  ModuleId = Modules!.FirstOrDefault()?.Id,
                                                                  actionName = actionName,
@@ -144,9 +149,10 @@ else
     }
     Func<Part, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
     {
-        nameof(Part.InnerCode) => o => o.InnerCode ?? "",       
+        nameof(Part.InnerCode) => o => o.InnerCode ?? "",
         nameof(Part.Description) => o => o.Description ?? "",
-        nameof(Part.Price) => o => o.Price ?? 0m,          
+        nameof(Part.Price) => o => o.Price ?? 0m,
+        nameof(Part.Stock) => o => o.Stock ?? 0m,
         _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto
     };
 
@@ -170,7 +176,7 @@ else
         {
             var errorMessage = await response.Content.ReadAsStringAsync();
             throw new Exception(errorMessage);
-        }                
+        }
         if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Part> sortDefinition)
         {
             data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
@@ -232,7 +238,7 @@ else
             }
         }
         await Task.CompletedTask;
-    } 
+    }
     private async Task OpenPartForm(int? mId) => await DialogService.OpenForm<PartForm, Part>(mId, PartMudDataGrid);
     // private async Task ClickAddPart(MouseEventArgs ev)
     // {
@@ -244,8 +250,8 @@ else
     //     PartId = item.Id;
     //     await Task.CompletedTask;
     // }
-    
-   
+
+
     private async Task ClickRefreshPart(MouseEventArgs ev)
     {
         await PartMudDataGrid!.ReloadServerData();
@@ -261,5 +267,7 @@ else
     {
         Session.IsNewOrEdit = false;
         hubEventsService.OnSupplierChanged -= ReloadPartsGrid;
+
     }
+
 }
