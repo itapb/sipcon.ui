@@ -4,12 +4,12 @@
             <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
                 <MudGrid Spacing="2">
                     <MudItem xs="12">
-                        <MudTextField T="string" Placeholder="CODIGO" Variant="Variant.Filled" @bind-Value="ClaimItem?.PartInnerCode"></MudTextField>
-                        <MudTextField T="string" Placeholder="DESCRIPCION" Variant="Variant.Filled" @bind-Value="ClaimItem?.PartName"></MudTextField>
-                        <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.LastChild">
+                        <MudTextField T="string" ReadOnly="true"  Label="CODIGO" @bind-Value="ClaimItem?.PartInnerCode"></MudTextField>
+                        <MudTextField T="string" ReadOnly="true"  Label="DESCRIPCION" @bind-Value="ClaimItem?.PartName"></MudTextField>
+                        <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
                             <MudStack Row="true" Spacing="2">
-                                <MudNumericField T="int?" HideSpinButtons="true" Label="@(TransactionQuantityTitle)" @bind-Value="ApproveQuantity" @ref="QuantityMudNumericField"></MudNumericField>
-                                <MudNumericField T="int?" HideSpinButtons="true" Label="@(ApproveQuantityTitle)" @bind-Value="TransactionQuantity" @ref="QuantityMudNumericField2"></MudNumericField>
+                                <MudNumericField T="int?" HideSpinButtons="true" Label="@TransactionQuantityTitle" @bind-Value="ApproveQuantity" @ref="QuantityMudNumericField"></MudNumericField>
+                                <MudNumericField T="int?" HideSpinButtons="true" Label="@ApproveQuantityTitle" @bind-Value="TransactionQuantity" @ref="QuantityMudNumericField2"></MudNumericField>
                             </MudStack>
                             
                             <MudTextField T="string" Label="COMENTARIO" @bind-Value="Comment" ></MudTextField>
@@ -66,12 +66,12 @@
     private void SetTitle()
     {
 
-        if ("SOBRANTE,NO SOLICTADO".Contains(ClaimItem?.StatusName ?? ""))
+        if ("SOBRANTE,NO SOLICTADO".Contains(ClaimItem?.ReasonDescription ?? ""))
         {            
             TransactionQuantityTitle = "CANT. INGRESAR";
             ApproveQuantityTitle = "CANT. FACTURAR";
         }        
-        else if ("FALTANTE,MAL ESTADO".Contains(ClaimItem?.StatusName ?? ""))
+        else if ("FALTANTE,MAL ESTADO".Contains(ClaimItem?.ReasonDescription ?? ""))
         {
             TransactionQuantityTitle = "CANT. REPONER";
             ApproveQuantityTitle = "CANT. NOTA";            
@@ -83,16 +83,5 @@
         SetTitle();
         base.OnInitialized();
     } 
-    // private async Task OnSearchClicK(MouseEventArgs args)
-    // {
-    //     var dialogReference = await DialogService.ShowAsync(typeof(ClaimOrderReplacementPartsCatalog), "", new DialogParameters {}, options);
-    //     if ((await dialogReference.Result) is DialogResult dialogResult && !dialogResult.Canceled && dialogResult.Data is not null)
-    //     {
-    //         dynamic contactData = dialogResult.Data;
-    //         PartId = contactData.PartId;
-    //         PartInnerCode = contactData.PartInnerCode;
-    //         Comment = "";
-    //         await QuantityMudNumericField!.FocusAsync();
-    //     }
-    // }
+
 }
