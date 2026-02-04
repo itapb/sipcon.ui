@@ -14,7 +14,7 @@ namespace Sipcon.WebApp.Client.Models
         public string EstatusName { get; set; } = string.Empty;
         public double? Quantity { get; set; } = null;
         public double? UnitPrice { get; set; } = null;
-        public double Price { get; set; } = 0;
+        public double? Price { get; set; } = 0;
         public string Serial { get; set; } = string.Empty;
         public string Reference { get; set; } = string.Empty;
         public bool IsExternal { get; set; } = false;
