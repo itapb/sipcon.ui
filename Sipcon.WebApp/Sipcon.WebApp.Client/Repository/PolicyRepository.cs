@@ -267,8 +267,8 @@
                 var url = $"api/Policy/Export?supplierId={IdSupplier}&userId={IdUser}";
                 url = (IdDealer.HasValue ) ? $"{url}&dealerId={IdDealer}" : url;
                 url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
-                url = string.IsNullOrEmpty(DateFrom) ? url : $"{url}&dateFrom={DateFrom}";
-                url = string.IsNullOrEmpty(DateTo) ? url : $"{url}&dateTo={DateTo}";
+                url = string.IsNullOrEmpty(DateFrom) ? url : $"{url}&fromDate={DateFrom}";
+                url = string.IsNullOrEmpty(DateTo) ? url : $"{url}&upToDate={DateTo}";
                 url = (EstatusId.HasValue) ? $"{url}&estatusId={EstatusId}" : url;
 
                 var response = await _http.GetAsync(url);
