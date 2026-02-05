@@ -11,5 +11,8 @@ namespace Sipcon.WebApp.Client.Models
         public string? ActionComment { get; set; }
         public int RelatedId { get; set; }
 
-    }
+        public int? ApproveQuantity { get; set; }
+        public int? TransactionQuantity  { get; set; }
+
+}
 }
