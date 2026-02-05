@@ -234,19 +234,20 @@ else
         }
          
          
-        var strDictionary = new Dictionary<string, string> {
-            { "ASSIGN", "GENERADO" },
-            { "UNASSIGN", "ASIGNADO" },
-            { "GENERATE", "BORRADOR" },
-            { "DECLINE", "BORRADOR,GENERADO" }
-        };
+        // var strDictionary = new Dictionary<string, string> {
+        //     { "ASSIGN", "GENERADO" },
+        //     { "UNASSIGN", "ASIGNADO" },
+        //     { "GENERATE", "BORRADOR" },
+        //     { "DECLINE", "BORRADOR,GENERADO" }
+        // };
 
         var mActions = MovementMudDataGrid?.FilteredItems
             .Where(item => item.IsSelected &&
-                          (item.Processed ?? false) &&
-                          (strDictionary.ContainsKey(actionName!) ?
-                           strDictionary[actionName!].Contains(item.StatusName?.ToUpper() ?? "") :
-                           true)) // Si no está en el diccionario, no filtrar por estatus
+                          !(item.Processed ?? false)
+                          // (strDictionary.ContainsKey(actionName!) ?
+                          //  strDictionary[actionName!].Contains(item.StatusName?.ToUpper() ?? "") :
+                          //  true)
+                            ) // Si no está en el diccionario, no filtrar por estatus
             .Select(item => new Client.Models.Action
             {
                 UserId = Session.UserId,
