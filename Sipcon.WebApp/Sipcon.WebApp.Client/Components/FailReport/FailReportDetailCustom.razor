@@ -93,7 +93,7 @@
                 </div>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn  Title="PRECIO UNI.">
+        <TemplateColumn  Title="MONTO UNI.">
             <CellTemplate>
                 <div class="d-flex justify-end">
                     <MudText Typo="Typo.caption" Align="Align.End">
@@ -102,15 +102,23 @@
                 </div>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn  Title="PRECIO TOTAL(S/IVA)">
-            <CellTemplate>
-                <div class="d-flex justify-end">
-                    <MudText Typo="Typo.caption" Align="Align.End">
-                        @(context.Item.Price?.ToString("N2"))
-                    </MudText>
-                </div>
-            </CellTemplate>
-        </TemplateColumn>
+
+              <TemplateColumn Title="MONTO TOTAL">
+    <CellTemplate>
+        <div class="d-flex justify-end">
+            <MudText Typo="Typo.caption" Align="Align.End">
+                @{
+                    // Calculamos el valor final basándonos en la condición
+                    double price = context.Item.Price ?? 0;
+                    var finalPrice = context.Item.IsTax ? (price * 1.16) : price;
+                    var suffix = context.Item.IsTax ? "G" : "E";
+                }
+                @($"{finalPrice.ToString("N2")} ({suffix})")
+            </MudText>
+        </div>
+    </CellTemplate>
+</TemplateColumn>
+
         <TemplateColumn  Title="ESTATUS">
             <CellTemplate>
                 <div class="d-flex justify-center">
