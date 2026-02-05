@@ -30,24 +30,97 @@
              ServerData="LoadGridData">
 
     <ToolBarContent>
-        <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddVehicle()"></MudIconButton>
-        <MudTextField @bind-Value="_searchString" Placeholder="Buscar" Adornment="Adornment.Start" Immediate="true"
-                      Typo="Typo.caption"
-                      AdornmentIcon="@Icons.Material.Filled.Search"
-                      OnAdornmentClick="() => ClickSearch()"
-                      IconSize="Size.Medium" 
-                      Class="mt-0" 
-                      OnKeyDown="HandleKeyDownSearch"></MudTextField>
+        <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="ClickAddVehicle"></MudIconButton>
+       <MudTextField @bind-Value="_searchString" 
+                      Style="font-size: 14px;line-height: 0.8rem;"
+                    Placeholder="buscar" 
+                    Adornment="Adornment.Start" 
+                    Immediate="true"
+                    Typo="Typo.caption"
+                    IconSize="Size.Medium" Class="mt-0" 
+                    OnKeyUp="HandleKeyDownSearch">
+        </MudTextField>
         <MudSpacer />
-        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
+        <div id="scroll_section" class="mx-auto" style="max-width: 650px">
+            <MudExpansionPanels Outlined="false" Elevation="0">
+                <MudExpansionPanel @bind-Expanded="@_open" HideIcon="true">
+                    <TitleContent>
+                        <div class="d-flex">
+                            <MudIcon Icon="@(_open? Icons.Material.Filled.FilterAltOff  : Icons.Material.Filled.FilterAlt)" Color="Color.Info"></MudIcon>
+                        </div>
+                    </TitleContent>
+                    <ChildContent>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4">
+                            <MudDatePicker @ref="_picker"
+                                           @bind-Date="_dateFrom"
+                                           Style="font-size: 14px;line-height: 0.8rem;min-width: 120px;"
+                                           Adornment="Adornment.Start"
+                                           AdornmentColor="Color.Info"
+                                           Class="align-right"
+                                           Placeholder="Fecha Desde"
+                                           Variant="Variant.Text"
+                                           PickerVariant="PickerVariant.Inline"
+                                           Margin="Margin.None"
+                                           DateFormat="dd/MM/yyyy"
+                                           AutoClose="true">
+                                <PickerActions>
+                                    <MudButton Class="mr-auto align-self-start" OnClick="@(() => _picker.ClearAsync())">Borrar</MudButton>
+                                    <MudButton OnClick="@(() => _picker.CloseAsync(false))">Cancelar</MudButton>
+                                </PickerActions>
+                            </MudDatePicker>
+
+                            <MudDatePicker @ref="_pickerTo"
+                                           @bind-Date="_dateTo"
+                                           Style="font-size: 14px;line-height: 0.8rem;min-width: 120px;"
+                                           Adornment="Adornment.Start"
+                                           AdornmentColor="Color.Info"
+                                           Class="align-right"
+                                           Placeholder="Fecha Hasta"
+                                           Variant="Variant.Text"
+                                           PickerVariant="PickerVariant.Inline"
+                                           Margin="Margin.None"
+                                           DateFormat="dd/MM/yyyy"
+                                           AutoClose="true">
+                                <PickerActions>
+                                    <MudButton Class="mr-auto align-self-start" OnClick="@(() => _pickerTo.ClearAsync())">Borrar</MudButton>
+                                    <MudButton OnClick="@(() => _pickerTo.CloseAsync(false))">Cancelar</MudButton>
+                                </PickerActions>
+                            </MudDatePicker>
+
+                          <MudSelect T="SelectOption" 
+                               @bind-Value="_selectedAction" 
+                               ToStringFunc="@(e => e?.Text)"
+                               Placeholder="ESTATUS"
+                               AdornmentIcon="@Icons.Material.Filled.FilterList"
+                               AdornmentColor="Color.Info"
+                               Style="font-size: 14px; width: 160px;"
+                               Variant="Variant.Text"
+                               Clearable="true"
+                               Dense="true">
+                        @if (_actions != null)
+                        {
+                            @foreach (var action in _actions)
+                            {
+                                @* T debe ser SelectOption *@
+                                <MudSelectItem T="SelectOption" Value="@action">@action.Text</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+                        </MudStack>
+                </ChildContent>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+
+        </div>
+        <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Info" OnClick="() => ClickSearch()"></MudIconButton>
         <MudIconButton Icon="@Icons.Material.Filled.Speed" Color="Color.Info" Size="Size.Small" Href="@("vehicledetailrecord/1")" />
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
         <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
             @foreach (var module in _itemsModules)
             {
                 <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
                 Label="@module.Text"
                 OnClick="() => HandleMenuClick(module)" />
-
             }
         </MudMenu>
     </ToolBarContent>
@@ -194,6 +267,16 @@
     private bool _loading = true;
     private string _moduleName = "VEHICULOS-VEHICULOS";
 
+      //Fechas y filtrados po estatus 
+    bool _open;
+    IMask maskDate = new DateMask("dd/MM/yyyy");
+    private DateTime? _dateFrom { get; set; } = null;
+    private DateTime? _dateTo { get; set; } = null;
+    private MudDatePicker _picker = new MudDatePicker();
+    private MudDatePicker _pickerTo = new MudDatePicker();
+    private List<SelectOption> _actions = new List<SelectOption>();
+    private SelectOption? _selectedAction;
+
     private MudDataGrid<Vehicle>? _mudDataGrid;
     private HashSet<Vehicle> _selectedVehicles = new([]);
     private IEnumerable<Module> _Modules { get; set; } = new List<Module>();
@@ -256,7 +339,15 @@
         _rowsTotal = 0;
         _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
 
-        var serviceResponse = await VehicleService.GetVehicles(Session.SupplierId, Session.UserId, _rowCount, _searchString, Session.DealerId);
+         //fechas y filtros
+        _actions = await ModuleActionsService.GetAction(Session.UserId, _moduleName);  
+        int? idRespaldado = _selectedAction?.Value;
+         if (idRespaldado.HasValue && _actions != null)   {  _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
+         int? _estatusid = _selectedAction?.Value;
+         string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
+        string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
+
+        var serviceResponse = await VehicleService.GetVehicles(Session.SupplierId, Session.UserId, _rowCount, _searchString, Session.DealerId,_dateFromStr,_dateToStr,_estatusid);
         if (serviceResponse.Processed)
         {
             _Vehicles = serviceResponse.Data;
@@ -279,12 +370,12 @@
     {
         if (e.Key == "Enter")
         {
-            if (_searchString.Length >= 3 || _searchString == string.Empty)
-            {
+          //  if (_searchString.Length >= 3 || _searchString == string.Empty)
+         //   {
                 Console.WriteLine($"Buscando: {_searchString}");
                 await _mudDataGrid!.ReloadServerData();
 
-            }
+//}
 
         }
     }
@@ -292,19 +383,21 @@
     private async Task ClickSearch()
     {
 
-        if (_searchString.Length >= 3)
-        {
+     //   if (_searchString.Length >= 3)
+     //   {
             Console.WriteLine($"Buscando: {_searchString}");
             await _mudDataGrid!.ReloadServerData();
-        }
+//}
 
     }
 
     private async Task HandleOnClickRefresh()
     {
 
-        Console.WriteLine($"Buscando: {_searchString}");
-        _searchString = string.Empty;
+        _searchString = string.Empty; // Limpia el MudTextField
+        _selectedAction = null;       // Limpia el MudSelect
+        _dateFrom = null;             // Limpia el primer MudDatePicker
+        _dateTo = null;
         await _mudDataGrid!.ReloadServerData();
     }
 
@@ -506,7 +599,13 @@
     private async Task ExportItemsAsync()
     {
 
-        var serviceResponse = await VehicleService.ExportVehicles(Session.SupplierId, Session.UserId, _searchString, Session.DealerId);
+           int? idRespaldado = _selectedAction?.Value;
+         if (idRespaldado.HasValue && _actions != null)   {  _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
+         int? _estatusid = _selectedAction?.Value;
+         string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
+        string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
+
+        var serviceResponse = await VehicleService.ExportVehicles(Session.SupplierId, Session.UserId, _searchString, Session.DealerId,_dateFromStr,_dateToStr,_estatusid);
         if (serviceResponse.Processed)
         {
             _success = true;

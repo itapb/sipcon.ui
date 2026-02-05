@@ -14,7 +14,7 @@
         private readonly HttpClient _http = http;
 
         
-        public async Task<ApiResponse<List<Vehicle>>> GetVehicles(int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null)
+        public async Task<ApiResponse<List<Vehicle>>> GetVehicles(int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null, string DateFrom = "", string DateTo = "", int? EstatusId = null)
         {
             ApiResponse<List<Vehicle>>? result;
 
@@ -23,7 +23,10 @@
                 var url = $"api/Vehicle/GetAll?supplierId={IdSupplier}&userId={IdUser}&rowFrom={RowFrom}";
                 url = (IdDealer.HasValue ) ? $"{url}&dealerId={IdDealer}" : url;
                 url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
-                
+                url = string.IsNullOrEmpty(DateFrom) ? url : $"{url}&fromDate={DateFrom}";
+                url = string.IsNullOrEmpty(DateTo) ? url : $"{url}&upToDate={DateTo}";
+                url = (EstatusId.HasValue) ? $"{url}&estatusId={EstatusId}" : url;
+
                 result = await _http.GetFromJsonAsync<ApiResponse<List<Vehicle>>>(url);
                 
 
@@ -332,7 +335,7 @@
 
         }
 
-        public async Task<ApiResponse<List<byte>>> ExportVehicles(int IdSupplier, int IdUser, string Filter = "", int? IdDealer = null)
+        public async Task<ApiResponse<List<byte>>> ExportVehicles(int IdSupplier, int IdUser, string Filter = "", int? IdDealer = null, string DateFrom = "", string DateTo = "", int? EstatusId = null)
         {
             ApiResponse<List<byte>> result; 
             string fileUrl = string.Empty;
@@ -341,6 +344,9 @@
                 var url = $"api/Vehicle/Export?supplierId={IdSupplier}&userId={IdUser}";
                 url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
                 url = (IdDealer.HasValue) ? $"{url}&dealerId={IdDealer}" : url;
+                url = string.IsNullOrEmpty(DateFrom) ? url : $"{url}&fromDate={DateFrom}";
+                url = string.IsNullOrEmpty(DateTo) ? url : $"{url}&upToDate={DateTo}";
+                url = (EstatusId.HasValue) ? $"{url}&estatusId={EstatusId}" : url;
 
                 var response = await _http.GetAsync(url);
                 

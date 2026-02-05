@@ -32,6 +32,9 @@ namespace Sipcon.WebApp.Client.Models
         public DateTime? DCreated { get; set; }
        
         public DateTime? DUpdated { get; set; }
-
+                
+        public string? PartName { get; set; }
+        public string? ReasonDescription { get; set; }
+        public string? PartInnerCode { get; set; }
     }
 }

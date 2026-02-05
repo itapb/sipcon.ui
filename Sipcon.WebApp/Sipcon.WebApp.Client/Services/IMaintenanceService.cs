@@ -4,12 +4,12 @@
     public interface IMaintenanceService
     {
 
-        public Task<ApiResponse<List<Maintenance>>> GetMaintenances(int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null);
+        public Task<ApiResponse<List<Maintenance>>> GetMaintenances(int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null, string DateFrom = "", string DateTo = "", int? EstatusId = null);
         public Task<ApiResponse<Maintenance>> GetMaintenance(int IdUser, int IdDealer, int IdMaintenance);
         public Task<ApiResponse<ActionResult>> CreateMaintenance(Maintenance Maintenance, int IdUser);
         public Task<ApiResponse<ActionResult>> UpdateMaintenance(Maintenance Maintenance, int IdUser);
         public Task<ApiResponse<ActionResult>> ActionsMaintenance(List<PostAction> PostActions, int IdUser);
-        public Task<ApiResponse<List<byte>>> ExportMaintenances(int IdSupplier, int IdUser, string Filter = "", int? IdDealer = null);
+        public Task<ApiResponse<List<byte>>> ExportMaintenances(int IdSupplier, int IdUser, string Filter = "", int? IdDealer = null, string DateFrom = "", string DateTo = "", int? EstatusId = null);
         public Task<ApiResponse<List<byte>>> ExportPdfMaintenance(int IdUser, int IdDealer, int IdMaintenance);
         
 

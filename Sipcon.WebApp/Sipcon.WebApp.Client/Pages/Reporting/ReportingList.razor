@@ -49,12 +49,11 @@
                     OnKeyUp="HandleKeyDownSearch">
         </MudTextField>
         <MudSpacer />
-        <div id="scroll_section" class="mx-auto" style="max-width: 600px">
+        <div id="scroll_section" class="mx-auto" style="max-width: 700px">
             <MudExpansionPanels Outlined="false" Elevation="0">
                 <MudExpansionPanel @bind-Expanded="@_open" HideIcon="true" >
                     <TitleContent>
                         <div class="d-flex">
-                            <MudText>Filtrar por: </MudText>
                             <MudIcon Icon="@(_open? Icons.Material.Filled.FilterAltOff  : Icons.Material.Filled.FilterAlt)" Color="Color.Info"></MudIcon>
                         </div>
                     </TitleContent>
@@ -110,6 +109,26 @@
                                     <MudButton OnClick="@(() => _pickerTo.CloseAsync(false))">Cancelar</MudButton>
                                 </PickerActions>
                             </MudDatePicker>
+
+                            <MudSelect T="SelectOption"
+                                       @bind-Value="_selectedAction"
+                                       ToStringFunc="@(e => e?.Text)"
+                                       Placeholder="ESTATUS"
+                                       AdornmentIcon="@Icons.Material.Filled.FilterList"
+                                       AdornmentColor="Color.Info"
+                                       Style="font-size: 14px;line-height: 0.8rem;min-width: 160px;max-width: 160px;margin-top: -3px;"
+                                       Variant="Variant.Text"
+                                       Clearable="true"
+                                       Dense="true">
+                                @if (_actions != null)
+                                {
+                                    @foreach (var action in _actions)
+                                    {
+                                        @* T debe ser SelectOption *@
+                                        <MudSelectItem T="SelectOption" Value="@action">@action.Text</MudSelectItem>
+                                    }
+                                }
+                            </MudSelect>
 
                          </MudStack>
                     </ChildContent>
@@ -178,7 +197,8 @@
     private DateTime? _dateTo { get; set; } = null;
     private bool _loading = true;
     private string _moduleName = "REPORTES-REPORTES";
-
+    private List<SelectOption> _actions = new List<SelectOption>();
+    private SelectOption? _selectedAction;
 
     IMask maskDate = new DateMask("dd/MM/yyyy");
 
@@ -269,11 +289,16 @@
 
         _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
 
+        //fechas y filtros
+        _actions = await ModuleActionsService.GetAction(Session.UserId, _moduleName);
+        int? idRespaldado = _selectedAction?.Value;
+        if (idRespaldado.HasValue && _actions != null) { _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
+        int? _estatusid = _selectedAction?.Value;
 
         string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
         string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
 
-        var serviceResponse = await ReportingService.GetReports(_reportingTypeValue ?? 0, Session.SupplierId, Session.UserId, _rowCount, _searchString, _dateFromStr, _dateToStr);
+        var serviceResponse = await ReportingService.GetReports(_reportingTypeValue ?? 0, Session.SupplierId, Session.UserId, _rowCount, _searchString, _dateFromStr, _dateToStr, Session.DealerId, _estatusid);
         if (serviceResponse.Processed)
         {
             _Report = serviceResponse.Data;
@@ -365,10 +390,16 @@
 
     private async Task ExportItemsAsync()
     {
+
+        //fechas y filtros
+        _actions = await ModuleActionsService.GetAction(Session.UserId, _moduleName);
+        int? idRespaldado = _selectedAction?.Value;
+        if (idRespaldado.HasValue && _actions != null) { _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
+        int? _estatusid = _selectedAction?.Value;
         string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
         string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
 
-        var serviceResponse = await ReportingService.Export(_reportingTypeValue ?? 0, Session.SupplierId,  Session.UserId, _searchString, _dateFromStr, _dateToStr);
+        var serviceResponse = await ReportingService.Export(_reportingTypeValue ?? 0, Session.SupplierId, Session.UserId, _searchString, _dateFromStr, _dateToStr, Session.DealerId, _estatusid);
         if (serviceResponse.Processed)
         {
             _success = true;
