@@ -52,14 +52,18 @@
     </ToolBarContent>
     <Columns>
         <SelectColumn  />
-        <TemplateColumn  Title="@(mDetailType.ToString() == "LaborTime" ? "MANO DE OBRA" : "REPUESTO")">
+        <TemplateColumn  Title="@(mDetailType.ToString() == "LaborTime" ? "MANO DE OBRA" : "REPUESTO")"  HeaderClass="justify-center" 
+                              HeaderStyle="text-align: center;" 
+                              Style="text-align: center;">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.Start">
                     @(context.Item.ItemName?.ToUpper())
                 </MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn  Title="TIPO">
+        <TemplateColumn  Title="TIPO"  HeaderClass="justify-center" 
+                              HeaderStyle="text-align: center;" 
+                              Style="text-align: center;">
             <CellTemplate>
 
                 @if (context.Item.ItemId != 0)
@@ -84,18 +88,22 @@
                 
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn Title="@(mDetailType == ServiceDetailTypeEnum.LaborTime ? "HORAS" : "CANTIDAD")">
+        <TemplateColumn Title="@(mDetailType == ServiceDetailTypeEnum.LaborTime ? "HORAS" : "CANTIDAD")"  HeaderClass="justify-center" 
+                              HeaderStyle="text-align: center;" 
+                              Style="text-align: center;">
             <CellTemplate>
-                <div class="d-flex justify-end">
+                <div class="d-flex justify-center">
                     <MudText Typo="Typo.caption" Align="Align.End">
                         @(mDetailType == ServiceDetailTypeEnum.LaborTime ? context.Item.Quantity?.ToString("N2") : context.Item.Quantity?.ToString("N0"))
                     </MudText>
                 </div>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn  Title="MONTO UNI.">
+        <TemplateColumn  Title="MONTO UNI."  HeaderClass="justify-center" 
+                              HeaderStyle="text-align: center;" 
+                              Style="text-align: center;">
             <CellTemplate>
-                <div class="d-flex justify-end">
+                <div class="d-flex justify-center">
                     <MudText Typo="Typo.caption" Align="Align.End">
                         @(context.Item.UnitPrice?.ToString("N2"))
                     </MudText>
@@ -103,9 +111,12 @@
             </CellTemplate>
         </TemplateColumn>
 
-              <TemplateColumn Title="MONTO TOTAL(S/IVA)">
+              <TemplateColumn Title="MONTO TOTAL(S/IVA)"
+                              HeaderClass="justify-center" 
+                              HeaderStyle="text-align: center;" 
+                              Style="text-align: center;"> 
     <CellTemplate>
-        <div class="d-flex justify-end">
+        <div class="d-flex justify-center">
             <MudText Typo="Typo.caption" Align="Align.End">
                 @{
                     // Calculamos el valor final basándonos en la condición
