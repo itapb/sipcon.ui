@@ -201,7 +201,7 @@ else
     private async Task ClickRefreshMovement(MouseEventArgs args) => await MovementMudDataGrid!.ReloadServerData();
     private async Task ClickNewMovement(MouseEventArgs ev)
     {      
-        HttpResponseMessage response = await Http.GetAsync($"api/Movements/NewMovementWithContext?userId={Session.UserId}&supplierId={Session.SupplierId}&typeId={TypeId!.ToUpper()}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Movements/NewMovementWithContext?userId={Session.UserId}&supplierId={Session.SupplierId}&dealerId={Session.DealerId}&typeId={TypeId!.ToUpper()}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterMovementDetails>>();
@@ -239,6 +239,7 @@ else
         await AuthenticationStateProvider.RefreshStaticVariables();
         await LoadDataAsync();
         hubEventsService.OnSupplierChanged += ReloadMovementsGrid;
+        hubEventsService.OnDealerChanged += ReloadMovementsGrid; //1
     }
 
 
@@ -269,7 +270,7 @@ else
         _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto        
     };
 
-    private async Task<GridData<CollectionMovementDetails>> ServerReload(GridState<CollectionMovementDetails> state)
+    private async Task<GridData<CollectionMovementDetails>> ServerReload(GridState<CollectionMovementDetails> state) 
     { 
         await AuthenticationStateProvider.RefreshStaticVariables();
         IsAllCheckBoxSelected = false;
@@ -286,7 +287,7 @@ else
         string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
 
         IEnumerable<CollectionMovementDetails> data;       
-        HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetMovementDetailsPicking?userId={Session.UserId}&supplierId={Session.SupplierId}&rowfrom={mOffset}&filter={searchString}&pending={IsPendant.ToString()}&fromDate={_dateFromStr}&upToDate={_dateToStr}&estatusId={_estatusid}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetMovementDetailsPicking?userId={Session.UserId}&supplierId={Session.SupplierId}&dealerId={Session.DealerId}&rowfrom={mOffset}&filter={searchString}&pending={IsPendant.ToString()}&fromDate={_dateFromStr}&upToDate={_dateToStr}&estatusId={_estatusid}");
 
         if (response.IsSuccessStatusCode)
         {
@@ -319,7 +320,7 @@ else
             var fileName = TypeId == "r" ? "Recepcion.xlsx" : "Traslado.xlsx";
 
             Loading = true;
-            var ResultZonas = await Http.GetAsync($"api/Movements/{segmentPath}?filter={searchString}&userId={Session.UserId}&supplierId={Session.SupplierId}");
+            var ResultZonas = await Http.GetAsync($"api/Movements/{segmentPath}?filter={searchString}&userId={Session.UserId}&supplierId={Session.SupplierId}&dealerId={Session.DealerId}");
             if (ResultZonas.IsSuccessStatusCode)
             {
                 var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
@@ -395,7 +396,8 @@ else
     public void Dispose()
     { 
         Session.IsNewOrEdit = false;
-        hubEventsService.OnSupplierChanged -= ReloadMovementsGrid;
+        hubEventsService.OnSupplierChanged -= ReloadMovementsGrid; 
+        hubEventsService.OnDealerChanged -= ReloadMovementsGrid;
     }
     private async Task OnPendantChanged()
     {

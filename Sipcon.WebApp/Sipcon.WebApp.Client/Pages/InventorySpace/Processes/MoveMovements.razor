@@ -12,11 +12,13 @@
 else
 {
     <MudDataGrid @ref="MovementMudDataGrid" T="MoveMovementDetails" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" FixedHeader Height="calc(100vh - 240px)" Loading="Loading" @bind-CurrentPage="ReceptionCurrentPage">
-        <ToolBarContent>
-            @if (TypeId != "p")
+        @* <ToolBarContent> *@
+            @* @if (TypeId != "p")
             {
                 <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="ClickNewMovement"></MudIconButton>
-            }
+            } *@
+           @*  <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick=" ClickNewMovement"></MudIconButton>
+
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
 
             <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshMovement"></MudIconButton>
@@ -25,10 +27,12 @@ else
                 {
                     <MudMenuItem Label="@strmodulo.ActionDisplay" Icon="@(strmodulo.ActionDisplay.ToActionIcon())" IconColor="@Color.Info" OnClick="@(() => ClickMenuMovement(strmodulo.ActionName))" />
                 }
-            </MudMenu>
-        </ToolBarContent>
+            </MudMenu> *@
+        @* </ToolBarContent> *@
 
         <ToolBarContent>
+            <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick=" ClickNewMovement"></MudIconButton>
+
             <MudTextField T="string"
                           Value="searchString"
                           ValueChanged="@(s => OnSearch(s))"
