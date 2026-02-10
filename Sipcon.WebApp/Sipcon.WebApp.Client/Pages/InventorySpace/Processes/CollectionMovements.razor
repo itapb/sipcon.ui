@@ -201,7 +201,7 @@ else
     private async Task ClickRefreshMovement(MouseEventArgs args) => await MovementMudDataGrid!.ReloadServerData();
     private async Task ClickNewMovement(MouseEventArgs ev)
     {      
-        HttpResponseMessage response = await Http.GetAsync($"api/Movements/NewMovementWithContext?userId={Session.UserId}&supplierId={Session.SupplierId}&typeId={TypeId!.ToUpper()}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Movements/NewMovementWithContext?userId={Session.UserId}&supplierId={Session.SupplierId}&dealerId={Session.DealerId}&typeId={TypeId!.ToUpper()}");
         if (response.IsSuccessStatusCode)
         {
             var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterMovementDetails>>();
@@ -271,7 +271,7 @@ else
         _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto        
     };
 
-    private async Task<GridData<CollectionMovementDetails>> ServerReload(GridState<CollectionMovementDetails> state)
+    private async Task<GridData<CollectionMovementDetails>> ServerReload(GridState<CollectionMovementDetails> state) 
     { 
         await AuthenticationStateProvider.RefreshStaticVariables();
         IsAllCheckBoxSelected = false;
