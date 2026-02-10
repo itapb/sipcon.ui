@@ -299,7 +299,7 @@ else
             var fileName = TypeId == "r" ? "Recepcion.xlsx" : "Traslado.xlsx";
 
             Loading = true;
-            var ResultZonas = await Http.GetAsync($"api/Movements/{segmentPath}?filter={searchString}&userId={Session.UserId}&supplierId={Session.SupplierId}&fromDate={_dateFromStr}&upToDate={_dateToStr}&estatusId={_estatusid}");
+            var ResultZonas = await Http.GetAsync($"api/Movements/{segmentPath}?&userId={Session.UserId}&supplierId={Session.SupplierId}&filter={searchString}&fromDate={_dateFromStr}&upToDate={_dateToStr}&estatusId={_estatusid}");
             if (ResultZonas.IsSuccessStatusCode)
             {
                 var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();

@@ -239,7 +239,8 @@ else
         await AuthenticationStateProvider.RefreshStaticVariables();
         await LoadDataAsync();
         hubEventsService.OnSupplierChanged += ReloadMovementsGrid;
-        hubEventsService.OnDealerChanged += ReloadMovementsGrid; //1
+        hubEventsService.OnDealerChanged += ReloadMovementsGrid;
+
     }
 
 
@@ -318,9 +319,16 @@ else
         {
             var segmentPath = TypeId == "r" ? "ReceptionExport" : "RelocationExport";
             var fileName = TypeId == "r" ? "Recepcion.xlsx" : "Traslado.xlsx";
+              //fechas y filtros
+            _actions = await ModuleActionsService.GetAction(Session.UserId, "INVENTARIO-PROCESOS-RECOLECCION");
+            int? idRespaldado = _selectedAction?.Value;
+            if (idRespaldado.HasValue && _actions != null) { _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
+            int? _estatusid = _selectedAction?.Value;
+            string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
+            string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
 
             Loading = true;
-            var ResultZonas = await Http.GetAsync($"api/Movements/{segmentPath}?filter={searchString}&userId={Session.UserId}&supplierId={Session.SupplierId}&dealerId={Session.DealerId}");
+            var ResultZonas = await Http.GetAsync($"api/Movements/{segmentPath}?filter={searchString}&userId={Session.UserId}&supplierId={Session.SupplierId}&fromDate={_dateFromStr}&upToDate={_dateToStr}&estatusId={_estatusid}");
             if (ResultZonas.IsSuccessStatusCode)
             {
                 var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
@@ -396,8 +404,9 @@ else
     public void Dispose()
     { 
         Session.IsNewOrEdit = false;
-        hubEventsService.OnSupplierChanged -= ReloadMovementsGrid; 
+        hubEventsService.OnSupplierChanged -= ReloadMovementsGrid;
         hubEventsService.OnDealerChanged -= ReloadMovementsGrid;
+
     }
     private async Task OnPendantChanged()
     {
