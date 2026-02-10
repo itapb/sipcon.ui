@@ -239,6 +239,8 @@ else
         await AuthenticationStateProvider.RefreshStaticVariables();
         await LoadDataAsync();
         hubEventsService.OnSupplierChanged += ReloadMovementsGrid;
+        hubEventsService.OnDealerChanged += ReloadMovementsGrid;
+
     }
 
 
@@ -286,7 +288,7 @@ else
         string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
 
         IEnumerable<CollectionMovementDetails> data;       
-        HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetMovementDetailsPicking?userId={Session.UserId}&supplierId={Session.SupplierId}&rowfrom={mOffset}&filter={searchString}&pending={IsPendant.ToString()}&fromDate={_dateFromStr}&upToDate={_dateToStr}&estatusId={_estatusid}");
+        HttpResponseMessage response = await Http.GetAsync($"api/Movements/GetMovementDetailsPicking?userId={Session.UserId}&supplierId={Session.SupplierId}&dealerId={Session.DealerId}&rowfrom={mOffset}&filter={searchString}&pending={IsPendant.ToString()}&fromDate={_dateFromStr}&upToDate={_dateToStr}&estatusId={_estatusid}");
 
         if (response.IsSuccessStatusCode)
         {
@@ -403,6 +405,8 @@ else
     { 
         Session.IsNewOrEdit = false;
         hubEventsService.OnSupplierChanged -= ReloadMovementsGrid;
+        hubEventsService.OnDealerChanged -= ReloadMovementsGrid;
+
     }
     private async Task OnPendantChanged()
     {
