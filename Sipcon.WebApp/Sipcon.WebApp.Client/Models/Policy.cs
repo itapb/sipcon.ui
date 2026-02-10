@@ -20,7 +20,8 @@ namespace Sipcon.WebApp.Client.Models
         public DateTime? LockDate { get; set; } = null;
         
         public DateTime? ExpirationDate { get; set; } = null;
-        
+        public DateTime? DateCreated { get; set; } = null;
+
         public int? EstatusId { get; set; } = null;
         
         public string EstatusName { get; set; } = string.Empty;

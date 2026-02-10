@@ -13,6 +13,7 @@ namespace Sipcon.WebApp.Client.Models
         public int? EstatusId { get; set; } = null;
         public string EstatusName { get; set; } = string.Empty;
         public DateTime? ServiceDate { get; set; } = null;
+        public DateTime? DateCreated { get; set; } = null;
         public string CustomerReport { get; set; } = string.Empty;
         public string DealerReport { get; set; } = string.Empty;
         public string TechnicalSolution { get; set; } = string.Empty;
