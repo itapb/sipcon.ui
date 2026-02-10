@@ -14,6 +14,7 @@ namespace Sipcon.WebApp.Client.Models
         public int? ReportTypeId { get; set; } = null;
         public string ReportTypeName { get; set; } = string.Empty;
         public DateTime? ServiceDate { get; set; } = null;
+        public DateTime? DateCreated { get; set; } = null;
         public string DealerReport { get; set; } = string.Empty;
         public string SupplierReport { get; set; } = string.Empty;
         public string? OrderNumber { get; set; } = string.Empty;
