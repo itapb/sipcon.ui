@@ -211,7 +211,7 @@ else
     private async Task ClickPrintGuide(Mobile.Models.Guide item)
     {
         Loading = true;
-        var ResultZonas = await Http.GetAsync($"/api/Inventory/ExportPdfGuide?guideId={item.Id}&userId={Session.UserId}");
+        var ResultZonas = await Http.GetAsync($"api/Inventory/ExportPdfGuide?guideId={item.Id}&userId={Session.UserId}");
         if (ResultZonas.IsSuccessStatusCode)
         {
             var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
