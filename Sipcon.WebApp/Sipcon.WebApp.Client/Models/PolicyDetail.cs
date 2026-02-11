@@ -15,8 +15,10 @@ namespace Sipcon.WebApp.Client.Models
         public DateTime? FromDate { get; set; } = null;
         public DateTime? UpToDate { get; set; } = null;
         public bool IsActive { get; set; } = true;
+        public int? ServiceId { get; set; } = null;
 
-       
+
+
     }
 
 }

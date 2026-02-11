@@ -297,10 +297,24 @@
 
                                                     @foreach (var item in _policyDetail)
                                                     {
-                                                        <MudTimelineItem TimelineAlign="TimelineAlign.End" Color="@(item.Valid == "PENDIENTE" ? Color.Info : Color.Default)" Size="Size.Small">
-                                                            <MudText Typo="Typo.body2" Style="font-size: 11px;">@item.Valid  <b>@(item.FromKm?.ToString("N0") + "-" + item.UpToKm?.ToString("N0") + " kms.") </b> </MudText>
-                                                            <MudText Typo="Typo.body2" Class="mud-text-secondary" Style="font-size: 11px;">@("Km: " + item.KM?.ToString("N0") + "  -  " + item.Date?.ToString("dd MMM yyyy"))</MudText>
-                                                        </MudTimelineItem>
+                                                    <MudTimelineItem TimelineAlign="TimelineAlign.End" Color="@GetTimelineColor(item.Valid)" Size="Size.Small" Culture="@CultureInfo.GetCultureInfo("es-VE")">
+
+                                                        @* Primera línea *@
+                                                        <MudText Typo="Typo.body2" Style="font-size: 11px;">
+                                                            @item.Valid <b>@(item.FromKm?.ToString("N0") + "-" + item.UpToKm?.ToString("N0") + " kms.") </b>
+                                                        </MudText>
+
+                                                        @* Segunda línea *@
+                                                        <MudText Typo="Typo.body2" Style="font-size: 11px;" Class="mud-text-secondary">
+                                                            @("Desde: " + item.FromDate?.ToString("dd MMM yyyy") + " - Hasta: " + item.UpToDate?.ToString("dd MMM yyyy"))
+                                                        </MudText>
+
+                                                        @* Tercera línea: Resaltado tipo 'badge' o marcador si es el actual *@
+                                                        <MudText Typo="Typo.body2" Style="font-size: 11px;" Class="mud-text-secondary">
+                                                            @("Km: " + item.KM?.ToString("N0") + " - " + item.Date?.ToString("dd MMM yyyy") + " - Servicio: " + item.ServiceId?.ToString("N0"))
+                                                        </MudText>
+
+                                                    </MudTimelineItem>
                                                     }
 
                                                 </MudTimeline>
@@ -560,6 +574,20 @@
        .NotEmpty().WithMessage("Campo requerido")
        .Length(1, 20).WithMessage("Campo requerido entre 1-20 carácteres"));
 
+    
+
+    private Color GetTimelineColor(string status)
+    {
+        return status switch
+        {
+            "VALIDO" => Color.Success,
+            "NO VALIDO" => Color.Error,
+            "PENDIENTE" => Color.Info,
+            "NO REGISTRADO" => Color.Warning,
+            "SRAN" => Color.Default,
+            _ => Color.Default
+        };
+    }
 
     protected override async Task OnInitializedAsync()
     {
