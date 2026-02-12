@@ -8,6 +8,10 @@
     <StaticWebAssetProjectMode>Default</StaticWebAssetProjectMode>
 	<BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
 	<PublishTrimmed>false</PublishTrimmed>
+	 <TrimMode>none</TrimMode>
+	 <!-- Esto evita optimizaciones de tipos genéricos que rompen LINQ -->
+	 <IlcGenerateCompleteTypeMetadata>true</IlcGenerateCompleteTypeMetadata>
+	 <IlcGenerateStackTraceData>true</IlcGenerateStackTraceData>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,6 +22,12 @@
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.2" />
     <PackageReference Include="MudBlazor" Version="8.15.0" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.15.0" />	
+  </ItemGroup>
+
+  <ItemGroup>
+		<TrimmerRootAssembly Include="System.Linq" />
+		<TrimmerRootAssembly Include="System.Linq.Expressions" />
+	    <TrimmerRootDescriptor Include="TrimmerConfig.xml" />
   </ItemGroup>
 
   <ProjectExtensions><VisualStudio><UserProperties wwwroot_4appsettings_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>

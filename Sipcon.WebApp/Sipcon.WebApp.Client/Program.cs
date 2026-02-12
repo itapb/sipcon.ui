@@ -8,6 +8,16 @@ using Sipcon.WebApp.Client.Services;
 using Sipcon.WebApp.Client.Utils;
 using System.Globalization;
 
+
+//var fix1 = Enumerable.SequenceEqual(new List<object>(), new List<object>());
+//var fix2 = Enumerable.SequenceEqual(new List<string>(), new List<string>());
+//var fix3 = Enumerable.SequenceEqual(new List<int>(), new List<int>());
+//var fix4 = Enumerable.SequenceEqual(new Dictionary<string, object>().Keys, new Dictionary<string, object>().Keys);
+//var fix5 = Enumerable.SequenceEqual(new Dictionary<string, object>().Values, new Dictionary<string, object>().Values);
+
+//Console.WriteLine($"Fixes loaded: {fix1 || fix2 || fix3}");
+
+
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
 CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US");

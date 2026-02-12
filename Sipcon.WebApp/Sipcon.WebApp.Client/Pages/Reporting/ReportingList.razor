@@ -33,29 +33,29 @@
              SortMode="SortMode.Multiple"
              @bind-CurrentPage="_currentPage">
     <ToolBarContent>
-       
-        <MudTextField @bind-Value="_searchString" 
+
+        <MudTextField @bind-Value="_searchString"
                       Style="font-size: 14px;line-height: 0.8rem;"
-                    Placeholder="buscar" 
-                    Adornment="Adornment.Start" 
-                    Immediate="true"
-                    Typo="Typo.caption"
-                    AdornmentIcon="@Icons.Material.Filled.Search"
-                    OnAdornmentClick="() => ClickSearch()"
-                    IconSize="Size.Medium" Class="mt-0" 
-                    OnKeyUp="HandleKeyDownSearch">
+                      Placeholder="buscar"
+                      Adornment="Adornment.Start"
+                      Immediate="true"
+                      Typo="Typo.caption"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      OnAdornmentClick="() => ClickSearch()"
+                      IconSize="Size.Medium" Class="mt-0"
+                      OnKeyUp="HandleKeyDownSearch">
         </MudTextField>
         <MudSpacer />
         <div id="scroll_section" class="mx-auto" style="max-width: 700px">
             <MudExpansionPanels Outlined="false" Elevation="0">
-                <MudExpansionPanel @bind-Expanded="@_open" HideIcon="true" >
+                <MudExpansionPanel @bind-Expanded="@_open" HideIcon="true">
                     <TitleContent>
                         <div class="d-flex">
                             <MudIcon Icon="@(_open? Icons.Material.Filled.FilterAltOff  : Icons.Material.Filled.FilterAlt)" Color="Color.Info"></MudIcon>
                         </div>
                     </TitleContent>
                     <ChildContent>
-                         <MudStack Row="true">
+                        <MudStack Row="true">
                             <MudSelect @bind-Value="@_reportingTypeValue"
                                        Style="font-size: 14px;line-height: 0.8rem;min-width: 160px;max-width: 160px;margin-top: -3px;"
                                        Placeholder="Tipo Reporte"
@@ -127,11 +127,11 @@
                                 }
                             </MudSelect>
 
-                         </MudStack>
+                        </MudStack>
                     </ChildContent>
                 </MudExpansionPanel>
             </MudExpansionPanels>
-            
+
         </div>
         <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Info" OnClick="() => ClickSearch()"></MudIconButton>
         <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
@@ -139,46 +139,46 @@
             @foreach (var module in _itemsModules)
             {
                 <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
-                Label="@module.Text"
-                OnClick="() => HandleMenuClick(module)" />
+                             Label="@module.Text"
+                             OnClick="() => HandleMenuClick(module)" />
             }
         </MudMenu>
 
 
     </ToolBarContent>
-    
-                        <Columns>
-                            @if (_columns != null && _columns.Any())
+
+    <Columns>
+        @if (_columns != null && _columns.Any())
+        {
+            @foreach (var col in _columns)
+            {
+                <TemplateColumn T="Dictionary<string, object>" Title="@col">
+                    <CellTemplate>
+                        @{
+                            // Acceso ultra-seguro al valor del diccionario
+                            string displayValue = "";
+                            if (context.Item.TryGetValue(col, out var val) && val != null)
                             {
-                                @foreach (var col in _columns)
-                                {
-                                    <TemplateColumn T="Dictionary<string, object>" Title="@col">
-                                        <CellTemplate>
-                                            @{
-                                                // Acceso ultra-seguro al valor del diccionario
-                                                string displayValue = "";
-                                                if (context.Item.TryGetValue(col, out var val) && val != null)
-                                                {
-                                                    // Manejo de JsonElement por si el API devuelve tipos complejos
-                                                    displayValue = val is JsonElement element ? element.ToString() : val.ToString();
-                                                }
-                                                <MudText Typo="Typo.caption">@displayValue</MudText>
-                                            }
-                                        </CellTemplate>
-                                    </TemplateColumn>
-                                }
+                                // Manejo de JsonElement por si el API devuelve tipos complejos
+                                displayValue = val is JsonElement element ? element.ToString() : val.ToString();
                             }
-                        </Columns>
-        
+                            <MudText Typo="Typo.caption">@displayValue</MudText>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+            }
+        }
+    </Columns>
+
     <PagerContent>
-        <MudDataGridPager  PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        <MudDataGridPager PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
     </PagerContent>
 </MudDataGrid>
 
-<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success" 
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success"
                     onCloseNested="() => _nestedVisible = false"
-                    ErrorMessage="@_nestedErrorMessage" 
-                    Title="@("Reportes")"/>
+                    ErrorMessage="@_nestedErrorMessage"
+                    Title="@("Reportes")" />
 
 
 
@@ -197,7 +197,7 @@
 
     private int _currentPage = 0;
     private int _rowCount = 0;
-    private int _rowsTotal = 0; 
+    private int _rowsTotal = 0;
 
     private int? _reportingTypeValue = null;
     private string _searchString = string.Empty;
@@ -263,6 +263,7 @@
 
     private async Task<GridData<Dictionary<string, object>>> LoadGridData(GridState<Dictionary<string, object>> state)
     {
+       
         await AuthenticationStateProvider.RefreshStaticVariables();
 
         // Sincronizamos paginación
@@ -320,11 +321,35 @@
                 _Report = serviceResponse.Data ?? new List<Dictionary<string, object>>();
                 _rowsTotal = serviceResponse.Total;
 
+                // if (_Report.Any())
+                // {
+                //     var nuevasColumnas = _Report.First().Keys.ToList();
+                //     // Solo actualizamos columnas si hay un cambio real de estructura
+                //     if (!_columns.SequenceEqual(nuevasColumnas))
+                //     {
+                //         _columns = nuevasColumnas;
+                //     }
+                // }
                 if (_Report.Any())
                 {
                     var nuevasColumnas = _Report.First().Keys.ToList();
-                    // Solo actualizamos columnas si hay un cambio real de estructura
-                    if (!_columns.SequenceEqual(nuevasColumnas))
+
+                    // Reemplazo manual de SequenceEqual para evitar el error de .NET 10
+                    bool sonIguales = _columns.Count == nuevasColumnas.Count;
+                    if (sonIguales)
+                    {
+                        for (int i = 0; i < _columns.Count; i++)
+                        {
+                            if (_columns[i] != nuevasColumnas[i])
+                            {
+                                sonIguales = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    // Solo actualizamos si detectamos un cambio real
+                    if (!sonIguales)
                     {
                         _columns = nuevasColumnas;
                     }
@@ -423,7 +448,7 @@
             var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
             var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
             await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Reporte.xlsx");
-        
+
         }
         else
         {
