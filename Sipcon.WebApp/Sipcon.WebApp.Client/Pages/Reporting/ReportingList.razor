@@ -21,20 +21,17 @@
 <CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
 
 <MudDataGrid @ref="_mudDataGrid"
-             T="ExpandoObject"
-             Items="_Report"
-            
-             SortMode="SortMode.Multiple"
-             FixedHeader Height="calc(92vh - 235px)"
-             MultiSelection="false"
+             T="Dictionary<string, object>"
+             ServerData="LoadGridData"
+             @key="@(_columns.Count)"
              Loading="_loading"
-             Filterable="true"
-             Hideable="true"
-             Bordered="false"
+             Height="calc(92vh - 235px)"
+             FixedHeader="true"
              Dense="true"
-             Striped="true"
              Hover="true"
-            @bind-CurrentPage="_currentPage">
+             Striped="true"
+             SortMode="SortMode.Multiple"
+             @bind-CurrentPage="_currentPage">
     <ToolBarContent>
        
         <MudTextField @bind-Value="_searchString" 
@@ -150,19 +147,28 @@
 
     </ToolBarContent>
     
-        <Columns>
-        @foreach (var colName in _columns)
-        {
-            <TemplateColumn T="ExpandoObject" Title="@colName">
-                <CellTemplate>
-                    @{
-                        var dict = (IDictionary<string, object>)context.Item;
-                        <MudText Typo="Typo.caption" Align="Align.Left">@dict[colName]</MudText>
-                    }
-                </CellTemplate>
-            </TemplateColumn>
-        }
-        </Columns>
+                        <Columns>
+                            @if (_columns != null && _columns.Any())
+                            {
+                                @foreach (var col in _columns)
+                                {
+                                    <TemplateColumn T="Dictionary<string, object>" Title="@col">
+                                        <CellTemplate>
+                                            @{
+                                                // Acceso ultra-seguro al valor del diccionario
+                                                string displayValue = "";
+                                                if (context.Item.TryGetValue(col, out var val) && val != null)
+                                                {
+                                                    // Manejo de JsonElement por si el API devuelve tipos complejos
+                                                    displayValue = val is JsonElement element ? element.ToString() : val.ToString();
+                                                }
+                                                <MudText Typo="Typo.caption">@displayValue</MudText>
+                                            }
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                }
+                            }
+                        </Columns>
         
     <PagerContent>
         <MudDataGridPager  PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
@@ -180,7 +186,9 @@
     [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
 
-    private IEnumerable<ExpandoObject> _Report = new List<ExpandoObject>();
+    private List<Dictionary<string, object>> _Report = new();
+    private List<string> _columns = new();
+    private MudDataGrid<Dictionary<string, object>>? _mudDataGrid;
 
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
@@ -204,7 +212,6 @@
 
     private MudDatePicker _picker = new MudDatePicker();
     private MudDatePicker _pickerTo = new MudDatePicker();
-    private MudDataGrid<ExpandoObject>? _mudDataGrid;
 
     private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
     public IEnumerable<SelectOption> _reportingTypeList { get; set; } = ([]);
@@ -216,7 +223,6 @@
         new("Reportes",  href: "reporting", disabled: false, icon: Icons.Material.Filled.ReportProblem),
     ];
 
-    List<string> _columns = new();
 
 
 
@@ -233,29 +239,19 @@
         hubEventsService.OnSupplierChanged += ReloadServerData;
         hubEventsService.OnDealerChanged += ReloadServerData;
 
-        var state = new GridState<ExpandoObject>
-        {
-            Page = _currentPage,
-
-        };
-        await LoadGridData(state);
-        await Task.CompletedTask;
+        // Nota: El Grid llamará a LoadGridData automáticamente al renderizarse
+        // porque está configurado con ServerData.
     }
 
     private async Task ReloadServerData()
     {
         if (_mudDataGrid != null)
         {
-            _mudDataGrid = new MudDataGrid<ExpandoObject>();
-            
             _open = false;
-            StateHasChanged();
-            var state = new GridState<ExpandoObject>
-            {
-                Page = 0,
-
-            };
-            await LoadGridData(state);
+            _currentPage = 0;
+            // IMPORTANTE: ReloadServerData() disparará internamente LoadGridData
+            await _mudDataGrid.ReloadServerData();
+            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -265,90 +261,110 @@
         hubEventsService.OnSupplierChanged -= ReloadServerData;
     }
 
-
-    private async Task<GridData<ExpandoObject>> LoadGridData(GridState<ExpandoObject> state)
+    private async Task<GridData<Dictionary<string, object>>> LoadGridData(GridState<Dictionary<string, object>> state)
     {
         await AuthenticationStateProvider.RefreshStaticVariables();
-        _rowCount = state.Page * state.PageSize;
 
+        // Sincronizamos paginación
+        _rowCount = state.Page * state.PageSize;
+        _currentPage = state.Page;
+
+        // Como pediste: Cargamos la lista de tipos aquí
         _reportingTypeList = await ModuleActionsService.GetReportingType(Session.UserId);
 
+        // Cargamos los datos del reporte
         await GetReporting();
 
-        return new GridData<ExpandoObject> { TotalItems = _rowsTotal, Items = _Report };
+        return new GridData<Dictionary<string, object>>
+        {
+            TotalItems = _rowsTotal,
+            Items = _Report
+        };
     }
 
     private async Task GetReporting()
     {
-        _loading = true;
-        _Report = new List<ExpandoObject>();
-        _columns = new List<string>();
-        _rowsTotal = 0;
-
-        StateHasChanged();
-
-        _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
-
-        //fechas y filtros
-        _actions = await ModuleActionsService.GetAction(Session.UserId, _moduleName);
-        int? idRespaldado = _selectedAction?.Value;
-        if (idRespaldado.HasValue && _actions != null) { _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
-        int? _estatusid = _selectedAction?.Value;
-
-        string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
-        string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
-
-        var serviceResponse = await ReportingService.GetReports(_reportingTypeValue ?? 0, Session.SupplierId, Session.UserId, _rowCount, _searchString, _dateFromStr, _dateToStr, Session.DealerId, _estatusid);
-        if (serviceResponse.Processed)
+        try
         {
-            _Report = serviceResponse.Data;
-            _rowsTotal = serviceResponse.Total;
+            _loading = true;
+            _Report = new List<Dictionary<string, object>>();
+            // No reseteamos _columns aquí para evitar que el Grid parpadee desapareciendo cabeceras
+            StateHasChanged();
 
-            if (_Report.Any())
+            _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
+            _actions = await ModuleActionsService.GetAction(Session.UserId, _moduleName);
+
+            int? idRespaldado = _selectedAction?.Value;
+            if (idRespaldado.HasValue && _actions != null)
             {
-                _columns = ((IDictionary<string, object>)_Report.First()).Keys.ToList();
+                _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado);
+            }
+
+            int? _estatusid = _selectedAction?.Value;
+            string _dateFromStr = _dateFrom?.ToString("yyyy-MM-dd") ?? string.Empty;
+            string _dateToStr = _dateTo?.ToString("yyyy-MM-dd") ?? string.Empty;
+
+            var serviceResponse = await ReportingService.GetReports(
+                _reportingTypeValue ?? 0,
+                Session.SupplierId,
+                Session.UserId,
+                _rowCount,
+                _searchString,
+                _dateFromStr,
+                _dateToStr,
+                Session.DealerId,
+                _estatusid);
+
+            if (serviceResponse.Processed)
+            {
+                _Report = serviceResponse.Data ?? new List<Dictionary<string, object>>();
+                _rowsTotal = serviceResponse.Total;
+
+                if (_Report.Any())
+                {
+                    var nuevasColumnas = _Report.First().Keys.ToList();
+                    // Solo actualizamos columnas si hay un cambio real de estructura
+                    if (!_columns.SequenceEqual(nuevasColumnas))
+                    {
+                        _columns = nuevasColumnas;
+                    }
+                }
+            }
+            else
+            {
+                _success = false;
+                _nestedErrorMessage = serviceResponse.Message ?? "Error al obtener datos";
+                OpenNested();
             }
         }
-        else
+        catch (Exception ex)
         {
-            _success = false;
-            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
-
-            OpenNested();
-
+            Console.WriteLine($"Error en GetReporting: {ex.Message}");
         }
-
-        _loading = false;
-        StateHasChanged();
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
     }
-
 
     private async Task HandleKeyDownSearch(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
         {
-            if (_searchString.Length >= 3 || _searchString == string.Empty)
+            if (_searchString.Length >= 3 || string.IsNullOrEmpty(_searchString))
             {
-                var state = new GridState<ExpandoObject>
-                {
-                    Page = _currentPage,
-
-                };
-                await LoadGridData(state);
+                await ClickSearch();
             }
-
         }
     }
 
     private async Task ClickSearch()
     {
-        var state = new GridState<ExpandoObject>
+        if (_mudDataGrid != null)
         {
-            Page = _currentPage,
-
-        };
-        await LoadGridData(state);
-
+            await _mudDataGrid.ReloadServerData();
+        }
     }
 
     private async Task HandleOnClickRefresh()
@@ -356,16 +372,14 @@
         _searchString = string.Empty;
         _dateFrom = null;
         _dateTo = null;
-        await _picker.ClearAsync();
-        await _pickerTo.ClearAsync();
+        if (_picker != null) await _picker.ClearAsync();
+        if (_pickerTo != null) await _pickerTo.ClearAsync();
+
         _open = false;
-        StateHasChanged();
-        var state = new GridState<ExpandoObject>
+        if (_mudDataGrid != null)
         {
-            Page = _currentPage,
-            
-        };
-        await LoadGridData(state);
+            await _mudDataGrid.ReloadServerData();
+        }
     }
 
     private void OpenNested()
@@ -373,6 +387,7 @@
         _nestedVisible = true;
         StateHasChanged();
     }
+
 
 
     private async Task HandleMenuClick(ModuleAction module)
