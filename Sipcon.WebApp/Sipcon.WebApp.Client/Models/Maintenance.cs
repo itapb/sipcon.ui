@@ -85,6 +85,7 @@ namespace Sipcon.WebApp.Client.Models
     {
         public int Id { get; set; } = 0;
         public bool IsActive { get; set; } = true;
+        public int? ReportTypeId { get; set; } = null;
         public string OrderNumber { get; set; } = string.Empty;
         public DateTime ServiceDate { get; set; } = DateTime.Now;
         public string DealerReport { get; set; } = string.Empty;
