@@ -37,5 +37,7 @@ namespace Sipcon.WebApp.Client.Models
         public string? ReasonDescription { get; set; }
         public string? PartInnerCode { get; set; }
         public int? Quantity { get; set; }
+ 
+        public bool? Credit { get; set; }
     }
 }

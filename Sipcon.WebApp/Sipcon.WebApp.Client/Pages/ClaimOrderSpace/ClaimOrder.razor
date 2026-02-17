@@ -39,6 +39,19 @@ else
             <PropertyColumn Property="x => x.PartName" Title="DESCRIPCION REPUESTO" />
             <PropertyColumn Property="x => x.Quantity" Title="CANTIDAD RECLAMADA" />
             <PropertyColumn Property="x => x.ReasonDescription" Title="MOTIVO RECLAMO" />
+            <TemplateColumn>
+    <HeaderTemplate>
+        NOTA CREDITO
+    </HeaderTemplate>
+    <CellTemplate>
+                    @if ((context.Item.StatusName?.ToUpper() == "APROBADO" || context.Item.StatusName?.ToUpper() == "PROCESADO") && (context.Item.ReasonDescription?.ToUpper() == "FALTANTE" || context.Item.ReasonDescription?.ToUpper() == "MAL ESTADO"))
+        {
+            <MudIcon Icon="@(context.Item.Credit ?? false ? Icons.Material.Filled.VerifiedUser : Icons.Material.Filled.Dangerous)" 
+                    Color="@(context.Item.Credit ?? false ? Color.Success : Color.Error)" 
+                    Size="Size.Medium" />
+        }
+    </CellTemplate>
+</TemplateColumn>
             <PropertyColumn Property="x => x.DealerName" Title="CONCESIONARIO" />
             <PropertyColumn Property="x => x.Login" Title="USUARIO" />
             <PropertyColumn Property="x => x.StatusName" Title="ESTATUS" />
