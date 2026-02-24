@@ -36,5 +36,10 @@ namespace Sipcon.WebApp.Client.Models
         public string? PartName { get; set; }
         public string? ReasonDescription { get; set; }
         public string? PartInnerCode { get; set; }
+        public int? Quantity { get; set; }
+ 
+        public bool? Credit { get; set; }
+        public string DisplayGuide => string.IsNullOrEmpty(Reference) ? "N/A" : Reference;
+        public string DisplayInvoice => string.IsNullOrEmpty(Invoice) ? "N/A" : Invoice;
     }
 }

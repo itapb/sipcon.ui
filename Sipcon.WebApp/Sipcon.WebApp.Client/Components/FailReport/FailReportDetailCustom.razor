@@ -163,19 +163,41 @@
                 </div>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn >
-            <CellTemplate>
-              
-                @if (_statusEdit.Contains(context.Item.EstatusName.ToUpper()))
-                {
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditFailReportDetail(context.Item)" />
-                    if (_itemsModules.Where(z => z.ActionName == "DEACTIVATE").ToList().Any())
-                    {
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickDeleteItemAsync(context.Item.Id)" Disabled="@mDisabledAddDetail" />
-                    }
-                }
-            </CellTemplate>
-        </TemplateColumn>
+                        <TemplateColumn>
+                    <CellTemplate>
+                        @{
+                            // Convertimos a mayúsculas una sola vez para eficiencia
+                            var status = context.Item.EstatusName?.ToUpper() ?? "";
+                            bool isRejected = (status == "RECHAZADO");
+                            bool canEdit = _statusEdit.Contains(status);
+                        }
+
+                        <div class="d-flex">
+                            @if (canEdit)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                                               Variant="Variant.Text" 
+                                               Color="Color.Default" 
+                                               Size="Size.Small" 
+                                               OnClick="() => ClickEditFailReportDetail(context.Item)" />
+                            }
+
+                            @* Nueva condición: Se muestra si está en la lista de edición O si está RECHAZADO *@
+                            @if (canEdit || isRejected)
+                            {
+                                if (_itemsModules.Any(z => z.ActionName == "DEACTIVATE"))
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                                   Variant="Variant.Text" 
+                                                   Color="Color.Default" 
+                                                   Size="Size.Small" 
+                                                   OnClick="() => ClickDeleteItemAsync(context.Item.Id)" 
+                                                   Disabled="@mDisabledAddDetail" />
+                                }
+                            }
+                        </div>
+                    </CellTemplate>
+                </TemplateColumn>
     </Columns>
     <PagerContent>
         <MudDataGridPager  PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />

@@ -42,37 +42,35 @@
         }
 
 
-        public async Task<ApiResponse<List<ExpandoObject>>> GetReports(int IdReporting, int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "", int? IdDealer = null , int? EstatusId = null)
+        public async Task<ApiResponse<List<Dictionary<string, object>>>> GetReports(int IdReporting, int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "", int? IdDealer = null, int? EstatusId = null)
         {
-            ApiResponse<List<ExpandoObject>>? result;
+            // Cambiamos el tipo de la respuesta a Dictionary
+            ApiResponse<List<Dictionary<string, object>>>? result;
 
             try
             {
                 var url = $"api/Reporting/GetReports?supplierId={IdSupplier}&userId={IdUser}&rowFrom={RowFrom}&reportingId={IdReporting}";
-                url = (IdDealer.HasValue ) ? $"{url}&dealerId={IdDealer}" : url;
+                url = (IdDealer.HasValue) ? $"{url}&dealerId={IdDealer}" : url;
                 url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
                 url = string.IsNullOrEmpty(DateFrom) ? url : $"{url}&fromDate={DateFrom}";
                 url = string.IsNullOrEmpty(DateTo) ? url : $"{url}&upToDate={DateTo}";
                 url = (EstatusId.HasValue) ? $"{url}&estatusId={EstatusId}" : url;
 
-                result = await _http.GetFromJsonAsync<ApiResponse<List<ExpandoObject>>>(url);
+                // La magia ocurre aquí: Dictionary es nativo para el JSON de .NET
+                result = await _http.GetFromJsonAsync<ApiResponse<List<Dictionary<string, object>>>>(url);
 
-                //var response = await _http.GetAsync(url);
-                //var jsonString = await response.Content.ReadAsStringAsync();
-                //var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                //var items = JsonSerializer.Deserialize<List<ExpandoObject>>(jsonString, options);
-
-                result = result is null ? new ApiResponse<List<ExpandoObject>>()
+                if (result is null)
                 {
-                    Processed = false,
-                    Message = "La respuesta del servidor no contiene datos.",
-
-                } : result;
-
+                    result = new ApiResponse<List<Dictionary<string, object>>>()
+                    {
+                        Processed = false,
+                        Message = "La respuesta del servidor no contiene datos.",
+                    };
+                }
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<List<ExpandoObject>>()
+                result = new ApiResponse<List<Dictionary<string, object>>>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
@@ -80,10 +78,9 @@
             }
 
             return result;
-
         }
 
-       
+
         public async Task<ApiResponse<List<byte>>> Export(int IdReporting, int IdSupplier, int IdUser, string Filter = "", string DateFrom = "", string DateTo = "", int? IdDealer = null, int? EstatusId = null)
         {
             ApiResponse<List<byte>> result;
