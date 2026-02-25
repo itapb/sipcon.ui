@@ -112,7 +112,7 @@
         if (actionName == "EXPORT" && StocktakingMudDataGrid?.FilteredItems.Count() > 0)
         {
             _loading = true;
-            var ResultZonas = await Http.GetAsync($"api/Inventory/Export?filter={searchString}&userId={Session.UserId}&supplierId={Session.SupplierId}");
+            var ResultZonas = await Http.GetAsync($"api/Inventory/Export?userId={Session.UserId}&supplierId={Session.SupplierId}&filter={searchString}&withStock={withStock}");
             if (ResultZonas.IsSuccessStatusCode)
             {
                 var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
