@@ -88,6 +88,7 @@
                 {
                     Id = Maintenance.Id,
                     IsActive = Maintenance.IsActive,
+                    ReportTypeId = Maintenance.ReportTypeId ?? 0,
                     OrderNumber = Maintenance.OrderNumber ?? string.Empty,
                     ServiceDate = Maintenance.ServiceDate ?? DateTime.Now,
                     DealerReport = Maintenance.DealerReport,
@@ -133,6 +134,7 @@
                 {
                     Id = Maintenance.Id,
                     IsActive = Maintenance.IsActive,
+                    ReportTypeId = Maintenance.ReportTypeId ?? 0,
                     OrderNumber = Maintenance.OrderNumber ?? string.Empty,
                     ServiceDate = Maintenance.ServiceDate ?? DateTime.Now,
                     DealerReport = Maintenance.DealerReport ?? string.Empty,
@@ -142,7 +144,7 @@
                     VehicleId = Maintenance.VehicleId ?? 0,
                     CustomerId = Maintenance.CustomerId ?? 0,
                     InvoiceNumber = Maintenance.InvoiceNumber,
-                    InvoiceDate = Maintenance.InvoiceDate ?? DateTime.Now
+                    InvoiceDate = Maintenance.InvoiceDate ?? DateTime.Now,
                 };
 
 

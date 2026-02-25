@@ -159,7 +159,7 @@
                                     </MudStack>
 
                                     <MudStack Row="true">
-                                        
+                                         
                                        
                                         <MudSelect @bind-Value="_model.ReportTypeId"
                                                    style="font-size: 14px"
@@ -651,7 +651,16 @@
 
         }
 
-        _FailReportTypeList = await ModuleActionsService.GetFailReportType(Session.UserId);
+        var originalList = await ModuleActionsService.GetFailReportType(Session.UserId);
+        var filteredList = new List<SelectOption>();
+        foreach (var item in originalList)
+        {
+            if (item.Text != "PARTICULAR")
+            {
+                filteredList.Add(item);
+            }
+        }
+        _FailReportTypeList = filteredList;
 
        
 

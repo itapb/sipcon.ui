@@ -131,6 +131,13 @@
                             </MudStack>
 
                             <MudStack Row="true">
+
+                                <MudTextField Typo="Typo.caption" @bind-Value="_model.ReportTypeName"
+                                              Label="Tipo Servicio"
+                                              Variant="Variant.Text"
+                                              Margin="Margin.Dense"
+                                              ReadOnly="true" /> 
+
                                 <MudDatePicker @bind-Date="_model.InvoiceDate"
                                                Style="font-size: 14px;line-height: 0.8rem;"
                                                Label="Fecha Factura"
@@ -252,18 +259,32 @@
 
                             
                             <MudContainer Class="dialog-background-surface py-1 pt-0 pa-1">
-                                    <MudTimeline TimelinePosition="TimelinePosition.Start">
+                            <MudTimeline TimelinePosition="TimelinePosition.Start">
+                                @foreach (var item in _policyDetail)
+                                {
+                                    bool isCurrentService = item.ServiceId == _model.Id;
 
-                                        @foreach (var item in _policyDetail)
-                                        {
-                                            <MudTimelineItem TimelineAlign="TimelineAlign.End" Color="@(item.Valid == "PENDIENTE" ? Color.Info : Color.Default)" Size="Size.Small">
-                                                <MudText Typo="Typo.body2" Style="font-size: 11px;">@item.Valid  <b>@(item.FromKm?.ToString("N0") + "-" + item.UpToKm?.ToString("N0") + " kms.") </b> </MudText>
-                                                <MudText Typo="Typo.body2" Class="mud-text-secondary" Style="font-size: 11px;">@("Km: " + item.KM?.ToString("N0") + "  -  " + item.Date?.ToString("dd MMM yyyy"))</MudText>
-                                            </MudTimelineItem>
-                                        }
+                                    <MudTimelineItem TimelineAlign="TimelineAlign.End" Color="@GetTimelineColor(item.Valid)" Size="Size.Small" Culture="@CultureInfo.GetCultureInfo("es-VE")">
+                
+                                        @* Primera línea *@
+                                        <MudText Typo="Typo.body2" Style="font-size: 11px;">
+                                            @item.Valid <b>@(item.FromKm?.ToString("N0") + "-" + item.UpToKm?.ToString("N0") + " kms.") </b> 
+                                        </MudText>
 
-                                    </MudTimeline>
-                            </MudContainer>
+                                        @* Segunda línea *@
+                                        <MudText Typo="Typo.body2" Style="font-size: 11px;" Class="mud-text-secondary">
+                                            @("Desde: " + item.FromDate?.ToString("dd MMM yyyy") + " - Hasta: " + item.UpToDate?.ToString("dd MMM yyyy"))
+                                        </MudText>
+
+                                        @* Tercera línea: Resaltado tipo 'badge' o marcador si es el actual *@
+                                        <MudText Typo="Typo.body2" Style="@GetTripleLineStyle(isCurrentService)">
+                                            @("Km: " + item.KM?.ToString("N0") + " - " + item.Date?.ToString("dd MMM yyyy") + " - Servicio: " + item.ServiceId?.ToString("N0"))
+                                        </MudText>
+
+                                    </MudTimelineItem>
+                                }
+                            </MudTimeline>
+                        </MudContainer>
                             
                         </MudCardContent>
 
@@ -947,6 +968,27 @@
         _nestedVisible = true;
         StateHasChanged();
     }
-
+    
+    private string GetTripleLineStyle(bool isSelected)
+    {
+        if (isSelected)
+        {
+            // Fondo amarillo suave, texto oscuro, borde izquierdo y padding para que no se pegue
+            return "font-size: 11px; background-color: #fff9c4; color: #333; border-left: 3px solid #fbc02d; padding-left: 4px; width: fit-content; border-radius: 2px; font-weight: bold;";
+        }
+        return "font-size: 11px; color: var(--mud-palette-text-secondary);";
+    }
+    private Color GetTimelineColor(string status)
+    {
+        return status switch
+        {
+            "VALIDO" => Color.Success,
+            "NO VALIDO" => Color.Error,
+            "PENDIENTE" => Color.Info,
+            "NO REGISTRADO" => Color.Warning,
+            "SRAN" => Color.Default,
+            _ => Color.Default
+        };
+    }
 
 }

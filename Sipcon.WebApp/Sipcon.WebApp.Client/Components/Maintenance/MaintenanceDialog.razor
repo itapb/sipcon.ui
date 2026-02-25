@@ -144,6 +144,23 @@
 
                                         <MudStack Row="true">
 
+                                     <MudSelect T="int?" 
+                                               Value="_model.ReportTypeId"
+                                               ValueChanged="OnReportTypeChanged"
+                                               Label="Tipo Reporte"
+                                               ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                               Disabled="@(!_model.VehicleId.HasValue)"
+                                               For="@(() => _model.ReportTypeId)"
+                                               Margin="Margin.Dense"
+                                               Style="font-size: 14px">
+                                        @foreach (var item in _FailReportTypeList)
+                                        {
+                                            // Asumiendo que item.Value es el ID que se guarda en ReportTypeId
+                                            <MudSelectItem Value="item.Value">@item.Text</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                            
+
                                             <MudDatePicker @bind-Date="_model.InvoiceDate"
                                                             Label="Fecha Factura"
                                                             Style="font-size: 12px"
@@ -168,8 +185,54 @@
                                                           ReadOnly="@(!_model.IsActive || _isReadOnly)"
                                                           For="@(() => _model.InvoiceNumber)" />
 
+                                
 
                                         </MudStack>
+                                       @if (_modelPolicyDetail != null && _modelPolicyDetail.Id > 0)
+                                            {
+                                                @* Cambiamos el color del borde dinámicamente: Success si es válido, Warning si no *@
+                                                var statusColor = IsServiceWithinPolicy ? "var(--mud-palette-success)" : "var(--mud-palette-warning)";
+                                                var iconColor = IsServiceWithinPolicy ? Color.Success : Color.Warning;
+
+                                                <MudPaper Variant="Variant.Outlined" 
+                                                          Class="pa-2 mt-2 d-flex align-center justify-space-between mud-background-gray" 
+                                                          Style="@($"border-radius: 8px; border-left: 6px solid {statusColor};")">
+        
+                                                    <div class="d-flex align-center flex-grow-1">
+                                                        <MudIcon Icon="@(IsServiceWithinPolicy ? Icons.Material.Filled.Shield : Icons.Material.Filled.ReportProblem)" 
+                                                                 Color="@iconColor" Class="mx-2" Size="Size.Medium" />
+
+                                                        <div class="d-flex flex-row align-center gap-4">
+                                                            @* Kilometraje *@
+                                                            <div class="d-flex flex-column">
+                                                                <MudText Typo="Typo.caption" Style="font-weight: bold; line-height: 1;">KILOMETRAJE ESCALA</MudText>
+                                                                <MudText Typo="Typo.body2" Color="@(IsServiceWithinPolicy ? Color.Default : Color.Error)" Style="font-size: 12px;">
+                                                                    @(_modelPolicyDetail.FromKm?.ToString("N0") + " - " + _modelPolicyDetail.UpToKm?.ToString("N0") + " kms.")
+                                                                </MudText>
+                                                            </div>
+
+                                                            <MudDivider Vertical="true" FlexItem="true" DividerType="DividerType.Middle" Class="mx-2" Style="height: 25px;" />
+
+                                                            @* Vigencia *@
+                                                            <div class="d-flex flex-column">
+                                                                <MudText Typo="Typo.caption" Style="font-weight: bold; line-height: 1;">VIGENCIA ESCALA</MudText>
+                                                                <MudText Typo="Typo.body2" Color="@(IsServiceWithinPolicy ? Color.Default : Color.Error)" Style="font-size: 12px;">
+                                                                    @(_modelPolicyDetail.FromDate?.ToString("dd/MM/yy") + " al " + _modelPolicyDetail.UpToDate?.ToString("dd/MM/yy"))
+                                                                </MudText>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="px-2">
+                                                        @if (!IsServiceWithinPolicy)
+                                                        {
+                                                            <MudText Typo="Typo.caption" Color="Color.Error" Class="mr-2">¡Datos fuera de rango!</MudText>
+                                                        }
+                                                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => OnReportTypeChanged(_model.ReportTypeId))" />
+                                                    </div>
+                                                </MudPaper>
+                                            }
+
                                         <MudTextField Typo="Typo.caption" @bind-Value="_model.DealerReport"
                                                         Label="Reporte Concesionario"
                                                         Lines="12"
@@ -297,10 +360,24 @@
 
                                                     @foreach (var item in _policyDetail)
                                                     {
-                                                        <MudTimelineItem TimelineAlign="TimelineAlign.End" Color="@(item.Valid == "PENDIENTE" ? Color.Info : Color.Default)" Size="Size.Small">
-                                                            <MudText Typo="Typo.body2" Style="font-size: 11px;">@item.Valid  <b>@(item.FromKm?.ToString("N0") + "-" + item.UpToKm?.ToString("N0") + " kms.") </b> </MudText>
-                                                            <MudText Typo="Typo.body2" Class="mud-text-secondary" Style="font-size: 11px;">@("Km: " + item.KM?.ToString("N0") + "  -  " + item.Date?.ToString("dd MMM yyyy"))</MudText>
-                                                        </MudTimelineItem>
+                                                    <MudTimelineItem TimelineAlign="TimelineAlign.End" Color="@GetTimelineColor(item.Valid)" Size="Size.Small" Culture="@CultureInfo.GetCultureInfo("es-VE")">
+
+                                                        @* Primera línea *@
+                                                        <MudText Typo="Typo.body2" Style="font-size: 11px;">
+                                                            @item.Valid <b>@(item.FromKm?.ToString("N0") + "-" + item.UpToKm?.ToString("N0") + " kms.") </b>
+                                                        </MudText>
+
+                                                        @* Segunda línea *@
+                                                        <MudText Typo="Typo.body2" Style="font-size: 11px;" Class="mud-text-secondary">
+                                                            @("Desde: " + item.FromDate?.ToString("dd MMM yyyy") + " - Hasta: " + item.UpToDate?.ToString("dd MMM yyyy"))
+                                                        </MudText>
+
+                                                        @* Tercera línea: Resaltado tipo 'badge' o marcador si es el actual *@
+                                                        <MudText Typo="Typo.body2" Style="font-size: 11px;" Class="mud-text-secondary">
+                                                            @("Km: " + item.KM?.ToString("N0") + " - " + item.Date?.ToString("dd MMM yyyy") + " - Servicio: " + item.ServiceId?.ToString("N0"))
+                                                        </MudText>
+
+                                                    </MudTimelineItem>
                                                     }
 
                                                 </MudTimeline>
@@ -541,6 +618,7 @@
     private Models.Policy _modelPolicy { get; set; } = new Models.Policy();
     private PolicyDetail _modelPolicyDetail { get; set; } = new PolicyDetail();
     private List<PolicyDetail> _policyDetail { get; set; } = new List<PolicyDetail>();
+    private IEnumerable<SelectOption> _FailReportTypeList { get; set; } = new List<SelectOption>();
 
     private string _errorModalMessage = string.Empty;
     private string _errorSearchVehicle = string.Empty;
@@ -560,6 +638,20 @@
        .NotEmpty().WithMessage("Campo requerido")
        .Length(1, 20).WithMessage("Campo requerido entre 1-20 carácteres"));
 
+    
+
+    private Color GetTimelineColor(string status)
+    {
+        return status switch
+        {
+            "VALIDO" => Color.Success,
+            "NO VALIDO" => Color.Error,
+            "PENDIENTE" => Color.Info,
+            "NO REGISTRADO" => Color.Warning,
+            "SRAN" => Color.Default,
+            _ => Color.Default
+        };
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -578,6 +670,17 @@
         }
 
         _searchVin = string.Empty;
+
+        var originalList = await ModuleActionsService.GetFailReportType(Session.UserId);
+        var filteredList = new List<SelectOption>();
+        foreach (var item in originalList)
+        {
+            if (item.Text == "GARANTIA" || item.Text == "PARTICULAR")
+            {
+                filteredList.Add(item);
+            }
+        }
+        _FailReportTypeList = filteredList;
 
         StateHasChanged();
         await Task.CompletedTask;
@@ -619,14 +722,6 @@
         if (serviceResponse.Processed)
         {
             _modelPolicy = serviceResponse.Data ?? new Models.Policy();
-
-
-            var serviceResponseDetail = await PolicyService.GetOnePolicyDetails(_modelPolicy.Id, _model.Km ?? 0, _model.ServiceDate ?? DateTime.Now);
-            if (serviceResponseDetail.Processed)
-            {
-                _modelPolicyDetail = serviceResponseDetail.Data.FirstOrDefault() ?? new PolicyDetail();
-            }
-
             var serviceResponselist = await PolicyService.GetLogPolicyDetails(_modelPolicy.Id);
             if (serviceResponselist.Processed)
             {
@@ -643,18 +738,8 @@
             _errorSearchVehicle = "Vehiculo sin poliza activa!";
         }
 
-        _model.PolicyDetailId = _modelPolicyDetail.Id;
         _model.NumberPolicy = _modelPolicy.Number;
-
-
         _model.DealerId = Session.DealerId;
-        @* 
-        _model.DealerId  =  _modelPolicy.;
-        _model.DealerServiceName  =  _modelPolicy.;
-        _model.DealerServiceCod  =  _modelPolicy.;
-        _model.DealerAddress  =  _modelPolicy.;
-        _model.DealerServiceCity  =  _modelPolicy.;
-        _model.DealerServiceState  =  _modelPolicy.; *@
 
         _model.DealerSaleId = 0;
         _model.DealerSaleName = _modelPolicy.DealerName ?? string.Empty;
@@ -666,7 +751,6 @@
         _model.ModelId = 0;
         _model.ModelName = _modelPolicy.ModelName;
         _model.Year = _modelPolicy.Year;
-
         _model.CustomerId = _modelPolicy.CustomerId;
         _model.Vat = _modelPolicy.Vat;
         _model.CustomerName = _modelPolicy.FirstName;
@@ -680,6 +764,60 @@
         await Task.Delay(50);
         StateHasChanged();
     }
+
+    private async Task GetLogPolicyBy()
+    {
+        _policyDetail = new List<PolicyDetail>();
+        var serviceResponselist = await PolicyService.GetLogPolicyDetails(_modelPolicy.Id);
+        if (serviceResponselist.Processed)
+        {
+            _policyDetail = serviceResponselist.Data ?? new List<PolicyDetail>();
+        }
+
+        await Task.CompletedTask;
+        await Task.Delay(50);
+        StateHasChanged();
+    }
+
+    private async Task OnReportTypeChanged(int? newValue)
+    {
+        _model.ReportTypeId = newValue;
+
+        // Buscamos el texto sin LINQ (como pediste antes)
+        SelectOption selectedOption = null;
+        foreach (var item in _FailReportTypeList)
+        {
+            if (item.Value == newValue)
+            {
+                selectedOption = item;
+                break;
+            }
+        }
+
+        if (selectedOption != null && selectedOption.Text == "GARANTIA")
+        {
+            await GetLogPolicyBy();
+
+            var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+            var parameters = new DialogParameters { ["PolicyDetails"] = _policyDetail };
+
+            var dialog = await DialogService.ShowAsync<YourPolicyDialog>("Seleccionar Escala", parameters, options);
+            var result = await dialog.Result;
+
+            if (!result.Canceled && result.Data is PolicyDetail selectedPolicy)
+            {
+                _model.PolicyDetailId = selectedPolicy.Id;
+                _modelPolicyDetail = selectedPolicy; // <-- Guardamos el objeto para la vista
+            }
+        }
+        else
+        {
+            // Si cambia a PARTICULAR, limpiamos la selección de garantía
+            _model.PolicyDetailId = null;
+            _modelPolicyDetail = null;
+        }
+    }
+
 
 
     private async Task ClickSearchVehicle()
@@ -711,6 +849,7 @@
 
         
     }
+
 
     private async Task HandleKeyUpSearchVehicle(KeyboardEventArgs e)
     {
@@ -825,6 +964,22 @@
 
     }
 
+    private bool IsServiceWithinPolicy
+    {
+        get
+        {
+            if (_modelPolicyDetail == null || _model == null) return false;
+
+            // Validación de Kilometraje: ¿El Km del reporte es mayor o igual al inicio de la escala?
+            bool kmValido = _model.Km <= (_modelPolicyDetail.UpToKm ?? 0);
+
+            // Lo mismo para la fecha si quieres incluir el último día de vigencia
+            bool fechaValida = _model.ServiceDate <= _modelPolicyDetail.UpToDate;
+
+            return kmValido && fechaValida;
+        }
+    }
+
     public class SelectValidator<T> : AbstractValidator<T>
     {
 
@@ -912,12 +1067,19 @@
                    }
                });
 
+
+            RuleFor(x => x.ReportTypeId)
+              .NotEmpty().WithMessage("Campo requerido")
+              .GreaterThan(0).WithMessage("Campo requerido.");
+
             RuleFor(x => x.PolicyDetailId)
                 .NotEmpty().WithMessage("Campo requerido")
                 .GreaterThan(0).WithMessage("Campo requerido.");
 
          
         }
+
+
 
 
         public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
