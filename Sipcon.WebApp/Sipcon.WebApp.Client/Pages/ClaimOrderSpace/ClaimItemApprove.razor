@@ -55,7 +55,14 @@
     {       
         if (IsQuantityValid())
         {
-            mAction?.RelatedId = ClaimItem?.PartId ?? 0;
+            if (ClaimItem?.ReasonDescription == "NO APLICA")
+            {
+                mAction!.RelatedId = 0;
+            }
+            else
+            {
+                mAction!.RelatedId = ApproveQuantity > 0 ? ClaimItem?.PartId ?? 0 : 0;
+            }
             mAction?.ActionComment = Comment;
             mAction?.ApproveQuantity = ApproveQuantity ?? 0;
             mAction?.TransactionQuantity = TransactionQuantity ?? 0;
@@ -63,9 +70,10 @@
         }else
         {
             await TransactionQuantityMudNumericField!.FocusAsync();
-            await DialogService.ShowDialog($"Suma {TransactionQuantityTitle} mas {ApproveQuantityTitle} debe ser igual {(ClaimItem?.Quantity ?? 0)}", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            await DialogService.ShowDialog($"Debe responder por la totalidad de la cantidad reclamada ({(ClaimItem?.Quantity ?? 0)}). No se permite respuesta parcial.", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
         }
     }
+
     private void SetTitle()
     {
 
@@ -74,15 +82,29 @@
             TransactionQuantityTitle = "CANT. INGRESAR";
             ApproveQuantityTitle = "CANT. FACTURAR";
         }        
-        else if ("FALTANTE,MAL ESTADO".Contains(ClaimItem?.ReasonDescription ?? ""))
+        else if ("FALTANTE,MAL ESTADO, MAL FUNCIONAMIENTO".Contains(ClaimItem?.ReasonDescription ?? ""))
         {
             TransactionQuantityTitle = "CANT. REPONER";
             ApproveQuantityTitle = "CANT. NOTA";            
         }
+        else if (ClaimItem?.ReasonDescription == "NO APLICA")
+        {
+            TransactionQuantityTitle = "CANT. REPONER";
+            ApproveQuantityTitle = "CANT. NOTA";
+        }
 
-        Comment = mAction?.ActionComment;
-        TransactionQuantity = mAction?.TransactionQuantity ;
-        ApproveQuantity = mAction?.ApproveQuantity;   
+        if (mAction != null)
+        {
+            Comment = mAction.ActionComment;
+            TransactionQuantity = mAction.TransactionQuantity;
+            ApproveQuantity = mAction.ApproveQuantity;
+        }
+
+        // 3. SOLO si es NO APLICA y NO hay mAction, forzar valores por defecto
+        if (ClaimItem?.ReasonDescription == "NO APLICA" && mAction == null)
+        {
+            ApproveQuantity = ClaimItem?.Quantity ?? 0;
+        }
     }
     protected override void OnInitialized()
     {
