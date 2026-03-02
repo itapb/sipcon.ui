@@ -338,6 +338,48 @@
             return result;
         }
 
+
+        public async Task<ApiResponse<List<byte>>> ExportFailReportsClosed(int IdSupplier, int IdUser, string Filter = "", int? IdDealer = null, string DateFrom = "", string DateTo = "", int? EstatusId = null)
+        {
+            ApiResponse<List<byte>> result;
+            try
+            {
+                var url = $"api/Service/GetExportFailClosed?supplierId={IdSupplier}&userId={IdUser}&serviceTypeId={(int)ServiceTypeEnum.FailReport}";
+                url = (IdDealer.HasValue) ? $"{url}&dealerId={IdDealer}" : url;
+                url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
+                url = string.IsNullOrEmpty(DateFrom) ? url : $"{url}&fromDate={DateFrom}";
+                url = string.IsNullOrEmpty(DateTo) ? url : $"{url}&upToDate={DateTo}";
+                url = (EstatusId.HasValue) ? $"{url}&estatusId={EstatusId}" : url;
+
+                var response = await _http.GetAsync(url);
+
+                var fileContent = await response.Content.ReadAsByteArrayAsync();
+                result = (fileContent is null) ? new ApiResponse<List<byte>>()
+                {
+                    Processed = false,
+                    Message = "Error al Exportar Data.",
+                    Data = []
+                } : new ApiResponse<List<byte>>()
+                {
+                    Processed = true,
+                    Message = "",
+                    Data = fileContent.ToList()
+                };
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<byte>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message),
+                    Data = []
+                };
+            }
+
+            return result;
+        }
+
         public async Task<ApiResponse<List<byte>>> ExportPdfSRG(int IdUser, int IdService, int? IdDealer = null)
         {
             ApiResponse<List<byte>> result;

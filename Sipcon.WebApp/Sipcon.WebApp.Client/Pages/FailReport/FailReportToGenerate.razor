@@ -85,26 +85,6 @@
                                     <MudButton OnClick="@(() => _pickerTo.CloseAsync(false))">Cancelar</MudButton>
                                 </PickerActions>
                             </MudDatePicker>
-
-                          <MudSelect T="SelectOption" 
-                               @bind-Value="_selectedAction" 
-                               ToStringFunc="@(e => e?.Text)"
-                               Placeholder="ESTATUS"
-                               AdornmentIcon="@Icons.Material.Filled.FilterList"
-                               AdornmentColor="Color.Info"
-                               Style="font-size: 14px; width: 160px;"
-                               Variant="Variant.Text"
-                               Clearable="true"
-                               Dense="true">
-                        @if (_actions != null)
-                        {
-                            @foreach (var action in _actions)
-                            {
-                                @* T debe ser SelectOption *@
-                                <MudSelectItem T="SelectOption" Value="@action">@action.Text</MudSelectItem>
-                            }
-                        }
-                    </MudSelect>
                         </MudStack>
                 </ChildContent>
                 </MudExpansionPanel>
@@ -113,7 +93,7 @@
         </div>
         <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Info" OnClick="() => ClickSearch()"></MudIconButton>
         <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
-            <MudIconButton Icon="@Icons.Material.Filled.DocumentScanner" Color="Color.Info" OnClick="() => ClickExportReportSRG()" />
+
         <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
             @foreach (var module in _itemsModules)
             {
@@ -314,10 +294,10 @@
         _rowsTotal = 0;
 
         _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
+        _itemsModules = _itemsModules.Where(a => a.Text == "GENERAR" || a.Text == "RECHAZAR").ToList();
 
         //fechas y filtros
         _actions = await ModuleActionsService.GetAction(Session.UserId, _moduleName);
-        _actions = _actions.Where(a => a.Text == "GENERATE" || a.Text == "EXPORT" || a.Text == "DECLINE").ToList();
         int? idRespaldado = _selectedAction?.Value;
          if (idRespaldado.HasValue && _actions != null)   {  _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
          int? _estatusid = _selectedAction?.Value;
@@ -470,9 +450,6 @@
     {
         switch (module.ActionName)
         {
-            case "EXPORT":
-                await ExportItemsAsync();
-                break;
             case "GENERATE":
                 await GenerateItemsAsync(module.IdAction, module.ActionName);
                 break;
@@ -486,35 +463,7 @@
     }
 
 
-    private async Task ExportItemsAsync()
-    {
-           int? idRespaldado = _selectedAction?.Value;
-         if (idRespaldado.HasValue && _actions != null)   {  _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
-         int? _estatusid = _selectedAction?.Value;
-         string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
-        string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
-
-        var serviceResponse = await FailReportService.ExportFailReports(Session.SupplierId, Session.UserId, _searchString, Session.DealerId,_dateFromStr,_dateToStr,_estatusid);
-        if (serviceResponse.Processed)
-        {
-            _success = true;
-            _nestedErrorMessage = "";
-
-            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
-            var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
-            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Reporte de Falla.xlsx");
-
-        }
-        else
-        {
-            // Console.WriteLine(serviceResponse.Message);
-            _success = false;
-            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
-            
-            OpenNested();
-
-        }
-    }
+   
 
     private async Task GenerateItemsAsync(int moduleId, string moduleActionName)
     {
