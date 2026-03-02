@@ -112,6 +112,43 @@
             return result;
         }
 
+
+        public async Task<ApiResponse<List<FailReport>>> GetFailReportsToGenerate(int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null, string DateFrom = "", string DateTo = "")
+        {
+            ApiResponse<List<FailReport>>? result;
+
+            try
+            {
+                var url = $"api/Service/GetServiceFailToGenerate?supplierId={IdSupplier}&userId={IdUser}&rowFrom={RowFrom}";
+                url = (IdDealer.HasValue) ? $"{url}&dealerId={IdDealer}" : url;
+                url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
+                url = string.IsNullOrEmpty(DateFrom) ? url : $"{url}&fromDate={DateFrom}";
+                url = string.IsNullOrEmpty(DateTo) ? url : $"{url}&upToDate={DateTo}";
+
+                result = await _http.GetFromJsonAsync<ApiResponse<List<FailReport>>>(url);
+
+                result = result is null ? new ApiResponse<List<FailReport>>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos.",
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<FailReport>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+
+        }
+
+
+
         public async Task<ApiResponse<ActionResult>> CreateFailReport(FailReport FailReport, int IdUser)
         {
             ApiResponse<ActionResult>? result;

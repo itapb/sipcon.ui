@@ -316,8 +316,7 @@
         _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
 
         //fechas y filtros
-        _actions = await ModuleActionsService.GetAction(Session.UserId, _moduleName);
-        _actions = _actions.Where(a => a.Text == "GENERATE" || a.Text == "EXPORT" || a.Text == "DECLINE").ToList();
+        _actions = await ModuleActionsService.GetAction(Session.UserId, _moduleName);  
         int? idRespaldado = _selectedAction?.Value;
          if (idRespaldado.HasValue && _actions != null)   {  _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
          int? _estatusid = _selectedAction?.Value;
