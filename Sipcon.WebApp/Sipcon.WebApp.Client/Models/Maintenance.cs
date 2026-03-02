@@ -13,7 +13,8 @@ namespace Sipcon.WebApp.Client.Models
         public string ServiceTypeName { get; set; } = string.Empty;
         public int? ReportTypeId { get; set; } = null;
         public string ReportTypeName { get; set; } = string.Empty;
-        public DateTime? ServiceDate { get; set; } = null;
+
+        private DateTime? _serviceDate = DateTime.Today;
         public DateTime? DateCreated { get; set; } = null;
         public string DealerReport { get; set; } = string.Empty;
         public string SupplierReport { get; set; } = string.Empty;
@@ -25,6 +26,14 @@ namespace Sipcon.WebApp.Client.Models
         public string EstatusName { get; set; } = string.Empty;
         public string AuthorizedUserName { get; set; } = string.Empty;
         public string AuthorizedUserLastName { get; set; } = string.Empty;
+
+        public DateTime? ServiceDate
+        {
+            get => _serviceDate;
+            // El .Date elimina cualquier residuo de tiempo (horas, min, seg)
+            set => _serviceDate = value?.Date;
+        }
+
 
 
         /// <summary>
@@ -85,6 +94,7 @@ namespace Sipcon.WebApp.Client.Models
     {
         public int Id { get; set; } = 0;
         public bool IsActive { get; set; } = true;
+        public int? ReportTypeId { get; set; } = null;
         public string OrderNumber { get; set; } = string.Empty;
         public DateTime ServiceDate { get; set; } = DateTime.Now;
         public string DealerReport { get; set; } = string.Empty;

@@ -99,7 +99,7 @@ else
                                         {
                                             <MudSelectItem T="SelectOption" Value="@action">@action.Text</MudSelectItem>
                                         }
-                                    }
+                                    } 
                                 </MudSelect>
                             </MudStack>
                         </ChildContent>
@@ -148,11 +148,11 @@ else
             <PropertyColumn Property="x => x.DealerName" Title="CONCESIONARIO" />
             <PropertyColumn Property="x => x.Login" Title="USUARIO" />
             <PropertyColumn Property="x => x.StatusName" Title="ESTATUS" />
-            @*             <TemplateColumn>
+            <TemplateColumn StickyRight="true">
                 <CellTemplate>
                     <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Print" OnClick="() => ClickPrintClaimOrder(context.Item)" />
                 </CellTemplate>
-            </TemplateColumn> *@
+            </TemplateColumn> 
             <TemplateColumn StickyRight="true">
                 <CellTemplate>
                     <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditClaimOrder(context.Item)" />
@@ -252,7 +252,7 @@ else
     private async Task ClickPrintClaimOrder(Models.ClaimPart item)
     {
         Loading = true;
-        var ResultZonas = await Http.GetAsync($"api/SaleOrder/ExportSaleOrder?saleOrderId={item.Id}&userId={Session.UserId}");
+        var ResultZonas = await Http.GetAsync($"api/Claim/ExportClaim?claimId={item.Id}&userId={Session.UserId}");
         if (ResultZonas.IsSuccessStatusCode)
         {
             var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
