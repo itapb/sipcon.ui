@@ -204,7 +204,7 @@
                 </div>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn >
+        <TemplateColumn StickyRight="true">
             <CellTemplate>
                 <MudStack Row="true">
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" Href="@(" FailReportdetail/" + context.Item.Id)" />
@@ -326,10 +326,10 @@
         string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
         string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
 
-         var serviceResponse = await FailReportService.GetFailReports(Session.SupplierId, Session.UserId, _rowCount, _searchString, Session.DealerId,_dateFromStr,_dateToStr,_estatusid);
+        var serviceResponse = await FailReportService.GetServiceFailClosed(Session.SupplierId, Session.UserId, _rowCount, _searchString, Session.DealerId, _dateFromStr, _dateToStr, _estatusid);
         if (serviceResponse.Processed)
         {
-            _FailReports = serviceResponse.Data.Where(a => a.EstatusName == "PROCESADO" || a.EstatusName == "GENERADO").ToList(); ;
+            _FailReports = serviceResponse.Data;
             _rowsTotal = serviceResponse.Total;
         }
         else
