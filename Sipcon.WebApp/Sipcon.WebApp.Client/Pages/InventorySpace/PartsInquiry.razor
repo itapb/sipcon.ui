@@ -1,5 +1,6 @@
 ﻿@page "/partsinquiry"
 @using Sipcon.WebApp.Client.Repository.Auth
+@using Sipcon.WebApp.Client.Pages
 @inject HubEventsService hubEventsService
 @implements IDisposable
 
@@ -15,6 +16,7 @@
             <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             <MudSpacer />
             <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshPart"></MudIconButton>
+            <MudIconButton Icon="@Icons.Material.Filled.PlaylistAdd" Color="Color.Info"OnClick="@OpenFormPartsDemandNewPart" Title="Nueva Demanda Insatisfecha" />
             <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
                 @foreach (var strmodulo in Modules!)
                 {
@@ -43,7 +45,16 @@
                         var stock = context.Item.Stock ?? 0;
                         var hasStock = stock > 0;
                     }
-                    <MudIcon Icon="@(hasStock? Icons.Material.Filled.Brightness1 : Icons.Material.Filled.Error)" Color="@(hasStock ? Color.Success : Color.Error)" Size="Size.Medium" />
+                    <MudIcon Icon="@(hasStock? Icons.Material.Filled.Brightness1 : Icons.Material.Filled.Error)" Color="@(hasStock? Color.Success: Color.Error)" Size="Size.Medium" />
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn>
+                <CellTemplate>
+                    @{
+                        var stock = context.Item.Stock ?? 0;
+                        var hasStock = stock > 0;
+                    }
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Filled.PlaylistAdd" Disabled="@hasStock" OnClick="@(() => OpenFormPartsDemand(context.Item))" Title="@(hasStock ? "No disponible (con stock)" : "Registrar Demanda Insatisfecha")" Color="@(hasStock? Color.Default: Color.Info)" />
                 </CellTemplate>
             </TemplateColumn>
 
@@ -65,6 +76,8 @@ else
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+
     private int? PartId;
     List<BreadcrumbItem> ItemsNavigate = [new("Home", href: "", icon: Icons.Material.Filled.Home), new("Inventario", href: "partsinquiry", icon: Icons.Material.Filled.Inventory), new("Consulta de Partes", href: "partsinquiry", icon: Icons.Material.Filled.Hardware)];
     bool IsAllCheckBoxSelected = false;
@@ -261,6 +274,58 @@ else
         if (PartMudDataGrid != null)
         {
             await PartMudDataGrid.ReloadServerData();
+        }
+    }
+    private async Task OpenFormPartsDemandNewPart()
+    {
+        var options = new DialogOptions
+        {
+            BackdropClick = false,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseButton = false,
+            NoHeader = true
+        };
+
+        var parameters = new DialogParameters<FormPartsDemand>
+    {
+        { x => x.PartId, 0 },
+        { x => x.PartCode, string.Empty }, 
+        { x => x.PartDescription, string.Empty }  
+    };
+
+        var dialog = await DialogService.ShowAsync<FormPartsDemand>("", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result!.Canceled)
+        {
+            await PartMudDataGrid!.ReloadServerData();
+        }
+    }
+    private async Task OpenFormPartsDemand(Part item)
+    {
+        var options = new DialogOptions
+        {
+            BackdropClick = false,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseButton = false,
+            NoHeader = true
+        };
+
+        var parameters = new DialogParameters
+    {
+        { "PartId", item.Id },
+        { "PartCode", item.InnerCode ?? "" },
+        { "PartDescription", item.Description ?? "" }
+    };
+
+        var dialog = await DialogService.ShowAsync<FormPartsDemand>("", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result!.Canceled)
+        {
+            await PartMudDataGrid!.ReloadServerData();
         }
     }
     public void Dispose()
