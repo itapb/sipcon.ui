@@ -77,6 +77,8 @@ builder.Services.AddScoped<IFailReportService, FailReportRepository>();
 builder.Services.AddScoped<ISecurityService, SecurityRepository>();
 builder.Services.AddScoped<IReportDMSService, ReportDMSRepository>();
 builder.Services.AddScoped<IReportingService, ReportingRepository>();
+builder.Services.AddScoped<IKardexService, KardexRepository>();
+
 
 
 

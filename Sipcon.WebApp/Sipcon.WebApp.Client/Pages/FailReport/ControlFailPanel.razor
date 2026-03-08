@@ -1,28 +1,46 @@
 ﻿@page "/failreport"
+@inject UtilModuleActions ModuleActionsService
+
 <PageTitle>Reporte de Falla</PageTitle>
 <CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
-<MudTabs Elevation="2" Rounded="true" Centered="true" ApplyEffectsToContainer="true" PanelClass="pa-2" Color="Color.Info" >
-        <MudTabPanel Icon="@Icons.Material.Filled.LocalShipping" Text="GENERAL" >
-            <FailReportList/>
+
+<MudTabs Elevation="2" Rounded="true" Centered="true" ApplyEffectsToContainer="true" PanelClass="pa-2" Color="Color.Info">
+    <MudTabPanel Icon="@Icons.Material.Filled.LocalShipping" Text="GENERAL">
+        <FailReportList />
+    </MudTabPanel>
+
+    @* Condicional para mostrar la pestaña basada en los permisos/acciones *@
+    @if (_itemsModules.Any(x => x.Text.Equals("GENERAR", StringComparison.OrdinalIgnoreCase)))
+    {
+        <MudTabPanel Icon="@Icons.Material.Filled.TextSnippet" Text="POR GENERAR">
+            <FailReportToGenerate />
         </MudTabPanel>
-       
-       <MudTabPanel Icon="@Icons.Material.Filled.TextSnippet" Text="POR GENERAR">
-           <FailReportToGenerate />
-       </MudTabPanel>
-       
-       <MudTabPanel Icon="@Icons.Material.Filled.PointOfSale" Text="GENERADOS">
-           <FailReportToGenerate />
-       </MudTabPanel>
-    </MudTabs>
-@code { [Inject] private UserSession Session { get; set; } = null!;
+    }
 
+    <MudTabPanel Icon="@Icons.Material.Filled.PointOfSale" Text="GENERADOS">
+        <FailReportClosed />
+    </MudTabPanel>
+</MudTabs>
 
-   private List<BreadcrumbItem> _itemsNavigate =
-                [
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
+    private string _moduleName = "SERVICIOS-REPORTE FALLA";
+    private List<ModuleAction> _itemsModules = new();
+
+    private List<BreadcrumbItem> _itemsNavigate = [
         new("Home", href: "", icon: Icons.Material.Filled.Home),
-        new("Servicios",href: "", icon: Icons.Material.Filled.Speed),
-        new("Reporte Falla",  href: "failreport", disabled: false, icon: Icons.Material.Filled.CarCrash),
+        new("Servicios", href: "", icon: Icons.Material.Filled.Speed),
+        new("Reporte Falla", href: "failreport", disabled: false, icon: Icons.Material.Filled.CarCrash),
     ];
 
+    // Es vital llamar a GetFailReports en el OnInitializedAsync para que la UI se refresque
+    protected override async Task OnInitializedAsync()
+    {
+        await GetFailReports();
+    }
 
+    private async Task GetFailReports()
+    {
+        _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
+    }
 }
