@@ -299,7 +299,7 @@
          string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
         string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
         
-        var serviceResponse = await KardexService.GetKardex(Session.SupplierId, Session.UserId, _rowCount, _searchString, Session.DealerId,_dateFromStr,_dateToStr);
+        var serviceResponse = await KardexService.GetKardex(Session.SupplierId, Session.UserId, _rowCount, _searchString,_dateFromStr,_dateToStr);
         if (serviceResponse.Processed)
         {
             _kardex = serviceResponse.Data;
@@ -365,9 +365,9 @@
     {
         switch (module.ActionName)
         {
-            // case "EXPORT":
-            //     await ExportItemsAsync();
-            //     break;
+            case "EXPORT":
+                await ExportItemsAsync();
+                break;
             default:
                 Console.WriteLine($"{MessageEnum.ActionsError.GetStringValue()}: {module.ActionName}");
                 break;
@@ -375,35 +375,35 @@
     }
 
 
-    // private async Task ExportItemsAsync()
-    // {
-    //     int? idRespaldado = _selectedAction?.Value;
-    //      if (idRespaldado.HasValue && _actions != null)   {  _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
-    //      int? _estatusid = _selectedAction?.Value;
-    //      string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
-    //     string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
+    private async Task ExportItemsAsync()
+    {
+        int? idRespaldado = _selectedAction?.Value;
+         if (idRespaldado.HasValue && _actions != null)   {  _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
+         int? _estatusid = _selectedAction?.Value;
+         string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
+        string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
 
-    //     var serviceResponse = await PolicyService.ExportPolicys(Session.SupplierId, Session.UserId, _searchString, Session.DealerId,_dateFromStr,_dateToStr,_estatusid);
-    //     if (serviceResponse.Processed)
-    //     {
-    //         _success = true;
-    //         _nestedErrorMessage = "";
+        var serviceResponse = await KardexService.ExportKardex(Session.SupplierId, Session.UserId, _searchString,_dateFromStr,_dateToStr);
+        if (serviceResponse.Processed)
+        {
+            _success = true;
+            _nestedErrorMessage = "";
 
-    //         var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
-    //         var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
-    //         await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Poliza.xlsx");
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+            var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Kardex.xlsx");
 
-    //     }
-    //     else
-    //     {
-    //         // Console.WriteLine(serviceResponse.Message);
-    //         _success = false;
-    //         _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue();
+        }
+        else
+        {
+            // Console.WriteLine(serviceResponse.Message);
+            _success = false;
+            _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue();
             
-    //         OpenNested();
+            OpenNested();
 
-    //     }
-    // }
+        }
+    }
 
 
 
