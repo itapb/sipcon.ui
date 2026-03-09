@@ -612,54 +612,71 @@
         await Task.CompletedTask;
     }
 
-    private async Task LockItemsAsync(int moduleId, string moduleActionName)
-    {
+    
 
+     private async Task LockItemsAsync(int moduleId, string moduleActionName)
+    {
+        Console.WriteLine("Bloquear Poliza...");
         if (selectedPolicy.Any())
         {
             var option = new DialogOptions
-                {
-                    CloseButton = false,
-                    MaxWidth = MaxWidth.Small,
-                    FullWidth = true,
-                    BackdropClick = false
-                };
-            bool? result = await DialogService.ShowMessageBox(
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false
+            };
+            bool? confirm = await DialogService.ShowMessageBox(
                 "Bloquear Poliza",
-                $"Seguro de Bloquear Poliza seleccionada? ",
+                $"Seguro de bloquear Poliza seleccionada? ",
                 yesText: "Si", noText: "No", "", option);
 
-            if (result == true)
+            if (confirm == true)
             {
-                List<PostAction> ActionList = ([]);
+                DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+                var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Bloquear poliza..." } };
+                var dialog = await DialogService.ShowAsync<TextItemDialog>("Poliza ", parameters, options);
 
-                foreach (var policy in selectedPolicy)
+                StateHasChanged();
+
+                var result = await dialog.Result;
+                if (!result!.Canceled)
                 {
-                    var VehicleAction = new PostAction
+                    var _Observacion = (string)(result.Data ?? string.Empty);
+                    List<PostAction> ActionList = ([]);
+
+                    foreach (var Item in selectedPolicy)
+                    {
+                        var ItemAction = new PostAction
                         {
-                            RecordId = policy.Id,
+                            RecordId = Item.Id,
                             ModuleId = moduleId,
-                            ActionName = moduleActionName
+                            ActionName = moduleActionName,
+                            ActionComment = _Observacion
                         };
-                    ActionList.Add(VehicleAction);
+                        ActionList.Add(ItemAction);
+                    }
+
+                    var serviceResponse = await PolicyService.ActionsPolicy(ActionList, Session.UserId);
+                    if (serviceResponse.Processed)
+                    {
+
+                        _success = true;
+                        _nestedErrorMessage = MessageEnum.LockOK.GetStringValue();
+
+                        await _mudDataGrid!.ReloadServerData();
+
+                    }
+                    else
+                    {
+                        // Console.WriteLine(serviceResponse.Message);
+                        _success = false;
+                        _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.LockNotOK.GetStringValue();
+
+                    }
+                    OpenNested();
                 }
 
-                var serviceResponse = await PolicyService.ActionsPolicy(ActionList, Session.UserId);
-                if (serviceResponse.Processed)
-                {
-
-                    _success = true;
-                    _nestedErrorMessage = MessageEnum.LockOK.GetStringValue();
-
-                    await _mudDataGrid!.ReloadServerData();
-                }
-                else
-                {
-                    // Console.WriteLine(serviceResponse.Message);
-                    _success = false;
-                    _nestedErrorMessage = MessageEnum.LockNotOK.GetStringValue();
-                }
-                OpenNested();
             }
 
         }
@@ -668,53 +685,71 @@
         await Task.CompletedTask;
     }
 
+
+
     private async Task UnlockItemsAsync(int moduleId, string moduleActionName)
     {
+        Console.WriteLine("Rechazar Reporte Falla...");
         if (selectedPolicy.Any())
         {
             var option = new DialogOptions
-                {
-                    CloseButton = false,
-                    MaxWidth = MaxWidth.Small,
-                    FullWidth = true,
-                    BackdropClick = false
-                };
-            bool? result = await DialogService.ShowMessageBox(
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false
+            };
+            bool? confirm = await DialogService.ShowMessageBox(
                 "Desbloquear Poliza",
                 $"Seguro de desbloquear Poliza seleccionada? ",
                 yesText: "Si", noText: "No", "", option);
 
-            if (result == true)
+            if (confirm == true)
             {
-                List<PostAction> ActionList = ([]);
+                DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+                var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Desbloquear poliza..." } };
+                var dialog = await DialogService.ShowAsync<TextItemDialog>("Poliza ", parameters, options);
 
-                foreach (var policy in selectedPolicy)
+                StateHasChanged();
+
+                var result = await dialog.Result;
+                if (!result!.Canceled)
                 {
-                    var VehicleAction = new PostAction
+                    var _Observacion = (string)(result.Data ?? string.Empty);
+                    List<PostAction> ActionList = ([]);
+
+                    foreach (var Item in selectedPolicy)
+                    {
+                        var ItemAction = new PostAction
                         {
-                            RecordId = policy.Id,
+                            RecordId = Item.Id,
                             ModuleId = moduleId,
-                            ActionName = moduleActionName
+                            ActionName = moduleActionName,
+                            ActionComment = _Observacion
                         };
-                    ActionList.Add(VehicleAction);
+                        ActionList.Add(ItemAction);
+                    }
+
+                    var serviceResponse = await PolicyService.ActionsPolicy(ActionList, Session.UserId);
+                    if (serviceResponse.Processed)
+                    {
+
+                        _success = true;
+                        _nestedErrorMessage = MessageEnum.UnLockOK.GetStringValue();
+
+                        await _mudDataGrid!.ReloadServerData();
+
+                    }
+                    else
+                    {
+                        // Console.WriteLine(serviceResponse.Message);
+                        _success = false;
+                        _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.UnLockNotOK.GetStringValue();
+
+                    }
+                    OpenNested();
                 }
 
-                var serviceResponse = await PolicyService.ActionsPolicy(ActionList, Session.UserId);
-                if (serviceResponse.Processed)
-                {
-                    _success = true;
-                    _nestedErrorMessage = MessageEnum.UnLockOK.GetStringValue();
-                    await _mudDataGrid!.ReloadServerData();
-
-                }
-                else
-                {
-                    // Console.WriteLine(serviceResponse.Message);
-                    _success = false;
-                    _nestedErrorMessage = MessageEnum.UnLockNotOK.GetStringValue();
-
-                }
-                OpenNested();
             }
 
         }
@@ -722,6 +757,8 @@
         selectedPolicy = new([]);
         await Task.CompletedTask;
     }
+
+
 
     private Func<Policy, string> _cellStyleFunc => x =>
     {

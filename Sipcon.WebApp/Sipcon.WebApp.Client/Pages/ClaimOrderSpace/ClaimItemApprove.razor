@@ -8,8 +8,14 @@
                         <MudTextField T="string" ReadOnly="true" Variant="Variant.Filled" Label="DESCRIPCION" @bind-Value="ClaimItem?.PartName"></MudTextField>
                         <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
                             <MudStack Row="true" Spacing="2">
-                                <MudNumericField T="int?" HideSpinButtons="true" Label="@TransactionQuantityTitle" @bind-Value="ApproveQuantity" @ref="TransactionQuantityMudNumericField"></MudNumericField>
-                                <MudNumericField T="int?" HideSpinButtons="true" Label="@ApproveQuantityTitle" @bind-Value="TransactionQuantity"></MudNumericField>
+                            <MudNumericField T="int?"
+                                             HideSpinButtons="true"
+                                             Label="@TransactionQuantityTitle"
+                                             @bind-Value="ApproveQuantity"
+                                             @ref="TransactionQuantityMudNumericField"
+                                             ReadOnly="@(ClaimItem?.ReasonDescription == "NO APLICA")">
+                            </MudNumericField>
+                            <MudNumericField T="int?" HideSpinButtons="true" Label="@ApproveQuantityTitle" @bind-Value="TransactionQuantity"></MudNumericField>
                             </MudStack>
                             
                             <MudTextField T="string" Label="COMENTARIO" @bind-Value="Comment" ></MudTextField>
@@ -55,7 +61,18 @@
     {       
         if (IsQuantityValid())
         {
-            mAction?.RelatedId = ClaimItem?.PartId ?? 0;
+            var motivosSinRepuesto = new[] { "NO SOLICITADO", "SOBRANTE", "NO APLICA" };
+
+            if (motivosSinRepuesto.Contains(ClaimItem?.ReasonDescription ?? ""))
+            {
+                mAction!.RelatedId = 0;  
+            }
+            else
+            {
+                mAction!.RelatedId = ApproveQuantity > 0 ? ClaimItem?.PartId ?? 0 : 0;
+            }
+
+            //mAction?.RelatedId = ClaimItem?.PartId ?? 0;
             mAction?.ActionComment = Comment;
             mAction?.ApproveQuantity = ApproveQuantity ?? 0;
             mAction?.TransactionQuantity = TransactionQuantity ?? 0;
@@ -63,7 +80,7 @@
         }else
         {
             await TransactionQuantityMudNumericField!.FocusAsync();
-            await DialogService.ShowDialog($"Suma {TransactionQuantityTitle} mas {ApproveQuantityTitle} debe ser igual {(ClaimItem?.Quantity ?? 0)}", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            await DialogService.ShowDialog($"Debe responder por la cantidad total reclamada ({(ClaimItem?.Quantity ?? 0)}). No se permiten respuestas parciales.", "Cantidad Inválida", "OK", Color.Error, Icons.Material.Filled.Error);
         }
     }
     private void SetTitle()
@@ -74,15 +91,21 @@
             TransactionQuantityTitle = "CANT. INGRESAR";
             ApproveQuantityTitle = "CANT. FACTURAR";
         }        
-        else if ("FALTANTE,MAL ESTADO".Contains(ClaimItem?.ReasonDescription ?? ""))
+        else if ("FALTANTE, MAL ESTADO, MAL FUNCIONAMIENTO, NO APLICA".Contains(ClaimItem?.ReasonDescription ?? ""))
         {
             TransactionQuantityTitle = "CANT. REPONER";
             ApproveQuantityTitle = "CANT. NOTA";            
         }
-
-        Comment = mAction?.ActionComment;
-        TransactionQuantity = mAction?.TransactionQuantity ;
-        ApproveQuantity = mAction?.ApproveQuantity;   
+        if (mAction != null)
+        {
+            Comment = mAction.ActionComment;
+            TransactionQuantity = mAction.TransactionQuantity;
+            ApproveQuantity = mAction.ApproveQuantity;
+        } 
+        if (ClaimItem?.ReasonDescription == "NO APLICA" && mAction == null)
+        {
+            ApproveQuantity = ClaimItem?.Quantity ?? 0;
+        }
     }
     protected override void OnInitialized()
     {
