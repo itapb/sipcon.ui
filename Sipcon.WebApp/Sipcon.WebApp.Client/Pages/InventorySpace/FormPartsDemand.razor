@@ -1,0 +1,346 @@
+﻿@using FluentValidation
+@using Sipcon.WebApp.Client.Pages
+@using Sipcon.WebApp.Client.Services
+@using Sipcon.WebApp.Client.Repository
+@using System.Text.Json
+@using Model
+
+@inject HttpClient Http
+@inject IDemandService DemandService
+@inject UserSession Session
+@inject IDialogService DialogService
+<MudForm Model="@_demand" @ref="@form" Validation="@_demandValidator.ValidateValue" ValidationChanged="@(EventCallback.Factory.Create<bool>(this, value => _isFormValid = value))">
+    <MudDialog Class="blur dialog-background" ActionsClass="dialog-background-surface">
+        <DialogContent>
+            @* Cabecera con título y botones *@
+            <MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
+                <MudCard>
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudGrid Spacing="0" Justify="Justify.Center">
+                                <MudItem xs="12" sm="4">
+                                    <div class="d-flex justify-left">
+                                        <MudText Typo="Typo.h6" Class="d-flex align-center">
+                                            <MudIcon Icon="@Icons.Material.Filled.PlaylistAdd" Color="Color.Primary" Class="mr-2" />
+                                            Demanda Insatisfecha
+                                        </MudText>
+                                    </div>
+                                </MudItem>
+
+                                <MudItem xs="12" sm="2">
+                                    @* Espacio vacío para alineación *@
+                                </MudItem>
+
+                                <MudItem xs="12" sm="6">
+                                    <div class="d-flex justify-right" style="justify-content: end;">
+                                        <MudButton OnClick="Cancel" Class="mr-2">Cancelar</MudButton>
+                                        <MudFab StartIcon="@Icons.Material.Filled.Save"
+                                                Label="Guardar"
+                                                OnClick="@(async () => await OnValidSubmit())"
+                                                Color="Color.Info"
+                                                Size="Size.Small"/>
+                                    </div>
+                                </MudItem>
+                            </MudGrid>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                </MudCard>
+            </MudContainer>
+
+            @* Contenido del formulario *@
+            <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudGrid Spacing="2">
+                                <!-- Descripción -->
+                                <MudItem xs="12">
+                                    <MudTextField @bind-Value="_demand.Description"
+                                                  Label="Descripción de la pieza"
+                                                  Variant="Variant.Outlined"
+                                                  Margin="Margin.Dense"
+                                                  Disabled="_isExistingPart" />
+                                </MudItem>
+
+                                <!-- Código -->
+                                <MudItem xs="12" sm="6">
+                                    <MudTextField @bind-Value="_demand.InnerCode"
+                                                  Label="Código"
+                                                  Variant="Variant.Outlined"
+                                                  Margin="Margin.Dense"
+                                                  Disabled="_isExistingPart"
+                                                  Required="@(!_isExistingPart)"
+                                                  RequiredError="El código es requerido"
+                                                  For="@(() => _demand.InnerCode)" />
+                                </MudItem>
+
+                                <!-- Cantidad -->
+                                <MudItem xs="12" sm="6">
+                                    <MudNumericField @bind-Value="_demand.Quantity"
+                                                     Label="Cantidad"
+                                                     Variant="Variant.Outlined"
+                                                     Margin="Margin.Dense"
+                                                     Min="1"
+                                                     Required="true"
+                                                     RequiredError="La cantidad es requerida"
+                                                     For="@(() => _demand.Quantity)" />
+                                </MudItem>
+
+                                <!-- Modelo -->
+                                <MudItem xs="12" sm="6">
+                                    <MudSelect T="Model"
+                                               Label="Modelo"
+                                               Variant="Variant.Outlined"
+                                               Margin="Margin.Dense"
+                                               ToStringFunc="@ConvertModelFunc"
+                                               ValueChanged="@OnModelValueChanged"
+                                               Value="@_modelSelected"
+                                               Required="@_isNewPart"
+                                               Disabled="@_isExistingPart"
+                                               RequiredError="El modelo es requerido"
+                                               AnchorOrigin="Origin.BottomCenter">
+                                        @if (_modelList != null && _modelList.Any())
+                                        {
+                                            @foreach (var model in _modelList)
+                                            {
+                                                <MudSelectItem Value="model" />
+                                            }
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+
+                                <!-- Motivo -->
+                                <MudItem xs="12" sm="6">
+                                    <MudSelect T="Reason"
+                                               Label="Motivo"
+                                               Variant="Variant.Outlined"
+                                               Margin="Margin.Dense"
+                                               ToStringFunc="@ConvertReasonFunc"
+                                               ValueChanged="@OnReasonValueChanged"
+                                               Value="@_reasonSelected"
+                                               Required="true"
+                                               RequiredError="El motivo es requerido"
+                                               AnchorOrigin="Origin.BottomCenter">
+                                        @if (_reasonList != null && _reasonList.Any())
+                                        {
+                                            @foreach (var reason in _reasonList)
+                                            {
+                                                <MudSelectItem Value="reason" />
+                                            }
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+
+                                <!-- Hidden fields -->
+                                <MudHidden @bind-Value="_demand.PartId" />
+                                <MudHidden @bind-Value="_demand.Id" />
+                                <MudHidden @bind-Value="_demand.DealerId" />
+                            </MudGrid>
+                        </MudCardContent>
+                    </MudCard>
+            </MudContainer>
+        </DialogContent>
+    </MudDialog>
+</MudForm>
+
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public int PartId { get; set; }
+
+    [Parameter]
+    public string PartCode { get; set; } = string.Empty;
+
+    [Parameter]
+    public string PartDescription { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback OnDemandSaved { get; set; }
+
+    private MudForm? form;
+    private Demand _demand { get; set; } = new Demand();
+    private bool _isFormValid;
+    private bool _isExistingPart => PartId > 0;
+    private bool _isNewPart => PartId == 0; 
+    private bool _isLoading = true;
+
+    // Listas de objetos
+    private List<Model> _modelList { get; set; } = new();
+    private List<Reason> _reasonList { get; set; } = new();
+
+    // Objetos seleccionados
+    private Model? _modelSelected { get; set; }
+    private Reason? _reasonSelected { get; set; }
+
+    // Funciones de conversión
+    private Func<Model?, string> ConvertModelFunc = model => model?.Name ?? model?.Description ?? string.Empty;
+    private Func<Reason?, string> ConvertReasonFunc = reason => reason?.Description ?? string.Empty;
+
+    private DemandValidator _demandValidator = new DemandValidator();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCatalogData();
+        InitializeDemand();
+        _isLoading = false;
+    }
+
+    private async Task LoadCatalogData()
+    {
+        try
+        {
+            _demand.DealerId = Session.DealerId;
+
+            // 1. Cargar modelos
+            HttpResponseMessage modelResponse = await Http.GetAsync($"api/Model/GetAll?userId={Session.UserId}&supplierId={Session.SupplierId}&rowFrom=0");
+            if (modelResponse.IsSuccessStatusCode)
+            {
+                var modelContent = await modelResponse.Content.ReadFromJsonAsync<ApiResponse<List<Model>>>();
+                _modelList = modelContent?.Data ?? new List<Model>();
+            }
+
+            // 2. Cargar motivos usando tu API
+            HttpResponseMessage reasonResponse = await Http.GetAsync($"api/Part/GetDemandReason?userId={Session.UserId}");
+            if (reasonResponse.IsSuccessStatusCode)
+            {
+                var reasonContent = await reasonResponse.Content.ReadFromJsonAsync<ApiResponse<List<Reason>>>();
+                _reasonList = reasonContent?.Data ?? new List<Reason>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading catalog data: {ex.Message}");
+        }
+    }
+
+    private void InitializeDemand()
+    {
+        _demand = new Demand
+        {
+            PartId = PartId,
+            InnerCode = PartCode,
+            Description = PartDescription,
+            Quantity = 1,
+            DealerId = Session.DealerId,
+            ModelId = 0,
+            ReasonId = 0
+        };
+
+        // Si es parte existente, no seleccionar modelo por defecto
+        if (_isExistingPart)
+        {
+            _modelSelected = null;
+        }
+    }
+
+    private async Task OnModelValueChanged(Model selectedModel)
+    {
+        _modelSelected = selectedModel;
+        _demand.ModelId = _modelSelected?.Id ?? 0;
+        await Task.CompletedTask;
+    }
+
+    private async Task OnReasonValueChanged(Reason selectedReason)
+    {
+        _reasonSelected = selectedReason;
+        _demand.ReasonId = _reasonSelected?.Id ?? 0;
+        await Task.CompletedTask;
+    }
+
+    private async Task OnValidSubmit()
+    {
+        if (_isExistingPart)
+        {
+            // Para partes existentes, forzar ModelId a 0 (no requerido)
+            _demand.ModelId = 0;
+        }
+
+        await form!.Validate();
+
+        if (form.IsValid)
+        {
+            try
+            {
+                // Validar motivo (siempre requerido)
+                if (_reasonSelected == null || _reasonSelected.Id == 0)
+                {
+                    await DialogService.ShowMessageBox("Validación", "Debe seleccionar un motivo");
+                    return;
+                }
+
+                // Validar modelo SOLO para partes nuevas
+                if (_isNewPart && (_modelSelected == null || _modelSelected.Id == 0))
+                {
+                    await DialogService.ShowMessageBox("Validación", "Debe seleccionar un modelo");
+                    return;
+                }
+
+                var response = await DemandService.CreateDemand(_demand, Session.UserId);
+
+                if (response?.Processed == true)
+                {
+                    if (OnDemandSaved.HasDelegate)
+                        await OnDemandSaved.InvokeAsync();
+
+                    MudDialog.Close(DialogResult.Ok(true));
+                }
+                else
+                {
+                    await DialogService.ShowMessageBox("Error", response?.Message ?? "Error al guardar la demanda");
+                }
+            }
+            catch (Exception ex)
+            {
+                await DialogService.ShowMessageBox("Error", $"Error al guardar: {ex.Message}");
+            }
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    // Validador ACTUALIZADO con reglas condicionales
+    public class DemandValidator : AbstractValidator<Demand>
+    {
+        public DemandValidator()
+        {
+            // Modelo solo requerido para partes nuevas
+            When(x => x.PartId == 0, () =>
+            {
+                RuleFor(x => x.ModelId)
+                    .NotNull().WithMessage("Campo requerido")
+                    .GreaterThan(0).WithMessage("Seleccione un modelo");
+            });
+
+            // Motivo siempre requerido
+            RuleFor(x => x.ReasonId)
+                .NotNull().WithMessage("Campo requerido")
+                .GreaterThan(0).WithMessage("Seleccione un motivo");
+
+            // Cantidad siempre requerida
+            RuleFor(x => x.Quantity)
+                .NotNull().WithMessage("Campo requerido")
+                .GreaterThan(0).WithMessage("La cantidad debe ser mayor a 0");
+
+            // Código solo requerido para partes nuevas
+            When(x => x.PartId == 0, () =>
+            {
+                RuleFor(x => x.InnerCode)
+                    .NotNull().WithMessage("Campo requerido")
+                    .NotEmpty().WithMessage("El código es requerido para partes nuevas");
+            });
+        }
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<Demand>.CreateWithOptions((Demand)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+    }
+}
