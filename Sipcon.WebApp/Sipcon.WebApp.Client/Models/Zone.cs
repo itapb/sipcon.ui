@@ -16,8 +16,8 @@ namespace Sipcon.WebApp.Client.Models
         [Required]
         public string? Size { get; set; }
 
-        public string? CrossDocking { get; set; }
-
+        [Required]
+        public bool IsCrossDocking { get; set; }
 
     }
 }
