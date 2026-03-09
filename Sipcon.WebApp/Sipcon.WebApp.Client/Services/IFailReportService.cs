@@ -13,8 +13,11 @@
         public Task<ApiResponse<ActionResult>> ActionsFailReport(List<PostAction> PostActions, int IdUser);
         public Task<ApiResponse<ActionResult>> ActionsFailReportProcess(List<PostActionProcess> PostActions, int IdUser);
         public Task<ApiResponse<List<byte>>> ExportFailReports(int IdSupplier, int IdUser, string Filter = "", int? IdDealer = null, string DateFrom = "", string DateTo = "", int? EstatusId = null);
+        public Task<ApiResponse<List<byte>>> ExportFailReportsClosed(int IdSupplier, int IdUser, string Filter = "", int? IdDealer = null, string DateFrom = "", string DateTo = "", int? EstatusId = null);
+        public Task<ApiResponse<List<FailReport>>> GetServiceFailClosed(int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null, string DateFrom = "", string DateTo = "", int? EstatusId = null);
         public Task<ApiResponse<List<byte>>> ExportPdfSRG(int IdUser, int IdService, int? IdDealer = null);
         public Task<ApiResponse<List<byte>>> ExportReportSRG(int IdUser, int IdSupplier, int IdDealer);
+        public Task<ApiResponse<List<FailReport>>> GetFailReportsToGenerate(int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null, string DateFrom = "", string DateTo = "");
 
 
 

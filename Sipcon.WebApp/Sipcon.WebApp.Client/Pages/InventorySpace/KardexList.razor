@@ -1,0 +1,443 @@
+﻿@page "/kardex"
+
+
+@using Sipcon.WebApp.Client.Repository.Auth
+@using System.Text.Json
+@using System.Globalization;
+
+
+@inject IKardexService KardexService
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+@inject IJSRuntime JSRuntime
+@inject HubEventsService hubEventsService
+@implements IDisposable
+
+
+
+
+<PageTitle>Kardex</PageTitle>
+<CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
+
+<MudDataGrid @ref="_mudDataGrid"
+             T="Kardex"
+             MultiSelection="true" 
+             SelectedItems="@selectedKardex"
+             SortMode="SortMode.Multiple"
+             Filterable="true"
+             FixedHeader Height="calc(92vh - 235px)"
+             Hideable="true"
+             Loading="_loading"
+             ShowColumnOptions="false"
+             Bordered="false"
+             Dense="true"
+             Culture="@_esCulture"
+             ServerData="LoadGridData">
+
+    <ToolBarContent>
+       <MudTextField @bind-Value="_searchString" 
+                      Style="font-size: 14px;line-height: 0.8rem;"
+                    Placeholder="buscar" 
+                    Adornment="Adornment.Start" 
+                    Immediate="true"
+                    Typo="Typo.caption"
+                    IconSize="Size.Medium" Class="mt-0" 
+                    OnKeyUp="HandleKeyDownSearch">
+        </MudTextField>
+        <MudSpacer />
+        @* BOTÓN DE AGRUPACIÓN MANUAL *@
+        <MudTooltip Text="Agrupar por Código">
+            <MudToggleIconButton Toggled="@_isGrouped"
+                                 ToggledChanged="OnToggledChanged"
+                                 Icon="@Icons.Material.Filled.ViewList" 
+                                 Color="@Color.Default"
+                                 ToggledIcon="@Icons.Material.Filled.TableRows" 
+                                 ToggledColor="@Color.Info" />
+        </MudTooltip>
+
+        <div id="scroll_section" class="mx-auto" style="max-width: 650px">
+            <MudExpansionPanels Outlined="false" Elevation="0">
+                <MudExpansionPanel @bind-Expanded="@_open" HideIcon="true">
+                    <TitleContent>
+                        <div class="d-flex">
+                            <MudIcon Icon="@(_open? Icons.Material.Filled.FilterAltOff  : Icons.Material.Filled.FilterAlt)" Color="Color.Info"></MudIcon>
+                        </div>
+                    </TitleContent>
+                    <ChildContent>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4">
+                            <MudDatePicker @ref="_picker"
+                                           @bind-Date="_dateFrom"
+                                           Style="font-size: 14px;line-height: 0.8rem;min-width: 120px;"
+                                           Adornment="Adornment.Start"
+                                           AdornmentColor="Color.Info"
+                                           Class="align-right"
+                                           Placeholder="Fecha Desde"
+                                           Variant="Variant.Text"
+                                           PickerVariant="PickerVariant.Inline"
+                                           Margin="Margin.None"
+                                           DateFormat="dd/MM/yyyy"
+                                           AutoClose="true">
+                                <PickerActions>
+                                    <MudButton Class="mr-auto align-self-start" OnClick="@(() => _picker.ClearAsync())">Borrar</MudButton>
+                                    <MudButton OnClick="@(() => _picker.CloseAsync(false))">Cancelar</MudButton>
+                                </PickerActions>
+                            </MudDatePicker>
+
+                            <MudDatePicker @ref="_pickerTo"
+                                           @bind-Date="_dateTo"
+                                           Style="font-size: 14px;line-height: 0.8rem;min-width: 120px;"
+                                           Adornment="Adornment.Start"
+                                           AdornmentColor="Color.Info"
+                                           Class="align-right"
+                                           Placeholder="Fecha Hasta"
+                                           Variant="Variant.Text"
+                                           PickerVariant="PickerVariant.Inline"
+                                           Margin="Margin.None"
+                                           DateFormat="dd/MM/yyyy"
+                                           AutoClose="true">
+                                <PickerActions>
+                                    <MudButton Class="mr-auto align-self-start" OnClick="@(() => _pickerTo.ClearAsync())">Borrar</MudButton>
+                                    <MudButton OnClick="@(() => _pickerTo.CloseAsync(false))">Cancelar</MudButton>
+                                </PickerActions>
+                            </MudDatePicker>
+                        </MudStack>
+                </ChildContent>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+
+        </div>
+        <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Info" OnClick="() => ClickSearch()"></MudIconButton>
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+            @foreach (var module in _itemsModules)
+            {
+                <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
+                Label="@module.Text"
+                OnClick="() => HandleMenuClick(module)" />
+            }
+        </MudMenu>
+    </ToolBarContent>
+  <Columns>
+    <SelectColumn T="Kardex" />
+
+    <PropertyColumn Property="x => x.PartCode" 
+                    Title="CÓDIGO" 
+                    Align="Align.Center"
+                    Groupable="true" 
+                    Filterable="false" 
+                    Sortable="false" 
+                    Hideable="false" />
+    
+    <TemplateColumn Title="DESCRIPCION REPUESTO" Align="Align.Center" Filterable="false">
+        <CellTemplate>
+            <MudText Typo="Typo.caption">@context.Item.PartName.ToUpper()</MudText>
+        </CellTemplate>
+    </TemplateColumn>
+
+    @* Trazabilidad *@
+    <TemplateColumn Title="FECHA / HORA" Align="Align.Center" Filterable="false">
+        <CellTemplate>
+            <MudText Typo="Typo.caption">
+                @(DateTime.TryParse(context.Item.Created, out var dt) 
+                    ? dt.ToString("dd/MM/yyyy HH:mm") 
+                    : context.Item.Created)
+            </MudText>
+        </CellTemplate>
+    </TemplateColumn>
+
+    <TemplateColumn Title="TIPO" Align="Align.Center" Filterable="false">
+        <CellTemplate>
+            <MudText Typo="Typo.caption">
+                @(context.Item.Type switch {
+                    "R" => "Recepción",
+                    "S" => "Aj. Salida",
+                    "E" => "Aj. Entrada",
+                    "D" => "Despacho",
+                    _ => context.Item.Type
+                })
+            </MudText>
+        </CellTemplate>
+    </TemplateColumn>
+
+    <PropertyColumn Property="x => x.ReferenceId" Title="REFERENCIA" Align="Align.Center" Filterable="false" />
+
+    @* Inventario *@
+    <PropertyColumn Property="x => x.QuantityOld" Title="STOCK INICIAL" Align="Align.Center" Filterable="false" />
+
+    <TemplateColumn Title="OPERACIÓN" Align="Align.Center" Filterable="false">
+        <CellTemplate>
+            @* Se eliminó el MudText innecesario para evitar conflictos de alineación y se usa un span con estilo *@
+            <span style="font-weight:bold; font-size: 0.75rem;">
+                @((context.Item.Type == "R" || context.Item.Type == "E") ? "+" : "-")@context.Item.Quantity
+            </span>
+        </CellTemplate>
+    </TemplateColumn>
+
+    <TemplateColumn Title="STOCK FINAL" Align="Align.Center" Filterable="false">
+        <CellTemplate>
+            <span style="font-weight:bold; font-size: 0.75rem;">@context.Item.QuantityNew</span>
+        </CellTemplate>
+    </TemplateColumn>
+
+    @* Costo y Auditoría *@
+    <PropertyColumn Property="x => x.Cost" Title="COSTO TOTAL" Align="Align.Center" Format="N2" Filterable="false" />
+    <PropertyColumn Property="x => x.UserName" Title="RESPONSABLE" Align="Align.Center" Filterable="false" />
+</Columns>
+
+    <PagerContent>
+        <MudDataGridPager  PageSizeOptions="new int[] {100}" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+    </PagerContent>
+</MudDataGrid>
+
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success"
+                    onCloseNested="() => _nestedVisible = false"
+                    ErrorMessage="@_nestedErrorMessage" 
+                    Title="@("Kardex")" />
+
+
+
+@code { [Inject] private UserSession Session { get; set; } = null!;
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
+    private IEnumerable<Kardex> _kardex = new List<Kardex>();
+    private string _nestedErrorMessage = string.Empty;
+    private bool _nestedVisible;
+    bool _success = false;
+   private CultureInfo _esCulture = new CultureInfo("es-ES");
+   
+
+    private int _rowCount = 0;
+    private int _rowsTotal = 0; 
+
+    private string _searchString = string.Empty;
+    private bool _loading = true;
+    private string _moduleName = "INVENTARIO-KARDEX";
+    private bool _isGrouped;
+    
+    //Fechas y filtrados po estatus 
+    bool _open;
+    IMask maskDate = new DateMask("dd/MM/yyyy");
+    private DateTime? _dateFrom { get; set; } = null;
+    private DateTime? _dateTo { get; set; } = null;
+    private MudDatePicker _picker = new MudDatePicker();
+    private MudDatePicker _pickerTo = new MudDatePicker();
+    private List<SelectOption> _actions = new List<SelectOption>();
+    private SelectOption? _selectedAction;
+
+    private MudDataGrid<Kardex>? _mudDataGrid;
+    private HashSet<Kardex> selectedKardex = new([]);
+    private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
+    
+   List<BreadcrumbItem> _itemsNavigate = [new("Home", href: "", icon: Icons.Material.Filled.Home), new("Inventario", href: "Kardex", icon: Icons.Material.Filled.Inventory), new("Kardex", href: "Kardex", icon: Icons.Material.Filled.Map)];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+
+        hubEventsService.OnSupplierChanged += ReloadServerData;
+        hubEventsService.OnDealerChanged += ReloadServerData;
+        await Task.CompletedTask;
+    }
+
+    
+
+        private async Task OnToggledChanged(bool toggled)
+        {
+            _isGrouped = toggled;
+
+            // Buscamos la columna de código en el Grid
+            var column = _mudDataGrid.RenderedColumns.FirstOrDefault(x => x.Title == "CÓDIGO");
+
+            if (column != null)
+            {
+                // Forzamos la agrupación por código
+                column.Grouping = _isGrouped;
+        
+                // Refrescamos el Grid para que aplique el cambio visual
+                await _mudDataGrid.ReloadServerData();
+            }
+        }
+
+    private async Task ReloadServerData()
+    {
+        if (_mudDataGrid != null)
+        {
+            await _mudDataGrid!.ReloadServerData();
+        }
+    }
+
+    public void Dispose()
+    {
+        hubEventsService.OnSupplierChanged -= ReloadServerData;
+        hubEventsService.OnDealerChanged -= ReloadServerData;
+    }
+
+
+    private async Task<GridData<Kardex>> LoadGridData(GridState<Kardex> state)
+    {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+
+        _rowCount = state.Page * state.PageSize;
+
+        await GetKardex();
+
+        return new GridData<Kardex> { TotalItems = _rowsTotal, Items = _kardex };
+    }
+
+    private async Task GetKardex()
+    {
+        _loading = true;
+        _kardex = new List<Kardex>();
+        _rowsTotal = 0;
+        
+        _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
+        
+        //fechas y filtros
+        _actions = await ModuleActionsService.GetAction(Session.UserId, _moduleName);  
+        int? idRespaldado = _selectedAction?.Value;
+         if (idRespaldado.HasValue && _actions != null)   {  _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
+         int? _estatusid = _selectedAction?.Value;
+         string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
+        string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
+        
+        var serviceResponse = await KardexService.GetKardex(Session.SupplierId, Session.UserId, _rowCount, _searchString,_dateFromStr,_dateToStr);
+        if (serviceResponse.Processed)
+        {
+            _kardex = serviceResponse.Data;
+            _rowsTotal = serviceResponse.Total;
+        }
+        else
+        {
+            // Console.WriteLine($"Error: {serviceResponse.Message}");            
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
+            OpenNested();
+        }
+
+        _loading = false;
+    }
+
+
+    private async Task HandleKeyDownSearch(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+           // if (_searchString.Length >= 3 || _searchString == string.Empty)
+           // {
+                Console.WriteLine($"Buscando: {_searchString}");
+                await _mudDataGrid!.ReloadServerData();
+          //  }
+
+        }
+    }
+
+    private async Task ClickSearch()
+    {
+
+       // if (_searchString.Length >= 3 ||  _dateFrom.HasValue ||  _dateTo.HasValue ||  _selectedAction != null)
+        //{
+            Console.WriteLine($"Buscando: {_searchString}");
+            await _mudDataGrid!.ReloadServerData();
+     
+
+    }
+
+
+    private async Task HandleOnClickRefresh()
+    {
+       _searchString = string.Empty; // Limpia el MudTextField
+        _selectedAction = null;       // Limpia el MudSelect
+        _dateFrom = null;             // Limpia el primer MudDatePicker
+        _dateTo = null;
+        await _mudDataGrid!.ReloadServerData();
+    }
+
+
+   
+    private void OpenNested()
+    {
+        _nestedVisible = true;
+        StateHasChanged();
+    }
+    
+
+
+    private async Task HandleMenuClick(ModuleAction module)
+    {
+        switch (module.ActionName)
+        {
+            case "EXPORT":
+                await ExportItemsAsync();
+                break;
+            default:
+                Console.WriteLine($"{MessageEnum.ActionsError.GetStringValue()}: {module.ActionName}");
+                break;
+        }
+    }
+
+
+    private async Task ExportItemsAsync()
+    {
+        int? idRespaldado = _selectedAction?.Value;
+         if (idRespaldado.HasValue && _actions != null)   {  _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
+         int? _estatusid = _selectedAction?.Value;
+         string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
+        string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
+
+        var serviceResponse = await KardexService.ExportKardex(Session.SupplierId, Session.UserId, _searchString,_dateFromStr,_dateToStr);
+        if (serviceResponse.Processed)
+        {
+            _success = true;
+            _nestedErrorMessage = "";
+
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+            var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Kardex.xlsx");
+
+        }
+        else
+        {
+            // Console.WriteLine(serviceResponse.Message);
+            _success = false;
+            _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue();
+            
+            OpenNested();
+
+        }
+    }
+
+
+
+    private Func<Policy, string> _cellStyleFunc => x =>
+    {
+        string style = "";
+
+        if (x.EstatusName.ToUpper() == "BORRADOR")
+            style += "";
+
+        else if (x.EstatusName.ToUpper() == "ACTIVADO")
+        {
+            style += "color:#fff";
+
+            style += ";background-color:#0099F3";
+
+        }
+
+
+        else if (x.EstatusName.ToUpper() == "BLOQUEADO")
+        {
+            style += "color:#fff";
+            style += ";background-color:#757575";
+        }
+        else 
+        {
+            style += "color:#fff";
+            style += ";background-color:#FF7043";
+        }
+        style += ";font-weight:bold";
+        style += ";font-style:italic";
+       
+
+        return style;
+    };
+
+}
