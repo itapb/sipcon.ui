@@ -80,6 +80,39 @@
             return result;
         }
 
+        public async Task<ApiStreamResponse> GetAttachmentPreview(int IdAttachment, int IdUser)
+        {
+            ApiStreamResponse result;
+            try
+            {
+                var response = await _http.GetAsync($"api/Attachment/GetPreview?userId={IdUser}&attachmentId={IdAttachment}");
+
+                var fileContent = await response.Content.ReadAsStreamAsync();
+
+                result = (fileContent is null) ? new ApiStreamResponse()
+                {
+                    Processed = false,
+                    Message = "Error al Exportar Data."
+                } : new ApiStreamResponse()
+                {
+                    Processed = true,
+                    Message = "",
+                    File = fileContent
+                };
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiStreamResponse()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+        }
+
         public async Task<ApiResponse<List<ActionResult>>> CreateAttachment(int IdRecord, string ModuleName, int IdUser, MultipartFormDataContent FormData)
         {
             ApiResponse<List<ActionResult>>? result;

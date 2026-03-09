@@ -1,0 +1,275 @@
+﻿@using Sipcon.WebApp.Client.Models
+@using Sipcon.WebApp.Client.Services
+@using Sipcon.WebApp.Client.Utils
+@using FluentValidation
+@using Gotho.BlazorPdf
+
+
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+@inject IAttachmentService AttachmentService
+@inject IJSRuntime JSRuntime
+
+
+@if (!_imageExtencion.Contains(_applicationName))
+{
+    <PdfViewer @ref="_pdfViewer" />
+}
+else
+{
+    <MudForm @ref="@form" >
+    
+        <MudDialog Class="blur dialog-background " ActionsClass="dialog-background-surface">
+            <DialogContent>
+                @* <MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
+                    <MudCard>
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudGrid Spacing="0" Justify="Justify.Center">
+                                    <MudItem xs="12" sm="4">
+                                        <div class="d-flex justify-left">
+                                        </div>
+                                    </MudItem>
+
+                                    <MudItem xs="12" sm="2">
+
+                                    </MudItem>
+                                    <MudItem xs="12" sm="6">
+                                        <div class="d-flex justify-right" style="justify-content: end;">
+                                            <MudButton OnClick="Cancel">Cancelar</MudButton>
+                                        </div>
+                                    </MudItem>
+                                </MudGrid>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                    </MudCard>
+                </MudContainer> *@
+
+                <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
+                <MudGrid Spacing="1" Justify="Justify.Center">
+
+                    <MudItem xs="12" sm="12">
+                        <MudCard>
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    @* <MudStack Row="true">
+                                        <MudIcon Icon="@Icons.Material.Filled.Preview" Color="Color.Info" Style="font-size: 3rem;"></MudIcon>
+                                            <MudText Typo="Typo.subtitle2">@Title</MudText>
+                                    </MudStack> *@
+
+                                </CardHeaderContent>
+                                <CardHeaderActions>
+
+                                </CardHeaderActions>
+                            </MudCardHeader>
+                            <MudCardContent Style="padding-top: 1px;">
+                                <div class="d-flex justify-center align-center" Style="height:350px;">
+                                    <MudImage ObjectFit="ObjectFit.Cover" ObjectPosition="@ImagePosition"
+                                                  Height="@(ImageHeight)" Width="@(ImageWidth)" 
+                                                  Src="@(_FileOpen)" Alt="Vista Previa Imagen"
+                                                  Elevation="25" Class="rounded-lg"/>
+                                </div>
+
+                                <MudChipSet T="string" CheckMark Class="mt-6">
+                                    <MudChip Text="Center" OnClick="@(() => SetImagePosition(ObjectPosition.Center))" SelectedColor="Color.Primary" Default="true" />
+                                    <MudChip Text="Top" OnClick="@(() => SetImagePosition(ObjectPosition.Top))" SelectedColor="Color.Primary" />
+                                    <MudChip Text="Bottom" OnClick="@(() => SetImagePosition(ObjectPosition.Bottom))" SelectedColor="Color.Primary" />
+                                    <MudChip Icon="@Icons.Material.Outlined.PhotoSizeSelectActual" IconColor="Color.Info" Text="Minimizar" OnClick="@(() => MinPreviewImage())" SelectedColor="Color.Primary" />
+                                    <MudChip Icon="@Icons.Material.Outlined.PhotoSizeSelectLarge" IconColor="Color.Info" Text="Maximizar" OnClick="@(() => MaxPreviewImage())" SelectedColor="Color.Primary" />
+                                    <MudChip Icon="@Icons.Material.Outlined.FileDownload" IconColor="Color.Info" Text="Descargar" OnClick="@(() => ClickExportAttachment())" SelectedColor="Color.Primary" />
+                                </MudChipSet>
+
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                </MudGrid>
+            </MudContainer>
+            </DialogContent>
+        </MudDialog>
+
+
+    </MudForm>
+
+}
+
+
+@* <NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success"
+                    onCloseNested="() => _nestedVisible = false"
+                    ErrorMessage="@_nestedErrorMessage"
+                    Title="@("Vista Previa")" /> *@
+
+
+<style>
+    .blur {
+    backdrop-filter: blur(10px);
+    }
+
+    .dialog-background {
+    background-color: transparent;
+    }
+
+    .dialog-background-title {
+    background: rgb(from var(--mud-palette-info-lighten) r g b / 50%);
+    color: var(--mud-palette-white);
+    }
+
+    .dialog-background-surface {
+    background: rgb(from var(--mud-palette-surface) r g b / 75%);
+    }
+</style>
+
+@code {
+
+    [Inject] private UserSession Session { get; set; } = null!;
+
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string IdAttachment { get; set; } = string.Empty;
+    [Parameter] public string NameAttachment { get; set; } = string.Empty;
+
+    private MudForm? form;
+    private string _errorMessage = string.Empty;
+
+    private void Cancel() => MudDialog.Cancel();
+    ObjectPosition ImagePosition = ObjectPosition.Center;
+
+    public int ImageHeight { get; set; } = 350;
+    public int ImageWidth { get; set; } = 720;
+
+    private string _nestedErrorMessage = string.Empty;
+    bool _success = false;
+    private bool _nestedVisible;
+
+    private string? _FileOpen = string.Empty;
+    private string _applicationName = string.Empty;
+
+    List<string> _imageExtencion = new List<string>()
+    {
+        "image/jpeg", 
+        "image/png", 
+        "video/mp4"
+    };
+
+    void SetImagePosition(ObjectPosition value)
+    {
+        ImagePosition = value;
+    }
+
+    private async Task MaxPreviewImage()
+    {
+
+        ImageHeight = 390;
+        ImageWidth = 1060;
+    }
+
+
+    private async Task MinPreviewImage()
+    {
+
+        ImageHeight = 350;
+        ImageWidth = 720;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await SetFormatImage();
+
+        await GetImagePreview();
+
+        await Task.Delay(50);
+        await Task.CompletedTask;
+
+    }
+
+    
+    public required PdfViewer _pdfViewer { get; set; }
+
+    private async Task SetFormatImage()
+    {
+
+        var fileExtension = Path.GetExtension(NameAttachment).ToLowerInvariant();
+        switch (fileExtension)
+        {
+            case ".jpg":
+            case ".jpeg":
+                _applicationName = "image/jpeg";
+                break;
+            case ".png":
+            case ".pneg":
+                _applicationName = "image/png";
+                break;
+            case ".mp4":
+                _applicationName = "video/mp4";
+                break;
+            case ".pdf":
+                _applicationName = "application/pdf";
+                break;
+            default:
+                _applicationName = "application/pdf";
+                break;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task GetImagePreview()
+    {
+        _FileOpen = "";
+        var fileUrl = "images/foton_planta.jpeg";
+        var serviceResponse = await AttachmentService.GetAttachment(Convert.ToInt32(IdAttachment), Session.UserId);
+        if (serviceResponse.Processed)
+        {
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+
+            if (_applicationName == "application/pdf")
+            {
+                await _pdfViewer.LoadPdfAsync(base64File, "PDF Document Filename");
+            }
+            else
+            {
+                fileUrl = $"data:{_applicationName};base64,{base64File}";
+            
+            }
+            
+        }
+       
+        _FileOpen = fileUrl;
+       
+       
+        StateHasChanged();
+    }
+    
+    private async Task ClickExportAttachment()
+    {
+        var serviceResponse = await AttachmentService.GetAttachment(Convert.ToInt32(IdAttachment), Session.UserId);
+        if (serviceResponse.Processed)
+        {
+            _success = true;
+            _nestedErrorMessage = "";
+
+           
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+            var fileUrl = $"data:{_applicationName};base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, NameAttachment);
+
+        }
+        else
+        {
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
+            OpenNested();
+
+        }
+    }
+
+    
+    private void OpenNested()
+    {
+        _nestedVisible = true;
+        StateHasChanged();
+    }
+
+}

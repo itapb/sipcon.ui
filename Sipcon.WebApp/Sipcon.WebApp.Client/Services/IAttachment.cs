@@ -7,6 +7,7 @@
 
         public Task<ApiResponse<List<Attachment>>> GetAttachments(int IdRecord, string ModuleName);
         public Task<ApiResponse<List<byte>>> GetAttachment(int IdAttachment, int IdUser);
+        public Task<ApiStreamResponse> GetAttachmentPreview(int IdAttachment, int IdUser);
         public Task<ApiResponse<List<ActionResult>>> CreateAttachment(int IdRecord, string ModuleName, int IdUser, MultipartFormDataContent FormData);
         public Task<ApiResponse<ActionResult>> DeleteAttachment(int IdAttachment, int IdUser);
 
