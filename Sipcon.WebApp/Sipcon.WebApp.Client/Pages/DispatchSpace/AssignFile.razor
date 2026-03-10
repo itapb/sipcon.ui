@@ -1,0 +1,81 @@
+﻿<MudForm @ref="form">
+    <div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
+        <MudPaper Elevation="2" Class="pa-3">
+            <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12">
+                        <MudTextField T="int?" Label="NRO TXT" @bind-Value="ControlId" Required="true" ErrorText="Campo requerido"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField T="int?" Label="NRO FACT" @bind-Value="InvoiceId" Required="true" ErrorText="Campo requerido"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudStack Row="true" Justify="Justify.Center">
+                            <MudStack Row="true" Spacing="4">
+                                <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="CheckClick" />
+                                <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="CloseClick" />
+                            </MudStack>
+                        </MudStack>
+                    </MudItem>
+                </MudGrid>
+            </MudFocusTrap>
+        </MudPaper>
+    </div>
+</MudForm>
+@code { [Inject] private UserSession Session { get; set; } = null!;
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    private int? InvoiceId;
+    private int? ControlId;
+    private MudForm form = null!;
+
+    [Parameter] public int? ModuleId { get; set; } = default!;
+    private async Task CheckClick(MouseEventArgs args)
+    {
+        await form!.Validate();
+        if (form.IsValid)
+        {
+           var  SyncItem  = new List<Client.Models.Action>
+            {
+                new Client.Models.Action
+                {
+                    ActionComment = "string",
+                    RelatedId = InvoiceId ?? 0,
+                    RecordId = ControlId ?? 0,
+                    actionName = "SINC",
+                    ModuleId = ModuleId,
+                    UserId = Session.UserId
+                }
+            };
+            
+            var strSyncItem = System.Text.Json.JsonSerializer.Serialize(SyncItem);
+            var result_newAdjustmentDetail = await Http.PostAsync($"api/InvoiceControl/PostActions?userId={Session.UserId}&supplierId={Session.SupplierId}", new StringContent(strSyncItem, null, "application/json"));
+            if (result_newAdjustmentDetail.IsSuccessStatusCode)
+            {
+                var sucessContent = await result_newAdjustmentDetail.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
+                if (sucessContent?.data is { insertedRows: > 0 } or { updatedRows: > 0 })
+                {
+                    var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "SINCRONIZAR", "OK", Color.Info, Icons.Material.Filled.Commit);
+                    if (!result!.Canceled)
+                        MudDialog?.Close(DialogResult.Ok(true));
+                }
+            }
+            else if (result_newAdjustmentDetail.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                var conflictContent = await result_newAdjustmentDetail.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+                await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+            else
+            {
+                var errorMessage = await result_newAdjustmentDetail.Content.ReadAsStringAsync();
+                await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+        }
+    }
+    private async Task CloseClick(MouseEventArgs args)
+    {
+        MudDialog?.Cancel();
+        await Task.CompletedTask;
+    }
+}

@@ -16,6 +16,6 @@
 
         public DateTime? Arrival { get; set; }
         public int? Stock { get; set; }
-
+        public string? Status { get; set; }
     }
 }

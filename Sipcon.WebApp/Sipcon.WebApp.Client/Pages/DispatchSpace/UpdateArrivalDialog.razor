@@ -1,0 +1,115 @@
+﻿@if (_isLoading)
+{
+    <LoadingForm IsMudDialog="@(MudDialog != null)" />
+}
+else
+{
+    <MudForm @ref="form">
+        <div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
+            <MudPaper Elevation="2" Class="pa-3">
+                <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.subtitle2" Class="mb-2">
+                                @SelectedIds.Count item(s) seleccionado(s)
+                            </MudText>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudDatePicker @bind-Date="_arrival"
+                                           Label="Fecha de Llegada"
+                                           PickerVariant="PickerVariant.Inline"
+                                           PickerPaperStylename="z-index: 5;"
+                                           DateFormat="dd/MM/yyyy"
+                                           Validation="@(new Func<DateTime?, string>(ValidateSelectedDate))" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudStack Row="true" Justify="Justify.Center">
+                                <MudStack Row="true" Spacing="4">
+                                    <MudFab Color="Color.Primary"
+                                            StartIcon="@Icons.Material.Filled.Check"
+                                            Size="Size.Medium"
+                                            OnClick="CheckClick" />
+                                    <MudFab Color="Color.Secondary"
+                                            StartIcon="@Icons.Material.Filled.Close"
+                                            Size="Size.Medium"
+                                            OnClick="CloseClick" />
+                                </MudStack>
+                            </MudStack>
+                        </MudItem>
+                    </MudGrid>
+                </MudFocusTrap>
+            </MudPaper>
+        </div>
+    </MudForm>
+}
+
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public List<int> SelectedIds { get; set; } = new();
+
+    private MudForm? form;
+    private DateTime? _arrival;
+    private bool _isLoading = false;
+    private bool _isArrivalValid = false;
+
+    private async Task CheckClick(MouseEventArgs args)
+    {
+        await form!.Validate();
+        if (!form.IsValid || !_isArrivalValid) return;
+
+        _isLoading = true;
+
+        var payload = SelectedIds.Select(id => new
+        {
+            id,
+            arrival = _arrival!.Value.ToString("yyyy-MM-dd")
+        }).ToList();
+
+        var json = System.Text.Json.JsonSerializer.Serialize(payload);
+        var result = await Http.PostAsync(
+            $"api/BackOrder/PostDarrival?userId={Session.UserId}",
+            new StringContent(json, null, "application/json"));
+
+        if (result.IsSuccessStatusCode)
+        {
+            var content = await result.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
+            if (content?.data is ({ insertedRows: > 0 } or { updatedRows: > 0 }))
+            {
+                var dialogResult = await DialogService.ShowDialog(
+                    Useful.OkSavedMessage, "Fecha Llegada", "OK",
+                    Color.Info, Icons.Material.Filled.Commit);
+                if (!dialogResult!.Canceled)
+                    MudDialog?.Close(DialogResult.Ok(true));
+            }
+        }
+        else if (result.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflict = await result.Content.ReadFromJsonAsync<WebApiResponse<object?>>();
+            await DialogService.ShowDialog(conflict?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        else
+        {
+            var errorMessage = await result.Content.ReadAsStringAsync();
+            await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+
+        _isLoading = false;
+    }
+
+    private void CloseClick(MouseEventArgs args) => MudDialog?.Cancel();
+
+    private string ValidateSelectedDate(DateTime? date)
+    {
+        if (!date.HasValue)
+        {
+            _isArrivalValid = false;
+            return "La fecha es requerida";
+        }
+        _isArrivalValid = date.Value.Date > DateTime.UtcNow.Date;
+        return _isArrivalValid ? "" : "Fecha debe ser mayor a Hoy!";
+    }
+}
