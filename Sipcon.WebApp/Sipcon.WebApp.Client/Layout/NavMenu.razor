@@ -64,6 +64,10 @@
                     {
                         <MudNavLink Href="failreport">Reporte Falla</MudNavLink>
                     }
+                    @if (_ModuleNames.Contains("SERVICIOS-CONCILIACION SRG"))
+                    {
+                        <MudNavLink Href="reportdms">Conciliación SRG</MudNavLink>
+                    }
                 </MudNavGroup>
             }
             @if (_ModuleNames.Any(s => s.Contains("INVENTARIO-")))
@@ -120,15 +124,25 @@
                         <MudNavLink Href="adjustment">Ajuste</MudNavLink>
                     }
 
-                    @if (_ModuleNames.Contains("INVENTARIO-PROCESOS-BACKORDER"))
+
+                    @* @if (_ModuleNames.Contains("INVENTARIO-PROCESOS-BACKORDER"))
                     {
                         <MudNavLink Href="backorders">BackOrders</MudNavLink>
-                    }
+                    } *@
+                    @if (_ModuleNames.Contains("INVENTARIO-PROCESOS-CONTROLDESPACHO"))
+                    {
+                        <MudNavLink Href="dispatchcontrol">Control Despacho</MudNavLink>
+                    }    
 
                     @if (_ModuleNames.Contains("INVENTARIO-PROCESOS-CONTROLFACTURACION"))
                     {
                         <MudNavLink Href="invoicecontrol">Control Facturacion</MudNavLink>
-                    }    
+                    }   
+                    
+                    @if (_ModuleNames.Contains("INVENTARIO-KARDEX"))
+                    {
+                        <MudNavLink Href="kardex">Kardex</MudNavLink>
+                    }
     
                 </MudNavGroup>
             }
@@ -177,6 +191,17 @@
                         <MudNavLink Href="accessgroup">Roles</MudNavLink>
                     }
                    
+                </MudNavGroup>
+            }
+
+             @if (_ModuleNames.Any(s => s.Contains("REPORTES-")))
+            {
+                <MudNavGroup Title="Reportes" Icon="@Icons.Material.Filled.ReportProblem" IconColor="Color.Info">
+
+                    @if (_ModuleNames.Contains("REPORTES-REPORTES"))
+                    {
+                        <MudNavLink Href="reporting">Reportes</MudNavLink>
+                    }
                 </MudNavGroup>
             }
 

@@ -91,6 +91,7 @@ namespace Sipcon.WebApp.Client.Helper
                 "RECLAMO" => Icons.Material.Filled.ReportProblem,
                 "APROBAR" => Icons.Material.Filled.ThumbUpAlt,
                 "PARA APROBAR" => Icons.Material.Filled.ThumbUpOffAlt,
+                "CONTROL DESPACHO" => Icons.Material.Filled.LocalShipping, 
                 _ => Icons.Material.Filled.HelpOutline
             };
         }

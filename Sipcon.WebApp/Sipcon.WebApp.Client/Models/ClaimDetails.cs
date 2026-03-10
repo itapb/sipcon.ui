@@ -42,7 +42,7 @@ namespace Sipcon.WebApp.Client.Models
 
 
         public int? IApproved { get; set; }
-
+        public int? ITransaction { get; set; }
         public decimal? SubTotal { get; set; }
 
         public decimal? Price { get; set; }

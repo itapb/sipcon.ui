@@ -8,8 +8,6 @@
                         <MudFab StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" Size="Size.Small" Label="Guardar" OnClick="SaveClick" Disabled="@(!IsCreatedClaimOrder)"></MudFab>
                         <MudButton OnClick="CloseClick">Cerrar</MudButton>
                     </MudStack>
-                        <MudFab StartIcon="@Icons.Material.Filled.ThumbUpAlt" Color="Color.Info" Size="Size.Small" Label="Aceptar" OnClick="ClaimAcceptClick" Disabled="@(!(IsReadyClaimDetails))"></MudFab>
-                        <MudFab StartIcon="@Icons.Material.Filled.PlayCircle" Color="Color.Info" Size="Size.Small" Label="Procesar" OnClick="ClaimProcessClick" Disabled="@(!(MasterClaimOrder?.StatusName == "APROBADO"))"></MudFab>
                         <MudFab StartIcon="@Icons.Material.Filled.AttachFile" Color="Color.Info" Size="Size.Small" Label="Archivos" OnClick="AttachmentsClick"></MudFab>
                     </MudStack>
                 </MudPaper>
@@ -18,6 +16,13 @@
                         <ToolBarContent>
                             <MudIconButton Icon="@Icons.Material.Filled.PlaylistAdd" Size="Size.Medium" OnClick="ClickAddClaimOrderDetails" Color="Color.Info" Disabled="@(!IsCreatedClaimOrder)"></MudIconButton>
                             <MudIconButton Icon="@Icons.Material.Filled.PlaylistRemove" Size="Size.Medium" OnClick="ClickRemoveClaimOrderDetails" Color="Color.Info" Disabled="@(!IsCreatedClaimOrder)"></MudIconButton>                          
+                             <MudSpacer />
+                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+                                @foreach (var strmodulo in Modules!)
+                                {
+                                    <MudMenuItem Label="@strmodulo.ActionDisplay" Icon="@(strmodulo.ActionDisplay.ToActionIcon())" IconColor="@Color.Info" OnClick="@(() => ClickMenuClaimOrder(strmodulo.ActionName))" />
+                                }
+                            </MudMenu>
                         </ToolBarContent>
                         <Columns>
                             <TemplateColumn>
@@ -48,8 +53,8 @@
                                     else if (MasterClaimOrder?.StatusName == "PARA APROBAR")
                                     {
                                         <MudStack Row="true" Spacing="2">
-                                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Filled.ThumbUp" OnClick="() => ClickApproveClaimOrderDetail(context.Item)" Disabled="@(!(context.Item!.StatusName == "BORRADOR"))" />
-                                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Filled.ThumbDown" OnClick="() => ClickDeclineClaimOrderDetail(context.Item)" Disabled="@(!(context.Item!.StatusName == "BORRADOR"))" />
+                                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Filled.ThumbUp" OnClick="() => ClickApproveClaimOrderDetail(context.Item)" Disabled="@(!(MasterClaimOrder!.StatusName == "PARA APROBAR"))" />
+                                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Filled.ThumbDown" OnClick="() => ClickDeclineClaimOrderDetail(context.Item)" Disabled="@(!(MasterClaimOrder!.StatusName == "PARA APROBAR"))" />
                                         </MudStack>
                                     }                                    
                                 </CellTemplate>
@@ -77,9 +82,10 @@
                                 <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterClaimOrder.Login" Adornment="Adornment.Start" AdornmentText="Login :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
                                 <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterClaimOrder.StatusName" Adornment="Adornment.Start" AdornmentText="Estatus :" Variant="Variant.Text" Class="align-right-input" /></MudItem>
 
-                                <MudItem xs="12"><MudTextField ReadOnly="false" @bind-Value="MasterClaimOrder.Reference" Label="Guia de Reclamo" Variant="Variant.Text" RequiredError="Campo opcionalmente requerido." Required="@(!AnyValidFields())" /></MudItem>
+                                <MudItem xs="12"><MudTextField ReadOnly="false" @bind-Value="MasterClaimOrder.Reference" Label="Nro de Guia" Variant="Variant.Text" RequiredError="Campo opcionalmente requerido." Required="@(!AnyValidFields())" /></MudItem>
+                                @* <MudItem xs="12"><MudTextField ReadOnly="false" @bind-Value="MasterClaimOrder.Reference" Label="Guia de Reclamo" Variant="Variant.Text" RequiredError="Campo opcionalmente requerido." Required="@(!AnyValidFields())" /></MudItem> *@
                                 <MudItem xs="12"><MudNumericField ReadOnly="false" HideSpinButtons="true" @bind-Value="MasterClaimOrder.Invoice" Label="Nro de Factura" Variant="Variant.Text" RequiredError="Campo opcionalmente requerido." Required="@(!AnyValidFields())" /></MudItem>
-                                <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterClaimOrder.Guide" Label="Guia de Nota de Credito" Variant="Variant.Text" RequiredError="Campo requerido." Required="false" /></MudItem>
+                                <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterClaimOrder.Guide" Label="Nro de Guía Reposición" Variant="Variant.Text" RequiredError="Campo requerido." Required="false" /></MudItem>
                                 <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterClaimOrder.Note" Label="Nota de Credito" Variant="Variant.Text" RequiredError="Campo requerido." Required="false" /></MudItem>
                                 <MudItem xs="12"><MudTextField ReadOnly="@(!IsCreatedClaimOrder)" @bind-Value="MasterClaimOrder.Comment" Label="Comentario" Variant="Variant.Text" /></MudItem>
                             }
@@ -97,7 +103,7 @@
                 </MudPaper>
                 <MudPaper Elevation="2" Class="pa-2 mud-text-align-center flex-grow-0">
                     <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd" StretchItems="StretchItems.Start">
-                        <MudFab StartIcon="@Icons.Material.Filled.CheckCircleOutline" Color="Color.Info" Size="Size.Small" Label="Generar" OnClick="GenerateClick" Disabled="@(!IsCreatedClaimOrder)" />
+                        <MudFab StartIcon="@Icons.Material.Filled.CheckCircleOutline" Color="Color.Info" Size="Size.Small" Label="PARA APROBAR" OnClick="GenerateClick" Disabled="@(!IsCreatedClaimOrder)" />
                     </MudStack>
                 </MudPaper>
             </MudStack>
@@ -118,6 +124,8 @@
     [Parameter] public int? Value { get; set; }
     [Parameter] public EventCallback<int?> ValueChanged { get; set; }
     [Parameter] public List<SaleOrderType>? ClaimOrderTypes { get; set; }
+    [Parameter] public List<Module>? Modules { get; set; }
+
     DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
     [Inject] private ILogger<ClaimOrderForm> Logger { get; set; } = default!;
     string TempReference = "";
@@ -164,12 +172,14 @@
             RecordId = item.Id,
             ModuleId = 32,
             actionName = "APPROVE",
-            ActionComment = "", //item.Quantity.ToString()
+            ActionComment = item.Comment , //item.Quantity.ToString()           
+            TransactionQuantity = item.ITransaction ,
+            ApproveQuantity = item.IApproved,
             RelatedId = 0
         }
         );
-       
-        var dialogReference = await DialogService.ShowAsync(typeof(ClaimItemApprove), "", new DialogParameters { ["mAction"] = mActions.FirstOrDefault() }, options);
+
+        var dialogReference = await DialogService.ShowAsync(typeof(ClaimItemApprove), "", new DialogParameters { ["mAction"] = mActions.FirstOrDefault(), ["ClaimItem"] = item }, options);
         if (!((await dialogReference.Result)!.Canceled))
         {
             await PostActionAndReload(mActions, $"api/Claim/PostActionsClaimDetails?userId={Session.UserId}");
@@ -526,6 +536,39 @@
 
     private async Task AttachmentsClick(MouseEventArgs args)
     {
-        await DialogService.ShowAsync(typeof(ClaimOrderAttachments), "", new DialogParameters { ["IdRecord"] = ClaimOrderId }, options);
+        var dialogParameters = new DialogParameters
+        {
+            ["IdRecord"] = MasterClaimOrder?.ClaimNum, //  de Id a ClaimNum
+        };
+
+        await DialogService.ShowAsync(typeof(ClaimOrderAttachments), "", dialogParameters, options);
+        // await DialogService.ShowAsync(typeof(ClaimOrderAttachments), "", new DialogParameters { ["IdRecord"] = ClaimOrderId }, options);
+    }
+    private async Task ClickMenuClaimOrder(string? actionName)
+    {
+       var mActions = new List<Client.Models.Action>();
+        mActions.Add(new Client.Models.Action
+        {
+            UserId = Session.UserId,
+            RecordId = ClaimOrderId,
+            ModuleId = Modules!.FirstOrDefault()?.Id,
+            actionName = actionName,
+            ActionComment = "",
+            RelatedId = 1
+        });
+        
+        if (actionName == "PROCESS")
+        {
+            var dialogReference = await DialogService.ShowAsync(typeof(ClaimOrderProcess), "", new DialogParameters { ["mAction"] = mActions.FirstOrDefault() }, options);
+            if (!((await dialogReference.Result)!.Canceled))
+            {
+                await PostActionAndReload(mActions, $"api/Claim/PostActionsClaim?userId={Session.UserId}");
+            }
+        }
+        else if (mActions?.Count > 0)
+        {
+            await PostActionAndReload(mActions, $"api/Claim/PostActionsClaim?userId={Session.UserId}");
+        }
+        await Task.CompletedTask;    
     }
 }

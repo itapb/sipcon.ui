@@ -16,7 +16,7 @@
         private readonly HttpClient _http = http;
 
 
-        public async Task<ApiResponse<List<FailReport>>> GetFailReports(int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null)
+        public async Task<ApiResponse<List<FailReport>>> GetFailReports(int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null, string DateFrom = "", string DateTo = "", int? EstatusId = null)
         {
             ApiResponse<List<FailReport>>? result;
 
@@ -25,6 +25,9 @@
                 var url = $"api/Service/GetAll?supplierId={IdSupplier}&userId={IdUser}&rowFrom={RowFrom}&serviceTypeId={(int)ServiceTypeEnum.FailReport}";
                 url = (IdDealer.HasValue ) ? $"{url}&dealerId={IdDealer}" : url;
                 url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
+                url = string.IsNullOrEmpty(DateFrom) ? url : $"{url}&fromDate={DateFrom}";
+                url = string.IsNullOrEmpty(DateTo) ? url : $"{url}&upToDate={DateTo}";
+                url = (EstatusId.HasValue) ? $"{url}&estatusId={EstatusId}" : url;
 
                 result = await _http.GetFromJsonAsync<ApiResponse<List<FailReport>>>(url);
 
@@ -48,6 +51,41 @@
 
         }
 
+
+        public async Task<ApiResponse<List<FailReport>>> GetServiceFailClosed(int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null, string DateFrom = "", string DateTo = "", int? EstatusId = null)
+        {
+            ApiResponse<List<FailReport>>? result;
+
+            try
+            {
+                var url = $"api/Service/GetServiceFailClosed?supplierId={IdSupplier}&userId={IdUser}&rowFrom={RowFrom}";
+                url = (IdDealer.HasValue) ? $"{url}&dealerId={IdDealer}" : url;
+                url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
+                url = string.IsNullOrEmpty(DateFrom) ? url : $"{url}&fromDate={DateFrom}";
+                url = string.IsNullOrEmpty(DateTo) ? url : $"{url}&upToDate={DateTo}";
+                url = (EstatusId.HasValue) ? $"{url}&estatusId={EstatusId}" : url;
+
+                result = await _http.GetFromJsonAsync<ApiResponse<List<FailReport>>>(url);
+
+                result = result is null ? new ApiResponse<List<FailReport>>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos.",
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<FailReport>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+
+        }
         public async Task<ApiResponse<List<FailReportType>>> GetFailReportTypes(int IdUser)
         {
             ApiResponse<List<FailReportType>>? result;
@@ -108,6 +146,43 @@
             }
             return result;
         }
+
+
+        public async Task<ApiResponse<List<FailReport>>> GetFailReportsToGenerate(int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null, string DateFrom = "", string DateTo = "")
+        {
+            ApiResponse<List<FailReport>>? result;
+
+            try
+            {
+                var url = $"api/Service/GetServiceFailToGenerate?supplierId={IdSupplier}&userId={IdUser}&rowFrom={RowFrom}";
+                url = (IdDealer.HasValue) ? $"{url}&dealerId={IdDealer}" : url;
+                url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
+                url = string.IsNullOrEmpty(DateFrom) ? url : $"{url}&fromDate={DateFrom}";
+                url = string.IsNullOrEmpty(DateTo) ? url : $"{url}&upToDate={DateTo}";
+
+                result = await _http.GetFromJsonAsync<ApiResponse<List<FailReport>>>(url);
+
+                result = result is null ? new ApiResponse<List<FailReport>>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos.",
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<FailReport>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+
+        }
+
+
 
         public async Task<ApiResponse<ActionResult>> CreateFailReport(FailReport FailReport, int IdUser)
         {
@@ -257,7 +332,7 @@
         }
 
 
-        public async Task<ApiResponse<List<byte>>> ExportFailReports(int IdSupplier, int IdUser, string Filter = "", int? IdDealer = null)
+        public async Task<ApiResponse<List<byte>>> ExportFailReports(int IdSupplier, int IdUser, string Filter = "", int? IdDealer = null, string DateFrom = "", string DateTo = "", int? EstatusId = null)
         {
             ApiResponse<List<byte>> result;
             try
@@ -265,9 +340,54 @@
                 var url = $"api/Service/Export?supplierId={IdSupplier}&userId={IdUser}&serviceTypeId={(int)ServiceTypeEnum.FailReport}";
                 url = (IdDealer.HasValue ) ? $"{url}&dealerId={IdDealer}" : url;
                 url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
+                url = string.IsNullOrEmpty(DateFrom) ? url : $"{url}&fromDate={DateFrom}";
+                url = string.IsNullOrEmpty(DateTo) ? url : $"{url}&upToDate={DateTo}";
+                url = (EstatusId.HasValue) ? $"{url}&estatusId={EstatusId}" : url;
 
                 var response = await _http.GetAsync(url);
                 
+                var fileContent = await response.Content.ReadAsByteArrayAsync();
+                result = (fileContent is null) ? new ApiResponse<List<byte>>()
+                {
+                    Processed = false,
+                    Message = "Error al Exportar Data.",
+                    Data = []
+                } : new ApiResponse<List<byte>>()
+                {
+                    Processed = true,
+                    Message = "",
+                    Data = fileContent.ToList()
+                };
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<byte>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message),
+                    Data = []
+                };
+            }
+
+            return result;
+        }
+
+
+        public async Task<ApiResponse<List<byte>>> ExportFailReportsClosed(int IdSupplier, int IdUser, string Filter = "", int? IdDealer = null, string DateFrom = "", string DateTo = "", int? EstatusId = null)
+        {
+            ApiResponse<List<byte>> result;
+            try
+            {
+                var url = $"api/Service/GetExportFailClosed?supplierId={IdSupplier}&userId={IdUser}&serviceTypeId={(int)ServiceTypeEnum.FailReport}";
+                url = (IdDealer.HasValue) ? $"{url}&dealerId={IdDealer}" : url;
+                url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
+                url = string.IsNullOrEmpty(DateFrom) ? url : $"{url}&fromDate={DateFrom}";
+                url = string.IsNullOrEmpty(DateTo) ? url : $"{url}&upToDate={DateTo}";
+                url = (EstatusId.HasValue) ? $"{url}&estatusId={EstatusId}" : url;
+
+                var response = await _http.GetAsync(url);
+
                 var fileContent = await response.Content.ReadAsByteArrayAsync();
                 result = (fileContent is null) ? new ApiResponse<List<byte>>()
                 {

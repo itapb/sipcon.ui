@@ -1,0 +1,464 @@
+﻿@* MoveMovements.razor - Componente para traslado con detalles *@
+@inject HubEventsService hubEventsService
+@implements IDisposable
+@inject UtilModuleActions ModuleActionsService
+
+<CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
+
+@if (MovementId != null)
+{
+    <MovementForm @bind-Value="MovementId" ModuleId="Modules!.FirstOrDefault()?.Id" />
+}
+else
+{
+    <MudDataGrid @ref="MovementMudDataGrid" T="MoveMovementDetails" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" FixedHeader Height="calc(100vh - 240px)" Loading="Loading" @bind-CurrentPage="ReceptionCurrentPage">
+        @* <ToolBarContent> *@
+            @* @if (TypeId != "p")
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="ClickNewMovement"></MudIconButton>
+            } *@
+           @*  <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick=" ClickNewMovement"></MudIconButton>
+
+            <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshMovement"></MudIconButton>
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+                @foreach (var strmodulo in Modules!)
+                {
+                    <MudMenuItem Label="@strmodulo.ActionDisplay" Icon="@(strmodulo.ActionDisplay.ToActionIcon())" IconColor="@Color.Info" OnClick="@(() => ClickMenuMovement(strmodulo.ActionName))" />
+                }
+            </MudMenu> *@
+        @* </ToolBarContent> *@
+
+        <ToolBarContent>
+            <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick=" ClickNewMovement"></MudIconButton>
+
+            <MudTextField T="string"
+                          Value="searchString"
+                          ValueChanged="@(s => OnSearch(s))"
+                          Placeholder="buscar"
+                          Adornment="Adornment.Start"
+                          IconSize="Size.Medium"
+                          Class="mt-0"
+                          Style="font-size: 14px; line-height: 0.8rem;"
+                          Typo="Typo.caption">
+            </MudTextField>
+            <MudSpacer />
+            <MudCheckBox @bind-Value="@IsPendant" Label="PENDIENTE" @bind-Value:after="OnPendantChanged" />
+            <MudSpacer />
+            <MudSpacer />
+            <div id="scroll_section" class="mx-auto" style="max-width: 650px">
+                <MudExpansionPanels Outlined="false" Elevation="0">
+                    <MudExpansionPanel @bind-Expanded="@_open" HideIcon="true">
+                        <TitleContent>
+                            <div class="d-flex">
+
+                                <MudIcon Icon="@(_open? Icons.Material.Filled.FilterAltOff  : Icons.Material.Filled.FilterAlt)" Color="Color.Info"></MudIcon>
+                            </div>
+                        </TitleContent>
+                        <ChildContent>
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4">
+                                <MudDatePicker @ref="_picker"
+                                               @bind-Date="_dateFrom"
+                                               Style="font-size: 14px;line-height: 0.8rem;min-width: 120px;"
+                                               Adornment="Adornment.Start"
+                                               AdornmentColor="Color.Info"
+                                               Class="align-right"
+                                               Placeholder="Fecha Desde"
+                                               Variant="Variant.Text"
+                                               PickerVariant="PickerVariant.Inline"
+                                               Margin="Margin.None"
+                                               DateFormat="dd/MM/yyyy"
+                                               AutoClose="true">
+                                    <PickerActions>
+                                        <MudButton Class="mr-auto align-self-start" OnClick="@(() => _picker.ClearAsync())">Borrar</MudButton>
+                                        <MudButton OnClick="@(() => _picker.CloseAsync(false))">Cancelar</MudButton>
+                                    </PickerActions>
+                                </MudDatePicker>
+
+                                <MudDatePicker @ref="_pickerTo"
+                                               @bind-Date="_dateTo"
+                                               Style="font-size: 14px;line-height: 0.8rem;min-width: 120px;"
+                                               Adornment="Adornment.Start"
+                                               AdornmentColor="Color.Info"
+                                               Class="align-right"
+                                               Placeholder="Fecha Hasta"
+                                               Variant="Variant.Text"
+                                               PickerVariant="PickerVariant.Inline"
+                                               Margin="Margin.None"
+                                               DateFormat="dd/MM/yyyy"
+                                               AutoClose="true">
+                                    <PickerActions>
+                                        <MudButton Class="mr-auto align-self-start" OnClick="@(() => _pickerTo.ClearAsync())">Borrar</MudButton>
+                                        <MudButton OnClick="@(() => _pickerTo.CloseAsync(false))">Cancelar</MudButton>
+                                    </PickerActions>
+                                </MudDatePicker>
+
+                                <MudSelect T="SelectOption"
+                                           @bind-Value="_selectedAction"
+                                           ToStringFunc="@(e => e?.Text)"
+                                           Placeholder="ESTATUS"
+                                           AdornmentIcon="@Icons.Material.Filled.FilterList"
+                                           AdornmentColor="Color.Info"
+                                           Style="font-size: 14px; width: 160px;"
+                                           Variant="Variant.Text"
+                                           Clearable="true"
+                                           Dense="true">
+                                    @if (_actions != null)
+                                    {
+                                        @foreach (var action in _actions)
+                                        {
+                                            @* T debe ser SelectOption *@
+                                            <MudSelectItem T="SelectOption" Value="@action">@action.Text</MudSelectItem>
+                                        }
+                                    }
+                                </MudSelect>
+                            </MudStack>
+                        </ChildContent>
+                    </MudExpansionPanel>
+                </MudExpansionPanels>
+
+            </div>
+            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Info" OnClick="ClickRefreshMovement"></MudIconButton>
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshMovement" />
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+                @foreach (var strmodulo in Modules!)
+                {
+                    <MudMenuItem Label="@strmodulo.ActionDisplay" Icon="@(strmodulo.ActionDisplay.ToActionIcon())" IconColor="@Color.Info" OnClick="@(() => ClickMenuMovement(strmodulo.ActionName))" />
+                }
+            </MudMenu>
+        </ToolBarContent>
+        <Columns>
+            <TemplateColumn>
+                <HeaderTemplate>
+                    <MudCheckBox @bind-Value="IsAllCheckBoxSelected" @bind-Value:after="AfterAsyncAllCheck" />
+                </HeaderTemplate>
+                <CellTemplate>
+                    <MudCheckBox @bind-Value="context.Item.IsSelected" />
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.MovementId" Title="NRO TRASLADO" />
+            <PropertyColumn Property="x => x.GeneratedDate" Title="FECHA" />
+            <PropertyColumn Property="x => x.PartInnerCode" Title="CODIGO PARTE" />
+            <PropertyColumn Property="x => x.PartDescription" Title="DESCRIPCION" />
+            <PropertyColumn Property="x => x.LocationName" Title="UBICACIÓN ORIGEN" />
+            <PropertyColumn Property="x => x.DestinationName" Title="UBICACIÓN DESTINO" />
+            <PropertyColumn Property="x => x.RequiredQty" Title="TEORICO" />
+            <PropertyColumn Property="x => x.RealQty" Title="REAL" />
+            <PropertyColumn Property="x => x.TypeName" Title="TIPO" />
+            <PropertyColumn Property="x => x.StatusName" Title="ESTATUS" />
+            <PropertyColumn Property="x => x.UserName" Title="USUARIO ASIGNADO" />
+            <TemplateColumn StickyRight="true">
+                <CellTemplate>
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditMovement(context.Item)" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="MoveMovementDetails" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        </PagerContent>
+    </MudDataGrid>
+}
+
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
+    [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private ILogger<MoveMovements> Logger { get; set; } = default!;
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+    List<BreadcrumbItem> ItemsNavigate = new();
+
+    bool _open;
+    IMask maskDate = new DateMask("dd/MM/yyyy");
+    private DateTime? _dateFrom { get; set; } = null;
+    private DateTime? _dateTo { get; set; } = null;
+    private MudDatePicker _picker = new MudDatePicker();
+    private MudDatePicker _pickerTo = new MudDatePicker();
+    private List<SelectOption> _actions = new List<SelectOption>();
+    private SelectOption? _selectedAction;
+
+    [Parameter] public string? TypeId { get; set; } = "t"; 
+    private int? MovementId = null;
+    public bool IsPendant { get; set; } = true;
+
+    private bool IsAllCheckBoxSelected = false;
+    int ReceptionCurrentPage = 0;
+    bool Loading = false;
+    private MudDataGrid<MoveMovementDetails>? MovementMudDataGrid;
+    private List<Module>? Modules;
+    DialogOptions options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
+    private string searchString = string.Empty;
+    string MovementTitle = "";
+    private Dictionary<string, string> strDictionaryContactName = new Dictionary<string, string> { { "r", "PROVEEDOR" }, { "t", "PLANTA" }, { "p", "PLANTA" } };
+    private string strContactName = "";
+
+    private async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            Loading = true;
+            searchString = text;
+            await MovementMudDataGrid!.ReloadServerData();
+        }
+    }
+
+    private async Task ClickRefreshMovement(MouseEventArgs args) => await MovementMudDataGrid!.ReloadServerData();
+
+    private async Task ClickNewMovement(MouseEventArgs ev)
+    {
+        HttpResponseMessage response = await Http.GetAsync($"api/Movements/NewMovementWithContext?userId={Session.UserId}&supplierId={Session.SupplierId}&typeId={TypeId!.ToUpper()}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<MasterMovementDetails>>();
+            var data = content2!.data ?? new MasterMovementDetails();
+            Session.IsNewOrEdit = true;
+            MovementId = data.Movement?.Id;
+        }
+        else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflictContent = await response.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+            await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        else
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            Logger.LogError(Session.TemplateLog(MovementTitle, errorMessage));
+            await DialogService.ShowUnexpected();
+        }
+        await Task.CompletedTask;
+    }
+
+    private async Task AfterAsyncAllCheck()
+    {
+        MovementMudDataGrid?.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
+        await Task.CompletedTask;
+    }
+
+    private async Task ClickEditMovement(MoveMovementDetails item)
+    {
+        Session.IsNewOrEdit = true;
+        await Task.FromResult(MovementId = item.MovementId);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+        await LoadDataAsync();
+        hubEventsService.OnSupplierChanged += ReloadMovementsGrid;
+    }
+
+    private async Task LoadDataAsync()
+    {
+        MovementTitle = TypeId switch { "r" => "Recepcion", "t" => "Traslado", "p" => "Recoleccion", _ => "Recepcion" };
+        string hrefMovement = TypeId switch { "r" => "reception", "t" => "move", "p" => "collection", _ => "reception" };
+        strContactName = strDictionaryContactName[TypeId!];
+
+        $"Home,Inventario,{MovementTitle}".Split(',').ToList().ForEach(s =>
+            ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
+
+        
+        Modules = await Http.GetFromJsonAsync<List<Module>>(
+            $"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-{MovementTitle.ToUpper()}&userId={Session.UserId}"
+        );
+    }
+
+    Func<MoveMovementDetails, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    {
+        nameof(MoveMovementDetails.Id) => o => o.Id ?? 0,
+        nameof(MoveMovementDetails.MovementId) => o => o.MovementId ?? 0,
+        nameof(MoveMovementDetails.GeneratedDate) => o => o.GeneratedDate ?? DateTime.UtcNow.ToString(),
+        nameof(MoveMovementDetails.PartInnerCode) => o => o.PartInnerCode ?? "",
+        nameof(MoveMovementDetails.PartDescription) => o => o.PartDescription ?? "",
+        nameof(MoveMovementDetails.LocationName) => o => o.LocationName,
+        nameof(MoveMovementDetails.DestinationName) => o => o.DestinationName ?? "",
+        nameof(MoveMovementDetails.RequiredQty) => o => o.RequiredQty ?? 0,
+        nameof(MoveMovementDetails.RealQty) => o => o.RealQty ?? 0,
+        nameof(MoveMovementDetails.TypeName) => o => o.TypeName,
+        nameof(MoveMovementDetails.Processed) => o => o.Processed ?? false,
+        nameof(MoveMovementDetails.UserName) => o => o.UserName,
+        _ => null!
+    };
+
+    private async Task<GridData<MoveMovementDetails>> ServerReload(GridState<MoveMovementDetails> state)
+    {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+        IsAllCheckBoxSelected = false;
+        Loading = true;
+        var totalItems = 0;
+        var mOffset = state.Page * state.PageSize;
+        IEnumerable<MoveMovementDetails> data;
+
+        //fechas y filtros
+        _actions = await ModuleActionsService.GetAction(Session.UserId, "INVENTARIO-PROCESOS-TRASLADO");
+        int? idRespaldado = _selectedAction?.Value;
+        if (idRespaldado.HasValue && _actions != null) { _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
+        int? _estatusid = _selectedAction?.Value;
+        string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
+        string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
+
+        
+        HttpResponseMessage response = await Http.GetAsync(
+            $"api/Movements/GetMovementDetailsTransfer?userId={Session.UserId}" +
+            $"&supplierId={Session.SupplierId}" +
+            $"&rowfrom={mOffset}" +
+            $"&filter={searchString}" +
+            $"&pending={IsPendant.ToString()}&fromDate={_dateFromStr}&upToDate={_dateToStr}&estatusId={_estatusid}"
+        );
+
+        if (response.IsSuccessStatusCode)
+        {
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<MoveMovementDetails>>>();
+            totalItems = content2!.total ?? 0;
+            data = content2!.data ?? new List<MoveMovementDetails>();
+
+            if (state.SortDefinitions.FirstOrDefault() is SortDefinition<MoveMovementDetails> sortDefinition)
+            {
+                data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending,
+                         GetSortKeySelector(sortDefinition.SortBy));
+            }
+        }
+        else
+        {
+            data = new List<MoveMovementDetails>();
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            Logger.LogError(Session.TemplateLog(MovementTitle, errorMessage));
+            await DialogService.ShowUnexpected();
+        }
+
+        Loading = false;
+        return new GridData<MoveMovementDetails> { TotalItems = totalItems, Items = data };
+    }
+
+    private async Task ClickMenuMovement(string? actionName)
+    {
+        //fechas y filtros
+        _actions = await ModuleActionsService.GetAction(Session.UserId, "INVENTARIO-PROCESOS-TRASLADO");
+        int? idRespaldado = _selectedAction?.Value;
+        if (idRespaldado.HasValue && _actions != null) { _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
+        int? _estatusid = _selectedAction?.Value;
+        string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
+        string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
+
+        if (actionName == "EXPORT" && (TypeId is "r" or "t") && MovementMudDataGrid?.FilteredItems.Count() > 0)
+        {
+            var segmentPath = TypeId == "t" ? "RelocationExport" : "ReceptionExport";
+            var fileName = TypeId == "t" ? "Traslado.xlsx" : "Recepcion.xlsx";
+
+            Loading = true;
+            var ResultZonas = await Http.GetAsync($"api/Movements/{segmentPath}?filter={searchString}&userId={Session.UserId}&supplierId={Session.SupplierId}&fromDate={_dateFromStr}&upToDate={_dateToStr}&estatusId={_estatusid}");
+            if (ResultZonas.IsSuccessStatusCode)
+            {
+                var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
+                var base64File = Convert.ToBase64String(fileContent);
+                var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+                await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, fileName);
+            }
+            Loading = false;
+            return;
+        }
+         
+         
+        // var strDictionary = new Dictionary<string, string> {
+        //     { "ASSIGN", "GENERADO" },
+        //     { "UNASSIGN", "ASIGNADO" },
+        //     { "GENERATE", "BORRADOR" },
+        //     { "DECLINE", "BORRADOR,GENERADO" }
+        // };
+
+        var mActions = MovementMudDataGrid?.FilteredItems
+            .Where(item => item.IsSelected &&
+                          !(item.Processed ?? false)
+                          // (strDictionary.ContainsKey(actionName!) ?
+                          //  strDictionary[actionName!].Contains(item.StatusName?.ToUpper() ?? "") :
+                          //  true)
+                            ) // Si no está en el diccionario, no filtrar por estatus
+            .Select(item => new Client.Models.Action
+            {
+                UserId = Session.UserId,
+                RecordId = item.Id,
+                ModuleId = Modules!.FirstOrDefault()?.Id,
+                actionName = actionName,
+                ActionComment = "",
+                RelatedId = 0
+            }).ToList();
+
+        if (mActions?.Count == 0)
+        {
+            await DialogService.ShowDialog("Accion no permitada, Verificar datos seleccionado(s)", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        else if (mActions?.Count > 0)
+        {
+            if (actionName == "ASSIGN")
+            {
+                
+                string ModuleName = TypeId switch
+                {
+                    "r" => "INVENTARIO-MOVIL-RECEPCION",
+                    "t" => "INVENTARIO-MOVIL-TRASLADO",
+                    "p" => "INVENTARIO-MOVIL-DESPACHO",
+                    _ => "INVENTARIO-MOVIL-RECEPCION"
+                };
+
+                var dialogReference = await DialogService.ShowAsync<AssignUserToMovement>("",
+                    new DialogParameters
+                    {
+                        ["SelectedActions"] = mActions,
+                        ["moduleName"] = ModuleName
+                    }, options);
+
+                if (await Useful.AsyncDialogResultIsOk(dialogReference))
+                    await MovementMudDataGrid!.ReloadServerData();
+            }
+            else
+            {
+                await PostActionAndReload(mActions, $"api/Movements/PostMovementDetailsTransferActions?userId={Session.UserId}");
+            }
+        }
+    }
+
+    private async Task PostActionAndReload(List<Models.Action>? actions, string requesturi)
+    {
+        var result_Post_Actions = (actions?.Count > 0) ? await Http.PostAsync(
+            requesturi,
+            new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json"))
+            : null;
+
+        if ((result_Post_Actions?.IsSuccessStatusCode ?? false))
+        {
+            var rest = result_Post_Actions.Content.ReadAsStringAsync();
+            await DialogService.ShowDialog(Useful.OkSavedMessage, "Accion", "OK", Color.Info, Icons.Material.Filled.Commit);
+            await MovementMudDataGrid!.ReloadServerData();
+        }
+        else if (result_Post_Actions?.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflictContent = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+            await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        else
+        {
+            var errorMessage = await result_Post_Actions!.Content.ReadAsStringAsync();
+            Logger.LogError(Session.TemplateLog(MovementTitle, errorMessage));
+            await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+    }
+
+    private async Task ReloadMovementsGrid()
+    {
+        if (MovementMudDataGrid != null && MovementId == null)
+        {
+            await MovementMudDataGrid.ReloadServerData();
+        }
+    }
+
+    public void Dispose()
+    {
+        Session.IsNewOrEdit = false;
+        hubEventsService.OnSupplierChanged -= ReloadMovementsGrid;
+    }
+
+    private async Task OnPendantChanged()
+    {
+        await MovementMudDataGrid!.ReloadServerData();
+    }
+}

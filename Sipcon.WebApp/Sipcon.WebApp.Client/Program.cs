@@ -8,6 +8,16 @@ using Sipcon.WebApp.Client.Services;
 using Sipcon.WebApp.Client.Utils;
 using System.Globalization;
 
+
+//var fix1 = Enumerable.SequenceEqual(new List<object>(), new List<object>());
+//var fix2 = Enumerable.SequenceEqual(new List<string>(), new List<string>());
+//var fix3 = Enumerable.SequenceEqual(new List<int>(), new List<int>());
+//var fix4 = Enumerable.SequenceEqual(new Dictionary<string, object>().Keys, new Dictionary<string, object>().Keys);
+//var fix5 = Enumerable.SequenceEqual(new Dictionary<string, object>().Values, new Dictionary<string, object>().Values);
+
+//Console.WriteLine($"Fixes loaded: {fix1 || fix2 || fix3}");
+
+
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
 CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US");
@@ -47,6 +57,8 @@ builder.Services.AddScoped<AuthenticationStateProvider, AuthenticationProviderJW
 builder.Services.AddScoped<IAuthorizeService, AuthenticationProviderJWT>(x => x.GetRequiredService<AuthenticationProviderJWT>());
 
 
+builder.Services.AddScoped<IDemandService, DemandRepository>();
+
 builder.Services.AddScoped<IModelService, ModelRepository>();
 builder.Services.AddScoped<IModuleService, ModuleRepository>();
 builder.Services.AddScoped<IVehicleService, VehicleRepository>();
@@ -66,6 +78,10 @@ builder.Services.AddScoped<ILaborTimeService, LaborTimeRepository>();
 builder.Services.AddScoped<ILicenseService, LicenseRepository>();
 builder.Services.AddScoped<IFailReportService, FailReportRepository>();
 builder.Services.AddScoped<ISecurityService, SecurityRepository>();
+builder.Services.AddScoped<IReportDMSService, ReportDMSRepository>();
+builder.Services.AddScoped<IReportingService, ReportingRepository>();
+builder.Services.AddScoped<IKardexService, KardexRepository>();
+
 
 
 

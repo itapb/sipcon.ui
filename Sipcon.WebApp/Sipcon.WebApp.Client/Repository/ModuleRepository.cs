@@ -63,6 +63,40 @@
 
         }
 
+        public async Task<ApiResponse<List<ActionModule>>> GetAction(int IdUser, string Module = "")
+        {
+            ApiResponse<List<ActionModule>> result;
+            try
+            {
+                var Modules = await _http.GetFromJsonAsync<List<ActionModule>>($"api/Module/GetActionByModule?moduleName={Module}&userId={IdUser}");
+
+                result = (Modules is null) ? new ApiResponse<List<ActionModule>>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos."
+                } : new ApiResponse<List<ActionModule>>()
+                {
+                    Processed = true,
+                    Data = [],
+                };
+
+                if (result.Processed)
+                {
+                    result.Data.AddRange(Modules ?? []);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<ActionModule>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+            return result;
+        }
+
     }
 
 }

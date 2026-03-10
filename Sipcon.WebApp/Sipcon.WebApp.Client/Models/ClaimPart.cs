@@ -18,7 +18,7 @@ namespace Sipcon.WebApp.Client.Models
         public string? Invoice { get; set; }
         public string? Guide { get; set; }
 
-      
+        public int? ClaimNum { get; set; }
         public string? DealerName { get; set; }
       
         public string? SupplierName { get; set; }
@@ -32,6 +32,14 @@ namespace Sipcon.WebApp.Client.Models
         public DateTime? DCreated { get; set; }
        
         public DateTime? DUpdated { get; set; }
-
+                
+        public string? PartName { get; set; }
+        public string? ReasonDescription { get; set; }
+        public string? PartInnerCode { get; set; }
+        public int? Quantity { get; set; }
+ 
+        public bool? Credit { get; set; }
+        public string DisplayGuide => string.IsNullOrEmpty(Reference) ? "N/A" : Reference;
+        public string DisplayInvoice => string.IsNullOrEmpty(Invoice) ? "N/A" : Invoice;
     }
 }
