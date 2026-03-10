@@ -584,7 +584,7 @@
                                     onChangeReportDetail="() => GetFailReport()">
             </FailReportDetailCustom>
         </MudTabPanel>
-        @* COMENTARIOS *@
+        @* MENSAJES *@
         <MudTabPanel Icon="@Icons.Material.Filled.Message" Text="MENSAJES" BadgeData="@(_comment.Count > 99 ? "99+" : _comment.Count().ToString())" BadgeColor="Color.Success">
             @* Messages *@
             <MudCard Elevation="1" Class="pa-1 mt-2">
@@ -699,7 +699,13 @@
                                 @foreach (var item in _attachment)
                                 {
                                         <MudItem xs="12" sm="4">
-                                            <MudText Typo="Typo.caption"><b><MudIcon Icon="@Icons.Custom.FileFormats.FileDocument" Color="Color.Inherit" Class="mr-2" />@item.FileName</b></MudText>
+                                            
+                                            <MudLink OnClick="() => ClickPreviewImage(item.Id, item.FileName)" Color="Color.Info">  
+                                                <MudText Typo="Typo.caption">        
+                                                    <MudIcon Icon="@Icons.Custom.FileFormats.FileDocument" Color="Color.Inherit" Class="mr-2" />@item.FileName
+                                                </MudText>        
+                                            </MudLink>  
+                                            
                                         </MudItem>
                                         <MudItem xs="12" sm="4">
                                             <MudText Typo="Typo.caption">@item.DateCreate!.Value.ToString("F", CultureInfo.GetCultureInfo("es-VE"))</MudText>
@@ -707,8 +713,16 @@
                                         <MudItem xs="12" sm="4">
                                             <div class="d-flex justify-left">
                                                 <MudStack Row="true">
-                                                    <MudIconButton Icon="@Icons.Material.Outlined.FileDownload" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickExportAttachment(item.Id, item.FileName)" />
-                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickDeleteAttachment(item.Id)"  />
+                                                    <MudTooltip Text="descargar">
+                                                        <MudIconButton Icon="@Icons.Material.Outlined.FileDownload" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickExportAttachment(item.Id, item.FileName)" />
+                                                    </MudTooltip>
+                                                    <MudTooltip Text="eliminar">
+                                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickDeleteAttachment(item.Id)"  />
+                                                    </MudTooltip>
+                                                    <MudTooltip Text="vista previa">
+                                                        <MudIconButton Icon="@Icons.Material.Filled.Preview" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickPreviewImage(item.Id, item.FileName)"  />
+                                                    </MudTooltip>
+                                                    
                                                     
                                                 </MudStack>
                                             </div>
@@ -951,6 +965,18 @@
             await Task.CompletedTask;
             
         }
+    }
+
+    private async Task ClickPreviewImage(int IdAttachment, string FileName)
+    {
+           
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true, NoHeader = false };
+        var parameters = new DialogParameters<PreviewImageDialog> { { x => x.Title, "Vista Previa." } , { x => x.IdAttachment, IdAttachment.ToString() } , { x => x.NameAttachment, FileName } };
+        var dialog = await DialogService.ShowAsync<PreviewImageDialog>("Vista Previa.", parameters, options);
+
+        StateHasChanged();
+
+        await Task.CompletedTask;
     }
 
     private async Task ClickExportPdfSRG()

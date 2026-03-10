@@ -48,6 +48,7 @@ builder.Services.AddMudServices();
 builder.Services.AddAuthorizationCore();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddAuthenticationStateDeserialization();
+builder.Services.AddBlazorPdfViewer();
 
 builder.Services.AddTransient<ISessionStorageService, SessionStorageRepository>();
 builder.Services.AddScoped<UserSession>();
