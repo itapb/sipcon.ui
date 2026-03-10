@@ -103,7 +103,7 @@
                 </MudPaper>
                 <MudPaper Elevation="2" Class="pa-2 mud-text-align-center flex-grow-0">
                     <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd" StretchItems="StretchItems.Start">
-                        <MudFab StartIcon="@Icons.Material.Filled.CheckCircleOutline" Color="Color.Info" Size="Size.Small" Label="Generar" OnClick="GenerateClick" Disabled="@(!IsCreatedClaimOrder)" />
+                        <MudFab StartIcon="@Icons.Material.Filled.CheckCircleOutline" Color="Color.Info" Size="Size.Small" Label="PARA APROBAR" OnClick="GenerateClick" Disabled="@(!IsCreatedClaimOrder)" />
                     </MudStack>
                 </MudPaper>
             </MudStack>
@@ -536,7 +536,13 @@
 
     private async Task AttachmentsClick(MouseEventArgs args)
     {
-        await DialogService.ShowAsync(typeof(ClaimOrderAttachments), "", new DialogParameters { ["IdRecord"] = ClaimOrderId }, options);
+        var dialogParameters = new DialogParameters
+        {
+            ["IdRecord"] = MasterClaimOrder?.ClaimNum, //  de Id a ClaimNum
+        };
+
+        await DialogService.ShowAsync(typeof(ClaimOrderAttachments), "", dialogParameters, options);
+        // await DialogService.ShowAsync(typeof(ClaimOrderAttachments), "", new DialogParameters { ["IdRecord"] = ClaimOrderId }, options);
     }
     private async Task ClickMenuClaimOrder(string? actionName)
     {

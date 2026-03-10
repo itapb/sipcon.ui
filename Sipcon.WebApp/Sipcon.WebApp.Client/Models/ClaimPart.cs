@@ -18,7 +18,7 @@ namespace Sipcon.WebApp.Client.Models
         public string? Invoice { get; set; }
         public string? Guide { get; set; }
 
-      
+        public int? ClaimNum { get; set; }
         public string? DealerName { get; set; }
       
         public string? SupplierName { get; set; }
