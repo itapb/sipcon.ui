@@ -1,4 +1,6 @@
-﻿<MudGrid Spacing="0">
+﻿@using System.Globalization
+
+<MudGrid Spacing="0">
     <MudItem xs="12">
         <MudPaper Elevation="2" Class="jpv1-dialog-background-title pa-3" Square="true">
             <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
@@ -17,24 +19,34 @@
     </MudItem>
     <MudItem xs="12">
         <MudDataGrid @ref="AttachmentsMudDataGrid" T="Attachment" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" FixedHeader Height="calc(100vh - 280px)" @bind-CurrentPage="ContactCurrentPage">
-@*             <ToolBarContent>
-                <MudTextField T="string" Placeholder="Buscar" Adornment="Adornment.Start" ValueChanged="@(s => OnSearch(s))" Value="searchString" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-                <MudSpacer />
-                <MudIconButton Icon="@Icons.Material.Filled.Upload" Color="Color.Info" OnClick="ClickUploadFiles"></MudIconButton>
-                <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefreshAttachments"></MudIconButton>               
-            </ToolBarContent> *@
             <Columns>
-                <PropertyColumn Property="x => x.FileName" Title="ARCHIVO" />
-                <PropertyColumn Property="x => x.DateCreate" Title="FECHA" Format="F" />             
-                
-                <TemplateColumn>
+                <TemplateColumn Title="ARCHIVO">
                     <CellTemplate>
-                        <MudIconButton Icon="@Icons.Material.Outlined.FileDownload" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickExportAttachment(context.Item.Id, context.Item.FileName)" />
+                        <MudLink OnClick="() => ClickPreviewImage(context.Item.Id, context.Item.FileName)" Color="Color.Info">  
+                            <MudText Typo="Typo.caption">        
+                                <MudIcon Icon="@Icons.Custom.FileFormats.FileDocument" Color="Color.Inherit" Class="mr-2" />@context.Item.FileName
+                            </MudText>        
+                        </MudLink> 
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="FECHA">
+                    <CellTemplate>
+                        <MudText Typo="Typo.caption">@context.Item.DateCreate!.Value.ToString("F", CultureInfo.GetCultureInfo("es-VE"))</MudText>
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn>
                     <CellTemplate>
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickDeleteAttachment(context.Item.Id)" />
+                        <MudStack Row="true">
+                            <MudTooltip Text="descargar">
+                                <MudIconButton Icon="@Icons.Material.Outlined.FileDownload" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickExportAttachment(context.Item.Id, context.Item.FileName)" />
+                            </MudTooltip>
+                            <MudTooltip Text="eliminar">
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickDeleteAttachment(context.Item.Id)" />
+                            </MudTooltip>
+                            <MudTooltip Text="vista previa">
+                                <MudIconButton Icon="@Icons.Material.Filled.Preview" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickPreviewImage(context.Item.Id, context.Item.FileName)"  />
+                            </MudTooltip>
+                        </MudStack>
                     </CellTemplate>
                 </TemplateColumn>
             </Columns>
@@ -137,6 +149,19 @@
 
         }
     }
+
+    private async Task ClickPreviewImage(int IdAttachment, string FileName)
+    {
+           
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true, NoHeader = false };
+        var parameters = new DialogParameters<PreviewImageDialog> { { x => x.Title, "Vista Previa." } , { x => x.IdAttachment, IdAttachment.ToString() } , { x => x.NameAttachment, FileName } };
+        var dialog = await DialogService.ShowAsync<PreviewImageDialog>("Vista Previa.", parameters, options);
+
+        StateHasChanged();
+
+        await Task.CompletedTask;
+    }
+
     private async Task ClickExportAttachment(int IdAttachment, string FileName)
     {
         var serviceResponse = await AttachmentService.GetAttachment(IdAttachment, Session.UserId);
