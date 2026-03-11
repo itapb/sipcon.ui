@@ -1,7 +1,6 @@
 ﻿@inject HubEventsService hubEventsService
 @implements IDisposable
-@inject UtilModuleActions ModuleActionsService
-@inject ILogger<PendingActionTab> Logger
+@inject ILogger<PendingTab> Logger
 @using Microsoft.Extensions.Logging
 @using System.Collections.Generic
 @using MudBlazor.Utilities
@@ -19,35 +18,28 @@
                       IconSize="Size.Medium"
                       Class="mt-0"
                       Style="font-size: 14px; line-height: 0.8rem;"
-                      Immediate="true"
-                      Typo="Typo.caption">
-        </MudTextField>
+                      Typo="Typo.caption" />
 
         <MudSpacer />
 
         <div id="scroll_section" class="mx-auto" style="max-width: 650px">
             <MudExpansionPanels Outlined="false" Elevation="0">
-                <MudExpansionPanel @ref="_filtersPanel" @bind-Expanded="@_openFilters" HideIcon="true" ShowExpandIcon="false">
+                <MudExpansionPanel @ref="_filtersPanel"
+                                   @bind-Expanded="@_openFilters"
+                                   HideIcon="true" ShowExpandIcon="false">
                     <TitleContent>
-                        <div class="d-flex">
-                            @if (!_openFilters)     
-                            {
-                                <div class="d-flex">
-                                    <MudIcon Icon="@Icons.Material.Filled.FilterAlt"
-                                             Color="Color.Info"></MudIcon>
-                                </div>
-                            }
-                        </div>
+                        @if (!_openFilters)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.FilterAlt" Color="Color.Info" />
+                        }
                     </TitleContent>
                     <ChildContent>
                         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4">
-                            <!-- Fecha Desde -->
                             <MudDatePicker @ref="_pickerFrom"
                                            @bind-Date="_dateFrom"
                                            Style="font-size: 14px;line-height: 0.8rem;min-width: 120px;"
                                            Adornment="Adornment.Start"
                                            AdornmentColor="Color.Info"
-                                           Class="align-right"
                                            Placeholder="Fecha Desde"
                                            Variant="Variant.Text"
                                            PickerVariant="PickerVariant.Inline"
@@ -55,20 +47,17 @@
                                            DateFormat="dd/MM/yyyy"
                                            AutoClose="true"
                                            Clearable="true">
-                                <!--  PickerActions  -->
                                 <PickerActions>
                                     <MudButton Class="mr-auto align-self-start" OnClick="@(() => _pickerFrom.ClearAsync())">Borrar</MudButton>
                                     <MudButton OnClick="@(() => _pickerFrom.CloseAsync(false))">Cancelar</MudButton>
                                 </PickerActions>
                             </MudDatePicker>
 
-                            <!-- Fecha Hasta -->
                             <MudDatePicker @ref="_pickerTo"
                                            @bind-Date="_dateTo"
                                            Style="font-size: 14px;line-height: 0.8rem;min-width: 120px;"
                                            Adornment="Adornment.Start"
                                            AdornmentColor="Color.Info"
-                                           Class="align-right"
                                            Placeholder="Fecha Hasta"
                                            Variant="Variant.Text"
                                            PickerVariant="PickerVariant.Inline"
@@ -82,11 +71,10 @@
                                 </PickerActions>
                             </MudDatePicker>
 
-                            <!-- Selector de Estatus -->
                             <MudSelect T="SelectOption"
                                        @bind-Value="_selectedStatus"
                                        ToStringFunc="@(e => e?.Text)"
-                                       Placeholder="Estatus" 
+                                       Placeholder="Estatus"
                                        Adornment="Adornment.Start"
                                        AdornmentIcon="@Icons.Material.Filled.Label"
                                        AdornmentColor="Color.Info"
@@ -94,23 +82,21 @@
                                        Variant="Variant.Text"
                                        Clearable="true"
                                        Dense="true">
-                                @if (_statuses != null)
+                                @foreach (var status in _statuses)
                                 {
-                                    @foreach (var status in _statuses)
-                                    {
-                                        <MudSelectItem T="SelectOption" Value="@status">@status.Text</MudSelectItem>
-                                    }
+                                    <MudSelectItem T="SelectOption" Value="@status">@status.Text</MudSelectItem>
                                 }
                             </MudSelect>
 
-                            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Info" OnClick="ClickRefresh" />
-
+                            <MudIconButton Icon="@Icons.Material.Filled.Search"
+                                           Color="Color.Info"
+                                           OnClick="ClickRefresh" />
                         </MudStack>
                     </ChildContent>
                 </MudExpansionPanel>
             </MudExpansionPanels>
         </div>
-        <!-- Botón de búsqueda y refresh   -->
+
         <MudSelect T="string" @bind-Value="SelectedmGroup"
                    Immediate="true" FitContent="true"
                    @bind-Value:after="AfterAsync"
@@ -122,7 +108,7 @@
                 <MudSelectItem T="string" Value="@mgroup">@mgroup</MudSelectItem>
             }
         </MudSelect>
-        <!-- CheckBox Con Existencias  -->
+
         <MudSwitch T="bool"
                    @bind-Value="@StockOnly"
                    @bind-Value:after="OnFilterChanged"
@@ -130,24 +116,24 @@
                    Color="Color.Success"
                    CheckedIcon="@Icons.Material.Filled.Inventory"
                    UncheckedIcon="@Icons.Material.Filled.Inventory2" />
-        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="ClickRefresh" />
-        <!--  FECHA DE LLEGADA -->
+
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                       Color="Color.Info"
+                       OnClick="ClickRefresh" />
+
         <MudIconButton Icon="@Icons.Material.Filled.CalendarMonth"
-               Color="Color.Info"
-               Title="Fecha de Llegada"
-               Disabled="@(!HasBackOrderSelected)"
-               OnClick="ClickUpdateArrival" />
+                       Color="Color.Info"
+                       Title="Fecha de Llegada"
+                       Disabled="@(!_hasBackOrderSelected)"
+                       OnClick="ClickUpdateArrival" />
+
         @if (Modules != null)
         {
             <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
                 @foreach (var strmodulo in Modules)
                 {
-                    @if (strmodulo.ActionName == "ASSIGN" || strmodulo.ActionName == "UNAVAILABLE" || strmodulo.ActionName == "UNASSIGN" || strmodulo.ActionName == "DECLINE" || strmodulo.ActionName == "EXPORT")
+                    @if (strmodulo.ActionName is "ASSIGN" or "UNAVAILABLE" or "UNASSIGN" or "DECLINE" or "EXPORT")
                     {
-                         @* <MudMenuItem Label="@strmodulo.ActionDisplay"
-                                     Icon="@(strmodulo.ActionDisplay.ToActionIcon())"
-                                     IconColor="@Color.Info"
-                                     OnClick="@(() => ClickMenu(strmodulo.ActionName))" /> *@  
                         <MudMenuItem Label="@GetActionDisplayName(strmodulo.ActionName)"
                                      Icon="@GetActionIcon(strmodulo.ActionName)"
                                      IconColor="@GetActionIconColor(strmodulo.ActionName)"
@@ -157,94 +143,85 @@
             </MudMenu>
         }
     </ToolBarContent>
+
     <Columns>
         <TemplateColumn>
             <HeaderTemplate>
-                <MudCheckBox @bind-Value="IsAllCheckBoxSelected" @bind-Value:after="AfterAsyncAllCheck" />
+                <MudCheckBox @bind-Value="IsAllCheckBoxSelected"
+                             @bind-Value:after="AfterAsyncAllCheck" />
             </HeaderTemplate>
             <CellTemplate>
-                <MudCheckBox @bind-Value="@context.Item.IsSelected" @bind-Value:after="StateHasChanged" />
+                <MudCheckBox @bind-Value="@context.Item.IsSelected"
+                             @bind-Value:after="UpdateHasBackOrderSelected" />
             </CellTemplate>
         </TemplateColumn>
 
-        <PropertyColumn Property="x => x.SaleOrderNumber" Title="NRO PEDIDO" Groupable="@(_saleOrderNumberGrouping)"
-                        @bind-Grouping="_saleOrderNumberGrouping" GroupBy="_groupBy1"
+        <PropertyColumn Property="x => x.SaleOrderNumber" Title="NRO PEDIDO"
+                        Groupable="@(_saleOrderNumberGrouping)"
+                        @bind-Grouping="_saleOrderNumberGrouping"
+                        GroupBy="_groupBy1"
                         @bind-GroupByOrder="_saleOrderNumberOrder"
                         @bind-GroupExpanded="_saleOrderNumberExpanded">
             <GroupTemplate>
                 @if (_customizeGroupTemplate)
                 {
-                    var color = context.Grouping.Key?.ToString() switch
-                    {
-                        "Healthcare" => Color.Primary,
-                        "Tech" => Color.Secondary,
-                        "Tourism" => Color.Info,
-                        _ => Color.Dark
-                    };
                     <div class="d-flex align-center">
-                        <MudIcon Icon="@Icons.Material.Filled.Business" Color="@color" Size="Size.Small" Class="mr-2" />
+                        <MudIcon Icon="@Icons.Material.Filled.Business" Color="Color.Dark" Size="Size.Small" Class="mr-2" />
                         <span style="font-weight:bold">@context.Grouping.Key</span>
-                        <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
+                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
                             @context.Grouping.Count() Repuesto
                         </MudChip>
-                        <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
-                            @context.Grouping.Select(x => x.DealerName).FirstOrDefault()?.ToString()
+                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
+                            @context.Grouping.Select(x => x.DealerName).FirstOrDefault()
                         </MudChip>
-                        <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
+                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
                             @context.Grouping.Sum(x => x.Quantity) Unidad
                         </MudChip>
                     </div>
                 }
                 else
                 {
-                    <span style="font-weight:bold">@(context.Grouping.Key)</span>
+                    <span style="font-weight:bold">@context.Grouping.Key</span>
                 }
             </GroupTemplate>
         </PropertyColumn>
 
         <PropertyColumn Property="x => x.CreatedDate" Title="FECHA">
             <GroupTemplate>
-                @if (_customizeGroupTemplate)
-                {
-                    <span style="font-weight:bold">FECHA: @context.Grouping.Key <MudChip Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small">total @context.Grouping.Count()</MudChip></span>
-                }
-                else
-                {
-                    <span style="font-weight:bold">@context.Title: @(context.Grouping.Key)</span>
-                }
+                <span style="font-weight:bold">
+                    FECHA: @context.Grouping.Key
+                    <MudChip Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small">
+                        total @context.Grouping.Count()
+                    </MudChip>
+                </span>
             </GroupTemplate>
         </PropertyColumn>
 
         <PropertyColumn Property="x => x.DealerName" Title="CONCESIONARIO" Groupable="false" />
 
-        <PropertyColumn Property="x => x.PartInnerCode" Title="CODIGO" Groupable="@(_partInnerCodeGrouping)"
-                        @bind-Grouping="_partInnerCodeGrouping" GroupBy="_groupBy1"
+        <PropertyColumn Property="x => x.PartInnerCode" Title="CODIGO"
+                        Groupable="@(_partInnerCodeGrouping)"
+                        @bind-Grouping="_partInnerCodeGrouping"
+                        GroupBy="_groupBy1"
                         @bind-GroupByOrder="_partInnerCoderOrder"
                         @bind-GroupExpanded="_partInnerCodeExpanded">
             <GroupTemplate>
                 @if (_customizeGroupTemplate)
                 {
-                    var color = context.Grouping.Key?.ToString() switch
-                    {
-                        "Healthcare" => Color.Primary,
-                        "Tech" => Color.Secondary,
-                        "Tourism" => Color.Info,
-                        _ => Color.Dark
-                    };
                     <div class="d-flex align-center">
-                        <MudIcon Icon="@Icons.Material.Filled.Hardware" Color="@color" Size="Size.Small" Class="mr-2" />
+                        <MudIcon Icon="@Icons.Material.Filled.Hardware" Color="Color.Dark" Size="Size.Small" Class="mr-2" />
                         <span style="font-weight:bold">@context.Grouping.Key</span>
-                        <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
+                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
                             @context.Grouping.Select(x => x.DealerName).Distinct().Count() Concesionario
                         </MudChip>
-                        <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
+                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
                             @context.Grouping.Sum(x => x.Quantity) Cantidad
                         </MudChip>
                     </div>
                 }
                 else
                 {
-                    <span style="font-weight:bold">@(context.Grouping.Key)</span>
+                    <span style="font-weight:bold">@context.Grouping.Key</span>
                 }
             </GroupTemplate>
         </PropertyColumn>
@@ -252,46 +229,43 @@
         <PropertyColumn Property="x => x.PartDescription" Title="DESCRIPCION" Groupable="false" />
         <PropertyColumn Property="x => x.Quantity" Title="CANTIDAD" Groupable="false" Format="N0" />
 
-        <PropertyColumn Property="x => x.TypeName" Title="TIPO" Groupable="@(_typeIdCodeGrouping)"
-                        @bind-Grouping="_typeIdCodeGrouping" GroupBy="_groupBy1"
+        <PropertyColumn Property="x => x.TypeName" Title="TIPO"
+                        Groupable="@(_typeIdCodeGrouping)"
+                        @bind-Grouping="_typeIdCodeGrouping"
+                        GroupBy="_groupBy1"
                         @bind-GroupByOrder="_typeIdCodeOrder"
                         @bind-GroupExpanded="_typeIdCodeExpanded">
             <GroupTemplate>
                 @if (_customizeGroupTemplate)
                 {
-                    var color = context.Grouping.Key?.ToString() switch
-                    {
-                        "Healthcare" => Color.Primary,
-                        "Tech" => Color.Secondary,
-                        "Tourism" => Color.Info,
-                        _ => Color.Dark
-                    };
                     <div class="d-flex align-center">
-                        <MudIcon Icon="@Icons.Material.Filled.Bloodtype" Color="@color" Size="Size.Small" Class="mr-2" />
+                        <MudIcon Icon="@Icons.Material.Filled.Bloodtype" Color="Color.Dark" Size="Size.Small" Class="mr-2" />
                         <span style="font-weight:bold">@context.Grouping.Key</span>
-                        <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
+                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
                             @context.Grouping.Select(x => x.DealerName).Distinct().Count() Concesionario
                         </MudChip>
-                        <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
+                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
                             @context.Grouping.Sum(x => x.Quantity) Cantidad
                         </MudChip>
                     </div>
                 }
                 else
                 {
-                    <span style="font-weight:bold">@(context.Grouping.Key)</span>
+                    <span style="font-weight:bold">@context.Grouping.Key</span>
                 }
             </GroupTemplate>
         </PropertyColumn>
+
         <TemplateColumn Title="ESTATUS">
             <CellTemplate>
                 <MudChip Size="Size.Small"
                          Color="@GetStatusColor(context.Item.Status)"
                          Variant="Variant.Filled">
-                    @context.Item.Status   
+                    @context.Item.Status
                 </MudChip>
             </CellTemplate>
         </TemplateColumn>
+
         <PropertyColumn Property="x => x.Stock" Title="EXISTENCIA" Groupable="false" />
         <PropertyColumn Property="x => x.Arrival" Title="FECHA LLEGADA" Groupable="false" />
 
@@ -305,21 +279,22 @@
             </CellTemplate>
         </TemplateColumn>
     </Columns>
+
     <PagerContent>
-        <MudDataGridPager T="BackOrder" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+        <MudDataGridPager T="BackOrder"
+                          PageSizeOptions="new int[] { 100 }"
+                          InfoFormat="{first_item}-{last_item} de {all_items}"
+                          RowsPerPageString="Registros por Pagina" />
     </PagerContent>
 </MudDataGrid>
-@* <div class="d-flex flex-wrap mt-4">
-    <MudButton OnClick="@ExpandAllGroupsAsync" Color="@Color.Primary">Expand all</MudButton>
-    <MudButton OnClick="@CollapseAllGroupsAsync" Color="@Color.Primary">Collapse all</MudButton>
-</div>
- *@
+
 @code {
     [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
+
     [Parameter] public List<Module>? Modules { get; set; }
     [Parameter] public List<SelectOption>? AllStatuses { get; set; }
 
@@ -332,56 +307,49 @@
     private string? searchString = string.Empty;
 
     private bool _customizeGroupTemplate = true;
-    private bool _customizeGroupBy;
-    private bool _customizeGroupStyle;
     private bool _saleOrderNumberGrouping = true;
     private int _saleOrderNumberOrder;
     private bool _partInnerCodeGrouping = false;
     private int _partInnerCoderOrder;
     private bool _typeIdCodeGrouping = false;
     private int _typeIdCodeOrder;
-
     private bool _saleOrderNumberExpanded = false;
     private bool _partInnerCodeExpanded = false;
     private bool _typeIdCodeExpanded = false;
 
-    private DateRange? _dateRange { get; set; }
     private Func<BackOrder, object>? _groupBy1;
 
     bool IsAllCheckBoxSelected = false;
-    bool _loading = true;
 
     // Filtros avanzados
     private bool _openFilters = false;
-    private DateTime? _dateFrom { get; set; } = null;
-    private DateTime? _dateTo { get; set; } = null;
+    private DateTime? _dateFrom;
+    private DateTime? _dateTo;
     private MudDatePicker _pickerFrom = new();
     private MudDatePicker _pickerTo = new();
     private SelectOption? _selectedStatus;
     private List<SelectOption> _statuses = new();
     private MudExpansionPanel _filtersPanel = new();
 
+    // *** OPTIMIZACIÓN: campo memoizado en lugar de propiedad computada en cada render ***
+    private bool _hasBackOrderSelected = false;
+
+    // *** OPTIMIZACIÓN: CancellationToken para cancelar peticiones obsoletas ***
+    private CancellationTokenSource? _cts;
+
+    private void UpdateHasBackOrderSelected()
+    {
+        _hasBackOrderSelected = DataGrid?.FilteredItems?
+            .Any(item => item.IsSelected && item.Status == "BACKORDER") ?? false;
+    }
+
     private async Task OnFilterChanged() => await DataGrid!.ReloadServerData();
-
-    private async Task ClearDateFrom()
-    {
-        _dateFrom = null;
-        await _pickerFrom.ClearAsync();
-        await DataGrid!.ReloadServerData();
-    }
-
-    private async Task ClearDateTo()
-    {
-        _dateTo = null;
-        await _pickerTo.ClearAsync();
-        await DataGrid!.ReloadServerData();
-    }
 
     protected override async Task OnInitializedAsync()
     {
+        // *** OPTIMIZACIÓN: RefreshStaticVariables solo una vez, no bloquea si no es necesario ***
         await AuthenticationStateProvider.RefreshStaticVariables();
 
-        // Filtrar estatus  
         _statuses = AllStatuses?.Where(s => s != null && (
             (s.Text?.Contains("UNASSIGN") ?? false) ||
             (s.Text?.Contains("UNAVAILABLE") ?? false) ||
@@ -395,60 +363,71 @@
         hubEventsService.OnDealerChanged += ReloadGrid;
     }
 
-    private async Task AfterDateRangeAsync()
+    private async Task<GridData<BackOrder>> ServerReload(GridState<BackOrder> state)
     {
-        if (_dateRange is not null) await DataGrid!.ReloadServerData();
+        // *** OPTIMIZACIÓN: Cancelar petición anterior si aún está en vuelo ***
+        _cts?.Cancel();
+        _cts = new CancellationTokenSource();
+        var token = _cts.Token;
+
+        IsAllCheckBoxSelected = false;
+        _hasBackOrderSelected = false;
+
+        string dateFromStr = _dateFrom?.ToString("yyyy-MM-dd") ?? string.Empty;
+        string dateToStr = _dateTo?.ToString("yyyy-MM-dd") ?? string.Empty;
+        int? estatusId = _selectedStatus?.Value;
+        var offset = state.Page * state.PageSize;
+
+        string url = $"api/BackOrder/GetAll?userId={Session.UserId}&supplierId={Session.SupplierId}" +
+                     $"&dealerId={Session.DealerId}&rowFrom={offset}&filter={searchString}" +
+                     $"&startdate={dateFromStr}&enddate={dateToStr}&estatusId={estatusId}" +
+                     $"&tab=POR ATENDER&stockOnly={StockOnly}";
+
+        try
+        {
+            var response = await Http.GetAsync(url, token);
+
+            if (token.IsCancellationRequested)
+                return new GridData<BackOrder> { TotalItems = 0, Items = [] };
+
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadFromJsonAsync<WebApiResponse<List<BackOrder>>>(
+                    cancellationToken: token);
+                return new GridData<BackOrder>
+                {
+                    TotalItems = content!.total ?? 0,
+                    Items = content.data ?? []
+                };
+            }
+
+            var errorMessage = await response.Content.ReadAsStringAsync(token);
+            Logger.LogError("Error en ServerReload: {Error}", errorMessage);
+            throw new Exception(errorMessage);
+        }
+        catch (OperationCanceledException)
+        {
+            return new GridData<BackOrder> { TotalItems = 0, Items = [] };
+        }
     }
 
-    private string GetActionDisplayName(string actionName)
+    private async Task AfterAsync()
     {
-        return actionName switch
-        {            
-            "ASSIGN" => "ASIGNAR",
-            "UNASSIGN" => "POR ASIGNAR",
-            "UNAVAILABLE" => "BACKORDER",
-            "DECLINE" => "RECHAZAR",
-            "EXPORT" => "EXPORTAR",
-            _ => actionName
-        };
+        // *** OPTIMIZACIÓN: actualizar flags sin ReloadServerData intermedio ***
+        _saleOrderNumberGrouping = SelectedmGroup == "NRO PEDIDO";
+        _partInnerCodeGrouping = SelectedmGroup == "CODIGO PARTE";
+        _typeIdCodeGrouping = SelectedmGroup == "TIPO";
+        await DataGrid!.ReloadServerData();
     }
 
-    private string GetActionIcon(string actionName)
+    private async Task AfterAsyncAllCheck()
     {
-        return actionName switch
-        {
-            "ASSIGN" => Icons.Material.Filled.Label,
-            "UNASSIGN" => Icons.Material.Filled.AssignmentInd,         
-            "UNAVAILABLE" => Icons.Material.Filled.HourglassBottom,   
-            "DECLINE" => Icons.Material.Filled.ThumbDown,               
-            "EXPORT" => Icons.Material.Filled.Download,
-            _ => Icons.Material.Filled.MoreHoriz
-        };
+        DataGrid?.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
+        UpdateHasBackOrderSelected();
+        StateHasChanged();
+        await Task.CompletedTask;
     }
 
-    private Color GetActionIconColor(string actionName)
-    {
-        return actionName switch
-        {
-            "ASSIGN" => Color.Info,
-            "UNASSIGN" => Color.Info,
-            "UNAVAILABLE" => Color.Info,   
-            "DECLINE" => Color.Info,
-            "EXPORT" => Color.Info,
-            _ => Color.Default
-        };
-    }
-    private Color GetStatusColor(string? status)
-    {
-        return status switch
-        {
-            "BACKORDER" => Color.Warning,      
-            "POR ASIGNAR" => Color.Info,        
-            _ => Color.Default
-        };
-    }
-    private bool HasBackOrderSelected => 
-    DataGrid?.FilteredItems?.Any(item => item.IsSelected && item.Status == "BACKORDER") ?? false;
     private async Task ClickUpdateArrival()
     {
         var selectedIds = DataGrid?.FilteredItems
@@ -456,108 +435,33 @@
             .Select(item => item.Id!.Value)
             .ToList();
 
-        if (selectedIds == null || selectedIds.Count == 0)
+        if (selectedIds is not { Count: > 0 })
         {
-            await DialogService.ShowDialog(
-                "Seleccione al menos un item", "Aviso", "OK",
+            await DialogService.ShowDialog("Seleccione al menos un item", "Aviso", "OK",
                 Color.Warning, Icons.Material.Filled.Warning);
             return;
         }
 
-        var dialogReference = await DialogService.ShowAsync<UpdateArrivalDialog>(
-            "",
-            new DialogParameters { ["SelectedIds"] = selectedIds },
-            options);
+        var dialogRef = await DialogService.ShowAsync<UpdateArrivalDialog>("",
+            new DialogParameters { ["SelectedIds"] = selectedIds }, options);
 
-        if (await Useful.AsyncDialogResultIsOk(dialogReference))
+        if (await Useful.AsyncDialogResultIsOk(dialogRef))
             await DataGrid!.ReloadServerData();
     }
-    private async Task AfterAsync()
+
+    private async Task ClickRefresh()
     {
-        _saleOrderNumberGrouping = false;
-        _partInnerCodeGrouping = false;
-        _typeIdCodeGrouping = false;
-        switch (SelectedmGroup)
-        {
-            case "NRO PEDIDO":
-                _saleOrderNumberGrouping = true;
-                break;
-            case "CODIGO PARTE":
-                _partInnerCodeGrouping = true;
-                break;
-            case "TIPO":
-                _typeIdCodeGrouping = true;
-                break;
-        }
         await DataGrid!.ReloadServerData();
+        if (_openFilters)
+            await _filtersPanel.CollapseAsync();
     }
-
-    private async Task AfterAsyncAllCheck()
-    {
-        if (DataGrid != null)
-            DataGrid.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);  
-            StateHasChanged();
-            await Task.CompletedTask;
-    }
-
-    private async Task<GridData<BackOrder>> ServerReload(GridState<BackOrder> state)
-    {
-        await AuthenticationStateProvider.RefreshStaticVariables();
-
-        IsAllCheckBoxSelected = false;
-        _loading = true;
-
-        string rowFromParam = state.Page > 0 ? $"&rowFrom={state.Page * state.PageSize}" : "";
-
-        var totalItems = 0;
-        IEnumerable<BackOrder> data;
-
-        string _dateFromStr = _dateFrom?.ToString("yyyy-MM-dd") ?? string.Empty;
-        string _dateToStr = _dateTo?.ToString("yyyy-MM-dd") ?? string.Empty;
-        int? _estatusId = _selectedStatus?.Value;
-
-        string url = $"api/BackOrder/GetAll?userId={Session.UserId}&supplierId={Session.SupplierId}&dealerId={Session.DealerId}{rowFromParam}&filter={searchString}&startdate={_dateFromStr}&enddate={_dateToStr}&estatusId={_estatusId}&tab=POR ATENDER&stockOnly={StockOnly}";
-
-        HttpResponseMessage response = await Http.GetAsync(url);
-
-        if (response.IsSuccessStatusCode)
-        {
-            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<BackOrder>>>();
-            totalItems = content2!.total ?? 0;
-            data = content2!.data ?? new List<BackOrder>();
-        }
-        else
-        {
-            var errorMessage = await response.Content.ReadAsStringAsync();
-            Logger.LogError($"Error en ServerReload: {errorMessage}");
-            throw new Exception(errorMessage);
-        }
-
-        _loading = false;
-
-        return new GridData<BackOrder> { TotalItems = totalItems, Items = data };
-    }
-
-    private Task ExpandAllGroupsAsync() => DataGrid.ExpandAllGroupsAsync();
-    private Task CollapseAllGroupsAsync() => DataGrid.CollapseAllGroupsAsync();
 
     private async Task OnSearch(string text)
     {
         if (text.Length == 0 || text.Length >= 3)
         {
-            _loading = true;
             searchString = text;
             await DataGrid!.ReloadServerData();
-        }
-    }
-
-    // private async Task ClickRefresh() => await DataGrid!.ReloadServerData();
-    private async Task ClickRefresh()
-    {
-        await DataGrid!.ReloadServerData(); 
-        if (_openFilters)
-        {
-            await _filtersPanel.CollapseAsync();
         }
     }
 
@@ -565,38 +469,40 @@
     {
         if (actionName == "EXPORT")
         {
-            _loading = true;
-            string _dateFromStr = _dateFrom?.ToString("yyyy-MM-dd") ?? string.Empty;
-            string _dateToStr = _dateTo?.ToString("yyyy-MM-dd") ?? string.Empty;
-            int? _estatusId = _selectedStatus?.Value;
+            string dateFromStr = _dateFrom?.ToString("yyyy-MM-dd") ?? string.Empty;
+            string dateToStr = _dateTo?.ToString("yyyy-MM-dd") ?? string.Empty;
+            int? estatusId = _selectedStatus?.Value;
 
-            var ResultZonas = await Http.GetAsync($"api/BackOrder/Export?filter={searchString}&userId={Session.UserId}&supplierId={Session.SupplierId}&dealerId={Session.DealerId}&tab=POR ATENDER&startdate={_dateFromStr}&enddate={_dateToStr}&estatusId={_estatusId}");
+            var result = await Http.GetAsync(
+                $"api/BackOrder/Export?filter={searchString}&userId={Session.UserId}" +
+                $"&supplierId={Session.SupplierId}&dealerId={Session.DealerId}" +
+                $"&tab=POR ATENDER&startdate={dateFromStr}&enddate={dateToStr}&estatusId={estatusId}");
 
-            if (ResultZonas.IsSuccessStatusCode)
+            if (result.IsSuccessStatusCode)
             {
-                var fileContent = await ResultZonas.Content.ReadAsByteArrayAsync();
-                var base64File = Convert.ToBase64String(fileContent);
-                var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+                var bytes = await result.Content.ReadAsByteArrayAsync();
+                var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{Convert.ToBase64String(bytes)}";
                 await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "BackOrders_PorAtender.xlsx");
             }
             else
             {
-                var errorMessage = await ResultZonas.Content.ReadAsStringAsync();
-                Logger.LogError($"Error en exportación: {errorMessage}");
-                await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+                var err = await result.Content.ReadAsStringAsync();
+                Logger.LogError("Error en exportación: {Error}", err);
+                await DialogService.ShowDialog(err, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
             }
-            _loading = false;
             return;
         }
 
         if (Modules == null || !Modules.Any())
         {
-            await DialogService.ShowDialog("No hay módulos disponibles", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            await DialogService.ShowDialog("No hay módulos disponibles", "Error", "OK",
+                Color.Error, Icons.Material.Filled.Error);
             return;
         }
 
         var moduleId = Modules.FirstOrDefault()?.Id;
-        var mActions = DataGrid?.FilteredItems.Where(item => item.IsSelected)
+        var mActions = DataGrid?.FilteredItems
+            .Where(item => item.IsSelected)
             .Select(item => new Models.Action
             {
                 UserId = Session.UserId,
@@ -607,76 +513,117 @@
                 RelatedId = 0
             }).ToList();
 
-        if (mActions?.Count == 0)
+        if (mActions is not { Count: > 0 })
         {
-            await DialogService.ShowDialog("Acción no permitida, verificar datos seleccionado(s)", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            await DialogService.ShowDialog("Acción no permitida, verificar datos seleccionado(s)",
+                "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            return;
         }
-        else if (mActions?.Count > 0)
+
+        if (actionName == "ASSIGN")
         {
-            if (actionName == "ASSIGN")
+            var dialogRef = await DialogService.ShowAsync<AssignUserToBackOrder>("",
+                new DialogParameters { ["SelectedActions"] = mActions, ["moduleName"] = "INVENTARIO-MOVIL-RECOLECCION" }, options);
+            if (await Useful.AsyncDialogResultIsOk(dialogRef))
+                await DataGrid!.ReloadServerData();
+        }
+        else if (actionName == "DECLINE")
+        {
+            var dialogRef = await DialogService.ShowAsync<BackOrderPartDeclineReason>("",
+                new DialogParameters { }, options);
+            if ((await dialogRef.Result) is { Canceled: false, Data: string comment })
             {
-                string ModuleName = "INVENTARIO-MOVIL-RECOLECCION";
-                var dialogReference = await DialogService.ShowAsync<AssignUserToBackOrder>("", new DialogParameters { ["SelectedActions"] = mActions, ["moduleName"] = ModuleName }, options);
-                if (await Useful.AsyncDialogResultIsOk(dialogReference)) await DataGrid!.ReloadServerData();
-            }
-            else if (actionName == "DECLINE")
-            {
-                var dialogReference = await DialogService.ShowAsync<BackOrderPartDeclineReason>("", new DialogParameters { }, options);
-                if ((await dialogReference.Result) is DialogResult dialogResult && !dialogResult.Canceled && dialogResult.Data is string mActionComment)
-                {
-                    mActions.ForEach(a => a.ActionComment = mActionComment);
-                    await PostActionAndReload(mActions, $"api/BackOrder/PostActions?userId={Session.UserId}");
-                }
-            }
-            else
-            {
+                mActions.ForEach(a => a.ActionComment = comment);
                 await PostActionAndReload(mActions, $"api/BackOrder/PostActions?userId={Session.UserId}");
             }
         }
+        else
+        {
+            await PostActionAndReload(mActions, $"api/BackOrder/PostActions?userId={Session.UserId}");
+        }
     }
 
-    private async Task PostActionAndReload(List<Models.Action>? actions, string requesturi)
+    private async Task PostActionAndReload(List<Models.Action>? actions, string uri)
     {
-        var result_Post_Actions = (actions?.Count > 0) ? await Http.PostAsync(requesturi, new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json")) : null;
-        if (result_Post_Actions?.IsSuccessStatusCode ?? false)
+        if (actions is not { Count: > 0 }) return;
+
+        var response = await Http.PostAsync(uri,
+            new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json"));
+
+        if (response.IsSuccessStatusCode)
         {
-            await DialogService.ShowDialog(Useful.OkSavedMessage, "Acción", "OK", Color.Info, Icons.Material.Filled.Commit);
+            await DialogService.ShowDialog(Useful.OkSavedMessage, "Acción", "OK",
+                Color.Info, Icons.Material.Filled.Commit);
             await DataGrid!.ReloadServerData();
         }
-        else if (result_Post_Actions?.StatusCode == System.Net.HttpStatusCode.Conflict)
+        else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
         {
-            var conflictContent = await result_Post_Actions.Content.ReadFromJsonAsync<WebApiResponse<object?>>();
-            await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            var conflict = await response.Content.ReadFromJsonAsync<WebApiResponse<object?>>();
+            await DialogService.ShowDialog(conflict?.message!, "Error", "OK",
+                Color.Error, Icons.Material.Filled.Error);
         }
         else
         {
-            var errorMessage = await result_Post_Actions!.Content.ReadAsStringAsync();
-            await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            var err = await response.Content.ReadAsStringAsync();
+            await DialogService.ShowDialog(err, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
         }
     }
 
     private async Task ClickEdit(BackOrder item)
     {
-        BackOrderItem mBackOrderItem = new()
-        {
-            Id = item.Id,
-            Quantity = item.Quantity,
-            Arrival = item.Arrival,
-        };
-        var dialogReference = await DialogService.ShowAsync(typeof(PartToBackOrderDetails), "", new DialogParameters { ["mBackOrderItem"] = mBackOrderItem }, options);
-        var result = await dialogReference.Result;
-        if (result != null && !result.Canceled)
+        var mBackOrderItem = new BackOrderItem { Id = item.Id, Quantity = item.Quantity, Arrival = item.Arrival };
+        var dialogRef = await DialogService.ShowAsync(typeof(PartToBackOrderDetails), "",
+            new DialogParameters { ["mBackOrderItem"] = mBackOrderItem }, options);
+        var result = await dialogRef.Result;
+        if (result is { Canceled: false })
             await DataGrid!.ReloadServerData();
     }
 
-    private async Task ReloadGrid()
+    private Color GetStatusColor(string? status) => status switch
     {
-        if (DataGrid != null)
-            await DataGrid.ReloadServerData();
-    }
+        "BACKORDER" => Color.Warning,
+        "POR ASIGNAR" => Color.Info,
+        _ => Color.Default
+    };
+
+    private string GetActionDisplayName(string actionName) => actionName switch
+    {
+        "ASSIGN" => "ASIGNAR",
+        "UNASSIGN" => "POR ASIGNAR",
+        "UNAVAILABLE" => "BACKORDER",
+        "DECLINE" => "RECHAZAR",
+        "EXPORT" => "EXPORTAR",
+        _ => actionName
+    };
+
+    private string GetActionIcon(string actionName) => actionName switch
+    {
+        "ASSIGN" => Icons.Material.Filled.Label,
+        "UNASSIGN" => Icons.Material.Filled.AssignmentInd,
+        "UNAVAILABLE" => Icons.Material.Filled.HourglassBottom,
+        "DECLINE" => Icons.Material.Filled.ThumbDown,
+        "EXPORT" => Icons.Material.Filled.Download,
+        _ => Icons.Material.Filled.MoreHoriz
+    };
+
+    private Color GetActionIconColor(string actionName) => actionName switch
+    {
+        "ASSIGN" or "UNASSIGN" or "UNAVAILABLE" or "DECLINE" or "EXPORT" => Color.Info,
+        _ => Color.Default
+    };
+
+    private async Task ReloadGrid() =>
+     await InvokeAsync(async () =>
+     {
+         if (DataGrid != null)
+             await DataGrid.ReloadServerData();
+         StateHasChanged();
+     });
 
     public void Dispose()
     {
+        _cts?.Cancel();
+        _cts?.Dispose();
         hubEventsService.OnSupplierChanged -= ReloadGrid;
         hubEventsService.OnDealerChanged -= ReloadGrid;
     }

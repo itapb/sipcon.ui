@@ -1,16 +1,31 @@
 ﻿@page "/dispatchcontrol"
+@inject ILogger<ControlTab> Logger
+
 <CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
-<MudTabs Elevation="2" Rounded="true" Centered="true" ApplyEffectsToContainer="true" PanelClass="pa-2" Color="Color.Info">
-    <MudTabPanel Icon="@Icons.Material.Filled.PendingActions" Text="PENDIENTES" RenderPanel="false">
-        <PendingTab Modules="Modules" AllStatuses="AllStatuses" />
-    </MudTabPanel>
 
-    <MudTabPanel Icon="@Icons.Material.Filled.MarkUnreadChatAlt" Text="POR ATENDER" RenderPanel="false">
-        <PendingActionTab Modules="Modules" AllStatuses="AllStatuses" />
+<MudTabs @ref="_tabs"
+         Elevation="2" Rounded="true" Centered="true"
+         ApplyEffectsToContainer="true" PanelClass="pa-2"
+         Color="Color.Info"
+         @bind-ActivePanelIndex="_activeTabIndex"
+         @bind-ActivePanelIndex:after="OnTabChanged">
+    <MudTabPanel Icon="@Icons.Material.Filled.PendingActions" Text="PENDIENTES">
+        @if (_tabsLoaded[0])
+        {
+            <PendingTab Modules="Modules" AllStatuses="AllStatuses" />
+        }
     </MudTabPanel>
-
-    <MudTabPanel Icon="@Icons.Material.Filled.Verified" Text="ATENDIDOS" RenderPanel="false">
-        <CompletedTab Modules="Modules" AllStatuses="AllStatuses" />
+    <MudTabPanel Icon="@Icons.Material.Filled.MarkUnreadChatAlt" Text="POR ATENDER">
+        @if (_tabsLoaded[1])
+        {
+            <PendingActionTab Modules="Modules" AllStatuses="AllStatuses" />
+        }
+    </MudTabPanel>
+    <MudTabPanel Icon="@Icons.Material.Filled.Verified" Text="ATENDIDOS">
+        @if (_tabsLoaded[2])
+        {
+            <CompletedTab Modules="Modules" AllStatuses="AllStatuses" />
+        }
     </MudTabPanel>
 </MudTabs>
 
@@ -18,20 +33,29 @@
     [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private UtilModuleActions ModuleActionsService { get; set; } = default!;
-    [Inject] private ILogger<ControlTab> Logger { get; set; } = default!;
 
     List<BreadcrumbItem> ItemsNavigate = new();
     private List<Module>? Modules { get; set; }
     private List<SelectOption>? AllStatuses { get; set; }
+    private MudTabs _tabs = null!;
+    private int _activeTabIndex = 0;
+
+    private bool[] _tabsLoaded = [true, false, false];
+
+    private void OnTabChanged()
+    {
+        if (_activeTabIndex >= 0 && _activeTabIndex < _tabsLoaded.Length)
+            _tabsLoaded[_activeTabIndex] = true;
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        // Configurar breadcrumbs
         string hrefMovement = "dispatchcontrol";
         "Home,Inventario,Control Despacho".Split(',').ToList().ForEach(s =>
-            ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
+            ItemsNavigate.Add(new BreadcrumbItem(s,
+                href: s == "Home" ? "" : hrefMovement,
+                icon: s.ToActionIcon())));
 
-        // Cargar datos comunes
         await LoadCommonData();
     }
 
@@ -39,12 +63,14 @@
     {
         try
         {
-            // Cargar módulos
-            Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-CONTROLDESPACHO&userId={Session.UserId}");
+            var modulesTask = Http.GetFromJsonAsync<List<Module>>(
+                $"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-CONTROLDESPACHO&userId={Session.UserId}");
+            var statusesTask = ModuleActionsService.GetAction(
+                Session.UserId, "INVENTARIO-PROCESOS-CONTROLDESPACHO");
 
-            // Cargar todos los estatus  
-            var statuses = await ModuleActionsService.GetAction(Session.UserId, "INVENTARIO-PROCESOS-CONTROLDESPACHO");
-            AllStatuses = statuses ?? new List<SelectOption>();
+            await Task.WhenAll(modulesTask, statusesTask);
+            Modules = modulesTask.Result;
+            AllStatuses = statusesTask.Result ?? new();
         }
         catch (Exception ex)
         {
@@ -52,4 +78,3 @@
         }
     }
 }
- 
