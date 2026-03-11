@@ -89,7 +89,10 @@
                                 <MudSpacer />
 
 
-                            <MudNumericField Typo="Typo.caption" T="double?" @bind-Value="_model.Quantity" @bind-Value:after="AfterValueChangePrice"
+                            <MudNumericField Typo="Typo.caption"
+                                             T="double?"
+                                             @bind-Value="_model.Quantity"
+                                             @bind-Value:after="AfterValueChangePrice"
                                              Label="@(DetailType.ToString() == "LaborTime" ? "Horas" : "Cantidad")"
                                              HelperText="@(_mQuantity.ToString())"
                                              Class="align-right"
@@ -99,8 +102,8 @@
                                              Margin="Margin.Dense"
                                              HideSpinButtons="true"
                                              Culture="@CultureInfo.GetCultureInfo("en-US")"
-                                             Pattern="^[0-9.]*$"
-                                             ReadOnly="@(!_model.IsActive || _isReadOnly )"
+                                             Pattern="^[0-9.]*$"    
+                                             ReadOnly="@(!_model.IsActive || _isReadOnly || (_model.Type == "L" && _model.IsExternal == false))"
                                              For="@(() => _model.Quantity)"
                                              Immediate="false" />
 
