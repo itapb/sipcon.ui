@@ -1,4 +1,4 @@
-﻿@page "/kardex"
+﻿    @page "/kardex"
 
 
 @using Sipcon.WebApp.Client.Repository.Auth
@@ -138,9 +138,7 @@
     <TemplateColumn Title="FECHA / HORA" Align="Align.Center" Filterable="false">
         <CellTemplate>
             <MudText Typo="Typo.caption">
-                @(DateTime.TryParse(context.Item.Created, out var dt) 
-                    ? dt.ToString("dd/MM/yyyy HH:mm") 
-                    : context.Item.Created)
+                @context.Item.Created
             </MudText>
         </CellTemplate>
     </TemplateColumn>
@@ -148,13 +146,7 @@
     <TemplateColumn Title="TIPO" Align="Align.Center" Filterable="false">
         <CellTemplate>
             <MudText Typo="Typo.caption">
-                @(context.Item.Type switch {
-                    "R" => "Recepción",
-                    "S" => "Aj. Salida",
-                    "E" => "Aj. Entrada",
-                    "D" => "Despacho",
-                    _ => context.Item.Type
-                })
+                @context.Item.Type
             </MudText>
         </CellTemplate>
     </TemplateColumn>
@@ -164,7 +156,14 @@
     @* Inventario *@
     <PropertyColumn Property="x => x.QuantityOld" Title="STOCK INICIAL" Align="Align.Center" Filterable="false" />
 
-    <PropertyColumn Property="x => x.Quantity" Title="OPERACION" Align="Align.Center" Filterable="false" />
+    <TemplateColumn Title="OPERACIÓN" Align="Align.Center" Filterable="false">
+        <CellTemplate>
+            @* Se eliminó el MudText innecesario para evitar conflictos de alineación y se usa un span con estilo *@
+            <span style="font-weight:bold; font-size: 0.75rem;">
+                @context.Item.Quantity
+            </span>
+        </CellTemplate>
+    </TemplateColumn>
 
     <TemplateColumn Title="STOCK FINAL" Align="Align.Center" Filterable="false">
         <CellTemplate>
