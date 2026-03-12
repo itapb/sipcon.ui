@@ -188,50 +188,63 @@
                                 
 
                                         </MudStack>
-                                       @if (_modelPolicyDetail != null && _modelPolicyDetail.Id > 0)
-                                            {
-                                                @* Cambiamos el color del borde dinámicamente: Success si es válido, Warning si no *@
-                                                var statusColor = IsServiceWithinPolicy ? "var(--mud-palette-success)" : "var(--mud-palette-warning)";
-                                                var iconColor = IsServiceWithinPolicy ? Color.Success : Color.Warning;
+                                        @if (_modelPolicyDetail != null && _modelPolicyDetail.Id > 0)
+                                        {
+                                            // Lógica de colores dinámica
+                                            var statusColor = ServicePolicyStatus == 1 ? "var(--mud-palette-success)" :
+                                            ServicePolicyStatus == 3 ? "var(--mud-palette-warning)" :
+                                            "var(--mud-palette-error)";
 
-                                                <MudPaper Variant="Variant.Outlined" 
-                                                          Class="pa-2 mt-2 d-flex align-center justify-space-between mud-background-gray" 
-                                                          Style="@($"border-radius: 8px; border-left: 6px solid {statusColor};")">
-        
-                                                    <div class="d-flex align-center flex-grow-1">
-                                                        <MudIcon Icon="@(IsServiceWithinPolicy ? Icons.Material.Filled.Shield : Icons.Material.Filled.ReportProblem)" 
-                                                                 Color="@iconColor" Class="mx-2" Size="Size.Medium" />
+                                            var iconColor = ServicePolicyStatus == 1 ? Color.Success :
+                                            ServicePolicyStatus == 3 ? Color.Warning :
+                                            Color.Error;
 
-                                                        <div class="d-flex flex-row align-center gap-4">
-                                                            @* Kilometraje *@
-                                                            <div class="d-flex flex-column">
-                                                                <MudText Typo="Typo.caption" Style="font-weight: bold; line-height: 1;">KILOMETRAJE ESCALA</MudText>
-                                                                <MudText Typo="Typo.body2" Color="@(IsServiceWithinPolicy ? Color.Default : Color.Error)" Style="font-size: 12px;">
-                                                                    @(_modelPolicyDetail.FromKm?.ToString("N0") + " - " + _modelPolicyDetail.UpToKm?.ToString("N0") + " kms.")
-                                                                </MudText>
-                                                            </div>
+                                            <MudPaper Variant="Variant.Outlined"
+                                                      Class="pa-2 mt-2 d-flex align-center justify-space-between mud-background-gray"
+                                                      Style="@($"border-radius: 8px; border-left: 6px solid {statusColor};")">
 
-                                                            <MudDivider Vertical="true" FlexItem="true" DividerType="DividerType.Middle" Class="mx-2" Style="height: 25px;" />
+                                                <div class="d-flex align-center flex-grow-1">
+                                                    <MudIcon Icon="@(ServicePolicyStatus == 1 ? Icons.Material.Filled.Shield : Icons.Material.Filled.ReportProblem)"
+                                                             Color="@iconColor" Class="mx-2" Size="Size.Medium" />
 
-                                                            @* Vigencia *@
-                                                            <div class="d-flex flex-column">
-                                                                <MudText Typo="Typo.caption" Style="font-weight: bold; line-height: 1;">VIGENCIA ESCALA</MudText>
-                                                                <MudText Typo="Typo.body2" Color="@(IsServiceWithinPolicy ? Color.Default : Color.Error)" Style="font-size: 12px;">
-                                                                    @(_modelPolicyDetail.FromDate?.ToString("dd/MM/yy") + " al " + _modelPolicyDetail.UpToDate?.ToString("dd/MM/yy"))
-                                                                </MudText>
-                                                            </div>
+                                                    <div class="d-flex flex-row align-center gap-4">
+                                                        @* Kilometraje *@
+                                                        <div class="d-flex flex-column">
+                                                            <MudText Typo="Typo.caption" Style="font-weight: bold; line-height: 1;">KILOMETRAJE ESCALA</MudText>
+                                                            <MudText Typo="Typo.body2"
+                                                                     Color="@(ServicePolicyStatus == 1 ? Color.Default : iconColor)"
+                                                                     Style="font-size: 12px;">
+                                                                @($"{_modelPolicyDetail.FromKm?.ToString("N0")} - {_modelPolicyDetail.UpToKm?.ToString("N0")} kms.")
+                                                            </MudText>
+                                                        </div>
+
+                                                        <MudDivider Vertical="true" FlexItem="true" Class="mx-2" Style="height: 25px;" />
+
+                                                        @* Vigencia *@
+                                                        <div class="d-flex flex-column">
+                                                            <MudText Typo="Typo.caption" Style="font-weight: bold; line-height: 1;">VIGENCIA ESCALA</MudText>
+                                                            <MudText Typo="Typo.body2"
+                                                                     Color="@(ServicePolicyStatus == 1 ? Color.Default : iconColor)"
+                                                                     Style="font-size: 12px;">
+                                                                @($"{_modelPolicyDetail.FromDate?.ToString("dd/MM/yy")} al {_modelPolicyDetail.UpToDate?.ToString("dd/MM/yy")}")
+                                                            </MudText>
                                                         </div>
                                                     </div>
+                                                </div>
 
-                                                    <div class="px-2">
-                                                        @if (!IsServiceWithinPolicy)
-                                                        {
-                                                            <MudText Typo="Typo.caption" Color="Color.Error" Class="mr-2">¡Datos fuera de rango!</MudText>
-                                                        }
-                                                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => OnReportTypeChanged(_model.ReportTypeId))" />
-                                                    </div>
-                                                </MudPaper>
-                                            }
+                                                <div class="px-2">
+                                                    @if (ServicePolicyStatus == 3)
+                                                    {
+                                                        <MudText Typo="Typo.caption" Color="Color.Warning" Class="mr-2">¡Servicio Anticipado!</MudText>
+                                                    }
+                                                    else if (ServicePolicyStatus == 2)
+                                                    {
+                                                        <MudText Typo="Typo.caption" Color="Color.Error" Class="mr-2">¡Fuera de rango!</MudText>
+                                                    }
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => OnReportTypeChanged(_model.ReportTypeId))" />
+                                                </div>
+                                            </MudPaper>
+                                        }
 
                                         <MudTextField Typo="Typo.caption" @bind-Value="_model.DealerReport"
                                                         Label="Reporte Concesionario"
@@ -964,21 +977,33 @@
 
     }
 
-    private bool IsServiceWithinPolicy
+    private int ServicePolicyStatus
     {
         get
         {
-            if (_modelPolicyDetail == null || _model == null) return false;
+            if (_modelPolicyDetail == null || _model == null) return -1;
 
-            // Validación de Kilometraje: ¿El Km del reporte es mayor o igual al inicio de la escala?
-            bool kmValido = _model.Km <= (_modelPolicyDetail.UpToKm ?? 0);
+            // 1. ¿Está EXCEDIDO? (Prioridad alta: Rojo)
+            // Si el Km es mayor al máximo O la fecha es posterior al límite.
+            if (_model.Km > (_modelPolicyDetail.UpToKm ?? 0) || _model.ServiceDate > _modelPolicyDetail.UpToDate)
+            {
+                return 2; // Rojo: Excedido
+            }
 
-            // Lo mismo para la fecha si quieres incluir el último día de vigencia
-            bool fechaValida = _model.ServiceDate <= _modelPolicyDetail.UpToDate;
+            // 2. ¿Es MENOR al mínimo? (Prioridad media: Amarillo)
+            // Si el Km es menor al inicio de escala O la fecha es anterior al inicio.
+            if (_model.Km < (_modelPolicyDetail.FromKm ?? 0) && _model.ServiceDate < _modelPolicyDetail.FromDate)
+            {
+                return 3; // Amarillo: Anticipado
+            }
 
-            return kmValido && fechaValida;
+            // 3. Si no es ninguna de las anteriores, está perfecto.
+            return 1; // Verde: En rango
         }
     }
+
+
+
 
     public class SelectValidator<T> : AbstractValidator<T>
     {
