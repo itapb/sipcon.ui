@@ -50,6 +50,7 @@
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;   
     [Parameter] public int? MovementId { get; set; }
+    [Parameter] public bool IsReception { get; set; }
    
     private MudDataGrid<Part>? PartsCatalogMudDataGrid;
 
@@ -105,19 +106,26 @@
         await PartsCatalogMudDataGrid!.ReloadServerData();
     }
     private async Task ClickAddPart(Part item)
+{
+    var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
+    NewMovementDetail AnewMovementDetail = new NewMovementDetail
     {
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
-        NewMovementDetail AnewMovementDetail = new NewMovementDetail
-        {
-            Id = 0,
-            PartId = item.Id,
-            MovementId = MovementId,
-            PartSize = item.Size
-        };
-        var dialogReference = await DialogService.ShowAsync<PartToMovementDetail>("", new DialogParameters { ["newMovementDetail"] = AnewMovementDetail }, options);
-        var dialogResult = await dialogReference.Result;
-        await Task.CompletedTask;
-    }
+        Id = 0,
+        PartId = item.Id,
+        MovementId = MovementId,
+        PartSize = item.Size,
+        filter=item.InnerCode
+    };
+    
+    var dialogReference = await DialogService.ShowAsync<PartToMovementDetail>("", new DialogParameters 
+    { 
+        ["newMovementDetail"] = AnewMovementDetail,
+        ["IsReception"] = IsReception
+    }, options);
+    
+    var dialogResult = await dialogReference.Result;
+    await Task.CompletedTask;
+}
     private void CloseClick(MouseEventArgs args)
     {
         MudDialog?.Close(DialogResult.Ok(true));
