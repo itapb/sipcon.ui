@@ -290,8 +290,8 @@ else
         var parameters = new DialogParameters<FormPartsDemand>
     {
         { x => x.PartId, 0 },
-        { x => x.PartCode, string.Empty }, 
-        { x => x.PartDescription, string.Empty }  
+        { x => x.PartCode, string.Empty },
+        { x => x.PartDescription, string.Empty }
     };
 
         var dialog = await DialogService.ShowAsync<FormPartsDemand>("", parameters, options);
@@ -300,8 +300,10 @@ else
         if (!result!.Canceled)
         {
             await PartMudDataGrid!.ReloadServerData();
+            await DialogService.ShowMessageBox("Éxito", "Demanda(s) registrada(s) exitosamente", "Aceptar");
         }
     }
+
     private async Task OpenFormPartsDemand(Part item)
     {
         var options = new DialogOptions
@@ -326,6 +328,7 @@ else
         if (!result!.Canceled)
         {
             await PartMudDataGrid!.ReloadServerData();
+            await DialogService.ShowMessageBox("Éxito", "Demanda registrada exitosamente", "Aceptar");
         }
     }
     public void Dispose()

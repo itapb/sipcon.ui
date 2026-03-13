@@ -32,7 +32,8 @@
                             </TemplateColumn>
                             <PropertyColumn Property="x => x.PartInnerCode" Title="COD REPUESTO" />
                             <PropertyColumn Property="x => x.PartDescription" Title="DESCRIPCION" />
-                            <PropertyColumn Property="x => x.LocationName" Title="UBICACION" />
+                            <PropertyColumn Property="x => x.LocationName" Title="UBICACION ORIGEN" />
+                            <PropertyColumn Property="x => x.DestinationName" Title="UBICACION DESTINO" />
                             <PropertyColumn Property="x => x.RequiredQty" Title="TEORICA" />
                             <PropertyColumn Property="x => x.RealQty" Title="REAL" />
                             <PropertyColumn Property="x => x.TypeName" Title="TIPO" />
@@ -162,12 +163,23 @@
             MovementId = item.MovementId,
             LocationId = item.LocationId,
             DestinationId = item.DestinationId,
-            RequiredQty = item.RequiredQty,           
+            RequiredQty = item.RequiredQty,
             Stock = item.Stock,
             PartSize = item.PartSize
 
         };
-        var dialogReference = await DialogService.ShowAsync(tipoCatalogo,"", new DialogParameters { ["newMovementDetail"] = AnewMovementDetail }, options);
+
+        var parameters = new DialogParameters();
+        parameters.Add("newMovementDetail", AnewMovementDetail);
+
+        // Solo agregar IsReception si es PartToMovementDetail (recepción)
+        if (MasterMovement?.TypeId == "R")
+        {
+            parameters.Add("IsReception", true);
+        }
+
+        var dialogReference = await DialogService.ShowAsync(tipoCatalogo, "", parameters, options);
+
         if (!((await dialogReference.Result)!.Canceled))
         {
             await MovementDetailsMudDataGrid!.ReloadServerData();
@@ -240,7 +252,18 @@
         int tempContactId = MasterMovement!.ContactId ?? 0;
 
         Type tipoCatalogo = MasterMovement?.TypeId == "R" ? typeof(PartsCatalog) : typeof(InventoryCatalog);
-        var dialogReference = await DialogService.ShowAsync(tipoCatalogo,"", new DialogParameters { ["MovementId"] = MasterMovement!.Id }, options);        
+
+        var parameters = new DialogParameters();
+        parameters.Add("MovementId", MasterMovement!.Id);
+
+        // Solo agregar IsReception si es PartsCatalog (recepción)
+        if (MasterMovement?.TypeId == "R")
+        {
+            parameters.Add("IsReception", true);
+        }
+
+        var dialogReference = await DialogService.ShowAsync(tipoCatalogo, "", parameters, options);
+
         if ((await dialogReference.Result) is DialogResult dialogResult && !dialogResult.Canceled)
         {
             await MovementDetailsMudDataGrid!.ReloadServerData();
