@@ -11,58 +11,71 @@
 @inject IJSRuntime JSRuntime
 
 
-@if (!_imageExtencion.Contains(_applicationName))
+@if (!_imageExtencion.Contains(_applicationName) && _applicationName != "video/mp4")
 {
     <PdfViewer @ref="_pdfViewer" />
 }
 else
 {
-    <MudForm @ref="@form" >
-    
+    <MudForm @ref="@form">
         <MudDialog Class="" ActionsClass="dialog-background-surface">
             <DialogContent>
-
                 <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
-                <MudGrid Spacing="1" Justify="Justify.Center">
+                    <MudGrid Spacing="1" Justify="Justify.Center">
+                        <MudItem xs="12" sm="12">
+                            <MudCard>
+                                <MudCardHeader>
+                                    <CardHeaderContent></CardHeaderContent>
+                                    <CardHeaderActions></CardHeaderActions>
+                                </MudCardHeader>
+                                <MudCardContent Style="padding-top: 1px;">
+                                    <div class="d-flex justify-center align-center" style="height:400px; background-color: #f5f5f5;">
 
-                    <MudItem xs="12" sm="12">
-                        <MudCard>
-                            <MudCardHeader>
-                                <CardHeaderContent>
+                                        @if (_applicationName == "video/mp4")
+                                        {
+                                            <video controls
+                                                   controlsList="nodownload"
+                                                   style="max-height: 100%; max-width: 100%;"
+                                                   src="@_FileOpen"
+                                                   type="video/mp4">
+                                                Tu navegador no soporta el video.
+                                            </video>
+                                        }
+                                        else
+                                        {
+                                            @* Renderizado para Imagen *@
+                                            <MudImage ObjectFit="ObjectFit.Cover"
+                                                      ObjectPosition="@ImagePosition"
+                                                      Height="@(ImageHeight)"
+                                                      Width="@(ImageWidth)"
+                                                      Src="@(_FileOpen)"
+                                                      Alt="Vista Previa Imagen"
+                                                      Elevation="25"
+                                                      Class="rounded-lg" />
+                                        }
 
-                                </CardHeaderContent>
-                                <CardHeaderActions>
+                                    </div>
 
-                                </CardHeaderActions>
-                            </MudCardHeader>
-                            <MudCardContent Style="padding-top: 1px;">
-                                <div class="d-flex justify-center align-center" Style="height:350px;">
-                                    <MudImage ObjectFit="ObjectFit.Cover" ObjectPosition="@ImagePosition"
-                                                  Height="@(ImageHeight)" Width="@(ImageWidth)" 
-                                                  Src="@(_FileOpen)" Alt="Vista Previa Imagen"
-                                                  Elevation="25" Class="rounded-lg"/>
-                                </div>
+                                    <MudChipSet T="string" CheckMark Class="mt-6">
+                                        @if (_applicationName != "video/mp4")
+                                        {
+                                            <MudChip Text="Centrar" OnClick="@(() => SetImagePosition(ObjectPosition.Center))" SelectedColor="Color.Primary" Default="true" />
+                                            <MudChip Text="Subir" OnClick="@(() => SetImagePosition(ObjectPosition.Top))" SelectedColor="Color.Primary" />
+                                            <MudChip Text="Bajar" OnClick="@(() => SetImagePosition(ObjectPosition.Bottom))" SelectedColor="Color.Primary" />
+                                        }
+                                        <MudChip Icon="@Icons.Material.Outlined.PhotoSizeSelectActual" IconColor="Color.Info" Text="Minimizar" OnClick="@(() => MinPreviewImage())" SelectedColor="Color.Primary" />
+                                        <MudChip Icon="@Icons.Material.Outlined.PhotoSizeSelectLarge" IconColor="Color.Info" Text="Maximizar" OnClick="@(() => MaxPreviewImage())" SelectedColor="Color.Primary" />
+                                        <MudChip Icon="@Icons.Material.Outlined.FileDownload" IconColor="Color.Info" Text="Descargar" OnClick="@(() => ClickExportAttachment())" SelectedColor="Color.Primary" />
+                                    </MudChipSet>
 
-                                <MudChipSet T="string" CheckMark Class="mt-6">
-                                    <MudChip Text="Center" OnClick="@(() => SetImagePosition(ObjectPosition.Center))" SelectedColor="Color.Primary" Default="true" />
-                                    <MudChip Text="Top" OnClick="@(() => SetImagePosition(ObjectPosition.Top))" SelectedColor="Color.Primary" />
-                                    <MudChip Text="Bottom" OnClick="@(() => SetImagePosition(ObjectPosition.Bottom))" SelectedColor="Color.Primary" />
-                                    <MudChip Icon="@Icons.Material.Outlined.PhotoSizeSelectActual" IconColor="Color.Info" Text="Minimizar" OnClick="@(() => MinPreviewImage())" SelectedColor="Color.Primary" />
-                                    <MudChip Icon="@Icons.Material.Outlined.PhotoSizeSelectLarge" IconColor="Color.Info" Text="Maximizar" OnClick="@(() => MaxPreviewImage())" SelectedColor="Color.Primary" />
-                                    <MudChip Icon="@Icons.Material.Outlined.FileDownload" IconColor="Color.Info" Text="Descargar" OnClick="@(() => ClickExportAttachment())" SelectedColor="Color.Primary" />
-                                </MudChipSet>
-
-                            </MudCardContent>
-                        </MudCard>
-                    </MudItem>
-                </MudGrid>
-            </MudContainer>
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                    </MudGrid>
+                </MudContainer>
             </DialogContent>
         </MudDialog>
-
-
     </MudForm>
-
 }
 
 
@@ -109,8 +122,8 @@ else
     private void Cancel() => MudDialog.Cancel();
     ObjectPosition ImagePosition = ObjectPosition.Center;
 
-    public int ImageHeight { get; set; } = 390;
-    public int ImageWidth { get; set; } = 1260;
+    public int ImageHeight { get; set; } = 350;
+    public int ImageWidth { get; set; } = 720;
 
     private string _nestedErrorMessage = string.Empty;
     bool _success = false;
@@ -189,31 +202,39 @@ else
     }
 
     private async Task GetImagePreview()
+{
+    _FileOpen = "";
+    // Imagen por defecto o placeholder
+    var fileUrl = "images/foton_planta.jpeg"; 
+    
+    var serviceResponse = await AttachmentService.GetAttachment(Convert.ToInt32(IdAttachment), Session.UserId);
+    
+    if (serviceResponse.Processed && serviceResponse.Data != null)
     {
-        _FileOpen = "";
-        var fileUrl = "images/foton_planta.jpeg";
-        var serviceResponse = await AttachmentService.GetAttachment(Convert.ToInt32(IdAttachment), Session.UserId);
-        if (serviceResponse.Processed)
-        {
-            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+        var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
 
-            if (_applicationName == "application/pdf")
-            {
-                await _pdfViewer.LoadPdfAsync(base64File, "PDF Document Filename");
-            }
-            else
-            {
-                fileUrl = $"data:{_applicationName};base64,{base64File}";
-            
-            }
-            
+        // 1. Manejo de PDFs
+        if (_applicationName == "application/pdf")
+        {
+            await _pdfViewer.LoadPdfAsync(base64File, "Documento PDF");
         }
-       
-        _FileOpen = fileUrl;
-       
-       
-        StateHasChanged();
+        // 2. Manejo de Videos MP4
+        if (_applicationName == "video/mp4")
+        {
+            // Limpiamos cualquier carácter de control que pueda romper la URL
+            var cleanBase64 = base64File.Replace("\r", "").Replace("\n", "");
+            fileUrl = $"data:video/mp4;base64,{cleanBase64}";
+        }
+        // 3. Manejo de Imágenes y otros formatos compatibles con Data URL
+        else 
+        {
+            fileUrl = $"data:{_applicationName};base64,{base64File}";
+        }
     }
+    
+    _FileOpen = fileUrl;
+    StateHasChanged();
+}
     
     private async Task ClickExportAttachment()
     {

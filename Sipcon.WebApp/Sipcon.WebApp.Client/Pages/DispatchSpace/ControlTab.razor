@@ -21,13 +21,16 @@
             <PendingActionTab Modules="Modules" AllStatuses="AllStatuses" />
         }
     </MudTabPanel>
-    <MudTabPanel Icon="@Icons.Material.Filled.Verified" Text="ATENDIDOS">
-        @if (_tabsLoaded[2])
-        {
-            <CompletedTab Modules="Modules" AllStatuses="AllStatuses" />
-        }
-    </MudTabPanel>
-</MudTabs>
+    @if (_moduleActions.Any(x => x.Text.Equals("ASIGNAR", StringComparison.OrdinalIgnoreCase)))
+    {
+        <MudTabPanel Icon="@Icons.Material.Filled.Verified" Text="ATENDIDOS">
+            @if (_tabsLoaded[2])
+            {
+                <CompletedTab Modules="Modules" AllStatuses="AllStatuses" />
+            }
+        </MudTabPanel>
+    }
+    </MudTabs>
 
 @code {
     [Inject] private UserSession Session { get; set; } = null!;
@@ -41,6 +44,7 @@
     private int _activeTabIndex = 0;
 
     private bool[] _tabsLoaded = [true, false, false];
+    private List<ModuleAction> _moduleActions = new();
 
     private void OnTabChanged()
     {
@@ -57,20 +61,31 @@
                 icon: s.ToActionIcon())));
 
         await LoadCommonData();
+
+        if (_activeTabIndex >= 0 && _activeTabIndex < _tabsLoaded.Length)
+            _tabsLoaded[_activeTabIndex] = true;
     }
 
     private async Task LoadCommonData()
     {
         try
         {
-            var modulesTask = Http.GetFromJsonAsync<List<Module>>(
-                $"api/Module/GetAll?moduleName=INVENTARIO-PROCESOS-CONTROLDESPACHO&userId={Session.UserId}");
-            var statusesTask = ModuleActionsService.GetAction(
-                Session.UserId, "INVENTARIO-PROCESOS-CONTROLDESPACHO");
+            string moduleName = "INVENTARIO-PROCESOS-CONTROLDESPACHO";
 
-            await Task.WhenAll(modulesTask, statusesTask);
+            var modulesTask = Http.GetFromJsonAsync<List<Module>>(
+                $"api/Module/GetAll?moduleName={moduleName}&userId={Session.UserId}");
+            var statusesTask = ModuleActionsService.GetAction(
+                Session.UserId, moduleName); 
+            var actionsTask = ModuleActionsService.GetModuleActions(Session.UserId, moduleName);
+
+           
+            await Task.WhenAll(modulesTask, statusesTask, actionsTask); 
+
+            _moduleActions = actionsTask.Result ?? new(); 
             Modules = modulesTask.Result;
             AllStatuses = statusesTask.Result ?? new();
+
+            StateHasChanged();
         }
         catch (Exception ex)
         {
