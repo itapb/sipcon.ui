@@ -1,137 +1,311 @@
-﻿@if (newMovementDetail  == null || SourceLocations == null || TargetLocations == null)
-{  
+﻿@if (newMovementDetail == null || SourceLocations == null || TargetLocations == null || CrossDockingLocations == null)
+{
     <LoadingForm IsMudDialog="@(MudDialog != null)" />
 }
 else
 {
     <MudForm @ref="form">
-    <div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
-        <MudPaper Elevation="2" Class="pa-3">
+        <div style="flex-shrink: 0;" class="pa-3 jpv1-dialog-body-background">
+            <MudPaper Elevation="2" Class="pa-3">
                 <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
-            <MudGrid Spacing="2">
-                <MudItem xs="12">                    
-                        <MudTextField T="int?" Label="Cantidad" @bind-Value="newMovementDetail.RequiredQty" For="@(() => newMovementDetail.RequiredQty)" Required="true"></MudTextField>                
-                </MudItem>
-                <MudItem xs="12">
-                    <MudSelect T="Location" Label="Ubicacion Origen" ToStringFunc="@ConvertLocationFunc" Value="SourceLocationSelected" ValueChanged="OnSourceLocationValueChanged" RequiredError="Campo requerido." Required="true">
-                        @foreach (var location in SourceLocations!)
+                    <MudGrid Spacing="2">
+
+                        <!-- Fila 1: Ubicación Origen (ancho completo) -->
+                        <MudItem xs="12">
+                            <MudSelect T="Location"
+                                       Label="Ubicación Origen"
+                                       ToStringFunc="@ConvertLocationFunc"
+                                       Value="SourceLocationSelected"
+                                       ValueChanged="OnSourceLocationValueChanged"
+                                       Required="true"
+                                       RequiredError="Campo requerido.">
+                                @foreach (var location in SourceLocations!)
+                                {
+                                    <MudSelectItem Value="location" />
+                                }
+                            </MudSelect>
+                        </MudItem>
+
+                        <!-- Fila 2: Cantidad (izquierda) | Cantidad sugerida CrossDocking (derecha) -->
+                        <MudItem xs="6">
+                            <MudTextField T="int?"
+                                          Label="Cantidad"
+                                          @bind-Value="newMovementDetail.RequiredQty"
+                                          For="@(() => newMovementDetail.RequiredQty)"
+                                          Required="true" />
+                        </MudItem>
+
+                        @if (IsReception && newMovementDetail?.Id == 0)
                         {
-                            <MudSelectItem Value="location" />
+                           <MudItem xs="6">
+                              <MudTextField T="int?"
+                          Label=@($"Cantidad sugerida CrossDocking:  {SuggestedCrossDockingQty}")
+                          @bind-Value="CrossDockingQty"
+                          For="@(() => CrossDockingQty)"
+                          Required="false" />
+                          </MudItem>
                         }
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="12">
-@*                     <MudSelect T="Location" Label="Ubicacion DestinoRecepcion" ToStringFunc="@ConvertLocationFunc" Value="TargetLocationSelected" ValueChanged="OnTargetLocationValueChanged" >
-                        @foreach (var location in TargetLocations!)
+
+                        <!-- Fila 3: Ubicación Destino (izquierda) | Ubicación CrossDocking (derecha) -->
+                        <MudItem xs="6">
+                            <MudTextField T="string"
+                                          Label="Ubicación Destino"
+                                          @bind-Value="TargetLocationText"
+                                          @ref="TargetLocationMudTextField" />
+                        </MudItem>
+
+                        @if (IsReception && newMovementDetail?.Id == 0)
                         {
-                            <MudSelectItem Value="location" />
+                            <MudItem xs="6">
+                                <MudSelect T="Location"
+                                           Label="Ubicación CrossDocking"
+                                           ToStringFunc="@ConvertLocationFunc"
+                                           Value="CrossDockingLocationSelected"
+                                           ValueChanged="OnCrossDockingLocationValueChanged"
+                                           Disabled="!HasCrossDockingQty"
+                                           Required="HasCrossDockingQty"
+                                           RequiredError="Debe seleccionar una ubicación CrossDocking">
+                                    @foreach (var location in CrossDockingLocations!)
+                                    {
+                                        <MudSelectItem Value="location" />
+                                    }
+                                </MudSelect>
+                            </MudItem>
                         }
-                    </MudSelect> *@
-                            <MudTextField T="string" Label="Ubicacion Destino" @bind-Value="TargetLocationText" @ref="TargetLocationMudTextField" />
-                </MudItem>
-                <MudItem xs="12">
-                    <MudStack Row="true" Justify="Justify.Center">
-                        <MudStack Row="true" Spacing="4">
-                            <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="CheckClick" />
-                            <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="CloseClick" />
-                        </MudStack>
-                    </MudStack>
-                </MudItem>
-            </MudGrid>
+
+                        <!-- Botones (ancho completo) -->
+                        <MudItem xs="12">
+                            <MudStack Row="true" Justify="Justify.Center">
+                                <MudStack Row="true" Spacing="4">
+                                    <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" OnClick="CheckClick" />
+                                    <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Close" Size="Size.Medium" OnClick="CloseClick" />
+                                </MudStack>
+                            </MudStack>
+                        </MudItem>
+                    </MudGrid>
                 </MudFocusTrap>
-        </MudPaper>
-    </div>
+            </MudPaper>
+        </div>
     </MudForm>
 }
 @code {
     [Inject] private UserSession Session { get; set; } = null!;
-    [Inject] private HttpClient Http { get; set; } = default!;    
+    [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
 
     string TypeIdSource = "R";
-    string TypeIdTarget = "A";    
+    string TypeIdTarget = "A";
 
     private MudForm? form;
     Location? SourceLocationSelected;
     Location? TargetLocationSelected;
+    Location? CrossDockingLocationSelected;
     List<Location>? Locations;
 
     List<Location>? SourceLocations;
     List<Location>? TargetLocations;
+    List<Location>? CrossDockingLocations; // Nueva lista para ubicaciones crossdocking
+
     [Parameter] public NewMovementDetail? newMovementDetail { get; set; } = default!;
+    [Parameter] public bool IsReception { get; set; } = false;
+
     private Func<Location?, string> ConvertLocationFunc = location => location?.Name!;
     private string TargetLocationText { get; set; } = string.Empty;
     private MudTextField<string>? TargetLocationMudTextField;
+
+    // Nuevas propiedades para crossdocking
+    private int? CrossDockingQty { get; set; }
+    private int SuggestedCrossDockingQty { get; set; }
+    private bool HasCrossDockingQty => CrossDockingQty.GetValueOrDefault() > 0;
+
     protected override async Task OnInitializedAsync()
     {
         // await Task.Delay(3000); // Simulate a delay for loading
-        await LoadLocations();       
-    }
-    private async Task LoadLocations()
-    {
-        HttpResponseMessage locationResponse = await Http.GetAsync($"api/Location/GetAll?userId={Session.UserId}&supplierId={Session.SupplierId}");
-        if (locationResponse.IsSuccessStatusCode)
+        await LoadLocations();
+        if (IsReception && newMovementDetail?.PartId != null)
         {
-            var content2 = await locationResponse.Content.ReadFromJsonAsync<WebApiResponse<List<Location>>>();           
-            Locations = content2!.data ?? new List<Location>(); 
-
-            SourceLocations = Locations!.Where(r => r.TypeId == TypeIdSource && r.IsFullActive == true).ToList();
-            TargetLocations = Locations!.Where(r => r.TypeId == TypeIdTarget && r.IsFullActive == true).ToList();
-            SourceLocationSelected = SourceLocations!.FirstOrDefault(r => r.Id == newMovementDetail!.LocationId);
-            TargetLocationSelected = TargetLocations!.FirstOrDefault(r => r.Id == newMovementDetail!.DestinationId);
-
-            TargetLocationText = TargetLocationSelected?.Name ?? string.Empty;
+            await LoadSuggestedCrossDocking();
         }
     }
+    
+    private async Task LoadLocations()
+    {
+        try
+        {
+            // 1. Cargar ubicaciones para origen y crossdocking (SP nuevo)
+            HttpResponseMessage response1 = await Http.GetAsync($"api/Location/GetReceptionCrossDocking?userId={Session.UserId}&supplierId={Session.SupplierId}");
+
+            // 2. Cargar ubicaciones para destino (SP viejo - GetAll)
+            HttpResponseMessage response2 = await Http.GetAsync($"api/Location/GetAll?userId={Session.UserId}&supplierId={Session.SupplierId}");
+
+            if (response1.IsSuccessStatusCode && response2.IsSuccessStatusCode)
+            {
+                // Procesar primera respuesta (origen y crossdocking)
+                var content1 = await response1.Content.ReadFromJsonAsync<WebApiResponse<List<Location>>>();
+                var locationsCD = content1!.data ?? new List<Location>();
+
+                // Procesar segunda respuesta (todas las ubicaciones)
+                var content2 = await response2.Content.ReadFromJsonAsync<WebApiResponse<List<Location>>>();
+                var allLocations = content2!.data ?? new List<Location>();
+
+                // Asignar según corresponda
+                SourceLocations = locationsCD.Where(r => r.TypeId == "R" && r.IsFullActive == true).ToList();
+                CrossDockingLocations = locationsCD.Where(r => r.TypeId == "A" && r.IsFullActive == true).ToList();
+
+                // TargetLocations usa GetAll para tener TODAS las ubicaciones de destino
+                TargetLocations = allLocations.Where(r => r.TypeId == "A" && r.IsFullActive == true).ToList();
+
+                SourceLocationSelected = SourceLocations?.FirstOrDefault(r => r.Id == newMovementDetail!.LocationId);
+                TargetLocationSelected = TargetLocations?.FirstOrDefault(r => r.Id == newMovementDetail!.DestinationId);
+                TargetLocationText = TargetLocationSelected?.Name ?? string.Empty;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Excepción: {ex.Message}");
+        }
+    }
+
+    private async Task LoadSuggestedCrossDocking()
+    {
+        try
+        {
+            HttpResponseMessage response = await Http.GetAsync($"api/Location/GetCrossDockingSuggested?userId={Session.UserId}&supplierId={Session.SupplierId}&filter={newMovementDetail.filter}");
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadFromJsonAsync<WebApiResponse<List<CrossDockingSuggested>>>();
+                var suggested = content?.data?.FirstOrDefault();
+                SuggestedCrossDockingQty = suggested?.RequestedQuantity ?? 0;
+                CrossDockingQty = SuggestedCrossDockingQty > 0 ? SuggestedCrossDockingQty : null;
+            }
+        }
+        catch
+        {
+            SuggestedCrossDockingQty = 0;
+        }
+    }
+
     private Task OnSourceLocationValueChanged(Location selectedSourceLocation)
     {
         SourceLocationSelected = selectedSourceLocation;
         newMovementDetail!.LocationId = selectedSourceLocation.Id;
         return Task.CompletedTask;
     }
+
     private Task OnTargetLocationValueChanged(Location selectedTargetLocation)
     {
         TargetLocationSelected = selectedTargetLocation;
         newMovementDetail!.DestinationId = selectedTargetLocation.Id;
         return Task.CompletedTask;
     }
+
+    private Task OnCrossDockingLocationValueChanged(Location selectedCrossDockingLocation)
+    {
+        CrossDockingLocationSelected = selectedCrossDockingLocation;
+        return Task.CompletedTask;
+    }
+
     private async Task CheckClick(MouseEventArgs args)
     {
         await form!.Validate();
-        if (form.IsValid && await ValidateTargetLocation() && await UnequalLocations())
+        if (!await ValidateTargetLocation() && await UnequalLocations())
+            return;
+
+        // Validaciones específicas de crossdocking - SOLO para registros NUEVOS
+        if (IsReception && newMovementDetail?.Id == 0 && HasCrossDockingQty)
         {
-            var strnewMovementDetail = System.Text.Json.JsonSerializer.Serialize(newMovementDetail);
-            var result_newMovementDetail = await Http.PostAsync($"api/Movements/PostMovementDetail?userId={Session.UserId}", new StringContent($"[{strnewMovementDetail}]", null, "application/json"));
-            if (result_newMovementDetail.IsSuccessStatusCode)
+            if (CrossDockingQty > newMovementDetail!.RequiredQty)
             {
-                var sucessContent = await result_newMovementDetail.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
-                if (sucessContent?.data is ({insertedRows: 1 } or {updatedRows : 1}))
-                {
-                    var result = await DialogService.ShowDialog(Useful.OkSavedMessage, "Agregar", "OK", Color.Info, Icons.Material.Filled.Commit);
-                    if (!result!.Canceled) 
-                        MudDialog?.Close(DialogResult.Ok(true));
-                }
+                await DialogService.ShowDialog("La cantidad de CrossDocking no puede ser mayor a la cantidad total", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+                return;
             }
-            else if (result_newMovementDetail.StatusCode == System.Net.HttpStatusCode.Conflict)
+
+            if (CrossDockingLocationSelected == null)
             {
-                var conflictContent = await result_newMovementDetail.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
-                await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+                await DialogService.ShowDialog("Debe seleccionar una ubicación CrossDocking", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+                return;
+            }
+        }
+
+        if (form.IsValid)
+        {
+            // Solo crear crossdocking si es registro NUEVO
+            if (IsReception && newMovementDetail?.Id == 0 && HasCrossDockingQty)
+            {
+                await CreateCrossDockingMovements();
             }
             else
             {
-                var errorMessage = await result_newMovementDetail.Content.ReadAsStringAsync();
-                await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);              
+                await CreateSingleMovement();
             }
         }
     }
+
+    private async Task CreateSingleMovement()
+    {
+        var strnewMovementDetail = System.Text.Json.JsonSerializer.Serialize(newMovementDetail);
+        var result = await Http.PostAsync($"api/Movements/PostMovementDetail?userId={Session.UserId}", new StringContent($"[{strnewMovementDetail}]", null, "application/json"));
+        await ProcessMovementResult(result);
+    }
+
+    private async Task CreateCrossDockingMovements()
+    {
+        // Crear UN SOLO objeto 
+        var movementToCreate = new NewMovementDetail
+        {
+            Id = 0,
+            PartId = newMovementDetail!.PartId,
+            MovementId = newMovementDetail.MovementId,
+            LocationId = newMovementDetail.LocationId,
+            RequiredQty = newMovementDetail.RequiredQty,
+            DestinationId = TargetLocationSelected?.Id,
+            PartSize = newMovementDetail.PartSize,
+            // Nuevos campos para crossdocking
+            CrossDockingQty = CrossDockingQty,
+            CrossDockingLocationId = CrossDockingLocationSelected?.Id
+        };
+
+        var strMovement = System.Text.Json.JsonSerializer.Serialize(movementToCreate);
+        var result = await Http.PostAsync($"api/Movements/PostMovementDetail?userId={Session.UserId}",
+                                          new StringContent($"[{strMovement}]", null, "application/json"));
+        await ProcessMovementResult(result);
+    }
+
+    private async Task ProcessMovementResult(HttpResponseMessage result_newMovementDetail)
+    {
+        if (result_newMovementDetail.IsSuccessStatusCode)
+        {
+            var sucessContent = await result_newMovementDetail.Content.ReadFromJsonAsync<WebApiResponse<PostResponse>>();
+            if ((sucessContent?.data?.insertedRows ?? 0) != 0 || (sucessContent?.data?.updatedRows ?? 0) != 0)
+
+            {
+                var dialogResult = await DialogService.ShowDialog(Useful.OkSavedMessage, "Agregar", "OK", Color.Info, Icons.Material.Filled.Commit);
+                if (!dialogResult!.Canceled)
+                    MudDialog?.Close(DialogResult.Ok(true));
+            }
+        }
+        else if (result_newMovementDetail.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflictContent = await result_newMovementDetail.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+            await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        else
+        {
+            var errorMessage = await result_newMovementDetail.Content.ReadAsStringAsync();
+            await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+    }
+
     private void CloseClick(MouseEventArgs args) => MudDialog?.Cancel();
+
     private async Task<bool> UnequalLocations()
     {
         var Uresult = SourceLocationSelected?.Id != TargetLocationSelected?.Id;
         if (!Uresult) await DialogService.ShowDialog("Las ubicaciones deben ser diferentes!", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
         return Uresult;
     }
+
     private async Task<bool> ValidateTargetLocation()
     {
         var vResult = true;
@@ -139,7 +313,7 @@ else
         if (TargetLocationResult != null)
         {
             TargetLocationSelected = TargetLocationResult;
-            newMovementDetail!.DestinationId = TargetLocationResult.Id;        
+            newMovementDetail!.DestinationId = TargetLocationResult.Id;
         }
         else
         {
@@ -153,4 +327,5 @@ else
         }
         return vResult;
     }
+
 }

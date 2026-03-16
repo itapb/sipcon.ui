@@ -28,7 +28,9 @@ namespace Sipcon.WebApp.Client.Models
         public int? RequiredQty { get; set; }
 
         public int? Stock { get; set; } = 0;
-
+        public String? filter { get; set; } = String.Empty;
         public String? PartSize { get; set; } = String.Empty;
+        public int? CrossDockingQty { get; set; }
+        public int? CrossDockingLocationId { get; set; }
     }
 }

@@ -79,5 +79,8 @@ namespace Sipcon.WebApp.Client.Models
 
         public int? PrintQty { get; set; } = 1;
 
+        public int? CrossDockingQty { get; set; }
+        public int? CrossDockingLocationId { get; set; }
+
     }
 }
