@@ -209,6 +209,21 @@ else
     private async Task CheckClick(MouseEventArgs args)
     {
         await form!.Validate();
+        // Evitar cantidades negativas en CrossDocking
+        if (IsReception && newMovementDetail?.Id == 0)
+        {
+            if (CrossDockingQty < 0)
+            {
+                await DialogService.ShowDialog(
+                    "La cantidad de CrossDocking no puede ser negativa.",
+                    "Error",
+                    "OK",
+                    Color.Error,
+                    Icons.Material.Filled.Error
+                );
+                return;
+            }
+        }
         if (!await ValidateTargetLocation() && await UnequalLocations())
             return;
 
