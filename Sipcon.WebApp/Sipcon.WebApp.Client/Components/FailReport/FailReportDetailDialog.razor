@@ -102,7 +102,8 @@
                                              Margin="Margin.Dense"
                                              HideSpinButtons="true"
                                              Culture="@CultureInfo.GetCultureInfo("en-US")"
-                                             Pattern="^[0-9.]*$"    
+                                             Pattern="@(_model.Type == "P" ? "^[0-9]*$" : "^[0-9.]*$")"
+                                             Step="@(_model.Type == "P" ? 1 : 0.01)"
                                              ReadOnly="@(!_model.IsActive || _isReadOnly || (_model.Type == "L" && _model.IsExternal == false))"
                                              For="@(() => _model.Quantity)"
                                              Immediate="false" />

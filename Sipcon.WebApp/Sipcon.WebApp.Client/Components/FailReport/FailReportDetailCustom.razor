@@ -88,17 +88,18 @@
                 
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn Title="@(mDetailType == ServiceDetailTypeEnum.LaborTime ? "HORAS" : "CANTIDAD")"  HeaderClass="justify-center" 
-                              HeaderStyle="text-align: center;" 
-                              Style="text-align: center;">
-            <CellTemplate>
-                <div class="d-flex justify-center">
-                    <MudText Typo="Typo.caption" Align="Align.End">
-                        @(mDetailType == ServiceDetailTypeEnum.LaborTime ? context.Item.Quantity?.ToString("N2") : context.Item.Quantity?.ToString("N0"))
-                    </MudText>
-                </div>
-            </CellTemplate>
-        </TemplateColumn>
+        <TemplateColumn Title="@(mDetailType == ServiceDetailTypeEnum.LaborTime ? "HORAS" : "CANTIDAD")" 
+                HeaderClass="justify-center" 
+                HeaderStyle="text-align: center;" 
+                Style="text-align: center;">
+    <CellTemplate>
+        <div class="d-flex justify-center">
+            <MudText Typo="Typo.caption" Align="Align.End">
+                @(context.Item.Quantity?.ToString("N2"))
+            </MudText>
+        </div>
+    </CellTemplate>
+</TemplateColumn>
         <TemplateColumn  Title="MONTO UNI."  HeaderClass="justify-center" 
                               HeaderStyle="text-align: center;" 
                               Style="text-align: center;">
