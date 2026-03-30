@@ -93,14 +93,36 @@
                             <MudItem xs="6">
                                 <MudTextField @bind-Value="SelectedContact.Address" Label="@($"{strDictionary["addressLabel"]}")" For="@(() => SelectedContact.Address)" MaxLength="150" Required="true" Disabled ="@(!SelectedContact.IsActive ?? false)"/>
                             </MudItem>
-                            <MudItem xs="6">
-                                <MudSelect T="City" Label="Ciudad" ToStringFunc="@ConvertCityFunc" Required="true" ValueChanged="OnCityValueChanged" RequiredError="Campo requerido." Value="CitySelected" Disabled ="@(!SelectedContact.IsActive ?? false)">
-                                    @foreach (var city in Cities!)
-                                    {
-                                        <MudSelectItem Value="city" />
-                                    }
-                                </MudSelect>
-                            </MudItem>
+                                <MudItem xs="6">
+                                    <MudSelect T="StateOption" Label="Estado" ToStringFunc="@ConvertStateFunc"
+                                               ValueChanged="OnStateValueChanged" Value="SelectedState"
+                                               Disabled="@(!(SelectedContact.IsActive ?? false))">
+                                        @foreach (var state in StateOptions!)
+                                        {
+                                            <MudSelectItem Value="state" />
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudSelect T="MunicipalityOption" Label="Municipio" ToStringFunc="@ConvertMunicipalityFunc"
+                                               ValueChanged="OnMunicipalityValueChanged" Value="SelectedMunicipality"
+                                               Disabled="@(SelectedState == null || !(SelectedContact.IsActive ?? false))">
+                                        @foreach (var municipality in MunicipalityOptions!)
+                                        {
+                                            <MudSelectItem Value="municipality" />
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudSelect T="City" Label="Ciudad" ToStringFunc="@ConvertCityFunc" Required="true"
+                                               ValueChanged="OnCityValueChanged" RequiredError="Campo requerido."
+                                               Value="CitySelected" Disabled="@(SelectedMunicipality == null || !(SelectedContact.IsActive ?? false))">
+                                        @foreach (var city in FilteredCities!)
+                                        {
+                                            <MudSelectItem Value="city" />
+                                        }
+                                    </MudSelect>
+                                </MudItem>
                             <MudItem xs="4">
                                 <MudTextField @bind-Value="SelectedContact.Email" Label="Correo" For="@(() => SelectedContact.Email)" MaxLength="50" Required="true" Disabled ="@(!SelectedContact.IsActive ?? false)"/>
                             </MudItem>
@@ -239,7 +261,16 @@ else
     // private List<Related>? Suppliers;
     // private List<Related>? Dealers;    
     private City? CitySelected;
-    private Brand? BrandSelected;    
+    private Brand? BrandSelected;   
+    private record StateOption(int Id, string Name);
+    private record MunicipalityOption(int Id, string Name, int StateId);
+    private List<StateOption>? StateOptions;
+    private List<MunicipalityOption>? MunicipalityOptions;
+    private List<City>? FilteredCities;
+    private StateOption? SelectedState;
+    private MunicipalityOption? SelectedMunicipality;
+    private Func<StateOption?, string> ConvertStateFunc = s => s?.Name!;
+    private Func<MunicipalityOption?, string> ConvertMunicipalityFunc = m => m?.Name!;
     // string mMessage = "Contactos";
     string SelectedRifType = "V";
     string[] Rifs = ["V", "E", "J", "G"];
@@ -312,6 +343,14 @@ else
             PayMethods = ContactDetailsResult.PayMethods;
             ContactGroups = ContactDetailsResult.Groups;
             Cities = ContactDetailsResult!.Cities;
+            StateOptions = Cities
+                .Where(c => c.StateId.HasValue)
+                .GroupBy(c => c.StateId)
+                .Select(g => new StateOption(g.Key.Value, g.First().StateName!))
+                .OrderBy(s => s.Name)
+                .ToList();
+            MunicipalityOptions = new List<MunicipalityOption>();
+            FilteredCities = new List<City>();
             Brands = ContactDetailsResult.Brands;
             Relateds = ContactDetailsResult.Relateds;
             SelectedContact = ContactDetailsResult.Contact!;
@@ -348,6 +387,31 @@ else
                 await AfterAsync();
                 FirstClickEditContact = false;
                 CitySelected = Cities!.FirstOrDefault(c => c.Id == SelectedContact.CityId);
+               
+                if (CitySelected != null)
+                {
+                   
+                    SelectedState = StateOptions?.FirstOrDefault(s => s.Id == CitySelected.StateId);
+    
+                    if (SelectedState != null)
+                    {
+                        MunicipalityOptions = Cities
+                            .Where(c => c.StateId == SelectedState.Id && c.MunicipalityId.HasValue)
+                            .GroupBy(c => c.MunicipalityId)
+                            .Select(g => new MunicipalityOption(g.Key.Value, g.First().MunicipalityName!, SelectedState.Id))
+                            .OrderBy(m => m.Name)
+                            .ToList();
+               
+                        SelectedMunicipality = MunicipalityOptions?.FirstOrDefault(m => m.Id == CitySelected.MunicipalityId);
+     
+                        if (SelectedMunicipality != null)
+                        {
+                            FilteredCities = Cities
+                                .Where(c => c.MunicipalityId == SelectedMunicipality.Id)
+                                .ToList();
+                        }
+                    }
+                }
                 GenderSelected = Genders.FirstOrDefault(x => x.Value == SelectedContact.Male);
 
                 PayMethodSelected = PayMethods!.FirstOrDefault(x => x.Id == SelectedContact.PayMethodId);
@@ -584,7 +648,7 @@ else
         SelectedContact!.CityName = selectedBrand?.Name;
         return Task.CompletedTask;
     }
-
+   
     private Task OnPayMethodValueChanged(PayMethod2 selectedPayMethod)
     {
         PayMethodSelected = selectedPayMethod;
@@ -675,4 +739,49 @@ else
         return errorMessage;
     }
 
+    private Task OnMunicipalityValueChanged(MunicipalityOption selectedMunicipality)
+    {
+        SelectedMunicipality = selectedMunicipality;
+        CitySelected = null;
+        SelectedContact!.CityId = null;
+    
+        if (selectedMunicipality != null)
+        {
+            FilteredCities = Cities
+                .Where(c => c.MunicipalityId == selectedMunicipality.Id)
+                .ToList();
+        }
+        else
+        {
+            FilteredCities = new List<City>();
+        }
+    
+        return Task.CompletedTask;
+    }
+
+    private Task OnStateValueChanged(StateOption selectedState)
+    {
+        SelectedState = selectedState;
+        SelectedMunicipality = null;
+        CitySelected = null;
+        SelectedContact!.CityId = null;
+    
+        if (selectedState != null)
+        {
+            MunicipalityOptions = Cities
+                .Where(c => c.StateId == selectedState.Id && c.MunicipalityId.HasValue)
+                .GroupBy(c => c.MunicipalityId)
+                .Select(g => new MunicipalityOption(g.Key.Value, g.First().MunicipalityName!, selectedState.Id))
+                .OrderBy(m => m.Name)
+                .ToList();
+            FilteredCities = new List<City>();
+        }
+        else
+        {
+            MunicipalityOptions = new List<MunicipalityOption>();
+            FilteredCities = new List<City>();
+        }
+    
+        return Task.CompletedTask;
+    }
 }
