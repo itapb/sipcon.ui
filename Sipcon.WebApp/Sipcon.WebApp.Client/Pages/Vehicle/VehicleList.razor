@@ -112,7 +112,9 @@
             </MudExpansionPanels>
 
         </div>
+        
         <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Info" OnClick="() => ClickSearch()"></MudIconButton>
+        <MudTooltip Text="Importar placas desde Excel">  <MudIconButton Icon="@Icons.Material.Filled.Pin"  Color="Color.Info"  OnClick="() => ImportPlateAsync()" /></MudTooltip>
         <MudIconButton Icon="@Icons.Material.Filled.Speed" Color="Color.Info" Size="Size.Small" Href="@("vehicledetailrecord/1")" />
         <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
         <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
@@ -151,10 +153,16 @@
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn Title="PLACA">
-            <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Left"><b>@context.Item.Plate.ToUpper()</b></MudText>
-            </CellTemplate>
-        </TemplateColumn>
+    <CellTemplate>
+        <MudText Typo="Typo.caption" Align="Align.Left">
+            <b>
+                @(string.IsNullOrWhiteSpace(context.Item.Plate) 
+                    ? "SIN DEFINIR" 
+                    : context.Item.Plate.ToUpper())
+            </b>
+        </MudText>
+    </CellTemplate>
+</TemplateColumn>
         <TemplateColumn Title="AÑO">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.Left">
@@ -542,6 +550,69 @@
         await Task.CompletedTask;
     }
 
+
+    private async Task ImportPlateAsync()
+    {
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+        var parameters = new DialogParameters<ImporItemDialog> { { x => x.Title, "Cargar Placas..." } };
+        var dialog = await DialogService.ShowAsync<ImporItemDialog>("simple dialog", parameters, options);
+
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+
+            IBrowserFile file = (IBrowserFile)(result.Data ?? string.Empty);
+            const long maxAllowedSize = 10 * 1024 * 1024; // 10MB
+            if (file.Size == 0)
+            {
+                _success = false;
+                _nestedErrorMessage = MessageEnum.ImportError.GetStringValue();
+                OpenNested();
+            }
+            else if (file.Size > maxAllowedSize)
+            {
+                _success = false;
+                _nestedErrorMessage = MessageEnum.ImportErrorMaxByte.GetStringValue();
+                OpenNested();
+            }
+            else
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
+
+                var content = new StreamContent(stream);
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+                // Create a multipart form data content
+                var formData = new MultipartFormDataContent();
+                formData.Add(content, "file", file.Name);
+
+
+                var serviceResponse = await VehicleService.ImportPlates(Session.SupplierId, Session.UserId, formData);
+                if (serviceResponse.Processed)
+                {
+                    _success = true;
+                    _nestedErrorMessage = MessageEnum.ImportOK.GetStringValue();
+
+                    await _mudDataGrid!.ReloadServerData();
+
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ImportNotOK.GetStringValue();
+                }
+                OpenNested();
+            }
+           
+
+        }
+
+
+       
+    
+        await Task.CompletedTask;
+    }
 
     // private async Task OnInputFileChange(InputFileChangeEventArgs e)
     // {
