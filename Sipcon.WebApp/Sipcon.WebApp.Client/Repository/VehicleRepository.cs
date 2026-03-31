@@ -407,6 +407,37 @@
             return result;
         }
 
+
+        public async Task<ApiResponse<ActionResult>> ImportPlates(int IdSupplier, int IdUser, MultipartFormDataContent FormData)
+        {
+            ApiResponse<ActionResult>? result;
+
+            try
+            {
+                var url = $"api/Vehicle/ImportPlate?supplierId={IdSupplier}&userId={IdUser}";
+
+                var response = await _http.PostAsync(url, FormData);
+
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = "El servidor devolvió una respuesta vacía."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+        }
+
     }
 
 }
