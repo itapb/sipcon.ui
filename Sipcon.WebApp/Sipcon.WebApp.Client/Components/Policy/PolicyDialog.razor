@@ -251,7 +251,7 @@
 													  ReadOnly="true" />
 
 									</MudStack>
-
+						
 
 									<MudTextField Typo="Typo.caption" @bind-Value="_model.Description"
 													Label="Tipo Poliza"
@@ -416,6 +416,14 @@
 											<MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
 										}
 									</MudSelect>
+
+									<MudNumericField Typo="Typo.caption" @bind-Value="_model.CertificateNumber"
+													  Label="Nro. Certificado"
+												      Variant="Variant.Text"
+												      Margin="Margin.Dense"
+												      HideSpinButtons="true"
+												      ReadOnly="@(!_model.IsActive || _isReadOnly)"
+												      Disabled="@(!_model.IsActive || _isReadOnly)" />
 
 									
 									<MudNumericField Typo="Typo.caption" @bind-Value="_model.InvoiceAmount"
@@ -956,7 +964,14 @@
 					}
 				});
 
-				
+			RuleFor(x => x.CertificateNumber)
+			   .Custom((value, context) =>
+					 {
+				   	if (value.HasValue && value.Value <= 0)
+					 {
+					    context.AddFailure($"Nro. Certificado debe ser mayor a 0");
+					 }
+			   });
 
 			RuleFor(x => x.Vin)
 				.NotNull().WithMessage("Campo requerido")

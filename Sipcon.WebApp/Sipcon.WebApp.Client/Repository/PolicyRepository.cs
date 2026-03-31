@@ -151,7 +151,8 @@
                     InvoiceNumber   = Policy.InvoiceNumber,
                     InvoiceAmount   = Policy.InvoiceAmount,
                     InvoiceDate     = Policy.InvoiceDate,
-                    PayMethodId     = Policy.PayMethodId
+                    PayMethodId     = Policy.PayMethodId,
+                    CertificateNumber = Policy.CertificateNumber
                 };
 
                 var response = await _http.PostAsJsonAsync($"api/Policy/PostPolicy?userId={IdUser}", _policy);
