@@ -14,7 +14,8 @@
 
 
 <MudForm Model="@_model" @ref="@form" Validation="@(_modelValidator.ValidateValue)" ValidationDelay="0">
-	<MudDialog Class="blur dialog-background" ActionsClass="dialog-background-surface">
+	<MudDialog Class="blur dialog-background" ActionsClass="dialog-background-surface" MaxWidth="MaxWidth.ExtraLarge" FullWidth="true">
+
 		<DialogContent>
 			<MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
 
@@ -65,7 +66,7 @@
 				</MudCard>
 
 			</MudContainer>
-			<div id="unique_id_scroll_section" class="ma-0" style="height:400px;overflow: auto;">
+			<div id="unique_id_scroll_section" class="ma-0">
 
 				<MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
 
@@ -428,6 +429,11 @@
 															  Immediate="true"
 															  Style="height: 24px; width: 100%;"
 															  Validation="@(new Func<string, IEnumerable<string>>(value => {
+																  if (string.IsNullOrWhiteSpace(value))
+																  {
+																	  return new List<string> { "Campo obligatorio" };
+																  }
+
 																  if (!string.IsNullOrEmpty(value) && !value.All(char.IsDigit))
 																  {
 																	  return new List<string> { "Solo números positivos" };
@@ -463,12 +469,6 @@
 					</MudGrid>
 
 				</MudContainer>
-				<MudScrollToTop TopOffset="100"
-								Selector="#unique_id_scroll_section"
-								VisibleCssClass="visible absolute"
-								HiddenCssClass="invisible">
-
-				</MudScrollToTop>
 			</div>
 
 			<MudDialog @bind-Visible="_nestedModalVisible">
