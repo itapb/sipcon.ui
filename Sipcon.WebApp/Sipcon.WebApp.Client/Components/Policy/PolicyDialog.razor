@@ -429,6 +429,11 @@
 															  Immediate="true"
 															  Style="height: 24px; width: 100%;"
 															  Validation="@(new Func<string, IEnumerable<string>>(value => {
+																  if (string.IsNullOrWhiteSpace(value))
+																  {
+																	  return new List<string> { "Campo obligatorio" };
+																  }
+
 																  if (!string.IsNullOrEmpty(value) && !value.All(char.IsDigit))
 																  {
 																	  return new List<string> { "Solo números positivos" };
