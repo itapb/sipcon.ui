@@ -20,7 +20,10 @@ namespace Sipcon.WebApp.Client.Utils
         IFailReportService FailReportService,
         IAssistenceService AssistenceService,
         IReportDMSService ReportDMSService,
-        IReportingService ReportingService
+        IReportingService ReportingService,
+        IAreaService AreaService,          
+        IFaseService FaseService,         
+        IFeatureTypeService FeatureTypeService   
         ) 
     {
 
@@ -105,7 +108,50 @@ namespace Sipcon.WebApp.Client.Utils
 
         }
 
+        // ── Inspección ────────────────────────────────────────────────────────
 
+        /// <summary>Áreas activas — usado en FaseDialog, FeatureTypeDialog, FeatureDialog.</summary>
+        public async Task<List<SelectOption>> GetAreaOption(int IdUser, int IdSupplier, int IdDealer)
+        {
+            List<SelectOption> _itemsSelect = new([]);
+            var response = await AreaService.GetAreas(IdUser, IdSupplier, IdDealer, active: true);
+            if (response.Processed)
+                foreach (var item in response.Data ?? new List<Area>())
+                    _itemsSelect.Add(new SelectOption(item.Id, item.Name ?? string.Empty));
+            return _itemsSelect;
+        }
+
+        /// <summary>Fases activas — usado en FeatureTypeDialog.</summary>
+        public async Task<List<SelectOption>> GetFaseOption(int IdUser, int IdSupplier, int IdDealer)
+        {
+            List<SelectOption> _itemsSelect = new([]);
+            var response = await FaseService.GetFases(IdUser, IdSupplier, IdDealer, active: true);
+            if (response.Processed)
+                foreach (var item in response.Data ?? new List<Fase>())
+                    _itemsSelect.Add(new SelectOption(item.Id, item.Name ?? string.Empty)
+                    {
+                        ParentId = item.AreaId,
+                        ParentText = item.AreaName ?? string.Empty
+                    });
+            return _itemsSelect;
+        }
+        /// <summary>Tipos de característica activos filtrados por Fase — usado en FeatureDialog.</summary> 
+        public async Task<List<SelectOption>> GetFeatureTypeOption(int IdUser, int IdSupplier, int IdDealer)
+        {
+            List<SelectOption> _itemsSelect = new([]);
+            var response = await FeatureTypeService.GetFeatureTypes(IdUser, IdSupplier, IdDealer, active: true);
+            if (response.Processed)
+                foreach (var item in response.Data ?? new List<FeatureType>())
+                    _itemsSelect.Add(new SelectOption(item.Id, item.Name ?? string.Empty)
+                    {
+                        ParentId = item.FaseId,
+                        ParentText = item.FaseName ?? string.Empty,
+                        ExtraText = item.AreaName ?? string.Empty
+                    });
+            return _itemsSelect;
+        }
+
+        // ── Vehículos ─────────────────────────────────────────────────────────
         public async Task<List<SelectOption>> GetColorOption(int IdUser)
         {
             List<SelectOption> _itemsSelect = new([]);
