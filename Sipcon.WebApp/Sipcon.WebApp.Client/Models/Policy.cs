@@ -36,7 +36,9 @@ namespace Sipcon.WebApp.Client.Models
         public string Plate { get; set; } = string.Empty;
         
         public string? EngineSerial { get; set; } = null;
-        
+
+        public String? CertificateNumber { get; set; } = null;
+
         public string? Year { get; set; } = null;
         
         public string? Color { get; set; } = null;
@@ -102,6 +104,9 @@ namespace Sipcon.WebApp.Client.Models
         /// <summary> Vehicle details </summary>
         [Required]
         public int? VehicleId { get; set; } = null;
+
+        
+        public String? CertificateNumber { get; set; } 
 
         /// <summary> Customer details </summary>
         [Required]

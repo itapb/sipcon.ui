@@ -14,7 +14,8 @@
 
 
 <MudForm Model="@_model" @ref="@form" Validation="@(_modelValidator.ValidateValue)" ValidationDelay="0">
-	<MudDialog Class="blur dialog-background" ActionsClass="dialog-background-surface">
+	<MudDialog Class="blur dialog-background" ActionsClass="dialog-background-surface" MaxWidth="MaxWidth.ExtraLarge" FullWidth="true">
+
 		<DialogContent>
 			<MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
 
@@ -65,7 +66,7 @@
 				</MudCard>
 
 			</MudContainer>
-			<div id="unique_id_scroll_section" class="ma-0" style="height:400px;overflow: auto;">
+			<div id="unique_id_scroll_section" class="ma-0">
 
 				<MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
 
@@ -251,7 +252,7 @@
 													  ReadOnly="true" />
 
 									</MudStack>
-
+						
 
 									<MudTextField Typo="Typo.caption" @bind-Value="_model.Description"
 													Label="Tipo Poliza"
@@ -416,23 +417,49 @@
 											<MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
 										}
 									</MudSelect>
+							
+										<MudGrid Spacing="1">
+											<MudItem xs="6">
+												<MudTextField @bind-Value="_model.CertificateNumber"
+															  Label="Nro. Certificado"
+															  Variant="Variant.Text"
+															  Margin="Margin.Dense"
+															  ReadOnly="@(!_model.IsActive || _isReadOnly)"
+															  Disabled="@(!_model.IsActive || _isReadOnly)"
+															  Immediate="true"
+															  Style="height: 24px; width: 100%;"
+															  Validation="@(new Func<string, IEnumerable<string>>(value => {
+																  if (string.IsNullOrWhiteSpace(value))
+																  {
+																	  return new List<string> { "Campo obligatorio" };
+																  }
 
-									
-									<MudNumericField Typo="Typo.caption" @bind-Value="_model.InvoiceAmount"
-													 T="double?"
-													 Label="Monto"
-													 Class="align-right"
-													 Min="0.00"
-													 MaxLength="15"
-													 Variant="Variant.Text"
-													 Margin="Margin.Dense"
-													 HideSpinButtons="true"
-													 Culture="@CultureInfo.GetCultureInfo("en-US")"
-													 Pattern="^[0-9.]*$"
-													 ErrorText="Campo requerido solo digitos [0-9.]"
-													 ReadOnly="@(!_model.IsActive || _isReadOnly)"
-													 For="@(() => _model.InvoiceAmount)"
-													 Immediate="true" />
+																  if (!string.IsNullOrEmpty(value) && !value.All(char.IsDigit))
+																  {
+																	  return new List<string> { "Solo números positivos" };
+																  }
+																  return new List<string>();
+															  }))" />
+											</MudItem>
+											<MudItem xs="6">
+												<MudNumericField Typo="Typo.caption" @bind-Value="_model.InvoiceAmount"
+																 T="double?"
+																 Label="Monto"
+																 Class="align-right"
+																 Min="0.00"
+																 MaxLength="15"
+																 Variant="Variant.Text"
+																 Margin="Margin.Dense"
+																 HideSpinButtons="true"
+																 Culture="@CultureInfo.GetCultureInfo("en-US")"
+																 Pattern="^[0-9.]*$"
+																 ErrorText="Campo requerido solo digitos [0-9.]"
+																 ReadOnly="@(!_model.IsActive || _isReadOnly)"
+																 For="@(() => _model.InvoiceAmount)"
+																 Immediate="true"
+																 Style="height: 24px; width: 100%;"/>
+											</MudItem>
+										</MudGrid>
 
 								</MudCardContent>
 
@@ -442,12 +469,6 @@
 					</MudGrid>
 
 				</MudContainer>
-				<MudScrollToTop TopOffset="100"
-								Selector="#unique_id_scroll_section"
-								VisibleCssClass="visible absolute"
-								HiddenCssClass="invisible">
-
-				</MudScrollToTop>
 			</div>
 
 			<MudDialog @bind-Visible="_nestedModalVisible">
@@ -495,6 +516,17 @@
 	.align-right input {
 		text-align: right;
 	}
+
+    /* Unificar altura de todos los campos */
+	  .mud-input-control {
+        height: 57px !important;
+        margin-bottom: 7px !important
+    }
+
+	/* Ajustar espaciado entre campos */
+    .mud-card-content > :not(:last-child) {
+        margin-bottom: 5px;
+    }
 </style>
 
 @code { [Inject] private UserSession Session { get; set; } = null!;
@@ -956,7 +988,33 @@
 					}
 				});
 
-				
+			RuleFor(x => x.CertificateNumber)
+				.Custom((value, context) =>
+				{
+					if (string.IsNullOrWhiteSpace(value))
+					{
+						context.AddFailure("Nro. Certificado no puede estar vacío");
+						return;
+					}
+
+					if (!value.All(char.IsDigit))
+					{
+						context.AddFailure("Nro. Certificado solo debe contener números");
+						return;
+					}
+
+					// Validación de número negativo
+					if (value.StartsWith("-"))
+					{
+						context.AddFailure("Nro. Certificado no puede ser negativo");
+						return;
+					}
+
+					if (value.Length > 10)
+					{
+						context.AddFailure("Nro. Certificado no puede exceder los 10 caracteres");
+					}
+				});
 
 			RuleFor(x => x.Vin)
 				.NotNull().WithMessage("Campo requerido")
