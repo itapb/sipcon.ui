@@ -1,0 +1,336 @@
+﻿@inject HubEventsService hubEventsService
+@implements IDisposable
+@inject ILogger<PendingIntt> Logger
+@using Microsoft.Extensions.Logging
+@using System.Collections.Generic
+@using MudBlazor.Utilities
+@using Sipcon.WebApp.Client.Models
+
+<MudDataGrid @ref="DataGrid" T="Intt"
+             ServerData="@ServerReload"
+             Hover FixedHeader
+             Height="calc(100vh - 310px)">
+    <ToolBarContent>
+       <MudTextField T="string"
+              Value="searchString"
+              ValueChanged="@(s => OnSearch(s))"
+              Placeholder="buscar"
+              Adornment="Adornment.Start"
+              AdornmentIcon="@Icons.Material.Filled.Search"
+              IconSize="Size.Medium"
+              Class="mt-0"
+              Style="font-size: 14px; line-height: 0.8rem;"
+              Typo="Typo.caption" />
+        <MudSpacer />
+
+        <div id="scroll_section" class="mx-auto" style="max-width: 650px">
+            <MudExpansionPanels Outlined="false" Elevation="0">
+                <MudExpansionPanel @ref="_filtersPanel"
+                                   @bind-Expanded="@_openFilters"
+                                   HideIcon="true" ShowExpandIcon="false">
+                    @* <TitleContent>
+                        @if (!_openFilters)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.FilterAlt" Color="Color.Info" />
+                        }
+                    </TitleContent>
+                    <ChildContent>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4">
+                            <MudDatePicker @ref="_pickerFrom"
+                                           @bind-Date="_dateFrom"
+                                           Style="font-size: 14px;line-height: 0.8rem;min-width: 120px;"
+                                           Adornment="Adornment.Start"
+                                           AdornmentColor="Color.Info"
+                                           Placeholder="Fecha Desde"
+                                           Variant="Variant.Text"
+                                           PickerVariant="PickerVariant.Inline"
+                                           Margin="Margin.None"
+                                           DateFormat="dd/MM/yyyy"
+                                           AutoClose="true"
+                                           Clearable="true">
+                                <PickerActions>
+                                    <MudButton Class="mr-auto align-self-start" OnClick="@(() => _pickerFrom.ClearAsync())">Borrar</MudButton>
+                                    <MudButton OnClick="@(() => _pickerFrom.CloseAsync(false))">Cancelar</MudButton>
+                                </PickerActions>
+                            </MudDatePicker>
+
+                            <MudDatePicker @ref="_pickerTo"
+                                           @bind-Date="_dateTo"
+                                           Style="font-size: 14px;line-height: 0.8rem;min-width: 120px;"
+                                           Adornment="Adornment.Start"
+                                           AdornmentColor="Color.Info"
+                                           Placeholder="Fecha Hasta"
+                                           Variant="Variant.Text"
+                                           PickerVariant="PickerVariant.Inline"
+                                           Margin="Margin.None"
+                                           DateFormat="dd/MM/yyyy"
+                                           AutoClose="true"
+                                           Clearable="true">
+                                <PickerActions>
+                                    <MudButton Class="mr-auto align-self-start" OnClick="@(() => _pickerTo.ClearAsync())">Borrar</MudButton>
+                                    <MudButton OnClick="@(() => _pickerTo.CloseAsync(false))">Cancelar</MudButton>
+                                </PickerActions>
+                            </MudDatePicker>
+
+                            <MudIconButton Icon="@Icons.Material.Filled.Search"
+                                           Color="Color.Info"
+                                           OnClick="ClickRefresh" />
+
+                            <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                           Color="Color.Error"
+                                           OnClick="CloseFilterPanel" />
+                        </MudStack>
+                    </ChildContent> *@
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+        </div>
+
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                       Color="Color.Info"
+                       OnClick="ClickRefresh" />
+
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+            @foreach (var strmodulo in Modules!)
+            {
+                @if (strmodulo.ActionName == "GENERATE")
+                {
+                    <MudMenuItem Label="@strmodulo.ActionDisplay"
+                                 Icon="@(strmodulo.ActionDisplay.ToActionIcon())"
+                                 IconColor="@Color.Info"
+                                 OnClick="@(() => ClickMenu(strmodulo.ActionName))" />
+                }
+            
+           @*  @if (strmodulo.ActionName == "EXPORT")
+            {
+                <MudMenuItem Label="@strmodulo.ActionDisplay"
+                             Icon="@(strmodulo.ActionDisplay.ToActionIcon())"
+                             IconColor="@Color.Info"
+                             OnClick="@(() => ClickMenu(strmodulo.ActionName))" />
+            } *@
+            }
+        </MudMenu>
+    </ToolBarContent>
+
+    <Columns>
+    <TemplateColumn>
+        <HeaderTemplate>
+            <MudCheckBox @bind-Value="IsAllCheckBoxSelected"
+                         @bind-Value:after="AfterAsyncAllCheck" />
+        </HeaderTemplate>
+        <CellTemplate>
+            <MudCheckBox @bind-Value="@context.Item.IsSelected" />
+        </CellTemplate>
+    </TemplateColumn>
+
+    <PropertyColumn Property="x => x.CertificateNumber" Title="NRO CERTIFICADO" Groupable="false" />
+    <PropertyColumn Property="x => x.ClientRif" Title="RIF CLIENTE" Groupable="false" />
+    <PropertyColumn Property="x => x.FirstName" Title="NOMBRE" Groupable="false" />
+    <PropertyColumn Property="x => x.FirstLastName" Title="APELLIDO" Groupable="false" />
+    <PropertyColumn Property="x => x.Plate" Title="PLACA" Groupable="false" />
+    <PropertyColumn Property="x => x.Vin" Title="VIN" Groupable="false" />
+    <PropertyColumn Property="x => x.Municipality" Title="MUNICIPIO" Groupable="false" />
+    <TemplateColumn Title="FECHA FACTURA">
+            <CellTemplate>
+                @{
+                 var displayDate = context.Item.InvoiceDate;
+                 if (!string.IsNullOrEmpty(context.Item.InvoiceDate) &&
+                        context.Item.InvoiceDate.Length == 8 &&
+                        DateTime.TryParseExact(context.Item.InvoiceDate, "yyyyMMdd",
+                            System.Globalization.CultureInfo.InvariantCulture,
+                            System.Globalization.DateTimeStyles.None,
+                            out DateTime parsedDate))
+                    {
+                        displayDate = parsedDate.ToString("yyyy-MM-dd");
+                    }
+                }
+                <MudText Style="white-space: nowrap; min-width: 110px;">@displayDate</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+    <PropertyColumn Property="x => x.InvoiceNumber" Title="NRO FACTURA" Groupable="false" />
+</Columns>
+
+    <PagerContent>
+        <MudDataGridPager T="Intt"
+                          PageSizeOptions="new int[] { 100 }"
+                          InfoFormat="{first_item}-{last_item} de {all_items}"
+                          RowsPerPageString="Registros por Pagina" />
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+    private MudDataGrid<Intt> DataGrid = null!;
+    private string? searchString = string.Empty;
+    private MudExpansionPanel _filtersPanel = new();
+    private bool _openFilters = false;
+    private DateTime? _dateFrom;
+    private DateTime? _dateTo;
+    private MudDatePicker _pickerFrom = new();
+    private MudDatePicker _pickerTo = new();
+    private CancellationTokenSource? _cts;
+    
+    private List<Module>? Modules;
+
+    bool IsAllCheckBoxSelected = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=REPORTES-INTT&userId={Session.UserId}");
+        hubEventsService.OnSupplierChanged += ReloadGrid;
+    }
+    private async Task<GridData<Intt>> ServerReload(GridState<Intt> state)
+    {
+        _cts?.Cancel();
+        _cts = new CancellationTokenSource();
+        var token = _cts.Token;
+
+        IsAllCheckBoxSelected = false;
+
+        var offset = state.Page * state.PageSize;
+        string url = $"api/Intt/GetPendientes?userId={Session.UserId}&supplierId={Session.SupplierId}&rowFrom={offset}&filter={searchString}";
+
+        try
+        {
+            var response = await Http.GetAsync(url, token);
+
+            if (token.IsCancellationRequested)
+                return new GridData<Intt> { TotalItems = 0, Items = [] };
+
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Intt>>>(cancellationToken: token);
+                return new GridData<Intt>
+                {
+                    TotalItems = content!.total ?? 0,
+                    Items = content.data ?? []
+                };
+            }
+
+            var errorMessage = await response.Content.ReadAsStringAsync(token);
+            throw new Exception(errorMessage);
+        }
+        catch (OperationCanceledException)
+        {
+            return new GridData<Intt> { TotalItems = 0, Items = [] };
+        }
+    }
+
+    private async Task ClickRefresh()
+    {
+        await DataGrid!.ReloadServerData();
+        if (_openFilters)
+            await _filtersPanel.CollapseAsync();
+    }
+
+    private async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            searchString = text;
+            _cts?.Cancel();
+            _cts = new CancellationTokenSource();
+            await DataGrid!.ReloadServerData();
+        }
+    }
+
+    private async Task AfterAsyncAllCheck()
+    {
+        DataGrid?.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task CloseFilterPanel()
+    {
+        if (_openFilters)
+            await _filtersPanel.CollapseAsync();
+    }
+
+    private async Task ClickMenu(string? actionName)
+    {
+        if (actionName == "GENERATE")
+        {
+            // Tu lógica existente para GENERATE
+            var selectedItems = DataGrid?.FilteredItems
+                .Where(item => item.IsSelected)
+                .ToList();
+
+            if (selectedItems == null || !selectedItems.Any())
+            {
+                await DialogService.ShowDialog(
+                    "Debe seleccionar al menos un registro para generar",
+                    "Error",
+                    "OK",
+                    Color.Error,
+                    Icons.Material.Filled.Error);
+                return;
+            }
+
+            var actions = selectedItems.Select(item => new Models.Action
+            {
+                UserId = Session.UserId,
+                RecordId = item.Id,
+                ModuleId = Modules?.FirstOrDefault(m => m.ActionName == "GENERATE")?.Id,
+                actionName = "GENERATE",
+                ActionComment = "",
+                RelatedId = 0
+            }).ToList();
+
+            var response = await Http.PostAsync(
+                $"api/Intt/PostActions?userId={Session.UserId}&supplierId={Session.SupplierId}",
+                new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json"));
+
+            if (response.IsSuccessStatusCode)
+            {
+                await DialogService.ShowDialog(
+                    "Registros generados exitosamente",
+                    "Éxito",
+                    "OK",
+                    Color.Success,
+                    Icons.Material.Filled.CheckCircle);
+                await DataGrid!.ReloadServerData();
+            }
+            else
+            {
+                var err = await response.Content.ReadAsStringAsync();
+                await DialogService.ShowDialog(err, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+        }
+        // else if (actionName == "EXPORT")
+        // {
+        //     var result = await Http.GetAsync($"api/Intt/ExportPendientesExcel?userId={Session.UserId}&supplierId={Session.SupplierId}&filter={searchString}");
+    
+        //     if (result.IsSuccessStatusCode)
+        //     {
+        //         var fileContent = await result.Content.ReadAsByteArrayAsync();
+        //         var base64File = Convert.ToBase64String(fileContent);
+        //         var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+        //         await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, $"INTT_Pendientes_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+        //     }
+        //     else
+        //     {
+        //         var errorMessage = await result.Content.ReadAsStringAsync();
+        //         await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        //     }
+        // }
+    }
+    private async Task ReloadGrid()
+    {
+        await InvokeAsync(async () =>
+        {
+            if (DataGrid != null)
+                await DataGrid.ReloadServerData();
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+        hubEventsService.OnSupplierChanged -= ReloadGrid;
+    }
+}
