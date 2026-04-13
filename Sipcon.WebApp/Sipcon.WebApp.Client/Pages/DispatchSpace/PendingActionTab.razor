@@ -394,10 +394,20 @@
             {
                 var content = await response.Content.ReadFromJsonAsync<WebApiResponse<List<BackOrder>>>(
                     cancellationToken: token);
+
+                IEnumerable<BackOrder> data = content?.data ?? [];
+
+                if (state.SortDefinitions.FirstOrDefault() is SortDefinition<BackOrder> sortDefinition)
+                {
+                    data = data.OrderByDirection(
+                        sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending,
+                        GetSortKeySelector(sortDefinition.SortBy));
+                }
+
                 return new GridData<BackOrder>
                 {
                     TotalItems = content!.total ?? 0,
-                    Items = content.data ?? []
+                    Items = data
                 };
             }
 
@@ -410,7 +420,20 @@
             return new GridData<BackOrder> { TotalItems = 0, Items = [] };
         }
     }
-
+    private Func<BackOrder, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    {
+        nameof(BackOrder.SaleOrderNumber) => o => (object)(o.SaleOrderNumber ?? 0),
+        nameof(BackOrder.CreatedDate) => o => (object)(o.CreatedDate ?? DateTime.MinValue),
+        nameof(BackOrder.DealerName) => o => (object)(o.DealerName ?? ""),
+        nameof(BackOrder.PartInnerCode) => o => (object)(o.PartInnerCode ?? ""),
+        nameof(BackOrder.PartDescription) => o => (object)(o.PartDescription ?? ""),
+        nameof(BackOrder.Quantity) => o => (object)(o.Quantity ?? 0),
+        nameof(BackOrder.TypeName) => o => (object)(o.TypeName ?? ""),
+        nameof(BackOrder.Status) => o => (object)(o.Status ?? ""),
+        nameof(BackOrder.Stock) => o => (object)(o.Stock ?? 0),
+        nameof(BackOrder.Arrival) => o => (object)(o.Arrival ?? DateTime.MinValue),
+        _ => o => (object)(o.SaleOrderNumber ?? 0)
+    };
     private async Task AfterAsync()
     {
         // *** OPTIMIZACIÓN: actualizar flags sin ReloadServerData intermedio ***
