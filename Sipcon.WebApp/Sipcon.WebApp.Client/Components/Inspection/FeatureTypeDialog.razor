@@ -50,13 +50,12 @@
                                 </CardHeaderContent>
                             </MudCardHeader>
                             <MudCardContent Style="padding-top: 0px;">
-
-                                @if (!string.IsNullOrEmpty(_areaName))
-                                {
-                                    <MudTextField Value="@_areaName"
-                                                  Label="Área" Variant="Variant.Text" Margin="Margin.Dense"
-                                                  Disabled="true" ReadOnly="true" />
-                                }
+                                <MudTextField Typo="Typo.caption"
+                                              @bind-Value="_item.Name"
+                                              Label="Tipo de Caracteristica" MaxLength="100"
+                                              Variant="Variant.Text" Margin="Margin.Dense"
+                                              Disabled="@(!(_item.IsActive ?? false))"
+                                              For="@(() => _item.Name)" Immediate="true" />
                                 <MudSelect T="int?"
                                            Value="_item.FaseId"
                                            ValueChanged="@((int? v) => OnFaseChanged(v))"
@@ -68,14 +67,15 @@
                                     {
                                         <MudSelectItem T="int?" Value="@fase.Value">@fase.Text</MudSelectItem>
                                     }
-                                </MudSelect> 
-                                <MudTextField Typo="Typo.caption"
-                                              @bind-Value="_item.Name"
-                                              Label="Tipo de Caracteristica" MaxLength="100"
-                                              Variant="Variant.Text" Margin="Margin.Dense"
-                                              Disabled="@(!(_item.IsActive ?? false))"
-                                              For="@(() => _item.Name)" Immediate="true" />
+                                </MudSelect>
 
+                                @if (!string.IsNullOrEmpty(_areaName))
+                                {
+                                    <MudTextField Value="@_areaName"
+                                                  Label="Área" Variant="Variant.Text" Margin="Margin.Dense"
+                                                  Disabled="true" ReadOnly="true" />
+                                }
+                                
                             </MudCardContent>
                         </MudCard>
                     </MudItem>

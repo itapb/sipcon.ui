@@ -55,19 +55,6 @@
                                 </CardHeaderContent>
                             </MudCardHeader>
                             <MudCardContent Style="padding-top: 0px;">
-                                <MudSelect T="int?"
-                                           @bind-Value="_fase.AreaId"
-                                           Label="Área"
-                                           Variant="Variant.Text"
-                                           Margin="Margin.Dense"
-                                           Disabled="@(!(_fase.IsActive ?? false))"
-                                           For="@(() => _fase.AreaId)"
-                                           ToStringFunc="@(id => _areaOptions.FirstOrDefault(a => a.Value == id)?.Text ?? string.Empty)">
-                                    @foreach (var area in _areaOptions)
-                                    {
-                                        <MudSelectItem T="int?" Value="@area.Value">@area.Text</MudSelectItem>
-                                    }
-                                </MudSelect>
                                 <MudTextField Typo="Typo.caption"
                                               @bind-Value="_fase.Name"
                                               Label="Fase"
@@ -85,7 +72,20 @@
                                                  Min="1"
                                                  Disabled="@(!(_fase.IsActive ?? false))"
                                                  For="@(() => _fase.OrderBy)"
-                                                 Immediate="true" /> 
+                                                 Immediate="true" />
+                                <MudSelect T="int?"
+                                           @bind-Value="_fase.AreaId"
+                                           Label="Área"
+                                           Variant="Variant.Text"
+                                           Margin="Margin.Dense"
+                                           Disabled="@(!(_fase.IsActive ?? false))"
+                                           For="@(() => _fase.AreaId)"
+                                           ToStringFunc="@(id => _areaOptions.FirstOrDefault(a => a.Value == id)?.Text ?? string.Empty)">
+                                    @foreach (var area in _areaOptions)
+                                    {
+                                        <MudSelectItem T="int?" Value="@area.Value">@area.Text</MudSelectItem>
+                                    }
+                                </MudSelect>
                             </MudCardContent>
                         </MudCard>
                     </MudItem>
