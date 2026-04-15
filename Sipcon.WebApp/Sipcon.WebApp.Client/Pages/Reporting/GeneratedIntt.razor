@@ -1,0 +1,261 @@
+﻿@inject HubEventsService hubEventsService
+@implements IDisposable
+@using System.Collections.Generic
+@using MudBlazor.Utilities
+@using Sipcon.WebApp.Client.Models
+
+<MudDataGrid @ref="DataGrid" T="Intt"
+             ServerData="@ServerReload"
+             Hover FixedHeader
+             Groupable
+             Height="calc(100vh - 310px)">
+    <ToolBarContent>
+        <MudTextField T="string"
+                      Placeholder="Buscar"
+                      Adornment="Adornment.Start"
+                      ValueChanged="@(s => OnSearch(s))"
+                      Value="searchString"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      IconSize="Size.Medium" />
+        <MudSpacer />
+        
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                       Color="Color.Info"
+                       OnClick="ClickRefresh" />
+        @*  <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+            @foreach (var strmodulo in Modules!)
+            {
+                @if (strmodulo.ActionName == "EXPORT")
+                {
+                    <MudMenuItem Label="@strmodulo.ActionDisplay"
+                                 Icon="@(strmodulo.ActionDisplay.ToActionIcon())"
+                                 IconColor="@Color.Info"
+                                 OnClick="@(() => ClickMenu(strmodulo.ActionName))" />
+                }
+            }
+        </MudMenu>  *@
+    </ToolBarContent>
+
+    <Columns>
+        <PropertyColumn Property="x => x.NumberTxt"
+                        Title="NRO TXT"
+                        Groupable="@(_numberTxtGrouping)"
+                        @bind-Grouping="_numberTxtGrouping"
+                        GroupBy="_groupBy1"
+                        @bind-GroupByOrder="_numberTxtOrder"
+                        @bind-GroupExpanded="_numberTxtExpanded">
+            <GroupTemplate>
+                <div class="d-flex align-center">
+                    <MudIcon Icon="@Icons.Material.Filled.TextSnippet"
+                             Color="Color.Dark"
+                             Size="Size.Small"
+                             Class="mr-2" />
+                    <span style="font-weight:bold">@context.Grouping.Key</span>
+                    <MudChip Variant="Variant.Outlined"
+                             Color="Color.Dark"
+                             Size="Size.Small"
+                             Class="ml-2">
+                        @context.Grouping.Count() Registros
+                    </MudChip>
+                    <MudIconButton Icon="@Icons.Material.Filled.Download"
+                                   OnClick="@(() => ClickExportTxt(Convert.ToString(@context.Grouping.Key)))"
+                                   Title="Descargar TXT" />
+                </div>
+            </GroupTemplate>
+        </PropertyColumn>
+        
+        <PropertyColumn Property="x => x.CertificateNumber"
+                        Title="NRO CERTIFICADO"
+                        Groupable="@(_certificateGrouping)"
+                        @bind-Grouping="_certificateGrouping"
+                        GroupBy="_groupBy1"
+                        @bind-GroupByOrder="_certificateOrder"
+                        @bind-GroupExpanded="_certificateExpanded">
+            <GroupTemplate>
+                <div class="d-flex align-center">
+                    <MudIcon Icon="@Icons.Material.Filled.Description"
+                             Color="Color.Dark"
+                             Size="Size.Small"
+                             Class="mr-2" />
+                    <span style="font-weight:bold">@context.Grouping.Key</span>
+                    <MudChip Variant="Variant.Outlined"
+                             Color="Color.Dark"
+                             Size="Size.Small"
+                             Class="ml-2">
+                        @context.Grouping.Count() Registros
+                    </MudChip>
+                </div>
+            </GroupTemplate>
+        </PropertyColumn>
+        
+        <PropertyColumn Property="x => x.ClientRif" Title="RIF CLIENTE" Groupable="false" />
+        <PropertyColumn Property="x => x.FirstName" Title="NOMBRE" Groupable="false" />
+        <PropertyColumn Property="x => x.FirstLastName" Title="APELLIDO" Groupable="false" />
+        <PropertyColumn Property="x => x.Plate" Title="PLACA" Groupable="false" />
+        <PropertyColumn Property="x => x.Vin" Title="VIN" Groupable="false" />
+        <PropertyColumn Property="x => x.Municipality" Title="MUNICIPIO" Groupable="false" />
+        <TemplateColumn Title="FECHA FACTURA">
+            <CellTemplate>
+                @{
+                    var displayDate = context.Item.InvoiceDate;
+                    if (!string.IsNullOrEmpty(context.Item.InvoiceDate) &&
+                           context.Item.InvoiceDate.Length == 8 &&
+                           DateTime.TryParseExact(context.Item.InvoiceDate, "yyyyMMdd",
+                               System.Globalization.CultureInfo.InvariantCulture,
+                               System.Globalization.DateTimeStyles.None,
+                               out DateTime parsedDate))
+                    {
+                        displayDate = parsedDate.ToString("yyyy-MM-dd");
+                    }
+                }
+                <MudText Style="white-space: nowrap; min-width: 110px;">@displayDate</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.InvoiceNumber" Title="NRO FACTURA" Groupable="false" />
+    </Columns>
+
+    <PagerContent>
+        <MudDataGridPager T="Intt"
+                          PageSizeOptions="new int[] { 100 }"
+                          InfoFormat="{first_item}-{last_item} de {all_items}"
+                          RowsPerPageString="Registros por Pagina" />
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+
+    private MudDataGrid<Intt> DataGrid = null!;
+    private string? searchString = string.Empty;
+    private List<Module>? Modules;
+    private CancellationTokenSource? _cts;
+    private Func<Intt, object>? _groupBy1 = x => int.TryParse(x.NumberTxt, out var num) ? num : 0;
+    
+    private bool _numberTxtGrouping = true;
+    private int _numberTxtOrder = 1;
+    private bool _numberTxtExpanded = false;
+    
+    private bool _certificateGrouping = false;
+    private int _certificateOrder;
+    private bool _certificateExpanded = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=REPORTES-INTT&userId={Session.UserId}");
+        hubEventsService.OnSupplierChanged += ReloadGrid;
+    }
+    
+   
+    
+    private async Task<GridData<Intt>> ServerReload(GridState<Intt> state)
+    {
+        _cts?.Cancel();
+        _cts = new CancellationTokenSource();
+        var token = _cts.Token;
+
+        var offset = state.Page * state.PageSize;
+        string url = $"api/Intt/GetGenerados?userId={Session.UserId}&supplierId={Session.SupplierId}&rowFrom={offset}&filter={searchString}";
+
+        try
+        {
+            var response = await Http.GetAsync(url, token);
+
+            if (token.IsCancellationRequested)
+                return new GridData<Intt> { TotalItems = 0, Items = [] };
+
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Intt>>>(cancellationToken: token);
+            
+                return new GridData<Intt>
+                {
+                    TotalItems = content!.total ?? 0,
+                    Items = content.data ?? []
+                };
+            }
+
+            var errorMessage = await response.Content.ReadAsStringAsync(token);
+            throw new Exception(errorMessage);
+        }
+        catch (OperationCanceledException)
+        {
+            return new GridData<Intt> { TotalItems = 0, Items = [] };
+        }
+    }
+
+    private async Task ClickRefresh()
+    {
+        await DataGrid!.ReloadServerData();
+    }
+
+    private async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            searchString = text;
+            _cts?.Cancel();
+            _cts = new CancellationTokenSource();
+            await DataGrid!.ReloadServerData();
+        }
+    }
+
+    private async Task ClickExportTxt(string numeroTxt)
+    {
+       
+        var result = await Http.GetAsync($"api/Intt/ExportTXT?userId={Session.UserId}&supplierId={Session.SupplierId}&controlId={numeroTxt}");
+    
+        if (result.IsSuccessStatusCode)
+        {
+            var fileContent = await result.Content.ReadAsByteArrayAsync();
+            var base64File = Convert.ToBase64String(fileContent);
+            var fileUrl = $"data:text/plain;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, $"{numeroTxt.PadLeft(10, '0')}.txt");
+        }
+        else
+        {
+            var errorMessage = await result.Content.ReadAsStringAsync();
+            await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+    }
+
+    // private async Task ClickMenu(string? actionName)
+    // {
+
+    // if (actionName == "EXPORT")
+    // {
+    //     var result = await Http.GetAsync($"api/Intt/ExportGeneradosExcel?userId={Session.UserId}&supplierId={Session.SupplierId}&filter={searchString}");
+        
+    //     if (result.IsSuccessStatusCode)
+    //     {
+    //         var fileContent = await result.Content.ReadAsByteArrayAsync();
+    //         var base64File = Convert.ToBase64String(fileContent);
+    //         var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+    //         await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, $"INTT_Generados_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+    //     }
+    //     else
+    //     {
+    //         var errorMessage = await result.Content.ReadAsStringAsync();
+    //         await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+    //     }
+    // }
+
+    // }
+
+    private async Task ReloadGrid()
+    {
+        if (DataGrid != null)
+        {
+            await DataGrid.ReloadServerData();
+        }
+    }
+
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+        hubEventsService.OnSupplierChanged -= ReloadGrid;
+    }
+}
