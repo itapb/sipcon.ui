@@ -1,0 +1,258 @@
+@using System.ComponentModel.DataAnnotations
+@using FluentValidation
+
+@inject IAreaService AreaService
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+
+<MudForm Model="@_area" @ref="@_form" Validation="@(_areaValidator.ValidateValue)" ValidationDelay="0">
+    <MudDialog Class="blur dialog-background" ActionsClass="dialog-background-surface">
+        <DialogContent>
+             
+            <MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
+                <MudCard>
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudGrid Spacing="0" Justify="Justify.Center">
+                                <MudItem xs="12" sm="4">
+                                    <div class="d-flex justify-left">
+                                        <MudSwitch @bind-Value="_area.IsActive"
+                                                   Label="Activo"
+                                                   LabelPlacement="Placement.End"
+                                                   Color="Color.Success"
+                                                   Disabled="@(ActionsModal == ActionsEnum.Create)" />
+                                    </div>
+                                </MudItem>
+                                <MudItem xs="12" sm="2"></MudItem>
+                                <MudItem xs="12" sm="6">
+                                    <div class="d-flex justify-right" style="justify-content: end;">
+                                        <MudButton OnClick="Cancel">Cancelar</MudButton>
+                                        <MudFab StartIcon="@Icons.Material.Filled.Save"
+                                                Label="Aceptar"
+                                                OnClick="@(async () => await OnValidSubmit())"
+                                                Color="Color.Info"
+                                                Size="Size.Small" />
+                                    </div>
+                                </MudItem>
+                            </MudGrid>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                </MudCard>
+            </MudContainer>
+             
+            <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
+                <MudGrid Spacing="1" Justify="Justify.Center">
+                    <MudItem xs="12" sm="12">
+                        <MudCard>
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudStack Row="true">
+                                        <MudIcon Icon="@Icons.Material.Filled.GridView"
+                                                 Color="Color.Default"
+                                                 Style="font-size: 2rem;" />
+                                        <MudText Typo="Typo.h6">Área</MudText>
+                                    </MudStack>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudCardContent Style="padding-top: 0px;">
+                                <MudTextField Typo="Typo.caption"
+                                              @bind-Value="_area.Name"
+                                              Label="Área"
+                                              MaxLength="100"
+                                              Variant="Variant.Text"
+                                              Margin="Margin.Dense"
+                                              Disabled="@(!(_area.IsActive ?? false))"
+                                              For="@(() => _area.Name)"
+                                              Immediate="true" />
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                </MudGrid>
+            </MudContainer>
+             
+            <MudDialog @bind-Visible="_nestedModalVisible">
+                <TitleContent>
+                    <MudStack Row="true">
+                        <MudIcon Icon="@Icons.Material.Filled.GridView"
+                                 Color="@(_successModal ? Color.Default : Color.Error)"
+                                 Style="font-size: 2rem;" />
+                        <MudText Typo="Typo.h6">Área</MudText>
+                    </MudStack>
+                </TitleContent>
+                <DialogContent>
+                    <MudText Class="nested"><p>@_errorModalMessage</p></MudText>
+                </DialogContent>
+                <DialogActions>
+                    <MudButton Color="Color.Info" OnClick="CloseNestedModal"
+                               Variant="Variant.Filled" Class="px-10">Ok</MudButton>
+                </DialogActions>
+            </MudDialog>
+
+        </DialogContent>
+    </MudDialog>
+</MudForm>
+
+<style>
+    .blur { backdrop-filter: blur(10px); }
+    .dialog-background { background-color: transparent; }
+    .dialog-background-title {
+        background: rgb(from var(--mud-palette-info-lighten) r g b / 50%);
+        color: var(--mud-palette-white);
+    }
+    .dialog-background-surface {
+        background: rgb(from var(--mud-palette-surface) r g b / 75%);
+    }
+</style>
+
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public int         IdArea      { get; set; }
+    [Parameter] public ActionsEnum ActionsModal { get; set; }
+
+    private MudForm?  _form;
+    private Area      _area             = new();
+    private string    _errorModalMessage = string.Empty;
+    private bool      _nestedModalVisible;
+    private bool      _successModal;
+
+    private readonly AreaValidator _areaValidator = new();
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (ActionsModal == ActionsEnum.Create)
+        {
+            // Nuevo registro — Id = 0 para que el SP haga INSERT
+            _area = new Area
+            {
+                Id         = 0,
+                IsActive   = true,
+                SupplierId = Session.SupplierId,
+                DealerId   = Session.DealerId,
+                UserId     = Session.UserId
+            };
+            await Task.Delay(50);
+            StateHasChanged();
+        }
+        else
+        {
+            await GetArea();
+        }
+    }
+
+    // ── Cargar área existente ─────────────────────────────────────────────────
+
+    private async Task GetArea()
+    {
+        var serviceResponse = await AreaService.GetArea(IdArea, Session.UserId);
+        if (serviceResponse.Processed)
+        {
+            _area = serviceResponse.Data ?? new Area();
+            await Task.Delay(50);
+            StateHasChanged();
+        }
+        else
+        {
+            _area              = new Area();
+            _errorModalMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
+            OpenNested();
+        }
+    }
+
+    // ── Guardar ───────────────────────────────────────────────────────────────
+    // Replica exactamente el patrón de ModelDialog.OnValidSubmit:
+    //   - Siempre llama SaveArea (el SP decide INSERT/UPDATE por el Id)
+    //   - Si Create y OK → cambia a Edit y recarga el registro guardado
+    //   - Muestra nested con resultado
+
+    private async Task OnValidSubmit()
+    {
+        await _form!.Validate();
+        if (!_form.IsValid) return;
+
+        _errorModalMessage = string.Empty;
+
+        // Aseguramos que el contexto del usuario esté en el modelo
+        _area.SupplierId = Session.SupplierId;
+        _area.DealerId   = Session.DealerId;
+        _area.UserId     = Session.UserId;
+
+        var serviceResponse = await AreaService.SaveArea(_area, Session.UserId);
+
+        if (serviceResponse.Processed)
+        {
+            if (ActionsModal == ActionsEnum.Create)
+            {
+                // Cambiar a modo Edit y recargar con el Id generado
+                ActionsModal = ActionsEnum.Edit;
+                var result   = serviceResponse.Data ?? new ActionResult();
+                if (result is not null)
+                {
+                    IdArea = result.LastId;
+                    await GetArea();
+                }
+            }
+            _errorModalMessage = MessageEnum.SaveOK.GetStringValue();
+            _successModal      = true;
+        }
+        else
+        {
+            _successModal      = false;
+            _errorModalMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue();
+        }
+
+        OpenNested();
+        StateHasChanged();
+    }
+
+    // ── Cancelar / Cerrar ─────────────────────────────────────────────────────
+
+    private void Cancel()
+    {
+        if (_successModal)
+            MudDialog.Close(DialogResult.Ok(true));
+        else
+            MudDialog.Cancel();
+    }
+
+    private async Task CloseNestedModal()
+    {
+        _nestedModalVisible = false;
+        StateHasChanged();
+        await Task.Delay(50);
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private void OpenNested()
+    {
+        _nestedModalVisible = true;
+        StateHasChanged();
+    }
+
+    // ── Validador FluentValidation ────────────────────────────────────────────
+
+    public class AreaValidator : AbstractValidator<Area>
+    {
+        public AreaValidator()
+        {
+            RuleFor(x => x.Name)
+                .NotEmpty().WithMessage("El nombre es obligatorio.")
+                .MaximumLength(100).WithMessage("El nombre no puede superar los 100 caracteres.");
+        }
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue =>
+            async (model, propertyName) =>
+            {
+                var result = await ValidateAsync(
+                    ValidationContext<Area>.CreateWithOptions(
+                        (Area)model, x => x.IncludeProperties(propertyName)));
+                return result.IsValid
+                    ? Array.Empty<string>()
+                    : result.Errors.Select(e => e.ErrorMessage);
+            };
+    }
+}

@@ -8,7 +8,10 @@ namespace Sipcon.WebApp.Client.Models
     {
 
         public int? Value { get; set; } 
-        public string Text { get; set; } 
+        public string Text { get; set; }
+        public int? ParentId { get; set; } = null;
+        public string ParentText { get; set; } = string.Empty;
+        public string ExtraText { get; set; } = string.Empty;
 
         public SelectOption(int val, string option )
         {

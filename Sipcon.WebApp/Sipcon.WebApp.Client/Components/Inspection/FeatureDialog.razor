@@ -1,0 +1,305 @@
+@using System.ComponentModel.DataAnnotations
+@using FluentValidation
+
+@inject IFeatureService FeatureService
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+
+<MudForm Model="@_item" @ref="@_form" Validation="@(_validator.ValidateValue)" ValidationDelay="0">
+    <MudDialog Class="blur dialog-background" ActionsClass="dialog-background-surface">
+        <DialogContent>
+
+            <MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
+                <MudCard>
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudGrid Spacing="0" Justify="Justify.Center">
+                                <MudItem xs="12" sm="4">
+                                    <div class="d-flex justify-left">
+                                        <MudSwitch @bind-Value="_item.IsActive"
+                                                   Label="Activo" LabelPlacement="Placement.End"
+                                                   Color="Color.Success"
+                                                   Disabled="@(ActionsModal == ActionsEnum.Create)" />
+                                    </div>
+                                </MudItem>
+                                <MudItem xs="12" sm="2"></MudItem>
+                                <MudItem xs="12" sm="6">
+                                    <div class="d-flex justify-right" style="justify-content: end;">
+                                        <MudButton OnClick="Cancel">Cancelar</MudButton>
+                                        <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Aceptar"
+                                                OnClick="@(async () => await OnValidSubmit())"
+                                                Color="Color.Info" Size="Size.Small" />
+                                    </div>
+                                </MudItem>
+                            </MudGrid>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                </MudCard>
+            </MudContainer>
+
+            <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
+                <MudGrid Spacing="1" Justify="Justify.Center">
+                    <MudItem xs="12">
+                        <MudCard>
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudStack Row="true">
+                                        <MudIcon Icon="@Icons.Material.Filled.Checklist" Color="Color.Default" Style="font-size: 2rem;" />
+                                        <MudText Typo="Typo.h6">Característica</MudText>
+                                    </MudStack>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudCardContent Style="padding-top: 0px;">
+                                <MudSelect T="int?"
+                                           @bind-Value="_item.ModelId"
+                                           Label="Modelo" Variant="Variant.Text" Margin="Margin.Dense"
+                                           Disabled="@(!(_item.IsActive ?? false))"
+                                           For="@(() => _item.ModelId)"
+                                           ToStringFunc="@(id => _modelOptions.FirstOrDefault(m => m.Value == id)?.Text ?? string.Empty)">
+                                    @foreach (var model in _modelOptions)
+                                    {
+                                        <MudSelectItem T="int?" Value="@model.Value">@model.Text</MudSelectItem>
+                                    }
+                                </MudSelect>
+                                @if (!string.IsNullOrEmpty(_areaName))
+                                {
+                                    <MudTextField Value="@_areaName"
+                                                  Label="Área" Variant="Variant.Text" Margin="Margin.Dense"
+                                                  Disabled="true" ReadOnly="true" />
+                                }
+
+                                @if (!string.IsNullOrEmpty(_faseName))
+                                {
+                                    <MudTextField Value="@_faseName"
+                                                  Label="Fase" Variant="Variant.Text" Margin="Margin.Dense"
+                                                  Disabled="true" ReadOnly="true" />
+                                }
+                                <MudSelect T="int?"
+                                           Value="_item.FeatureTypeId"
+                                           ValueChanged="@((int? v) => OnFeatureTypeChanged(v))"
+                                           Label="Tipo de Característica" Variant="Variant.Text" Margin="Margin.Dense"
+                                           Disabled="@(!(_item.IsActive ?? false))"
+                                           For="@(() => _item.FeatureTypeId)"
+                                           ToStringFunc="@(id => _featureTypeOptions.FirstOrDefault(f => f.Value == id)?.Text ?? string.Empty)">
+                                    @foreach (var ft in _featureTypeOptions)
+                                    {
+                                        <MudSelectItem T="int?" Value="@ft.Value">@ft.Text</MudSelectItem>
+                                    }
+                                </MudSelect>
+                                <MudTextField Typo="Typo.caption"
+                                              @bind-Value="_item.Name"
+                                              Label="Característica" MaxLength="100"
+                                              Variant="Variant.Text" Margin="Margin.Dense"
+                                              Disabled="@(!(_item.IsActive ?? false))"
+                                              For="@(() => _item.Name)" Immediate="true" />
+
+                                <div class="mt-2 mb-1">
+                                    <MudText Typo="Typo.caption" Style="color:var(--mud-palette-text-secondary)">Valor por defecto</MudText>
+                                    <div style="margin-top:4px;">
+                                        <MudChip T="string"
+                                                 Text="@DefaultValueLabel(_item.DefaultValue)"
+                                                 Color="@DefaultValueColor(_item.DefaultValue)"
+                                                 Variant="Variant.Filled" Size="Size.Small"
+                                                 Disabled="@(!(_item.IsActive ?? false))"
+                                                 OnClick="CycleDefaultValue"
+                                                 Style="cursor:pointer; font-weight:500; min-width:80px;" />
+                                    </div>
+                                </div>
+
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                </MudGrid>
+            </MudContainer>
+
+            <MudDialog @bind-Visible="_nestedModalVisible">
+                <TitleContent>
+                    <MudStack Row="true">
+                        <MudIcon Icon="@Icons.Material.Filled.Checklist"
+                                 Color="@(_successModal ? Color.Default : Color.Error)"
+                                 Style="font-size: 2rem;" />
+                        <MudText Typo="Typo.h6">Característica</MudText>
+                    </MudStack>
+                </TitleContent>
+                <DialogContent>
+                    <MudText Class="nested"><p>@_errorModalMessage</p></MudText>
+                </DialogContent>
+                <DialogActions>
+                    <MudButton Color="Color.Info" OnClick="CloseNestedModal" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
+                </DialogActions>
+            </MudDialog>
+
+        </DialogContent>
+    </MudDialog>
+</MudForm>
+
+<style>
+    .blur { backdrop-filter: blur(10px); }
+    .dialog-background { background-color: transparent; }
+    .dialog-background-title { background: rgb(from var(--mud-palette-info-lighten) r g b / 50%); color: var(--mud-palette-white); }
+    .dialog-background-surface { background: rgb(from var(--mud-palette-surface) r g b / 75%); }
+</style>
+
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public int         IdFeature    { get; set; }
+    [Parameter] public ActionsEnum ActionsModal { get; set; }
+
+    private MudForm? _form;
+    private Feature  _item              = new();
+    private string   _errorModalMessage = string.Empty;
+    private bool     _nestedModalVisible;
+    private bool     _successModal;
+
+    // private IEnumerable<SelectOption> _areaOptions        = new List<SelectOption>();
+    // private IEnumerable<SelectOption> _faseOptions        = new List<SelectOption>();
+    private IEnumerable<SelectOption> _featureTypeOptions = new List<SelectOption>();
+    private IEnumerable<SelectOption> _modelOptions       = new List<SelectOption>();
+
+    private readonly FeatureValidator _validator = new();
+
+    // ── DefaultValue helpers ──────────────────────────────────────────────────
+
+    private static string DefaultValueLabel(bool? v) => v switch { true => "Sí", false => "No", _ => "Ninguno" };
+    private static Color  DefaultValueColor(bool? v) => v switch { true => Color.Success, false => Color.Error, _ => Color.Default };
+
+    private void CycleDefaultValue()
+    {
+        _item.DefaultValue = _item.DefaultValue switch { null => true, true => false, false => null };
+        StateHasChanged();
+    }
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+    // Quita estas líneas:
+    // private IEnumerable<SelectOption> _areaOptions        = new List<SelectOption>();
+    // private IEnumerable<SelectOption> _faseOptions        = new List<SelectOption>();
+
+    // Agrega:
+    private string _faseName = string.Empty;
+    private string _areaName = string.Empty;
+
+    // Reemplaza OnInitializedAsync:
+    protected override async Task OnInitializedAsync()
+    {
+        _featureTypeOptions = await ModuleActionsService.GetFeatureTypeOption(
+            Session.UserId, Session.SupplierId, Session.DealerId);
+        _modelOptions = await ModuleActionsService.GetModelOption(Session.SupplierId, Session.UserId);
+
+        if (ActionsModal == ActionsEnum.Create)
+        {
+            _item = new Feature { Id = 0, IsActive = true, SupplierId = Session.SupplierId, DealerId = Session.DealerId, UserId = Session.UserId };
+            await Task.Delay(50);
+            StateHasChanged();
+        }
+        else
+        {
+            await GetItem();
+        }
+    }
+
+    // Reemplaza OnAreaChanged y OnFaseChanged por:
+    private void OnFeatureTypeChanged(int? featureTypeId)
+    {
+        _item.FeatureTypeId = featureTypeId;
+        _faseName = string.Empty;
+        _areaName = string.Empty;
+
+        if (featureTypeId.HasValue)
+        {
+            var opt = _featureTypeOptions.FirstOrDefault(f => f.Value == featureTypeId);
+            if (opt is not null)
+            {
+                _faseName = opt.ParentText;
+                _areaName = opt.ExtraText;
+            }
+        }
+        StateHasChanged();
+    }
+
+    // Reemplaza GetItem:
+    private async Task GetItem()
+    {
+        var serviceResponse = await FeatureService.GetFeature(IdFeature, Session.UserId);
+        if (serviceResponse.Processed)
+        {
+            _item = serviceResponse.Data ?? new Feature();
+            _faseName = _item.FaseName ?? string.Empty;
+            _areaName = _item.AreaName ?? string.Empty;
+            await Task.Delay(50);
+            StateHasChanged();
+        }
+        else
+        {
+            _item = new Feature();
+            _errorModalMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
+            OpenNested();
+        }
+    }
+
+    private async Task OnValidSubmit()
+    {
+        await _form!.Validate();
+        if (!_form.IsValid) return;
+
+        _errorModalMessage  = string.Empty;
+        _item.SupplierId    = Session.SupplierId;
+        _item.DealerId      = Session.DealerId;
+        _item.UserId        = Session.UserId;
+
+        var serviceResponse = await FeatureService.SaveFeature(_item, Session.UserId);
+        if (serviceResponse.Processed)
+        {
+            if (ActionsModal == ActionsEnum.Create)
+            {
+                ActionsModal = ActionsEnum.Edit;
+                var result = serviceResponse.Data ?? new ActionResult();
+                if (result is not null) { IdFeature = result.LastId; await GetItem(); }
+            }
+            _errorModalMessage = MessageEnum.SaveOK.GetStringValue();
+            _successModal      = true;
+        }
+        else
+        {
+            _successModal      = false;
+            _errorModalMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue();
+        }
+        OpenNested();
+        StateHasChanged();
+    }
+
+    private void Cancel()
+    {
+        if (_successModal) MudDialog.Close(DialogResult.Ok(true));
+        else MudDialog.Cancel();
+    }
+
+    private async Task CloseNestedModal()
+    {
+        _nestedModalVisible = false;
+        StateHasChanged();
+        await Task.Delay(50);
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private void OpenNested() { _nestedModalVisible = true; StateHasChanged(); }
+
+    public class FeatureValidator : AbstractValidator<Feature>
+    {
+        public FeatureValidator()
+        {
+            RuleFor(x => x.Name).NotEmpty().WithMessage("El nombre es obligatorio.").MaximumLength(100);
+            RuleFor(x => x.FeatureTypeId).NotNull().GreaterThan(0).WithMessage("Debe seleccionar un tipo de característica.");
+            RuleFor(x => x.ModelId).NotNull().GreaterThan(0).WithMessage("Debe seleccionar un modelo.");
+        }
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue =>
+            async (model, propertyName) =>
+            {
+                var result = await ValidateAsync(ValidationContext<Feature>.CreateWithOptions((Feature)model, x => x.IncludeProperties(propertyName)));
+                return result.IsValid ? Array.Empty<string>() : result.Errors.Select(e => e.ErrorMessage);
+            };
+    }
+}
