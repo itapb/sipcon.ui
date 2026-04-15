@@ -50,42 +50,6 @@
                                 </CardHeaderContent>
                             </MudCardHeader>
                             <MudCardContent Style="padding-top: 0px;">
-                                <MudSelect T="int?"
-                                           @bind-Value="_item.ModelId"
-                                           Label="Modelo" Variant="Variant.Text" Margin="Margin.Dense"
-                                           Disabled="@(!(_item.IsActive ?? false))"
-                                           For="@(() => _item.ModelId)"
-                                           ToStringFunc="@(id => _modelOptions.FirstOrDefault(m => m.Value == id)?.Text ?? string.Empty)">
-                                    @foreach (var model in _modelOptions)
-                                    {
-                                        <MudSelectItem T="int?" Value="@model.Value">@model.Text</MudSelectItem>
-                                    }
-                                </MudSelect>
-                                @if (!string.IsNullOrEmpty(_areaName))
-                                {
-                                    <MudTextField Value="@_areaName"
-                                                  Label="Área" Variant="Variant.Text" Margin="Margin.Dense"
-                                                  Disabled="true" ReadOnly="true" />
-                                }
-
-                                @if (!string.IsNullOrEmpty(_faseName))
-                                {
-                                    <MudTextField Value="@_faseName"
-                                                  Label="Fase" Variant="Variant.Text" Margin="Margin.Dense"
-                                                  Disabled="true" ReadOnly="true" />
-                                }
-                                <MudSelect T="int?"
-                                           Value="_item.FeatureTypeId"
-                                           ValueChanged="@((int? v) => OnFeatureTypeChanged(v))"
-                                           Label="Tipo de Característica" Variant="Variant.Text" Margin="Margin.Dense"
-                                           Disabled="@(!(_item.IsActive ?? false))"
-                                           For="@(() => _item.FeatureTypeId)"
-                                           ToStringFunc="@(id => _featureTypeOptions.FirstOrDefault(f => f.Value == id)?.Text ?? string.Empty)">
-                                    @foreach (var ft in _featureTypeOptions)
-                                    {
-                                        <MudSelectItem T="int?" Value="@ft.Value">@ft.Text</MudSelectItem>
-                                    }
-                                </MudSelect>
                                 <MudTextField Typo="Typo.caption"
                                               @bind-Value="_item.Name"
                                               Label="Característica" MaxLength="100"
@@ -105,7 +69,41 @@
                                                  Style="cursor:pointer; font-weight:500; min-width:80px;" />
                                     </div>
                                 </div>
-
+                                <MudSelect T="int?"
+                                           @bind-Value="_item.ModelId"
+                                           Label="Modelo" Variant="Variant.Text" Margin="Margin.Dense"
+                                           Disabled="@(!(_item.IsActive ?? false))"
+                                           For="@(() => _item.ModelId)"
+                                           ToStringFunc="@(id => _modelOptions.FirstOrDefault(m => m.Value == id)?.Text ?? string.Empty)">
+                                    @foreach (var model in _modelOptions)
+                                    {
+                                        <MudSelectItem T="int?" Value="@model.Value">@model.Text</MudSelectItem>
+                                    }
+                                </MudSelect>
+                                <MudSelect T="int?"
+                                           Value="_item.FeatureTypeId"
+                                           ValueChanged="@((int? v) => OnFeatureTypeChanged(v))"
+                                           Label="Tipo de Característica" Variant="Variant.Text" Margin="Margin.Dense"
+                                           Disabled="@(!(_item.IsActive ?? false))"
+                                           For="@(() => _item.FeatureTypeId)"
+                                           ToStringFunc="@(id => _featureTypeOptions.FirstOrDefault(f => f.Value == id)?.Text ?? string.Empty)">
+                                    @foreach (var ft in _featureTypeOptions)
+                                    {
+                                        <MudSelectItem T="int?" Value="@ft.Value">@ft.Text</MudSelectItem>
+                                    }
+                                </MudSelect>
+                                @if (!string.IsNullOrEmpty(_faseName))
+                                {
+                                    <MudTextField Value="@_faseName"
+                                                  Label="Fase" Variant="Variant.Text" Margin="Margin.Dense"
+                                                  Disabled="true" ReadOnly="true" />
+                                }
+                                @if (!string.IsNullOrEmpty(_areaName))
+                                {
+                                    <MudTextField Value="@_areaName"
+                                                  Label="Área" Variant="Variant.Text" Margin="Margin.Dense"
+                                                  Disabled="true" ReadOnly="true" />
+                                }
                             </MudCardContent>
                         </MudCard>
                     </MudItem>
