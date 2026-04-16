@@ -60,7 +60,9 @@
                                                 <MudCheckBox @bind-Value="SelectedContact.IsCustomer" Label="Cliente" @bind-Value:after="AfterAsyncCustomer" Required="!IsCheckboxValid" RequiredError="" />
                                                 <MudCheckBox @bind-Value="SelectedContact.IsProvider" Label="Proveedor" @bind-Value:after="AfterAsyncProvider" Required="!IsCheckboxValid" RequiredError="" />
                                                 <MudCheckBox @bind-Value="SelectedContact.IsUser" Label="Usuario" @bind-Value:after="AfterAsyncUser" Required="!IsCheckboxValid" RequiredError="" />
-                                                    
+                                                <MudCheckBox @bind-Value="SelectedContact.IsTransporter" Label="Transportista"
+                                                                     @bind-Value:after="AfterAsyncTransporter"
+                                                                     Disabled="@(!SelectedContact.IsActive ?? false)" />
                                             }
                                                     
                                                         
@@ -390,6 +392,7 @@ else
                 if (SelectedContact.IsDealer ?? false) await AfterAsyncDealer();
                 if (SelectedContact.IsCustomer ?? false) await AfterAsyncCustomer();
                 if (SelectedContact.IsUser ?? false) await AfterAsyncUser();
+                if (SelectedContact.IsTransporter ?? false) await AfterAsyncTransporter(); 
                 await AfterAsync();
                 FirstClickEditContact = false;
                 CitySelected = Cities!.FirstOrDefault(c => c.Id == SelectedContact.CityId);
