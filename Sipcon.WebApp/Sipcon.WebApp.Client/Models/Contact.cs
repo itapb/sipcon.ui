@@ -27,7 +27,8 @@ namespace Sipcon.WebApp.Client.Models
         public bool? IsCustomer { get; set; }
       
         public bool? IsSupplier { get; set; }
-        
+        public bool? IsTransporter { get; set; }
+
         public bool? IsUser { get; set; }
      
         public bool? IsDealer { get; set; }

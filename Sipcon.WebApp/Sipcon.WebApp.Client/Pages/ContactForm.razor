@@ -31,6 +31,9 @@
                                         case "CONTACTOS-CONTACTOS":
                                                 <MudCheckBox @bind-Value="SelectedContact.IsCustomer" Label="Cliente" @bind-Value:after="AfterAsyncCustomer" Required="!IsCheckboxValid"  RequiredError="" Disabled ="@(!SelectedContact.IsActive ?? false)"/>
                                                 <MudCheckBox @bind-Value="SelectedContact.IsProvider" Label="Proveedor" @bind-Value:after="AfterAsyncProvider" Required="!IsCheckboxValid"  RequiredError="" Disabled ="@(!SelectedContact.IsActive ?? false)"/>
+                                                 <MudCheckBox @bind-Value="SelectedContact.IsTransporter" Label="Transportista"
+                                                                 @bind-Value:after="AfterAsyncTransporter"
+                                                                 Disabled="@(!SelectedContact.IsActive ?? false)" />
                                             break;
                                         case "SEGURIDAD-CONTACTOS":
                                             @if (IsCheckboxValid)
@@ -45,7 +48,10 @@
                                                     <MudCheckBox @bind-Value="SelectedContact.IsCustomer" Label="Cliente" @bind-Value:after="AfterAsyncCustomer" Required="!IsCheckboxValid" RequiredError="" />
                                                     <MudCheckBox @bind-Value="SelectedContact.IsProvider" Label="Proveedor" @bind-Value:after="AfterAsyncProvider" Required="!IsCheckboxValid" RequiredError="" />
                                                     <MudCheckBox @bind-Value="SelectedContact.IsUser" Label="Usuario" @bind-Value:after="AfterAsyncUser" Required="!IsCheckboxValid" RequiredError="" />
-                                                }
+                                                    <MudCheckBox @bind-Value="SelectedContact.IsTransporter" Label="Transportista"
+                                                                         @bind-Value:after="AfterAsyncTransporter"
+                                                                         Disabled="@(!SelectedContact.IsActive ?? false)" />
+                                                        }
                                             }
                                             else
                                             {
@@ -54,7 +60,9 @@
                                                 <MudCheckBox @bind-Value="SelectedContact.IsCustomer" Label="Cliente" @bind-Value:after="AfterAsyncCustomer" Required="!IsCheckboxValid" RequiredError="" />
                                                 <MudCheckBox @bind-Value="SelectedContact.IsProvider" Label="Proveedor" @bind-Value:after="AfterAsyncProvider" Required="!IsCheckboxValid" RequiredError="" />
                                                 <MudCheckBox @bind-Value="SelectedContact.IsUser" Label="Usuario" @bind-Value:after="AfterAsyncUser" Required="!IsCheckboxValid" RequiredError="" />
-                                                    
+                                                <MudCheckBox @bind-Value="SelectedContact.IsTransporter" Label="Transportista"
+                                                                     @bind-Value:after="AfterAsyncTransporter"
+                                                                     Disabled="@(!SelectedContact.IsActive ?? false)" />
                                             }
                                                     
                                                         
@@ -384,6 +392,7 @@ else
                 if (SelectedContact.IsDealer ?? false) await AfterAsyncDealer();
                 if (SelectedContact.IsCustomer ?? false) await AfterAsyncCustomer();
                 if (SelectedContact.IsUser ?? false) await AfterAsyncUser();
+                if (SelectedContact.IsTransporter ?? false) await AfterAsyncTransporter(); 
                 await AfterAsync();
                 FirstClickEditContact = false;
                 CitySelected = Cities!.FirstOrDefault(c => c.Id == SelectedContact.CityId);
@@ -426,7 +435,7 @@ else
     }
     private Task ValidateCheckBox()
     {        
-        IsCheckboxValid = (SelectedContact!.IsSupplier ?? false) || (SelectedContact.IsDealer ?? false) || (SelectedContact.IsCustomer ?? false) || (SelectedContact.IsUser ?? false) || (SelectedContact.IsProvider ?? false);
+        IsCheckboxValid = (SelectedContact!.IsSupplier ?? false) || (SelectedContact.IsDealer ?? false) || (SelectedContact.IsCustomer ?? false) || (SelectedContact.IsUser ?? false) || (SelectedContact.IsProvider ?? false) || (SelectedContact.IsTransporter ?? false); ;
         return Task.CompletedTask;
     }
     private Task AfterAsync()
@@ -486,6 +495,7 @@ else
         bool isICustomer = SelectedContact!.IsCustomer ?? false;
         bool isIUser = SelectedContact.IsUser ?? false;
         bool IsProvider = SelectedContact.IsProvider ?? false;
+        bool isITransporter = SelectedContact.IsTransporter ?? false;
         if (FirstClickEditContact == false && isICustomer == true) SelectedRifType = "V";
 
         var localIsRifVorE = IsRifVorE;
@@ -514,8 +524,88 @@ else
             strDictionary["Birthday"] = localIsRifVorE ? "" : " invisible";
             strDictionary["Male"] = localIsRifVorE ? "" : " invisible";
         }
-        else if (IsProvider == false & isICustomer == false && isIUser == false)
+        else if (IsProvider == false && isICustomer == false && isIUser == false)
         {
+            if (isITransporter == true)
+            {
+                strDictionary["BrandName"] = " invisible";
+                strDictionary["Supplier"] = " invisible";
+                strDictionary["Dealer"] = " invisible";
+                strDictionary["Reference"] = " invisible";
+            }
+            else
+            {
+                strDictionary["BrandName"] = "";
+                strDictionary["Supplier"] = "";
+                strDictionary["Dealer"] = "";
+                strDictionary["Reference"] = "";
+            }
+            strDictionary["Birthday"] = localIsRifVorE ? "" : " invisible";
+            strDictionary["Male"] = localIsRifVorE ? "" : " invisible";
+        }
+        AfterAsync();
+        ValidateCheckBox();
+        return Task.CompletedTask;
+    }
+
+    private Task AfterAsyncTransporter()
+    {
+        bool isITransporter = SelectedContact!.IsTransporter ?? false;
+        bool isICustomer = SelectedContact.IsCustomer ?? false;
+        bool isIUser = SelectedContact.IsUser ?? false;
+        bool isIProvider = SelectedContact.IsProvider ?? false;
+
+        SelectedContact!.IsDealer = false;
+        SelectedContact.IsSupplier = false;
+
+        var localIsRifVorE = IsRifVorE;
+        strDictionary["V"] = "";
+        strDictionary["E"] = "";
+        strDictionary["LastName"] = localIsRifVorE ? "" : " invisible";
+
+        if (isITransporter == true)
+        {
+            SelectedContact!.Type = "Transportista";
+            strDictionary["BrandName"] = " invisible";
+            strDictionary["Supplier"] = " invisible";
+            strDictionary["Dealer"] = " invisible";
+            strDictionary["Reference"] = " invisible";
+            strDictionary["Birthday"] = localIsRifVorE ? "" : " invisible";
+            strDictionary["Male"] = localIsRifVorE ? "" : " invisible";
+        }
+        else if (isICustomer == true && isIUser == false)
+        {
+            SelectedContact!.Type = "Cliente";
+            strDictionary["BrandName"] = " invisible";
+            strDictionary["Supplier"] = " invisible";
+            strDictionary["Dealer"] = " invisible";
+            strDictionary["Reference"] = " invisible";
+            strDictionary["Birthday"] = localIsRifVorE ? "" : " invisible";
+            strDictionary["Male"] = localIsRifVorE ? "" : " invisible";
+        }
+        else if (isIProvider == true && isICustomer == false && isIUser == false)
+        {
+            SelectedContact!.Type = "Proveedor";
+            strDictionary["BrandName"] = " invisible";
+            strDictionary["Supplier"] = " invisible";
+            strDictionary["Dealer"] = " invisible";
+            strDictionary["Reference"] = " invisible";
+            strDictionary["Birthday"] = localIsRifVorE ? "" : " invisible";
+            strDictionary["Male"] = localIsRifVorE ? "" : " invisible";
+        }
+        else if (isIUser == true)
+        {
+            SelectedContact!.Type = "Usuario";
+            strDictionary["BrandName"] = " invisible";
+            strDictionary["Reference"] = " invisible";
+            strDictionary["Supplier"] = "";
+            strDictionary["Dealer"] = "";
+            strDictionary["Birthday"] = localIsRifVorE ? "" : " invisible";
+            strDictionary["Male"] = localIsRifVorE ? "" : " invisible";
+        }
+        else
+        {
+            // ningún tipo activo
             strDictionary["BrandName"] = "";
             strDictionary["Supplier"] = "";
             strDictionary["Dealer"] = "";
@@ -525,7 +615,7 @@ else
         }
         AfterAsync();
         ValidateCheckBox();
-        return Task.CompletedTask;        
+        return Task.CompletedTask;
     }
     private Task NewContactUI()
     {
@@ -590,6 +680,7 @@ else
         bool isICustomer = SelectedContact!.IsCustomer ?? false;
         bool isIUser = SelectedContact.IsUser ?? false;
         bool IsProvider = SelectedContact.IsProvider ?? false;
+        bool isITransporter = SelectedContact.IsTransporter ?? false;
         if (FirstClickEditContact == false && isICustomer == true) SelectedRifType = "V";
 
         var localIsRifVorE = IsRifVorE;
@@ -620,17 +711,27 @@ else
         }
         else if (isICustomer == false && isIUser == false && IsProvider == false)
         {
-            strDictionary["BrandName"] = "";
-            strDictionary["Supplier"] = "";
-            strDictionary["Dealer"] = ""; 
+            if (isITransporter == true)
+            {
+                strDictionary["BrandName"] = " invisible";
+                strDictionary["Supplier"] = " invisible";
+                strDictionary["Dealer"] = " invisible";
+                strDictionary["Reference"] = " invisible";
+            }
+            else
+            {
+                strDictionary["BrandName"] = "";
+                strDictionary["Supplier"] = "";
+                strDictionary["Dealer"] = "";
+                strDictionary["Reference"] = "";
+            }
             strDictionary["Birthday"] = localIsRifVorE ? "" : " invisible";
             strDictionary["Male"] = localIsRifVorE ? "" : " invisible";
-            strDictionary["Reference"] = "";
         }
         AfterAsync();
         ValidateCheckBox();
         return Task.CompletedTask;
-    } 
+    }
 
 
     private Task OnCityValueChanged(City selectedCity)
