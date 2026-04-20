@@ -82,6 +82,7 @@ builder.Services.AddScoped<IReportDMSService, ReportDMSRepository>();
 builder.Services.AddScoped<IReportingService, ReportingRepository>();
 builder.Services.AddScoped<IKardexService, KardexRepository>();
 
+builder.Services.AddScoped<IRateService, RateRepository>();
 
 builder.Services.AddScoped<IAreaService, AreaRepository>(); 
 builder.Services.AddScoped<IFaseService, FaseRepository>();
@@ -91,4 +92,5 @@ builder.Services.AddScoped<IFeatureService, FeatureRepository>();
 builder.Services.AddTransient<UtilModuleActions>();
 builder.Services.AddScoped(typeof(MasterComp<,>));
 builder.Services.AddSingleton<HubEventsService>();
+
 await builder.Build().RunAsync();
