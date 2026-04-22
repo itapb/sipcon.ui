@@ -1,0 +1,150 @@
+﻿
+
+<MudDataGrid @ref="DocumentPreviewDataGrid"
+        T="AccountPreview"
+        ServerData="LoadGridData"
+        Hover="false"
+        Dense="true"
+        Bordered="false"
+        Filterable="false"
+        Striped="true"
+        FixedHeader Height="calc(20vh - 40px)"
+>
+<ToolBarContent>
+        <MudStack Row="true">
+            <MudIcon Icon="@Icons.Material.Filled.FilePresent" Color="Color.Default" Style="font-size: 1.5rem;"></MudIcon>
+            <MudText Typo="Typo.subtitle2">Documentos Relacionados</MudText>
+        </MudStack>
+</ToolBarContent>
+    <Columns>
+        <TemplateColumn Title="">
+                <CellTemplate>
+                    <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Style="font-weight:bold;">@("#" + context.Item.PaymentId.ToString().PadLeft(10, '0'))</MudText>
+                </CellTemplate>
+            </TemplateColumn>
+        <TemplateColumn Title="">
+                <CellTemplate>
+                    <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Number</MudText>
+                </CellTemplate>
+            </TemplateColumn>
+        <TemplateColumn Title="">
+                <CellTemplate>
+                    <MudText Typo="Typo.caption" Align="Align.Left">@(Convert.ToDateTime(context.Item.DocumentDate).ToString("dd/MM/yyyy"))</MudText>
+                </CellTemplate>
+            </TemplateColumn>
+        <TemplateColumn Title="">
+                <CellTemplate>
+                    <div class="d-flex justify-center">
+                        <MudText Typo="Typo.caption" Align="Align.End" Color="Color.Default">
+                            @(context.Item.Amount?.ToString("N2"))
+                        </MudText>
+                    </div>
+                </CellTemplate>
+            </TemplateColumn>
+        <TemplateColumn Title="">
+            <CellTemplate>
+                <div class="d-flex justify-start">
+                    @if (context.Item.ConceptName != null)
+                    {
+                        Color color = Color.Default;
+                        string style = "";
+                        string txt = "";
+                        if (context.Item.ConceptName.ToUpper() == "BASE")
+                        {
+                            color = Color.Dark;
+                            txt = "Base";
+                        }
+                        else if (context.Item.ConceptName.ToUpper() == "PLACA")
+                        {
+                            color = Color.Info;
+                            txt = "Placa";
+                        }
+                        else if (context.Item.ConceptName.ToUpper() == "IVA (25%)")
+                        {
+                            color = Color.Error;
+                            txt = "IVA (25%)";
+                        }
+                        else if (context.Item.ConceptName.ToUpper() == "RETENCION IVA (75%)")
+                        {
+                            color = Color.Primary;
+                            txt = "Retención IVA (75%)";
+                        }
+
+                        style += "font-size: 11px";
+                        style += ";font-style:italic";
+
+                        <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
+                            @(txt)
+                        </MudChip>
+                    }
+                   
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="">
+            <CellTemplate>
+                <div class="d-flex justify-start">
+                    @if (context.Item.TypeName != null)
+                    {
+                        Color color = Color.Default;
+                        string style = "";
+                        string txt = "";
+                        if (context.Item.TypeName.ToUpper() == "UNIDADES")
+                        {
+                            color = Color.Dark;
+                            txt = "Unidades";
+                        }
+                        else if (context.Item.TypeName.ToUpper() == "REPUESTOS")
+                        {
+                            color = Color.Info;
+                            txt = "Repuestos";
+                        }
+                        else if (context.Item.TypeName.ToUpper() == "PROFORMA")
+                        {
+                            color = Color.Success;
+                            txt = "Proforma";
+                        }
+                        else if (context.Item.TypeName.ToUpper() == "OTROS GASTOS")
+                        {
+                            color = Color.Warning;
+                            txt = "Otros Gastos";
+                        }
+                        else
+                        {
+                            color = Color.Error;
+                        }
+                        style += "font-size: 11px";
+                        style += ";font-style:italic";
+
+                        <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
+                            @(txt)
+                        </MudChip>
+                    }
+                   
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
+
+    </Columns>
+</MudDataGrid>
+
+
+@code { 
+
+    [Parameter] public IEnumerable<AccountPreview> DocumentDetails { get; set; } = new List<AccountPreview>();
+
+    private MudDataGrid<AccountPreview>? DocumentPreviewDataGrid;
+
+    private int _rowCount = 0;
+    
+
+    private async Task<GridData<AccountPreview>> LoadGridData(GridState<AccountPreview> state)
+    {
+
+        _rowCount = state.Page * state.PageSize;
+
+        return new GridData<AccountPreview> { TotalItems = DocumentDetails.Count(), Items = DocumentDetails };
+    }
+
+
+}

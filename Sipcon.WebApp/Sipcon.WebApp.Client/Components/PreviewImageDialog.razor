@@ -126,8 +126,8 @@ else
     public int ImageWidth { get; set; } = 720;
 
     private string _nestedErrorMessage = string.Empty;
-    bool _success = false;
-    private bool _nestedVisible;
+    // bool _success = false;
+    // private bool _nestedVisible;
 
     private string? _FileOpen = string.Empty;
     private string _applicationName = string.Empty;
@@ -241,7 +241,7 @@ else
         var serviceResponse = await AttachmentService.GetAttachment(Convert.ToInt32(IdAttachment), Session.UserId);
         if (serviceResponse.Processed)
         {
-            _success = true;
+            // _success = true;
             _nestedErrorMessage = "";
 
            
@@ -252,7 +252,7 @@ else
         }
         else
         {
-            _success = false;
+            // _success = false;
             _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
             OpenNested();
 
@@ -262,7 +262,7 @@ else
     
     private void OpenNested()
     {
-        _nestedVisible = true;
+        // _nestedVisible = true;
         StateHasChanged();
     }
 

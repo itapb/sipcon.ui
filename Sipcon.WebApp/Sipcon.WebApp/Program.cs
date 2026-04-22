@@ -100,6 +100,7 @@ builder.Services.AddScoped<ISecurityService, SecurityRepository>();
 builder.Services.AddScoped<IReportDMSService, ReportDMSRepository>();
 builder.Services.AddScoped<IReportingService, ReportingRepository>();
 builder.Services.AddScoped<IKardexService, KardexRepository>();
+builder.Services.AddScoped<IPaymentService, PaymentsRepository>();
 
 
 builder.Services.AddTransient<UtilModuleActions>();

@@ -7,12 +7,19 @@ namespace Sipcon.WebApp.Client.Models
     public class SelectOption 
     {
 
-        public int? Value { get; set; } 
+        public int? Value { get; set; }
+        public string? ValueStr { get; set; }
         public string Text { get; set; } 
 
         public SelectOption(int val, string option )
         {
             Value = val;
+            Text = option;
+        }
+
+        public SelectOption(string val, string option)
+        {
+            ValueStr = val;
             Text = option;
         }
 

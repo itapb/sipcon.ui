@@ -1,0 +1,395 @@
+﻿@page "/paymentdetail"
+@page "/paymentdetail/{IdPayment}"
+
+@using Sipcon.WebApp.Client.Pages
+@using Sipcon.WebApp.Client.Repository.Auth
+@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+@using System.Globalization
+@using FluentValidation
+
+
+@inject IAttachmentService AttachmentService
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+
+
+<PageTitle>Aseguramiento de Ingreso</PageTitle>
+
+<MudContainer Style="position:relative;">
+
+    <MudStack Row="true">
+        <CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
+        <MudSpacer />
+        <MudSpacer />
+        
+    </MudStack>
+
+    <MudTabs Elevation="2" Rounded="true" Centered="false" ApplyEffectsToContainer="true" PanelClass="pa-2" Color="Color.Default">
+         @* ARCHIVOS  *@
+         <MudTabPanel Icon="@Icons.Material.Filled.Attachment" Text="ARCHIVOS" BadgeIcon="@Icons.Material.Filled.CloudUpload">
+            @* Attachment *@
+            <MudCard Elevation="2" Class="pa-1 mt-2">
+                <MudCardHeader Style="padding-bottom: 0px;">
+                    <CardHeaderContent>
+                        <MudStack Row="true">
+                            <MudIcon Icon="@Icons.Material.Outlined.FileUpload" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
+                            <MudText Typo="Typo.subtitle2">Archivos Adjuntos </MudText>
+                        </MudStack>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <MudButton StartIcon="@Icons.Material.Filled.AttachFile" Variant="Variant.Outlined"
+                                   Size="Size.Small"
+                                   OnClick="() => ClickUploadFiles()">Adjuntar Archivo</MudButton>
+                        <MudButton StartIcon="@Icons.Material.Filled.KeyboardReturn" Variant="Variant.Filled" 
+                                   Color="Color.Dark" Size="Size.Small" IconColor="Color.Secondary"
+                                   Href="paymentreport">Volver</MudButton>
+                        
+                    </CardHeaderActions>
+                </MudCardHeader>
+
+                <MudCardContent Style="padding-top: 0px;">
+
+                    <div id="unique_id_scroll_section" class="ma-0" style="height:230px;overflow: auto;">
+
+                        <MudContainer Class="dialog-background-surface py-1 pt-0 pa-1">
+                            <MudDivider />
+                            @if (_attachment.Count > 0)
+                            {
+                                <MudGrid Spacing="0" Justify="Justify.Center">
+
+                                    @foreach (var item in _attachment)
+                                    {
+                                        <MudItem xs="12" sm="4">
+                                            <MudLink OnClick="() => ClickPreviewImage(item.Id, item.FileName)" Color="Color.Info">  
+                                                <MudText Typo="Typo.caption">        
+                                                    <MudIcon Icon="@Icons.Custom.FileFormats.FileDocument" Color="Color.Inherit" Class="mr-2" />@item.FileName
+                                                </MudText>        
+                                            </MudLink>  
+                                        </MudItem>
+                                        <MudItem xs="12" sm="4">
+                                            <MudText Typo="Typo.caption">@item.DateCreate!.Value.ToString("F", CultureInfo.GetCultureInfo("es-VE"))</MudText>
+                                        </MudItem>
+                                        <MudItem xs="12" sm="4">
+                                            <div class="d-flex justify-left">
+                                                <MudStack Row="true">
+                                                    <MudTooltip Text="descargar">
+                                                        <MudIconButton Icon="@Icons.Material.Outlined.FileDownload" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickExportAttachment(item.Id, item.FileName)" />
+                                                    </MudTooltip>
+                                                    <MudTooltip Text="eliminar">
+                                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickDeleteAttachment(item.Id)" />
+                                                    </MudTooltip>
+                                                    <MudTooltip Text="vista previa">
+                                                        <MudIconButton Icon="@Icons.Material.Filled.Preview" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickPreviewImage(item.Id, item.FileName)"  />
+                                                    </MudTooltip>
+                                                </MudStack>
+                                            </div>
+                                        </MudItem>
+                                    }
+                                </MudGrid>
+                            }
+                        </MudContainer>
+                        <MudScrollToTop TopOffset="100"
+                                        Selector="#unique_id_scroll_section"
+                                        VisibleCssClass="visible absolute"
+                                        HiddenCssClass="invisible">
+
+                        </MudScrollToTop>
+                    </div>
+
+                    <MudDivider />
+
+                </MudCardContent>
+            </MudCard>
+        </MudTabPanel>
+
+    </MudTabs>
+
+    @if (!dataLoaded)
+    {
+        <MudOverlay Visible="isLoaded" DarkBackground="true" Absolute="true">
+            <MudProgressCircular Color="Color.Secondary" Indeterminate="true" />
+        </MudOverlay>
+    }
+</MudContainer>
+
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success"
+                    onCloseNested="() => _nestedVisible = false"
+    ErrorMessage="@_nestedErrorMessage" 
+    Title="@("Reporte de Pago")" />
+
+@code { 
+    [Inject] private UserSession Session { get; set; } = null!;
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
+    [Parameter]
+    public string IdPayment { get; set; } = string.Empty;
+    
+    private List<Attachment> _attachment { get; set; } = new List<Attachment>();
+   
+    private string _moduleName = "PAGOS-ASEGURAMIENTO";
+    
+    private string _nestedErrorMessage = string.Empty;
+    private bool _nestedVisible;
+    string _strComment = string.Empty;
+    bool _success = false;
+    private bool dataLoaded = false;
+    private bool isLoaded = false;
+
+   
+    private List<BreadcrumbItem> _itemsNavigate =
+                [
+        new("Home", href: "", icon: Icons.Material.Filled.Home),
+        new("Portal de Pagos",href: "", icon: Icons.Material.Filled.Payments),
+        new("Aseguramiento de Ingreso",href: "paymentreport", icon: Icons.Material.Filled.Payments),
+        new("Detalle de Pago",  href: "paymentdetail", disabled: false, icon: Icons.Material.Filled.Payment),
+    ];
+
+
+    IList<IBrowserFile> _files = new List<IBrowserFile>();
+    private void UploadFiles(IBrowserFile file)
+    {
+        _files.Add(file);
+        //TODO upload the files to the server
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+        Session.IsNewOrEdit = true;
+
+        await GetPaymentDetails();
+
+        StateHasChanged();
+        await Task.CompletedTask;
+
+    }
+
+
+    private async Task GetPaymentDetails()
+    {
+
+        await GetAttachments();
+            
+        await Task.Delay(50);
+        StateHasChanged();
+       
+
+    }
+
+    private async Task GetAttachments()
+    {
+        var serviceResponse = await AttachmentService.GetAttachments(Convert.ToInt32(IdPayment), _moduleName);
+        if (serviceResponse.Processed)
+        {
+            _attachment = serviceResponse.Data ?? new List<Attachment>();
+
+            await Task.Delay(50);
+            StateHasChanged();
+        }
+
+        await Task.CompletedTask;
+    }
+
+
+    private async Task ClickDeleteAttachment(int IdAttachment)
+    {
+        var option = new DialogOptions
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            BackdropClick = false
+        };
+        bool? result = await DialogService.ShowMessageBox(
+            "Archivos Adjuntos",
+            $"Seguro de Eliminar Archivo? ",
+            yesText: "Si", noText: "No", "", option);
+
+        if (result == true)
+        {
+
+            var serviceResponse = await AttachmentService.DeleteAttachment(IdAttachment, Session.UserId);
+            if (serviceResponse.Processed)
+            {
+                await GetAttachments();
+                await Task.Delay(50);
+            }
+            else
+            {
+                //Console.WriteLine(serviceResponse.Message);
+                _success = false;
+                _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GenerateNotOK.GetStringValue();
+                
+                OpenNested();
+            }
+            StateHasChanged();
+            await Task.CompletedTask;
+           
+
+           
+        }
+    }
+
+    private async Task ClickPreviewImage(int IdAttachment, string FileName)
+    {
+           
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true, NoHeader = false };
+        var parameters = new DialogParameters<PreviewImageDialog> { { x => x.Title, "Vista Previa." } , { x => x.IdAttachment, IdAttachment.ToString() } , { x => x.NameAttachment, FileName } };
+        var dialog = await DialogService.ShowAsync<PreviewImageDialog>("Vista Previa.", parameters, options);
+
+        StateHasChanged();
+
+        await Task.CompletedTask;
+    }
+
+    private async Task ClickExportAttachment(int IdAttachment, string FileName)
+    {
+        var serviceResponse = await AttachmentService.GetAttachment(IdAttachment, Session.UserId);
+        if (serviceResponse.Processed)
+        {
+            _success = true;
+            _nestedErrorMessage = "";
+
+            var applicationName = string.Empty;
+            var fileExtension = Path.GetExtension(FileName).ToLowerInvariant();
+            switch (fileExtension)
+            {
+                case ".jpg":
+                case ".jpeg":
+                    applicationName = "image/jpeg";
+                    break;
+                case ".png":
+                case ".pneg":
+                    applicationName = "image/png";
+                    break;
+                case ".mp4":
+                    applicationName = "video/mp4";
+                    break;
+                case ".pdf":
+                    applicationName = "application/pdf";
+                    break;
+                default:
+                    applicationName = "application/pdf";
+                    break;
+            }
+
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+            var fileUrl = $"data:{applicationName};base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, FileName);
+
+        }
+        else
+        {
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
+            OpenNested();
+
+        }
+    }
+
+
+    private async Task ClickUploadFiles()
+    {
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+        var parameters = new DialogParameters<ImporFilesDialog> { { x => x.Title, "Adjuntar Archivo..." } };
+        var dialog = await DialogService.ShowAsync<ImporFilesDialog>("simple dialog", parameters, options);
+
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            bool isFormData = false;
+            dataLoaded = false;
+            isLoaded = true;
+            StateHasChanged();
+            IReadOnlyList<IBrowserFile> files = (IReadOnlyList<IBrowserFile>)(result.Data ?? new List<IBrowserFile>());
+            const long maxAllowedSize = 6 * 1024 * 1024; // 6MB
+            //Console.WriteLine($"Número de archivos seleccionados: {files.Count}");
+
+            using (MultipartFormDataContent formData = new MultipartFormDataContent())
+            {
+                foreach (var file in files)
+                {
+
+                    if (file.Size == 0)
+                    {
+                        _success = false;
+                        isFormData = false;
+                        _nestedErrorMessage = MessageEnum.ImportError.GetStringValue();
+                        dataLoaded = true;
+                        isLoaded = false;
+                        StateHasChanged();
+                        OpenNested();
+                        break;
+                    }
+                    else if (file.Size > maxAllowedSize)
+                    {
+                        _success = false;
+                        isFormData = false;
+                        _nestedErrorMessage = MessageEnum.ImportErrorMaxByte.GetStringValue();
+                        dataLoaded = true;
+                        isLoaded = false;
+                        StateHasChanged();
+                        OpenNested();
+                        break;
+                    }
+                    else
+                    {
+
+                        var content = new StreamContent(file.OpenReadStream(maxAllowedSize: maxAllowedSize));
+
+                        content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+                        formData.Add(content, "files", file.Name);
+
+                        isFormData = true;
+
+                    }
+                }
+
+                if (isFormData)
+                {
+                    var serviceResponse = await AttachmentService.CreateAttachment(Convert.ToInt32(IdPayment), _moduleName, Session.UserId, formData);
+                    if (serviceResponse.Processed)
+                    {
+                        _success = true;
+                        _nestedErrorMessage = MessageEnum.ImportOK.GetStringValue();
+                        dataLoaded = true;
+                        isLoaded = false;
+                        StateHasChanged();
+                        await GetAttachments();
+                    }
+                    else
+                    {
+                        _success = false;
+                        _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ImportNotOK.GetStringValue();
+                        dataLoaded = true;
+                        isLoaded = false;
+                        StateHasChanged();
+                        OpenNested();
+                    }
+                     StateHasChanged();
+                    await Task.Delay(50);
+                }
+                else{
+                    dataLoaded = true;
+                    isLoaded = false;
+                    StateHasChanged();
+                }
+            }
+
+        }
+
+        await Task.CompletedTask;
+    }
+
+
+    private void OpenNested()
+    {
+        _nestedVisible = true;
+        StateHasChanged();
+    }
+    
+
+}

@@ -271,7 +271,7 @@ else
         var mOffset = state.Page * state.PageSize;
 
         //fechas y filtros
-        _actions = await ModuleActionsService.GetAction(Session.UserId, "PEDIDOS-PEDIDOS");
+        _actions = await ModuleActionsService.GetStatusByModule(Session.UserId, "PEDIDOS-PEDIDOS");
         int? idRespaldado = _selectedAction?.Value;
         if (idRespaldado.HasValue && _actions != null) { _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
         int? _estatusid = _selectedAction?.Value;
@@ -307,7 +307,7 @@ else
     private async Task ClickMenuSalesOrder(string? actionName)
     {
         //fechas y filtros
-        _actions = await ModuleActionsService.GetAction(Session.UserId, "PEDIDOS-PEDIDOS");
+        _actions = await ModuleActionsService.GetStatusByModule(Session.UserId, "PEDIDOS-PEDIDOS");
         int? idRespaldado = _selectedAction?.Value;
         if (idRespaldado.HasValue && _actions != null) { _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
         int? _estatusid = _selectedAction?.Value;
