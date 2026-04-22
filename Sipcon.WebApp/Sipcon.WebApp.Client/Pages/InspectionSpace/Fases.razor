@@ -1,0 +1,370 @@
+@page "/fase"
+
+@using Sipcon.WebApp.Client.Components.Inspection
+@using Sipcon.WebApp.Client.Repository.Auth
+
+@inject IFaseService FaseService
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+@inject IJSRuntime JSRuntime
+@inject HubEventsService hubEventsService
+@implements IDisposable
+
+<PageTitle>Fases</PageTitle>
+<CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
+
+<MudDataGrid @ref="_mudDataGrid"
+             T="Fase"
+             MultiSelection="true"
+             SelectedItems="@_selectedFases"
+             SortMode="SortMode.Multiple"
+             Filterable="true"
+             FixedHeader Height="calc(92vh - 235px)"
+             Hideable="true"
+             Loading="_loading"
+             Bordered="false"
+             Dense="true"
+             ServerData="LoadGridData">
+
+    <ToolBarContent>
+        <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="() => ClickAddFase()"></MudIconButton>
+        <MudTextField @bind-Value="_searchString" Placeholder="Buscar" Adornment="Adornment.Start" Immediate="true"
+                      Typo="Typo.caption"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      OnAdornmentClick="() => ClickSearch()"
+                      IconSize="Size.Medium" Class="mt-0"
+                      OnKeyDown="HandleKeyDownSearch"></MudTextField>
+        <MudSpacer />
+        <MudToggleGroup T="string" Value="_activeFilter"
+                        ValueChanged="@((string v) => OnFilterChanged(v))"
+                        Color="Color.Info" Size="Size.Small" Class="mr-2"
+                        SelectionMode="SelectionMode.SingleSelection">
+            <MudToggleItem Value="@("all")"      Text="Todos"     />
+            <MudToggleItem Value="@("active")"   Text="Activos"   />
+            <MudToggleItem Value="@("inactive")" Text="Inactivos" />
+        </MudToggleGroup>
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+            @foreach (var module in _itemsModules)
+            {
+                <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
+                             Label="@module.Text"
+                             OnClick="() => HandleMenuClick(module)" />
+            }
+        </MudMenu>
+    </ToolBarContent>
+
+    <Columns>
+        <SelectColumn ShowInFooter="false" />
+        <PropertyColumn Property="x => x.Name" Title="FASE" Sortable="false" Filterable="false"
+                        HeaderClass="mud-text-align-center" CellClass="mud-text-align-center" />
+        <PropertyColumn Property="x => x.OrderBy" Title="ORDEN" Sortable="false" Filterable="false"
+                        HeaderClass="mud-text-align-center" CellClass="mud-text-align-center" />
+        <PropertyColumn Property="x => x.AreaName" Title="ÁREA" Sortable="false" Filterable="false"
+                        HeaderClass="mud-text-align-center" CellClass="mud-text-align-center" />
+        <PropertyColumn Property="x => x.Updated"  Title="ACTUALIZACIÓN" Sortable="false" Filterable="false"
+                        HeaderClass="mud-text-align-center" CellClass="mud-text-align-center" />
+        <PropertyColumn Property="x => x.UpdatedBy" Title="USUARIO"      Sortable="false" Filterable="false"
+                        HeaderClass="mud-text-align-center" CellClass="mud-text-align-center" />
+        <TemplateColumn CellClass="mud-text-align-center" CellStyle="min-width:120px">
+            <HeaderTemplate>
+                <span style="display:block; text-align:center; width:100%;">ESTATUS</span>
+            </HeaderTemplate>
+            <CellTemplate>
+                <div @onclick:stopPropagation="true" style="display:flex; justify-content:center;">
+                    <MudChip T="string"
+                             Text="@(context.Item.IsActive ?? false ? "Activo" : "Inactivo")"
+                             Color="@(context.Item.IsActive ?? false ? Color.Success : Color.Default)"
+                             Variant="Variant.Filled"
+                             Size="Size.Small"
+                             Disabled="@_togglingIds.Contains(context.Item.Id)"
+                             OnClick="@(() => ToggleItemAsync(context.Item, !(context.Item.IsActive ?? false)))"
+                             Style="cursor:pointer; font-weight:500; min-width:80px;" />
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn HeaderClass="mud-text-align-center" CellClass="mud-text-align-center">
+            <CellTemplate>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text"
+                               Color="Color.Default" Size="Size.Small"
+                               OnClick="() => ClickEditFase(context.Item)" />
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+
+    <PagerContent>
+        <MudDataGridPager PageSizeOptions="new int[] { 100 }"
+                          InfoFormat="{first_item}-{last_item} de {all_items}"
+                          RowsPerPageString="Registros por Pagina" />
+    </PagerContent>
+</MudDataGrid>
+
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success"
+                    onCloseNested="() => _nestedVisible = false"
+                    ErrorMessage="@_nestedErrorMessage"
+                    Title="@("Fases")" />
+
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
+
+    private IEnumerable<Fase> _fases              = new List<Fase>();
+    private string            _nestedErrorMessage = string.Empty;
+    private bool              _nestedVisible;
+    private bool              _success;
+    private int               _rowCount;
+    private int               _rowsTotal;
+    private string            _searchString  = string.Empty;
+    private string            _activeFilter  = "all";   // "all" | "active" | "inactive"
+    private bool              _loading       = true;
+    private const string      ModuleName     = "INSPECCION-FASE";
+
+    private MudDataGrid<Fase>?  _mudDataGrid;
+    private HashSet<Fase>       _selectedFases = new([]);
+    private List<ModuleAction>  _itemsModules  = new([]);
+    private HashSet<int>        _togglingIds   = new([]);
+
+    private List<BreadcrumbItem> _itemsNavigate =
+    [
+        new("Home",       href: "",     icon: Icons.Material.Filled.Home),
+        new("Inspección", href: "",     icon: Icons.Material.Filled.FactCheck),
+        new("Fases",      href: "fase", icon: Icons.Material.Filled.AccountTree)
+    ];
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+        hubEventsService.OnSupplierChanged += ReloadServerData;
+        hubEventsService.OnDealerChanged += ReloadServerData;
+    }
+
+    public void Dispose()
+    {
+        hubEventsService.OnSupplierChanged -= ReloadServerData;
+        hubEventsService.OnDealerChanged -= ReloadServerData;
+    }
+
+    // ── Grid ──────────────────────────────────────────────────────────────────
+
+    private async Task ReloadServerData()
+    {
+        if (_mudDataGrid != null)
+            await _mudDataGrid.ReloadServerData();
+    }
+
+    private async Task<GridData<Fase>> LoadGridData(GridState<Fase> state)
+    {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+        _rowCount = state.Page * state.PageSize;
+        await GetFases();
+        return new GridData<Fase> { TotalItems = _rowsTotal, Items = _fases };
+    }
+
+    private async Task GetFases()
+    {
+        _loading   = true;
+        _fases     = new List<Fase>();
+        _rowsTotal = 0;
+
+        _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, ModuleName);
+
+        bool? activeParam = _activeFilter switch
+        {
+            "active"   => true,
+            "inactive" => false,
+            _          => null
+        };
+
+        var serviceResponse = await FaseService.GetFases(
+            Session.UserId, Session.SupplierId, Session.DealerId,
+            _rowCount, _searchString, activeParam);
+
+        if (serviceResponse.Processed)
+        {
+            _fases     = serviceResponse.Data;
+            _rowsTotal = serviceResponse.Total;
+        }
+        else
+        {
+            _success            = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
+            OpenNested();
+        }
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+    // ── Búsqueda ──────────────────────────────────────────────────────────────
+
+    private async Task OnFilterChanged(string value)
+    {
+        _activeFilter = value;
+        await _mudDataGrid!.ReloadServerData();
+    }
+
+    private async Task HandleKeyDownSearch(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && (_searchString.Length >= 3 || _searchString == string.Empty))
+            await _mudDataGrid!.ReloadServerData();
+    }
+
+    private async Task ClickSearch()
+    {
+        if (_searchString.Length >= 3)
+            await _mudDataGrid!.ReloadServerData();
+    }
+
+    private async Task HandleOnClickRefresh()
+    {
+        _searchString = string.Empty;
+        await _mudDataGrid!.ReloadServerData();
+    }
+
+    // ── CRUD ──────────────────────────────────────────────────────────────────
+
+    private async Task ClickAddFase()
+    {
+        var options    = new DialogOptions { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+        var parameters = new DialogParameters<FaseDialog> { { x => x.IdFase, 0 }, { x => x.ActionsModal, ActionsEnum.Create } };
+        var dialog     = await DialogService.ShowAsync<FaseDialog>("", parameters, options);
+        var result     = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            await _mudDataGrid!.ReloadServerData();
+            StateHasChanged();
+        }
+    }
+
+    private async Task ClickEditFase(Fase item)
+    {
+        var options    = new DialogOptions { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+        var parameters = new DialogParameters<FaseDialog> { { x => x.IdFase, item.Id }, { x => x.ActionsModal, ActionsEnum.Edit } };
+        var dialog     = await DialogService.ShowAsync<FaseDialog>("", parameters, options);
+        var result     = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            await _mudDataGrid!.ReloadServerData();
+            StateHasChanged();
+        }
+    }
+
+    // ── Menú acciones ─────────────────────────────────────────────────────────
+
+    private async Task HandleMenuClick(ModuleAction module)
+    {
+        switch (module.ActionName)
+        {
+            case "EXPORT":
+                await ExportItemsAsync();
+                break;
+            case "ACTIVATE":
+                await ToggleActiveAsync(module.IdAction, module.ActionName, activating: true);
+                break;
+            case "DEACTIVATE":
+                await ToggleActiveAsync(module.IdAction, module.ActionName, activating: false);
+                break;
+            default:
+                Console.WriteLine($"{MessageEnum.ActionsError.GetStringValue()}: {module.ActionName}");
+                break;
+        }
+    }
+
+    private async Task ExportItemsAsync()
+    {
+        var serviceResponse = await FaseService.ExportFases(
+            Session.UserId, Session.SupplierId, Session.DealerId, _searchString);
+
+        if (serviceResponse.Processed)
+        {
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+            var fileUrl    = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Fases.xlsx");
+        }
+        else
+        {
+            _success            = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
+            OpenNested();
+        }
+    }
+
+    private async Task ToggleActiveAsync(int moduleId, string moduleActionName, bool activating)
+    {
+        if (!_selectedFases.Any()) return;
+
+        var title    = activating ? "Activar Fase(s)"   : "Inactivar Fase(s)";
+        var question = activating ? "¿Seguro de activar las fases seleccionadas?"
+                                  : "¿Seguro de inactivar las fases seleccionadas?";
+        var option   = new DialogOptions { CloseButton = false, MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false };
+        bool? confirmed = await DialogService.ShowMessageBox(title, question, yesText: "Si", noText: "No", options: option);
+
+        if (confirmed == true)
+        {
+            var actionList = _selectedFases.Select(f => new PostAction
+            {
+                RecordId   = f.Id,
+                ModuleId   = moduleId,
+                ActionName = moduleActionName
+            }).ToList();
+
+            var serviceResponse = await FaseService.ActionsFase(actionList, Session.UserId);
+            _success            = serviceResponse.Processed;
+            _nestedErrorMessage = serviceResponse.Processed
+                ? (activating ? MessageEnum.ActivateOK.GetStringValue() : MessageEnum.DeactivateOK.GetStringValue())
+                : serviceResponse.Message ?? (activating ? MessageEnum.ActivateNotOK.GetStringValue() : MessageEnum.DeactivateNotOK.GetStringValue());
+
+            if (serviceResponse.Processed)
+                await _mudDataGrid!.ReloadServerData();
+
+            OpenNested();
+        }
+
+        _selectedFases = new([]);
+    }
+
+    // ── Toggle por fila ───────────────────────────────────────────────────────
+
+    private async Task ToggleItemAsync(Fase item, bool newValue)
+    {
+        if (_togglingIds.Contains(item.Id)) return;
+
+        var actionName = newValue ? "ACTIVATE" : "DEACTIVATE";
+        var module     = _itemsModules.FirstOrDefault(m => m.ActionName == actionName);
+        if (module is null) return;
+
+        _togglingIds.Add(item.Id);
+        StateHasChanged();
+
+        var postAction = new List<PostAction>
+        {
+            new() { RecordId = item.Id, ModuleId = module.IdAction, ActionName = actionName }
+        };
+
+        var serviceResponse = await FaseService.ActionsFase(postAction, Session.UserId);
+
+        if (serviceResponse.Processed)
+        {
+            item.IsActive = newValue;
+        }
+        else
+        {
+            _success            = false;
+            _nestedErrorMessage = serviceResponse.Message
+                ?? (newValue ? MessageEnum.ActivateNotOK.GetStringValue()
+                             : MessageEnum.DeactivateNotOK.GetStringValue());
+            OpenNested();
+        }
+
+        _togglingIds.Remove(item.Id);
+        StateHasChanged();
+    }
+
+    private void OpenNested()
+    {
+        _nestedVisible = true;
+        StateHasChanged();
+    }
+}

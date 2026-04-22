@@ -7,9 +7,12 @@ namespace Sipcon.WebApp.Client.Models
     public class SelectOption 
     {
 
-        public int? Value { get; set; }
+        public int? Value { get; set; } 
+        public string Text { get; set; }
+        public int? ParentId { get; set; } = null;
+        public string ParentText { get; set; } = string.Empty;
+        public string ExtraText { get; set; } = string.Empty;
         public string? ValueStr { get; set; }
-        public string Text { get; set; } 
 
         public SelectOption(int val, string option )
         {
