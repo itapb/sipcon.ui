@@ -54,12 +54,17 @@
         </TemplateColumn>
         <TemplateColumn Title="TASA">
             <CellTemplate>
-                <MudText Typo="Typo.caption">@context.Item.NRate.ToString("N2")</MudText>
+                <MudText Typo="Typo.caption">@(context.Item.NRate?.ToString("N2") ?? "0.00")</MudText>
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn Title="">
             <CellTemplate>
-                <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditRate(context.Item)" />
+                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                               Variant="Variant.Text"
+                               Color="Color.Default"
+                               Size="Size.Small"
+                               Disabled="@(!IsToday(context.Item.DDate))"
+                               OnClick="() => ClickEditRate(context.Item)" />
             </CellTemplate>
         </TemplateColumn>
     </Columns>
@@ -168,7 +173,7 @@
 
         var parameters = new DialogParameters
         {
-            { "IdRate", item.Id },
+            { "RateItem", item },
             { "ActionsModal", ActionsEnum.Edit }
         };
 
@@ -215,5 +220,10 @@
             _nestedErrorMessage = serviceResponse.Message ?? "Error al exportar";
             OpenNested();
         }
+    }
+
+    private bool IsToday(DateTime date)
+    {
+        return date.Date == DateTime.Today;
     }
 }
