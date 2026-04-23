@@ -23,7 +23,8 @@ namespace Sipcon.WebApp.Client.Utils
         IReportingService ReportingService,
         IAreaService AreaService,          
         IFaseService FaseService,         
-        IFeatureTypeService FeatureTypeService   
+        IFeatureTypeService FeatureTypeService ,  
+        IPaymentService PaymentService
         ) 
     {
 
@@ -89,7 +90,7 @@ namespace Sipcon.WebApp.Client.Utils
                             _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Outlined.ThumbUp, module.Id, module.ActionName, Color.Info));
                             break;
                         case "VALIDATE":
-                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.ThumbUp, module.Id, module.ActionName, Color.Info));
+                            _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.DoneOutline, module.Id, module.ActionName, Color.Info));
                             break;
                         case "NOTVALIDATE":
                             _itemsModules.Add(new ModuleAction(module.ActionDisplay, "#", false, Icons.Material.Filled.ThumbDown, module.Id, module.ActionName, Color.Info));
@@ -439,11 +440,118 @@ namespace Sipcon.WebApp.Client.Utils
 
         }
 
-        public async Task<List<SelectOption>> GetAction(int IdUser, string ModuleName)
+        public async Task<List<SelectOption>> GetCurrencySelectOption()
         {
             List<SelectOption> _itemsSelect = new([]);
 
-            var moduleResponse = await ModuleService.GetAction(IdUser, ModuleName);
+
+            var moduleResponse = await PaymentService.GetCurrencyType();
+            if (moduleResponse.Processed)
+            {
+                List<CurrencyType> _List = moduleResponse.Data ?? new List<CurrencyType>();
+
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Id, item.Name));
+                }
+            }
+            return _itemsSelect;
+        }
+
+        public async Task<List<SelectOption>> GetPaymentSelectOption()
+        {
+            List<SelectOption> _itemsSelect = new([]);
+
+
+            var moduleResponse = await PaymentService.GetPaymentType();
+            if (moduleResponse.Processed)
+            {
+                List<PaymentType> _List = moduleResponse.Data ?? new List<PaymentType>();
+
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Id, item.Name));
+                }
+            }
+            return _itemsSelect;
+        }
+
+        public async Task<List<SelectOption>> GetDocumentTypeSelectOption()
+        {
+            List<SelectOption> _itemsSelect = new([]);
+
+
+            var moduleResponse = await PaymentService.GetDocumentType();
+            if (moduleResponse.Processed)
+            {
+                List<DocumentType> _List = moduleResponse.Data ?? new List<DocumentType>();
+
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Code, item.Name));
+                }
+            }
+            return _itemsSelect;
+        }
+
+        public async Task<List<SelectOption>> GetDocumentStatusSelectOption()
+        {
+            List<SelectOption> _itemsSelect = new([]);
+
+
+            var moduleResponse = await PaymentService.GetDocumentStatus();
+            if (moduleResponse.Processed)
+            {
+                List<DocumentStatus> _List = moduleResponse.Data ?? new List<DocumentStatus>();
+
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Id, item.Display));
+                }
+            }
+            return _itemsSelect;
+        }
+
+        public async Task<List<SelectOption>> GetDocumentConceptSelectOption()
+        {
+            List<SelectOption> _itemsSelect = new([]);
+
+
+            var moduleResponse = await PaymentService.GetDocumentConceptsType();
+            if (moduleResponse.Processed)
+            {
+                List<ConceptsType> _List = moduleResponse.Data ?? new List<ConceptsType>();
+
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Code, item.Name));
+                }
+            }
+            return _itemsSelect;
+        }
+
+        public async Task<List<SelectOption>> GetBankAccountSelectOption(int Idsupplier)
+        {
+            List<SelectOption> _itemsSelect = new([]);
+
+            var moduleResponse = await PaymentService.GetBankAccountsType(Idsupplier);
+            if (moduleResponse.Processed)
+            {
+                List<BankAccountsType> _List = moduleResponse.Data ?? new List<BankAccountsType>();
+
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Code, item.Account));
+                }
+            }
+            return _itemsSelect;
+        }
+
+        public async Task<List<SelectOption>> GetStatusByModule(int IdUser, string ModuleName)
+        {
+            List<SelectOption> _itemsSelect = new([]);
+
+            var moduleResponse = await ModuleService.GetStatusByModule(IdUser, ModuleName);
             if (moduleResponse.Processed)
             {
                 List<ActionModule> _List = moduleResponse.Data ?? new List<ActionModule>();

@@ -63,7 +63,7 @@
 
         }
 
-        public async Task<ApiResponse<List<ActionModule>>> GetAction(int IdUser, string Module = "")
+        public async Task<ApiResponse<List<ActionModule>>> GetStatusByModule(int IdUser, string Module = "")
         {
             ApiResponse<List<ActionModule>> result;
             try

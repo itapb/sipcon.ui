@@ -297,7 +297,7 @@
         _itemsModules = _itemsModules.Where(a => a.Text == "GENERAR" || a.Text == "RECHAZAR").ToList();
 
         //fechas y filtros
-        _actions = await ModuleActionsService.GetAction(Session.UserId, _moduleName);
+        _actions = await ModuleActionsService.GetStatusByModule(Session.UserId, _moduleName);
         int? idRespaldado = _selectedAction?.Value;
          if (idRespaldado.HasValue && _actions != null)   {  _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
          int? _estatusid = _selectedAction?.Value;

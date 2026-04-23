@@ -629,7 +629,7 @@
 
     private Maintenance _model { get; set; } = new Maintenance();
     private Models.Policy _modelPolicy { get; set; } = new Models.Policy();
-    private PolicyDetail _modelPolicyDetail { get; set; } = new PolicyDetail();
+    private PolicyDetail? _modelPolicyDetail { get; set; } = new PolicyDetail();
     private List<PolicyDetail> _policyDetail { get; set; } = new List<PolicyDetail>();
     private IEnumerable<SelectOption> _FailReportTypeList { get; set; } = new List<SelectOption>();
 
@@ -797,7 +797,7 @@
         _model.ReportTypeId = newValue;
 
         // Buscamos el texto sin LINQ (como pediste antes)
-        SelectOption selectedOption = null;
+        SelectOption? selectedOption = null;
         foreach (var item in _FailReportTypeList)
         {
             if (item.Value == newValue)

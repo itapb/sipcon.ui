@@ -278,7 +278,7 @@ else
         $"Home,Pedidos,{RequisitionTitle}".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
         Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=PEDIDOS-RECLAMOS&userId={Session.UserId}");
         //await LoadSaleOrderTypes();
-        _actions = await ModuleActionsService.GetAction(Session.UserId, "PEDIDOS-RECLAMOS"); //AGREGUE ESTO
+        _actions = await ModuleActionsService.GetStatusByModule(Session.UserId, "PEDIDOS-RECLAMOS"); //AGREGUE ESTO
     }
     Func<Models.ClaimPart, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
     {
@@ -368,7 +368,7 @@ else
     private async Task ClickMenuClaimOrder(string? actionName)
     {
         //fechas y filtros
-        _actions = await ModuleActionsService.GetAction(Session.UserId, "PEDIDOS-RECLAMOS");
+        _actions = await ModuleActionsService.GetStatusByModule(Session.UserId, "PEDIDOS-RECLAMOS");
         int? idRespaldado = _selectedAction?.Value;
         if (idRespaldado.HasValue && _actions != null) { _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
         int? _estatusid = _selectedAction?.Value;
