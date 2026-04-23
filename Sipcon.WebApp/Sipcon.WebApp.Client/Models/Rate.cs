@@ -2,9 +2,11 @@
 
 namespace Sipcon.WebApp.Client.Models
 {
-    public class Rate : Record
+    public class Rate 
     {
+        public int? Id { get; set; } = 0;
+        public decimal? NRate { get; set; }
         public DateTime DDate { get; set; }
-        public decimal NRate { get; set; }
+
     }
 }
