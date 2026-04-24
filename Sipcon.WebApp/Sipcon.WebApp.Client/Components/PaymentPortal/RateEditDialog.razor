@@ -37,7 +37,6 @@
                     <MudCard>
                         <MudCardContent Style="padding-top: 0px;">
                             <MudDatePicker Date="_rate.DDate"
-                                           DateChanged="OnDateChanged"
                                            Label="Fecha"
                                            Required="true"
                                            Format="dd/MM/yyyy"
@@ -82,54 +81,72 @@
 @code {
    
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
-    [Parameter] public int IdRate { get; set; }
+    [Parameter] public Rate RateItem { get; set; } = new();
     [Parameter] public ActionsEnum ActionsModal { get; set; }
     
     private Rate _rate = new();
     private bool _isEdit => ActionsModal == ActionsEnum.Edit;
     
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        if (_isEdit && IdRate > 0)
+        if (_isEdit && RateItem != null)
         {
-            var response = await RateService.GetRates(null, null); 
-            if (response.Processed && response.Data != null)
-            {
-                var found = response.Data.FirstOrDefault(r => r.Id == IdRate);
-                if (found != null)
-                    _rate = found;
-            }
+            _rate = RateItem;
         }
         else
         {
             _rate = new Rate
             {
-                DDate = DateTime.Today,
-                NRate = 0
+                Id = 0,
+                NRate = null,
+                DDate = DateTime.Today
             };
         }
     }
-    
-    private void OnDateChanged(DateTime? newDate)
-    {
-        if (newDate.HasValue)
-            _rate.DDate = newDate.Value;
-    }
-    
-    private void OnRateChanged(decimal? newRate)
-    {
-        if (newRate.HasValue)
-            _rate.NRate = newRate.Value;
-    }
-    
+   
     private void Cancel() => MudDialog.Cancel();
     
     private async Task Save()
     {
-        var response = _isEdit
-            ? await RateService.UpdateRate(_rate)
-            : await RateService.CreateRate(_rate);
-        
+        // Validaciones del lado del cliente
+        if (_rate.NRate == null)
+        {
+            await DialogService.ShowMessageBox(
+                "Validación",
+                "LA TASA ES OBLIGATORIA",
+                yesText: "OK"
+            );
+            return;
+        }
+    
+        if (_rate.NRate < 0)
+        {
+            await DialogService.ShowMessageBox(
+                "Validación",
+                "LA TASA NO PUEDE SER NEGATIVA",
+                yesText: "OK"
+            );
+            return;
+        }
+    
+        if (_rate.NRate == 0)
+        {
+            await DialogService.ShowMessageBox(
+                "Validación",
+                "LA TASA NO PUEDE SER 0",
+                yesText: "OK"
+            );
+            return;
+        }
+    
+        var rateToSend = new Rate
+        {
+            Id = _rate.Id,
+            NRate = _rate.NRate
+        };
+    
+        var response = await RateService.SaveRate(rateToSend);
+    
         if (response.Processed)
         {
             await DialogService.ShowMessageBox(
@@ -149,11 +166,4 @@
         }
     }
 
-    private async Task OnRateKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Key == "-" || e.Key == "_")
-        {
-            await Task.CompletedTask;
-        }
-    }
 }
