@@ -81,16 +81,18 @@ builder.Services.AddScoped<ISecurityService, SecurityRepository>();
 builder.Services.AddScoped<IReportDMSService, ReportDMSRepository>();
 builder.Services.AddScoped<IReportingService, ReportingRepository>();
 builder.Services.AddScoped<IKardexService, KardexRepository>();
-
-
+builder.Services.AddScoped<IRateService, RateRepository>();
 builder.Services.AddScoped<IAreaService, AreaRepository>(); 
 builder.Services.AddScoped<IFaseService, FaseRepository>();
 builder.Services.AddScoped<IFeatureTypeService, FeatureTypeRepository>();
 builder.Services.AddScoped<IFeatureService, FeatureRepository>();
+builder.Services.AddScoped<IPaymentService, PaymentsRepository>();
+
 builder.Services.AddScoped<IFeatureOptionService, FeatureOptionRepository>();
 builder.Services.AddScoped<IFeatureValueTypeService, FeatureValueTypeRepository>();
 
 builder.Services.AddTransient<UtilModuleActions>();
 builder.Services.AddScoped(typeof(MasterComp<,>));
 builder.Services.AddSingleton<HubEventsService>();
+
 await builder.Build().RunAsync();

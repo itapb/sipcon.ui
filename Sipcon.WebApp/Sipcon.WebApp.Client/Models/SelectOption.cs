@@ -12,10 +12,17 @@ namespace Sipcon.WebApp.Client.Models
         public int? ParentId { get; set; } = null;
         public string ParentText { get; set; } = string.Empty;
         public string ExtraText { get; set; } = string.Empty;
+        public string? ValueStr { get; set; }
 
         public SelectOption(int val, string option )
         {
             Value = val;
+            Text = option;
+        }
+
+        public SelectOption(string val, string option)
+        {
+            ValueStr = val;
             Text = option;
         }
 

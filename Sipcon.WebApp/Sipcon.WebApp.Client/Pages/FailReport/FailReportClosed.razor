@@ -318,7 +318,7 @@
         _itemsModules = _itemsModules.Where(a =>  a.Text == "EXPORTAR" || a.Text == "PROCESAR").ToList();
 
         //fechas y filtros
-        _actions = await ModuleActionsService.GetAction(Session.UserId, _moduleName);
+        _actions = await ModuleActionsService.GetStatusByModule(Session.UserId, _moduleName);
         _actions = _actions.Where(a => a.Text == "GENERADO"|| a.Text == "PROCESADO").ToList();
         int? idRespaldado = _selectedAction?.Value;
         if (idRespaldado.HasValue && _actions != null)   {  _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }

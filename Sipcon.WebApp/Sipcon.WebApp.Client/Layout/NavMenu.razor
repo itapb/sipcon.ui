@@ -169,6 +169,28 @@
     
                 </MudNavGroup>
             }
+
+            @if (_ModuleNames.Any(s => s.Contains("PAGOS-")))
+                    {
+                        <MudNavGroup Title="Portal de Pagos" Icon="@Icons.Material.Filled.AccountBalance" IconColor="Color.Info">
+
+                            @if (_ModuleNames.Contains("PAGOS-TASAS"))
+                            {
+                                <MudNavLink Href="ratelist">Tasas</MudNavLink>
+                            }
+                            
+                            @if (_ModuleNames.Contains("PAGOS-REPORTE"))
+                            { 
+                                <MudNavLink Href="documentreport">Reportar Pagos</MudNavLink>
+                            }
+
+                            @if (_ModuleNames.Contains("PAGOS-ASEGURAMIENTO"))
+                            { 
+                                <MudNavLink Href="paymentreport">Aseguramiento de Ingreso</MudNavLink>
+                            } 
+       
+                        </MudNavGroup>
+                    }
            
             @if (_ModuleNames.Any(s => s.Contains("PEDIDOS-")))
             {
@@ -193,7 +215,6 @@
             }
            
             
-           
             @if (_ModuleNames.Any(s => s.Contains("SEGURIDAD-")))
             {
                 <MudNavGroup Title="Seguridad" Icon="@Icons.Material.Filled.Security" IconColor="Color.Info">

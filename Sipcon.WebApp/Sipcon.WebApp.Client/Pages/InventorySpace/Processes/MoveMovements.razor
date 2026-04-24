@@ -290,7 +290,7 @@ else
         IEnumerable<MoveMovementDetails> data;
 
         //fechas y filtros
-        _actions = await ModuleActionsService.GetAction(Session.UserId, "INVENTARIO-PROCESOS-TRASLADO");
+        _actions = await ModuleActionsService.GetStatusByModule(Session.UserId, "INVENTARIO-PROCESOS-TRASLADO");
         int? idRespaldado = _selectedAction?.Value;
         if (idRespaldado.HasValue && _actions != null) { _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
         int? _estatusid = _selectedAction?.Value;
@@ -333,7 +333,7 @@ else
     private async Task ClickMenuMovement(string? actionName)
     {
         //fechas y filtros
-        _actions = await ModuleActionsService.GetAction(Session.UserId, "INVENTARIO-PROCESOS-TRASLADO");
+        _actions = await ModuleActionsService.GetStatusByModule(Session.UserId, "INVENTARIO-PROCESOS-TRASLADO");
         int? idRespaldado = _selectedAction?.Value;
         if (idRespaldado.HasValue && _actions != null) { _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
         int? _estatusid = _selectedAction?.Value;

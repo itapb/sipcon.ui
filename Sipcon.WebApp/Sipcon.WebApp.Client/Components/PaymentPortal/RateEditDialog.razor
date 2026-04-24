@@ -1,0 +1,159 @@
+@using Sipcon.WebApp.Client.Models
+@using Sipcon.WebApp.Client.Pages.Policy
+@using Sipcon.WebApp.Client.Services
+@using System.Globalization
+@using MudBlazor
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject IRateService RateService
+
+<MudDialog Class="blur dialog-background" ActionsClass="dialog-background-surface">
+    <DialogContent>
+        <MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudGrid Spacing="0" Justify="Justify.Center">
+                            <MudItem xs="12" sm="6">
+                                <div class="d-flex justify-left">
+                                    <MudText Typo="Typo.h6">@(ActionsModal == ActionsEnum.Edit ? "Editar Tasa" : "Nueva Tasa")</MudText>
+                                </div>
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <div class="d-flex justify-right" style="justify-content: end;">
+                                    <MudButton OnClick="Cancel">Cancelar</MudButton>
+                                    <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Aceptar" OnClick="Save" Color="Color.Info" Size="Size.Small" />
+                                </div>
+                            </MudItem>
+                        </MudGrid>
+                    </CardHeaderContent>
+                </MudCardHeader>
+            </MudCard>
+        </MudContainer>
+
+        <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
+            <MudGrid Spacing="1" Justify="Justify.Center">
+                <MudItem xs="12">
+                    <MudCard>
+                        <MudCardContent Style="padding-top: 0px;">
+                            <MudDatePicker Date="_rate.DDate"
+                                           DateChanged="OnDateChanged"
+                                           Label="Fecha"
+                                           Required="true"
+                                           Format="dd/MM/yyyy"
+                                           Variant="Variant.Outlined"
+                                           Margin="Margin.Dense"
+                                           Disabled="@_isEdit" />
+    
+                            <MudNumericField @bind-Value="_rate.NRate"
+                                             Label="Tasa"
+                                             Required="true"
+                                             Format="N2"
+                                             Variant="Variant.Outlined"
+                                             Margin="Margin.Dense"
+                                             Culture="@CultureInfo.GetCultureInfo("es-VE")" />
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+    </DialogContent>
+</MudDialog>
+
+<style>
+    .blur {
+        backdrop-filter: blur(10px);
+    }
+
+    .dialog-background {
+        background-color: transparent;
+    }
+
+    .dialog-background-title {
+        background: rgb(from var(--mud-palette-info-lighten) r g b / 50%);
+        color: var(--mud-palette-white);
+    }
+
+    .dialog-background-surface {
+        background: rgb(from var(--mud-palette-surface) r g b / 75%);
+    }
+</style>
+
+@code {
+   
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public int IdRate { get; set; }
+    [Parameter] public ActionsEnum ActionsModal { get; set; }
+    
+    private Rate _rate = new();
+    private bool _isEdit => ActionsModal == ActionsEnum.Edit;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        if (_isEdit && IdRate > 0)
+        {
+            var response = await RateService.GetRates(null, null); 
+            if (response.Processed && response.Data != null)
+            {
+                var found = response.Data.FirstOrDefault(r => r.Id == IdRate);
+                if (found != null)
+                    _rate = found;
+            }
+        }
+        else
+        {
+            _rate = new Rate
+            {
+                DDate = DateTime.Today,
+                NRate = 0
+            };
+        }
+    }
+    
+    private void OnDateChanged(DateTime? newDate)
+    {
+        if (newDate.HasValue)
+            _rate.DDate = newDate.Value;
+    }
+    
+    private void OnRateChanged(decimal? newRate)
+    {
+        if (newRate.HasValue)
+            _rate.NRate = newRate.Value;
+    }
+    
+    private void Cancel() => MudDialog.Cancel();
+    
+    private async Task Save()
+    {
+        var response = _isEdit
+            ? await RateService.UpdateRate(_rate)
+            : await RateService.CreateRate(_rate);
+        
+        if (response.Processed)
+        {
+            await DialogService.ShowMessageBox(
+                "Éxito",
+                _isEdit ? "Tasa actualizada correctamente" : "Tasa creada correctamente",
+                yesText: "OK"
+            );
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            await DialogService.ShowMessageBox(
+                "Error",
+                response.Message ?? "Ocurrió un error al procesar la operación",
+                yesText: "OK"
+            );
+        }
+    }
+
+    private async Task OnRateKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "-" || e.Key == "_")
+        {
+            await Task.CompletedTask;
+        }
+    }
+}
