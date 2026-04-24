@@ -21,6 +21,9 @@ namespace Sipcon.WebApp.Client.Models
         [Required(ErrorMessage = "Campo requerido.")]
         public int? ModelId { get; set; }
 
+        [Required(ErrorMessage = "Campo requerido.")]
+        public int? FeatureValueTypeId { get; set; }
+
         [Required]
         public int? SupplierId { get; set;} 
 

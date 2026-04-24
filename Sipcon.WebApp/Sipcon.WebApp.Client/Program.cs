@@ -88,6 +88,8 @@ builder.Services.AddScoped<IFeatureTypeService, FeatureTypeRepository>();
 builder.Services.AddScoped<IFeatureService, FeatureRepository>();
 builder.Services.AddScoped<IPaymentService, PaymentsRepository>();
 
+builder.Services.AddScoped<IFeatureOptionService, FeatureOptionRepository>();
+builder.Services.AddScoped<IFeatureValueTypeService, FeatureValueTypeRepository>();
 
 builder.Services.AddTransient<UtilModuleActions>();
 builder.Services.AddScoped(typeof(MasterComp<,>));
