@@ -12,7 +12,7 @@ namespace Sipcon.WebApp.Client.Repository
 
         public async Task<ApiResponse<List<Feature>>> GetFeatures(
             int userId, int supplierId, int? dealerId,
-            int rowFrom = 0, string filter = "", bool? active = null)
+            int rowFrom = 0, string filter = "", bool? active = null, int? modelId = null)
         {
             ApiResponse<List<Feature>>? result;
             try
@@ -20,7 +20,8 @@ namespace Sipcon.WebApp.Client.Repository
                 var url = $"api/Feature/GetAll?userId={userId}&supplierId={supplierId}&rowFrom={rowFrom}";
                 if (dealerId.HasValue)             url += $"&dealerId={dealerId.Value}";
                 if (!string.IsNullOrEmpty(filter)) url += $"&filter={filter}";
-                if (active.HasValue)               url += $"&active={active.Value}";
+                if (active.HasValue)               url += $"&active={active.Value}"; 
+                if (modelId.HasValue)              url += $"&modelId={modelId.Value}";
 
                 result = await _http.GetFromJsonAsync<ApiResponse<List<Feature>>>(url);
                 result ??= new ApiResponse<List<Feature>> { Processed = false, Message = "La respuesta del servidor no contiene datos." };
@@ -91,7 +92,7 @@ namespace Sipcon.WebApp.Client.Repository
 
         public async Task<ApiResponse<List<byte>>> ExportFeatures(
             int userId, int supplierId, int? dealerId,
-            string filter = "", bool? active = null)
+            string filter = "", bool? active = null, int? modelId = null)
         {
             ApiResponse<List<byte>> result;
             try
@@ -100,6 +101,7 @@ namespace Sipcon.WebApp.Client.Repository
                 if (dealerId.HasValue)             url += $"&dealerId={dealerId.Value}";
                 if (!string.IsNullOrEmpty(filter)) url += $"&filter={filter}";
                 if (active.HasValue)               url += $"&active={active.Value}";
+                if (modelId.HasValue)              url += $"&modelId={modelId.Value}";
 
                 var response    = await _http.GetAsync(url);
                 var fileContent = await response.Content.ReadAsByteArrayAsync();

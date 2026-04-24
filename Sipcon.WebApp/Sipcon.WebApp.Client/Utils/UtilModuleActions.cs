@@ -8,7 +8,7 @@ using System.Diagnostics;
 namespace Sipcon.WebApp.Client.Utils
 {
     public class UtilModuleActions(
-        IModuleService ModuleService, 
+        IModuleService ModuleService,
         IVehicleColorService VehicleColorService,
         IModelService ModelService,
         ISupplierService SupplierService,
@@ -21,10 +21,12 @@ namespace Sipcon.WebApp.Client.Utils
         IAssistenceService AssistenceService,
         IReportDMSService ReportDMSService,
         IReportingService ReportingService,
-        IAreaService AreaService,          
-        IFaseService FaseService,         
-        IFeatureTypeService FeatureTypeService   
-        ) 
+        IAreaService AreaService,
+        IFaseService FaseService,
+        IFeatureTypeService FeatureTypeService,
+        IFeatureOptionService FeatureOptionService,
+        IFeatureValueTypeService FeatureValueTypeService
+        )
     {
 
         //private readonly IModuleService ServiceModule = Service;
@@ -34,7 +36,7 @@ namespace Sipcon.WebApp.Client.Utils
         {
             List<ModuleAction> _itemsModules = new([]);
             List<Module> _Modules = [];
-        
+
             var moduleResponse = await ModuleService.GetModules(IdUser, ModuleName);
             if (moduleResponse.Processed)
             {
@@ -108,8 +110,13 @@ namespace Sipcon.WebApp.Client.Utils
 
         }
 
-        // ── Inspección ────────────────────────────────────────────────────────
+        // ── Inspección ──────────────────────────────────────────────────────── 
+        private List<SelectOption>? _cachedFeatureTypeOptions = null;
+        private List<SelectOption>? _cachedModelOptions = null;
+        private List<SelectOption>? _cachedOptionValueOptions = null;
+        private string _cacheKey = string.Empty;
 
+        private string BuildKey(int supplierId, int dealerId) => $"{supplierId}_{dealerId}";
         /// <summary>Áreas activas — usado en FaseDialog, FeatureTypeDialog, FeatureDialog.</summary>
         public async Task<List<SelectOption>> GetAreaOption(int IdUser, int IdSupplier, int IdDealer)
         {
@@ -138,6 +145,10 @@ namespace Sipcon.WebApp.Client.Utils
         /// <summary>Tipos de característica activos filtrados por Fase — usado en FeatureDialog.</summary> 
         public async Task<List<SelectOption>> GetFeatureTypeOption(int IdUser, int IdSupplier, int IdDealer)
         {
+            var key = BuildKey(IdSupplier, IdDealer);
+            if (_cachedFeatureTypeOptions is not null && _cacheKey == key)
+                return _cachedFeatureTypeOptions;
+
             List<SelectOption> _itemsSelect = new([]);
             var response = await FeatureTypeService.GetFeatureTypes(IdUser, IdSupplier, IdDealer, active: true);
             if (response.Processed)
@@ -148,9 +159,52 @@ namespace Sipcon.WebApp.Client.Utils
                         ParentText = item.FaseName ?? string.Empty,
                         ExtraText = item.AreaName ?? string.Empty
                     });
+            _cachedFeatureTypeOptions = _itemsSelect;
+            _cacheKey = key;
             return _itemsSelect;
         }
 
+        public async Task<List<SelectOption>> GetOption(int userId, int featureId)
+        {
+            List<SelectOption> _itemsSelect = new([]);
+
+
+            var moduleResponse = await FeatureOptionService.GetFeatureOptions(userId, featureId);
+            if (moduleResponse.Processed)
+            {
+                List<FeatureOption> _List = moduleResponse.Data ?? new List<FeatureOption>();
+
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Id, item.Name));
+                }
+            }
+            return _itemsSelect;
+
+        }
+
+        public async Task<List<SelectOption>> GetOptionValue(int userId)
+        {
+            if (_cachedOptionValueOptions is not null)
+                return _cachedOptionValueOptions;
+
+            List<SelectOption> _itemsSelect = new([]);
+
+
+            var moduleResponse = await FeatureValueTypeService.GetFeatureValueTypes( userId);
+            if (moduleResponse.Processed)
+            {
+                List<FeatureValueType> _List = moduleResponse.Data ?? new List<FeatureValueType>();
+
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Id, item.Name));
+                }
+            }
+            _cachedOptionValueOptions = _itemsSelect;
+            return _itemsSelect;
+
+        }
         // ── Vehículos ─────────────────────────────────────────────────────────
         public async Task<List<SelectOption>> GetColorOption(int IdUser)
         {

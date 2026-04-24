@@ -32,31 +32,54 @@
                       Typo="Typo.caption"
                       AdornmentIcon="@Icons.Material.Filled.Search"
                       OnAdornmentClick="() => ClickSearch()"
-                      IconSize="Size.Medium" Class="mt-0"
+                      IconSize="Size.Medium" Class="mt-1"
                       OnKeyDown="HandleKeyDownSearch"></MudTextField>
         <MudSpacer />
-        <MudToggleGroup T="string" Value="_activeFilter"
-                        ValueChanged="@((string v) => OnFilterChanged(v))"
-                        Color="Color.Info" Size="Size.Small" Class="mr-2"
-                        SelectionMode="SelectionMode.SingleSelection">
-            <MudToggleItem Value="@("all")"      Text="Todos"     />
-            <MudToggleItem Value="@("active")"   Text="Activos"   />
-            <MudToggleItem Value="@("inactive")" Text="Inactivos" />
-        </MudToggleGroup>
-        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
-        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
-            @foreach (var module in _itemsModules)
-            {
-                <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
-                             Label="@module.Text"
-                             OnClick="() => HandleMenuClick(module)" />
-            }
-        </MudMenu>
+
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+            <MudToggleGroup T="string" Value="_activeFilter"
+                            ValueChanged="@((string v) => OnFilterChanged(v))"
+                            Color="Color.Info" Size="Size.Small"
+                            SelectionMode="SelectionMode.SingleSelection">
+                <MudToggleItem Value="@("all")" Text="Todos" />
+                <MudToggleItem Value="@("active")" Text="Activos" />
+                <MudToggleItem Value="@("inactive")" Text="Inactivos" />
+            </MudToggleGroup>
+
+            <MudSelect T="int?"
+                       Value="_selectedModelId"
+                       ValueChanged="@(async (int? v) => { _selectedModelId = v; await _mudDataGrid!.ReloadServerData(); })"
+                       Placeholder="Modelo"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Clearable="true"
+                       Dense="true"
+                       Style="min-width:110px; max-width:150px; margin-top:0; font-size:0.8125rem; height:30px;"
+                       ToStringFunc="@(id => id == null ? "Todos" : _modelOptions.FirstOrDefault(m => m.Value == id)?.Text ?? string.Empty)">
+                @foreach (var model in _modelOptions)
+                {
+                    <MudSelectItem T="int?" Value="@model.Value">@model.Text</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
+
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+                @foreach (var module in _itemsModules)
+                {
+                    <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
+                                 Label="@module.Text"
+                                 OnClick="() => HandleMenuClick(module)" />
+                }
+            </MudMenu>
+        </MudStack>
     </ToolBarContent>
 
     <Columns>
         <SelectColumn ShowInFooter="false" />
         <PropertyColumn Property="x => x.Name" Title="CARACTERÍSTICA" Sortable="false" Filterable="false"
+                        HeaderClass="mud-text-align-center" CellClass="mud-text-align-center" />
+        <PropertyColumn Property="x => x.ModelName" Title="MODELO" Sortable="false" Filterable="false"
                         HeaderClass="mud-text-align-center" CellClass="mud-text-align-center" />
         <PropertyColumn Property="x => x.FeatureTypeName" Title="TIPO CARACTERÍSTICA" Sortable="false" Filterable="false"
                         HeaderClass="mud-text-align-center" CellClass="mud-text-align-center" />
@@ -122,6 +145,7 @@
     private string               _searchString  = string.Empty;
     private string               _activeFilter  = "all";
     private bool                 _loading       = true;
+    private int?                 _selectedModelId = null; 
     private const string         ModuleName     = "INSPECCION-CARACTERISTICAS";
 
     private MudDataGrid<Feature>?  _mudDataGrid;
@@ -186,12 +210,28 @@
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
+    private IEnumerable<SelectOption> _featureTypeOptions = new List<SelectOption>();
+    private IEnumerable<SelectOption> _modelOptions = new List<SelectOption>();
+    private IEnumerable<SelectOption> _valueTypeOptions = new List<SelectOption>();
 
     protected override async Task OnInitializedAsync()
     {
         await AuthenticationStateProvider.RefreshStaticVariables();
         hubEventsService.OnSupplierChanged += ReloadServerData;
         hubEventsService.OnDealerChanged += ReloadServerData;
+
+        // Catálogos solo una vez al iniciar
+        var tModules = ModuleActionsService.GetModuleActions(Session.UserId, ModuleName);
+        var tTypes = ModuleActionsService.GetFeatureTypeOption(Session.UserId, Session.SupplierId, Session.DealerId);
+        var tModels = ModuleActionsService.GetModelOption(Session.SupplierId, Session.UserId);
+        var tValTypes = ModuleActionsService.GetOptionValue(Session.UserId);
+
+        await Task.WhenAll(tModules, tTypes, tModels, tValTypes);
+
+        _itemsModules = tModules.Result;
+        _featureTypeOptions = tTypes.Result;
+        _modelOptions = tModels.Result;
+        _valueTypeOptions = tValTypes.Result;
     }
 
     public void Dispose()
@@ -203,8 +243,16 @@
 
     private async Task ReloadServerData()
     {
-        if (_mudDataGrid != null)
-            await _mudDataGrid.ReloadServerData();
+        if (_mudDataGrid is null) return;
+
+        // Recargar catálogos también porque cambia el contexto
+        var tTypes = ModuleActionsService.GetFeatureTypeOption(Session.UserId, Session.SupplierId, Session.DealerId);
+        var tModels = ModuleActionsService.GetModelOption(Session.SupplierId, Session.UserId);
+        await Task.WhenAll(tTypes, tModels);
+        _featureTypeOptions = tTypes.Result;
+        _modelOptions = tModels.Result;
+
+        await _mudDataGrid.ReloadServerData();
     }
 
     private async Task<GridData<Feature>> LoadGridData(GridState<Feature> state)
@@ -217,31 +265,30 @@
 
     private async Task GetItems()
     {
-        _loading   = true;
-        _items     = new List<Feature>();
+        _loading = true;
+        _items = new List<Feature>();
         _rowsTotal = 0;
-
-        _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, ModuleName);
 
         bool? activeParam = _activeFilter switch
         {
-            "active"   => true,
+            "active" => true,
             "inactive" => false,
-            _          => null
+            _ => null
         };
 
+        // Solo el request que realmente necesita actualizarse
         var serviceResponse = await FeatureService.GetFeatures(
             Session.UserId, Session.SupplierId, Session.DealerId,
-            _rowCount, _searchString, activeParam);
+            _rowCount, _searchString, activeParam, _selectedModelId);
 
         if (serviceResponse.Processed)
         {
-            _items     = serviceResponse.Data;
+            _items = serviceResponse.Data;
             _rowsTotal = serviceResponse.Total;
         }
         else
         {
-            _success            = false;
+            _success = false;
             _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
             OpenNested();
         }
