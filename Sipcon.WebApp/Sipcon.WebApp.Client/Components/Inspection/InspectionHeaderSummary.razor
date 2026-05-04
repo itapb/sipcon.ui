@@ -1,0 +1,97 @@
+@using MudBlazor
+
+@if (Header != null)
+{
+    <MudGrid Spacing="3" Class="mb-4">
+        @* Card: Información del Vehículo *@
+        <MudItem xs="12" sm="6">
+            <MudPaper Elevation="0" Outlined="true" Class="pa-4 h-100" Style="border-radius: 12px; border-left: 6px solid var(--mud-palette-info);">
+                <MudText Typo="Typo.subtitle2" Color="Color.Dark" Class="mb-2 fw-bold text-uppercase" Style="font-size: 0.75rem;">Datos del Vehículo</MudText>
+                <div class="d-flex flex-column gap-2">
+                    <div class="d-flex justify-space-between border-b-dashed pb-1">
+                        <MudText Typo="Typo.caption" Color="Color.Dark">Modelo:</MudText>
+                        <MudText Typo="Typo.body2" Class="fw-bold">@(Header.Model ?? "N/A")</MudText>
+                    </div>
+                    <div class="d-flex justify-space-between border-b-dashed pb-1">
+                        <MudText Typo="Typo.caption" Color="Color.Dark">Placaa:</MudText>
+                        <MudText Typo="Typo.body2" Class="fw-bold">@(Header.VehiclePlate ?? "---")</MudText>
+                    </div>
+                    <div class="d-flex justify-space-between border-b-dashed pb-1">
+                        <MudText Typo="Typo.caption" Color="Color.Dark">VIN:</MudText>
+                        <MudText Typo="Typo.body2" Class="fw-bold">@(Header.Vin ?? "---")</MudText>
+                    </div>
+                    <div class="d-flex justify-space-between">
+                        <MudText Typo="Typo.caption" Color="Color.Dark">Área:</MudText>
+                        <MudText Typo="Typo.body2" Class="fw-bold text-primary">@(Header.NameArea ?? "Sin Área")</MudText>
+                    </div>
+                </div>
+            </MudPaper>
+        </MudItem>
+
+        @* Card: Personal Involucrado *@
+        <MudItem xs="12" sm="6">
+            <MudPaper Elevation="0" Outlined="true" Class="pa-4 h-100" Style="border-radius: 12px; border-left: 6px solid var(--mud-palette-info);">
+                <MudText Typo="Typo.subtitle2" Color="Color.Info" Class="mb-2 fw-bold text-uppercase" Style="font-size: 0.75rem;">Personal y Control</MudText>
+                <div class="d-flex flex-column gap-2">
+                    @if (Header.Created.HasValue)
+                    {
+                        <div class="d-flex align-center">
+                            <MudText Typo="Typo.caption" Class="flex-grow-1">Fecha:</MudText>
+                            <MudText Typo="Typo.body2" Class="fw-bold">@Header.Created.Value.ToString("dd/MM/yyyy HH:mm")</MudText>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Header.ClosedByName))
+                    {
+                        <div class="d-flex align-center border-b-dashed pb-1">
+                            <MudText Typo="Typo.caption" Class="flex-grow-1">Cerrado por:</MudText>
+                            <MudText Typo="Typo.body2" Class="fw-bold text-success">@Header.ClosedByName</MudText>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Header.RecepByName))
+                    {
+                        <div class="d-flex align-center border-b-dashed pb-1">
+                            <MudText Typo="Typo.caption" Class="flex-grow-1">Recepción:</MudText>
+                            <MudText Typo="Typo.body2" Class="fw-bold">@Header.RecepByName</MudText>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Header.TransporterName))
+                    {
+                        <div class="d-flex align-center border-b-dashed pb-1">
+                            <MudText Typo="Typo.caption" Class="flex-grow-1">Transportista:</MudText>
+                            <MudText Typo="Typo.body2" Class="fw-bold">@Header.TransporterName</MudText>
+                        </div>
+                    }
+                </div>
+            </MudPaper>
+        </MudItem>
+
+        @* Comentarios *@
+        @if (!string.IsNullOrEmpty(Header.Comment))
+        {
+            <MudItem xs="12">
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" ContentAlignment="HorizontalAlignment.Left" Class="rounded-lg pa-2">
+                    <div class="d-flex flex-column">
+                        <MudText Typo="Typo.caption" Style="font-weight: 800;" Class="text-uppercase">Comentarios de Inspección</MudText>
+                        <MudText Typo="Typo.body2" Style="font-style: italic;">"@Header.Comment"</MudText>
+                    </div>
+                </MudAlert>
+            </MudItem>
+        }
+
+        @* Botón de adjuntos *@
+        @if (Header.HasFiles == true)
+        {
+            <MudItem xs="12" Class="d-flex justify-center mt-n2">
+                <MudButton Variant="Variant.Text" Color="Color.Info" StartIcon="@Icons.Material.Filled.PhotoLibrary" OnClick="OnViewAttachments" Class="rounded-pill">
+                    Ver Archivos Adjuntos del Vehículo
+                </MudButton>
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    [Parameter] public InspectionDetail? Header { get; set; }
+    [Parameter] public int RecordId { get; set; }
+    [Parameter] public EventCallback OnViewAttachments { get; set; }
+}
