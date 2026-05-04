@@ -67,6 +67,7 @@ builder.Services.AddScoped<IVehicleService, VehicleRepository>();
 builder.Services.AddScoped<IVehicleColorService, VehicleColorRepository>();
 builder.Services.AddScoped<IBrandService, BrandRepository>();
 builder.Services.AddScoped<IPolicyTypeService, PolicyTypeRepository>();
+builder.Services.AddScoped<IInspectionService, InspectionRepository>();
 builder.Services.AddScoped<ISupplierService, SupplierRepository>();
 builder.Services.AddScoped<IDealerService, DealerRepository>();
 builder.Services.AddScoped<IPolicyService, PolicyRepository>();
