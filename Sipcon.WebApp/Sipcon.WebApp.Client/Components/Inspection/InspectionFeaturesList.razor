@@ -1,0 +1,93 @@
+@using MudBlazor
+
+@if (Loading)
+{
+    <div class="d-flex justify-center pa-10">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    </div>
+}
+else if (FeaturesGrouped != null)
+{
+    @* Se agrupan los features por featuretypes *@
+    @foreach (var grupo in FeaturesGrouped)
+    {
+        <div class="group-header d-flex align-center mt-6 mb-3 pa-2 rounded-r-lg">
+            <MudIcon Icon="@Icons.Material.Filled.Label" Size="Size.Small" Color="Color.Primary" Class="mr-2" />
+            <MudText Typo="Typo.subtitle2" Style="font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">@grupo.Key</MudText>
+        </div>
+
+        <MudPaper Elevation="0" Outlined="true" Style="border-radius: 12px;" Class="mb-4 overflow-hidden">
+            <MudList T="string" Clickable="false" Dense="true" Class="pa-0">
+                @* Mostrando los features *@
+                @foreach (var feat in grupo)
+                {
+                    <MudListItem Class="py-3 px-4 item-hover border-b">
+                        <div class="d-flex align-center justify-space-between w-100">
+                            <div class="d-flex flex-column" style="max-width: 60%;">
+                                <MudText Typo="Typo.body2" Style="font-weight: 500;">@feat.Feature</MudText>
+                                
+                                @if (!string.IsNullOrEmpty(feat.Observation))
+                                {
+                                    <div class="d-flex align-start mt-1">
+                                        <MudText Typo="Typo.caption" Color="Color.Dark" Style="font-style: italic;">@feat.Observation</MudText>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="d-flex align-center">
+                                <div class="mr-3">
+                                    @* LLAMADA AL FRAGMENTO HTML *@
+                                    @DisplayValue(feat)
+                                </div>
+
+                                @if (feat.HasFiles == true)
+                                {
+                                    <MudTooltip Text="Ver evidencias">
+                                        <MudIconButton Icon="@Icons.Material.Filled.ImageSearch" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info" OnClick="@(() => OnViewAttachments.InvokeAsync(feat.Id))" Class="rounded-lg" />
+                                    </MudTooltip>
+                                }
+                            </div>
+                        </div>
+                    </MudListItem>
+                }
+            </MudList>
+        </MudPaper>
+    }
+}
+
+@code {
+    [Parameter] public bool Loading { get; set; }
+    [Parameter] public IEnumerable<IGrouping<string, dynamic>>? FeaturesGrouped { get; set; }
+    [Parameter] public EventCallback<int> OnViewAttachments { get; set; }
+
+    @* DEFINICIÓN DEL FRAGMENTO CON CAST A STRING PARA EVITAR AMBIGÜEDAD *@
+    RenderFragment DisplayValue(dynamic feat) => @<text>
+        @if (feat.FeatureValueTypeId == "1")
+        {
+            @if (feat.Value == 1)
+            {
+                <MudChip T="string" Color="Color.Success" Variant="Variant.Text" Size="Size.Small" Icon="@Icons.Material.Filled.CheckCircle" Class="fw-bold">Aprobado</MudChip>
+            }
+            else if (feat.Value == 0)
+            {
+                <MudChip T="string" Color="Color.Error" Variant="Variant.Text" Size="Size.Small" Icon="@Icons.Material.Filled.Cancel" Class="fw-bold">No Aprobado</MudChip>
+            }
+            else
+            {
+                <MudChip T="string" Color="Color.Default" Variant="Variant.Text" Size="Size.Small" Icon="@Icons.Material.Filled.RadioButtonUnchecked" Class="fw-bold" Style="opacity: 0.5;">Pendiente</MudChip>
+            }
+        }
+        else if (feat.FeatureValueTypeId == "2")
+        {
+            @* Se agrega (string) para resolver la ambigüedad *@
+            <MudChip T="string" Color="Color.Info" Size="Size.Small" Variant="Variant.Filled" Class="fw-bold">@((string)feat.OptionSelected)</MudChip>
+        }
+        else
+        {
+            @* Se agrega (string) para asegurar que AddContent sepa qué método usar *@
+            <MudText Typo="Typo.body2" Color="Color.Primary" Class="fw-bold px-3 py-1 rounded-pill" Style="background: var(--mud-palette-primary-hover); white-space: nowrap;">
+                @((feat?.Value?.ToString()) ?? "---")
+            </MudText>
+        }
+    </text>;
+}

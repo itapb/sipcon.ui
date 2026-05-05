@@ -1,0 +1,203 @@
+@using MudBlazor
+@inject IInspectionService InspectionService
+@inject IAttachmentService AttachmentService
+@inject IJSRuntime JS
+
+<MudDialog>
+    <TitleContent>
+        <div class="d-flex align-center">
+            <MudIcon Icon="@Icons.Material.Filled.AttachFile" Color="Color.Info" Class="mr-3"/>
+            <MudText Typo="Typo.h6">Archivos Adjuntos</MudText>
+        </div>
+    </TitleContent>
+
+    <DialogContent>
+        @if (_loading)
+        {
+            <div class="d-flex flex-column align-center justify-center pa-10">
+                <MudProgressCircular Color="Color.Info" Indeterminate="true" Class="mb-2" />
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Cargando archivos...</MudText>
+            </div>
+        }
+        else if (_files == null || !_files.Any())
+        {
+            <div class="d-flex flex-column align-center justify-center pa-10 border-dashed">
+                <MudIcon Icon="@Icons.Material.Filled.CloudOff" Size="Size.Large" Color="Color.Primary" />
+                <MudText Typo="Typo.body1" Color="Color.Secondary">No hay archivos adjuntos</MudText>
+            </div>
+        }
+        else
+        {
+            <div class="mb-4 px-2">
+                <MudText Typo="Typo.subtitle2" Color="Color.Dark">
+                    Total: @(_files.Count) @(_files.Count == 1 ? "archivo" : "archivos")
+                </MudText>
+            </div>
+
+            <MudList T="string" Clickable="true" Dense="true" Class="pa-0">
+                @foreach (var file in _files)
+                {
+                    <MudListItem Class="px-2 py-3 border-b">
+                        <div class="d-flex align-center justify-space-between w-100">
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="@GetFileIcon(file.fileName)" Color="Color.Info" Class="mr-3" />
+                                <div class="d-flex flex-column">
+                                    <MudText Typo="Typo.body2" Style="font-weight: 500;">@file.fileName</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                        @file.dateCreate?.ToString("dd/MM/yyyy HH:mm")
+                                    </MudText>
+                                </div>
+                            </div>
+
+                            <MudIconButton Icon="@Icons.Material.Filled.Download" 
+                                           Size="Size.Small" 
+                                           Color="Color.Info" 
+                                           Variant="Variant.Outlined"
+                                           Disabled="_downloading"
+                                           OnClick="@(() => DescargarAdjunto(file))" />
+
+                           <MudIconButton Icon="@Icons.Material.Filled.Preview" 
+                                           Size="Size.Small" 
+                                           Color="Color.Info"
+                                           Variant="Variant.Outlined"
+                                           OnClick="@(() => PreviewAdjunto(file))" />
+                        </div>
+                    </MudListItem>
+                }
+            </MudList>
+        }
+    </DialogContent>
+</MudDialog>
+
+<style>
+    .border-dashed { 
+        border: 2px dashed var(--mud-palette-divider); 
+        border-radius: 8px; 
+    }
+    .border-b { border-bottom: 1px solid var(--mud-palette-lines-default); }
+    .border-b:last-child { border-bottom: none; }
+    .w-100 { width: 100%; }
+</style>
+
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
+
+    [CascadingParameter] MudDialog MudDialog { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+
+    [Parameter] public int RecordId { get; set; }
+    [Parameter] public string ModuleName { get; set; } = "InspectionFeatures";
+
+    private List<InspectionFiles> _files = new();
+    private bool _loading = true;
+    private bool _downloading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFiles();
+    }
+
+    private async Task LoadFiles()
+    {
+        _loading = true;
+
+        try
+        {
+            var response = await InspectionService.GetInpectionFiles(RecordId, ModuleName);
+
+            if (response.Processed && response.Data != null)
+            {
+                _files = response.Data.Where(x => x.isActive == true).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar adjuntos: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private string GetFileIcon(string? fileName)
+    {
+        if (string.IsNullOrEmpty(fileName)) return Icons.Material.Filled.InsertDriveFile;
+
+        var ext = System.IO.Path.GetExtension(fileName).ToLower();
+        
+        return ext switch
+        {
+            ".jpg" or ".jpeg" or ".png" or ".webp" => Icons.Material.Filled.Image,
+            ".pdf" => Icons.Material.Filled.PictureAsPdf,
+            _ => Icons.Material.Filled.InsertDriveFile
+        };
+    }
+    
+    private async Task DescargarAdjunto(InspectionFiles file)
+    {
+        if (file.Id == null || string.IsNullOrEmpty(file.fileName)) return;
+
+        try
+        {
+            _downloading = true;
+        
+            var serviceResponse = await AttachmentService.GetAttachment(file.Id.Value, Session.UserId); 
+
+            if (serviceResponse.Processed && serviceResponse.Data != null)
+            {
+                var applicationName = string.Empty;
+                var fileExtension = Path.GetExtension(file.fileName).ToLowerInvariant();
+
+                switch (fileExtension)
+                {
+                    case ".jpg":
+                    case ".jpeg":
+                        applicationName = "image/jpeg";
+                        break;
+                    case ".png":
+                    case ".pneg":
+                        applicationName = "image/png";
+                        break;
+                    case ".mp4":
+                        applicationName = "video/mp4";
+                        break;
+                    case ".pdf":
+                        applicationName = "application/pdf";
+                        break;
+                    default:
+                        applicationName = "application/octet-stream";
+                        break;
+                }
+
+                var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+                var fileUrl = $"data:{applicationName};base64,{base64File}";
+
+                await JS.InvokeVoidAsync("downloadFile", fileUrl, file.fileName);
+            }
+            else
+            {
+                var errorMessage = serviceResponse.Message ?? "No se pudo exportar el archivo.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error en la descarga: {ex.Message}");
+        }
+        finally
+        {
+            _downloading = false;
+        }
+    }
+
+    private async Task PreviewAdjunto(InspectionFiles file)
+    {
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true, NoHeader = false };
+        var parameters = new DialogParameters<PreviewImageDialog> { { x => x.Title, "Vista Previa." }, { x => x.IdAttachment, file.Id.ToString() }, { x => x.NameAttachment, file.fileName } };
+        var dialog = await DialogService.ShowAsync<PreviewImageDialog>("Vista Previa.", parameters, options);
+
+        StateHasChanged();
+
+        await Task.CompletedTask;
+    }
+}

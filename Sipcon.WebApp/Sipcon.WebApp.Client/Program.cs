@@ -27,19 +27,21 @@ CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("en-US");
 //builder.Services.AddScoped<TokenHandler>();
 //var backEndUrl = builder.Configuration.GetValue<string>("BackEndUrl")!;
 var backEndUrl = "";
-var env = builder.Configuration.GetValue<string>("Environment")!;
-if (env == "DEV")
-{
-    backEndUrl = builder.Configuration.GetValue<string>("BackEndUrlDEV")!;
-}
-if (env == "QA")
-{
-    backEndUrl = builder.Configuration.GetValue<string>("BackEndUrlQA")!;
-}
-if (env == "PROD")
-{
-    backEndUrl = builder.Configuration.GetValue<string>("BackEndUrl")!;
-}
+var env = builder.Configuration.GetValue<string>("BackEndUrl")!;
+backEndUrl = builder.Configuration.GetValue<string>(env)!;
+
+//if (env == "DEV")
+//{
+//    backEndUrl = builder.Configuration.GetValue<string>("BackEndUrlDEV")!;
+//}
+//if (env == "QA")
+//{
+//    backEndUrl = builder.Configuration.GetValue<string>("BackEndUrlQA")!;
+//}
+//if (env == "PROD")
+//{
+//    backEndUrl = builder.Configuration.GetValue<string>("BackEndUrl")!;
+//}
 
 builder.Services.AddHttpClient("ServerAPI", client => client.BaseAddress = new Uri(backEndUrl)); 
 builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("ServerAPI"));
@@ -65,6 +67,7 @@ builder.Services.AddScoped<IVehicleService, VehicleRepository>();
 builder.Services.AddScoped<IVehicleColorService, VehicleColorRepository>();
 builder.Services.AddScoped<IBrandService, BrandRepository>();
 builder.Services.AddScoped<IPolicyTypeService, PolicyTypeRepository>();
+builder.Services.AddScoped<IInspectionService, InspectionRepository>();
 builder.Services.AddScoped<ISupplierService, SupplierRepository>();
 builder.Services.AddScoped<IDealerService, DealerRepository>();
 builder.Services.AddScoped<IPolicyService, PolicyRepository>();
