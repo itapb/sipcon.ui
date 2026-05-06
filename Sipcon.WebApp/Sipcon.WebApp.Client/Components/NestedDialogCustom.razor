@@ -2,14 +2,14 @@
 <MudDialog @bind-Visible="IsVisible">
     <TitleContent>
         <MudStack Row="true">
-            <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="@(Success? Color.Default: Color.Error)" Style="font-size: 2rem;"></MudIcon>
+            <MudIcon Icon="@Icon" Color="@(Success ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
             <MudText Typo="Typo.h6">@Title</MudText>
         </MudStack>
     </TitleContent>
     <DialogContent>
 
         <MudStack Row="true">
-            <MudText Class="nested"><p>@ErrorMessage!</p> </MudText>
+            <MudText Class="nested"><p>@ErrorMessage</p> </MudText>
         </MudStack>
 
     </DialogContent>
@@ -29,7 +29,8 @@
 
 </style>
 
-@code { [Inject] private UserSession Session { get; set; } = null!;
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
 
     [Inject] private IDialogService DialogService { get; set; } = default!;
 
@@ -38,6 +39,8 @@
     [Parameter] public string ErrorMessage { get; set; } = string.Empty;
     [Parameter] public string Title { get; set; } = "Sipcon";
     [Parameter] public EventCallback onCloseNested { get; set; }
+    [Parameter] public string? Icon { get; set; } = Icons.Material.Filled.CarRental;
+
 
     private async Task CloseNested()
     {

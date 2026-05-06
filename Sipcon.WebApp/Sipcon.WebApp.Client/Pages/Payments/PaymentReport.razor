@@ -21,6 +21,7 @@
 <MudText Typo="Typo.caption">Gestión de transferencias reportadas por concesionarios</MudText>
 
 
+<MudDrawerContainer Class="mud-height-full">
 
 <MudContainer Class="py-2 pt-2 pa-2 mt-2">
     @* //Filtros *@
@@ -171,11 +172,17 @@
                 string style = "";
                 string txt = "";
 
-                if (Item.Name.ToUpper() == "TRANSITO")
+                if (Item.Name.ToUpper() == "BORRADOR")
                 {
                     color = Color.Warning;
-                    txt = "Transito";
+                    txt = "Borrador";
                     backgroundColor = "width: 25%;background-color: #fff7ed;";
+                }
+                if (Item.Name.ToUpper() == "APROBADO")
+                {
+                    color = Color.Primary;
+                    txt = "Aprobado";
+                    backgroundColor = "width: 25%;background-color: #f5f4fd;";
                 }
                 else if (Item.Name.ToUpper() == "PARA VALIDAR")
                 {
@@ -290,36 +297,37 @@
                     <col style="width: 10%;" />
                     <col style="width: 24%;" />
                     <col style="width: 10%;" />
-                    <col style="width: 2%;" />
-                    <col style="width: 2%;" />
+                    <col style="width: 4%;" />
                 </ColGroup>
                 <Columns>
                     <SelectColumn T="Payment" />
-                    <HierarchyColumn T="Payment" EnableHeaderToggle="false" />
+                        @* ButtonDisabledFunc="@(context => context.StatusName.ToUpper() == "BORRADOR")" *@
+                    <HierarchyColumn T="Payment" EnableHeaderToggle="false"  />
+
                     <TemplateColumn Title="Fecha">
                         <CellTemplate>
-                            <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.PaymentDetail.DateRate.ToString("dd/MM/yyyy"))</MudText>
+                            <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.DateRate.ToString("dd/MM/yyyy"))</MudText>
                         </CellTemplate>
                     </TemplateColumn>
                     <TemplateColumn Title="Tipo">
                         <CellTemplate>
                             <div class="d-flex justify-start">
-                                @if (context.Item.PaymentDetail.TypeName != null)
+                                @if (context.Item.TypeName != null)
                                 {
                                     Color color = Color.Default;
                                     string style = "";
                                     string txt = "";
-                                    if (context.Item.PaymentDetail.TypeName.ToUpper() == "RETENCION")
+                                    if (context.Item.TypeName.ToUpper() == "RETENCION")
                                     {
                                         color = Color.Dark;
                                         txt = "Retencion";
                                     }
-                                    else if (context.Item.PaymentDetail.TypeName.ToUpper() == "TRANSFERENCIA")
+                                    else if (context.Item.TypeName.ToUpper() == "TRANSFERENCIA")
                                     {
                                         color = Color.Info;
                                         txt = "Transferencia";
                                     }
-                                    else if (context.Item.PaymentDetail.TypeName.ToUpper() == "EFECTIVO")
+                                    else if (context.Item.TypeName.ToUpper() == "EFECTIVO")
                                     {
                                         color = Color.Success;
                                         txt = "Efectivo";
@@ -342,17 +350,17 @@
                     <TemplateColumn Title="Moneda">
                         <CellTemplate>
                             <div class="d-flex justify-start">
-                                @if (context.Item.PaymentDetail.CurrencyName != null)
+                                @if (context.Item.CurrencyName != null)
                                 {
                                     Color color = Color.Default;
                                     string style = "";
                                     string txt = "";
-                                    if (context.Item.PaymentDetail.CurrencyName.ToUpper() == "BS - BOLIVAR")
+                                    if (context.Item.CurrencyName.ToUpper() == "BS - BOLIVAR")
                                     {
                                         color = Color.Warning;
                                         txt = "Bs.";
                                     }
-                                    else if (context.Item.PaymentDetail.CurrencyName.ToUpper() == "$ - DOLAR")
+                                    else if (context.Item.CurrencyName.ToUpper() == "$ - DOLAR")
                                     {
                                         color = Color.Success;
                                         txt = "USD";
@@ -372,49 +380,51 @@
                             </div>
                         </CellTemplate>
                     </TemplateColumn>
-                    <PropertyColumn Title="Banco" Filterable="false" Property="x => x.PaymentDetail.BankName.ToLower()"  CellStyle="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 0;" />
+                    <PropertyColumn Title="Banco" Filterable="false" Property="x => x.BankName.ToLower()"  CellStyle="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 0;" />
                     <TemplateColumn Title="Referencia">
                         <CellTemplate>
-                            <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.PaymentDetail.Reference</MudText>
+                            <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Reference</MudText>
                         </CellTemplate>
                     </TemplateColumn>
                     <TemplateColumn Title="Monto">
                         <CellTemplate>
                             <div class="d-flex justify-center">
                                 <MudText Typo="Typo.caption" Align="Align.End">
-                                                @(context.Item.PaymentDetail.Amount?.ToString("N2"))
+                                                @(context.Item.Amount?.ToString("N2"))
                                 </MudText>
                             </div>
                         </CellTemplate>
                     </TemplateColumn>
-                    <PropertyColumn Title="Concesionario" Filterable="false" Property="x => x.PaymentDetail.DealerName.ToLower()" CellStyle="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 0;" />
+                    <PropertyColumn Title="Concesionario" Filterable="false" Property="x => x.DealerName.ToLower()" CellStyle="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 0;" />
                     <TemplateColumn Title="Estado">
                         <CellTemplate>
                             <div class="d-flex justify-start">
-                                @if (context.Item.PaymentDetail.StatusName != null)
+                                @if (context.Item.StatusName != null)
                                 {
                                     Color color = Color.Default;
                                     string style = "";
                                     string txt = "";
-                                    if (context.Item.PaymentDetail.StatusName.ToUpper() == "TRANSITO")
+                                    if (context.Item.StatusName.ToUpper() == "BORRADOR")
                                     {
-                                        color = Color.Dark;
-                                        txt = "Transito";
+                                        color = Color.Warning;
+                                        txt = "Borrador";
                                     }
-                                    else if (context.Item.PaymentDetail.StatusName.ToUpper() == "PARA VALIDAR")
+                                    if (context.Item.StatusName.ToUpper() == "APROBADO")
+                                    {
+                                        color = Color.Primary;
+                                        txt = "Aprobado";
+                                    }
+                                    else if (context.Item.StatusName.ToUpper() == "PARA VALIDAR")
                                     {
                                         color = Color.Info;
                                         txt = "Para Validar";
                                     }
-                                    else if (context.Item.PaymentDetail.StatusName.ToUpper() == "VALIDADO")
+                                    else if (context.Item.StatusName.ToUpper() == "VALIDADO")
                                     {
                                         color = Color.Success;
                                         txt = "Validado";
                                     }
-                                    else
-                                    {
-                                        color = Color.Error;
-                                    }
+                                    
                                     style += "font-size: 12px";
                                     style += ";font-style:italic";
 
@@ -426,20 +436,28 @@
                             </div>
                         </CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn StickyRight="true">
+                  
+                    @* <TemplateColumn StickyRight="true">
                         <CellTemplate>
-                            @if (context.Item.PaymentDetail.StatusName != null)
-                            {
-                                if (context.Item.PaymentDetail.StatusName.ToUpper() == "TRANSITO")
-                                {
-                                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" />
-                                }
-                            }
+                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.AttachFile" Href="@("paymentfiles/" + context.Item.Id)" />
                         </CellTemplate>
-                    </TemplateColumn>
+                    </TemplateColumn> *@
+
                     <TemplateColumn StickyRight="true">
                         <CellTemplate>
-                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.AttachFile" Href="@("paymentdetail/" + context.Item.PaymentDetail.Id)" />
+                            <MudButtonGroup Size="@Size.Small" Variant="Variant.Text" Color="Color.Dark">
+                                    @if (context.Item.StatusName != null)
+                                    {
+                                        if (context.Item.StatusName.ToUpper() == "BORRADOR")
+                                        {
+                                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditPayment(context.Item)" />
+                                        
+                                        }
+                                    
+                                    }
+                                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.AttachFile" OnClick="() => OnClickAttachamentButton(context.Item)" />
+                            </MudButtonGroup>
+                            
                         </CellTemplate>
                     </TemplateColumn>
 
@@ -451,31 +469,26 @@
                             <MudCardHeader Style="padding-top: 8px;">
                                 <CardHeaderContent >
                                     <MudText Typo="Typo.button" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">
-                                        @("#" + context.Item.PaymentDetail.Id.ToString().PadLeft(10, '0'))
+                                        @("#" + context.Item.Id.ToString().PadLeft(10, '0'))
                                     </MudText>
                                 </CardHeaderContent>
                             </MudCardHeader>
                             <MudCardContent Style="padding-top: 0px;">
-                                <MudText Style="font-weight:bold;" Typo="Typo.body2">Cuenta Nro. : <MudText Inline="true" Typo="Typo.caption">@context.Item.PaymentDetail.AccountNumber</MudText></MudText>
-                                <MudText Style="font-weight:bold;" Typo="Typo.body2">Banco       : <MudText Inline="true" Typo="Typo.caption">@context.Item.PaymentDetail.BankName</MudText></MudText>
-                                @if (context.Item.PaymentDetail.TypeName.ToUpper() == "TRANSFERENCIA")
+                                <MudText Style="font-weight:bold;" Typo="Typo.body2">Cuenta Nro. : <MudText Inline="true" Typo="Typo.caption">@context.Item.AccountNumber</MudText></MudText>
+                                <MudText Style="font-weight:bold;" Typo="Typo.body2">Banco       : <MudText Inline="true" Typo="Typo.caption">@context.Item.BankName</MudText></MudText>
+                                @if (context.Item.TypeName.ToUpper() == "TRANSFERENCIA")
                                 {
-                                    <MudText Style="font-weight:bold;" Typo="Typo.body2">Banco Origen: <MudText Inline="true" Typo="Typo.caption">@context.Item.PaymentDetail.BankOriginName</MudText></MudText>
+                                    <MudText Style="font-weight:bold;" Typo="Typo.body2">Banco Origen: <MudText Inline="true" Typo="Typo.caption">@context.Item.BankOriginName</MudText></MudText>
                        
                                 }
                             </MudCardContent>
                         </MudCard>
                     
                         <MudCard Style="width: 70%; min-height:176px;">
-                            @* <MudCardHeader Style="padding-top: 8px;">
-                                <MudStack Row="true">
-                                    <MudIcon Icon="@Icons.Material.Filled.FilePresent" Color="Color.Default" Style="font-size: 1.5rem;"></MudIcon>
-                                    <MudText Typo="Typo.subtitle2">Documentos Relacionados</MudText>
-                                </MudStack>
-                            </MudCardHeader> *@
+                  
                             <MudCardContent Style="padding-top: 0px;" Class="">
                                 
-                                <DocumentDetail DocumentDetails="context.Item.AccountPreview" />
+                                <DocumentPreviewList DocumentDetails="context.Item.AccountPreview" IsVisibleToolBar ="true"/>
 
                             </MudCardContent>
                         </MudCard>
@@ -490,17 +503,29 @@
         </MudCardContent>
     </MudCard>
 
-
- 
-
 </MudContainer>
 
+@if (IdPaymentPreviewSelected > 0)
+{
+    <MudDrawer @bind-Open="@_openDrawer" Width="950px" Anchor="Anchor.End" Elevation="1" Variant="@DrawerVariant.Temporary" OverlayAutoClose="false">
+    
+            <PaymentAccountDetail SelectedDocuments="@DocumentSelecteds" 
+                SelectedPaymentId="@IdPaymentPreviewSelected" 
+                OnClickCloseDetail="() => ClickClosedDrawer()">
+            </PaymentAccountDetail>
+    
+    </MudDrawer>
+}
+
+    <NestedDialogCustom IsVisible="@NestedVisible"
+                        Icon="@Icons.Material.Filled.Payments"
+                        Success="@Success"
+                        onCloseNested="() => NestedVisible = false"
+                        ErrorMessage="@NestedErrorMessage"
+                        Title="@("Aseguramiento de Ingreso")" />
+</MudDrawerContainer>
 
 
-<NestedDialogCustom IsVisible="@NestedVisible" Success="@Success"
-                    onCloseNested="() => NestedVisible = false"
-                    ErrorMessage="@NestedErrorMessage"
-                    Title="@("Aseguramiento de Ingreso")" />
 
 @code {
     [Inject] private UserSession Session { get; set; } = null!;
@@ -520,6 +545,7 @@
     private bool Loading = false;
     private bool _open;
     private string SearchString = string.Empty;
+    private bool _openDrawer = false;
 
     private List<ModuleAction> ItemsModules = new List<ModuleAction>([]);
     private List<PaymentResumen> PaymentResumenList { get; set; } = new List<PaymentResumen>();
@@ -529,6 +555,9 @@
 
     private MudDataGrid<Payment>? PaymentsDataGrid;
     private HashSet<Payment> selectedPaymens = new([]);
+
+    private List<AccountPreview> DocumentSelecteds { get; set; } = new List<AccountPreview>();
+    private int IdPaymentPreviewSelected = 0;
 
     IMask maskDate = new DateMask("dd/MM/yyyy");
     private DateTime? _dateFrom { get; set; } = null;
@@ -573,12 +602,12 @@
 
     Func<Payment, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
     {
-        nameof(Payment.PaymentDetail.Id) => o => o.PaymentDetail.Id,
-        nameof(Payment.PaymentDetail.DateRate) => o => o.PaymentDetail.DateRate,
-        nameof(Payment.PaymentDetail.DealerName) => o => o.PaymentDetail.DealerName ?? "",
-        nameof(Payment.PaymentDetail.CurrencyName) => o => o.PaymentDetail.CurrencyName ?? "",
-        nameof(Payment.PaymentDetail.TypeName) => o => o.PaymentDetail.TypeName ?? "",
-        nameof(Payment.PaymentDetail.StatusName) => o => o.PaymentDetail.StatusName ?? "",
+        nameof(Payment.Id) => o => o.Id,
+        nameof(Payment.DateRate) => o => o.DateRate,
+        nameof(Payment.DealerName) => o => o.DealerName ?? "",
+        nameof(Payment.CurrencyName) => o => o.CurrencyName ?? "",
+        nameof(Payment.TypeName) => o => o.TypeName ?? "",
+        nameof(Payment.StatusName) => o => o.StatusName ?? "",
         _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto
     };
 
@@ -592,7 +621,7 @@
         var mOffset = state.Page * state.PageSize;
 
         IEnumerable<Payment> Data;
-     
+
 
         int? idRespaldado = SelectedStatus?.Value;
         if (idRespaldado.HasValue && StatusList != null) { SelectedStatus = StatusList.FirstOrDefault(x => x.Value == idRespaldado); }
@@ -609,7 +638,7 @@
         string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
         string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
 
-        var resumentResponse = await PaymentService.GetPaymentsResumen(Session.UserId, Session.SupplierId, Session.DealerId, SearchString, _dateFromStr, _dateToStr, _estatusid, _currencyid, _paymentid);
+        var resumentResponse = await PaymentService.GetPaymentsStatusResumen(Session.UserId, Session.SupplierId, Session.DealerId, SearchString, _dateFromStr, _dateToStr, _estatusid, _currencyid, _paymentid);
         PaymentResumenList = resumentResponse.Processed ? resumentResponse.Data ?? new List<PaymentResumen>() : new List<PaymentResumen>();
         StateHasChanged();
 
@@ -633,11 +662,59 @@
             // OpenNested();
 
         }
-       
+
         Loading = false;
         StateHasChanged();
-        
+
         return new GridData<Payment> { TotalItems = TotalItems, Items = Data };
+    }
+
+    private async Task ClickEditPayment(Payment args)
+    {
+        if (Session.DealerId != 0)
+        {
+            DocumentSelecteds = new List<AccountPreview>();
+            // IdPaymentPreviewSelected = args.PaymentId;
+            IdPaymentPreviewSelected = args.Id;
+
+            _openDrawer = !_openDrawer;
+        }
+        else
+        {
+            Success = false;
+            NestedErrorMessage = "Seleccione un concesionario.";
+            OpenNested();
+        }
+        StateHasChanged();
+    }
+
+    private async Task OnClickAttachamentButton(Payment args)
+    {
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = false, NoHeader = true };
+        var parameters = new DialogParameters<PaymentFilesDialog> { { x => x.Title, "Agregar Comprobantes" }, { x => x.IdPayment, args.Id.ToString() } };
+        var dialog = await DialogService.ShowAsync<PaymentFilesDialog>("Agregar Comprobantes", parameters, options);
+
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            await PaymentsDataGrid!.ReloadServerData();
+
+        }
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task ClickClosedDrawer()
+    {
+        IdPaymentPreviewSelected = 0;
+        selectedPaymens = new([]);
+        _openDrawer = !_openDrawer;
+        DocumentSelecteds = new List<AccountPreview>();
+
+        await PaymentsDataGrid!.ReloadServerData();
+
+        StateHasChanged();
     }
 
     private async Task HandleMenuClick(ModuleAction module)
@@ -722,7 +799,7 @@
                 {
                     var _Action = new PostAction
                     {
-                        RecordId = item.PaymentDetail.Id,
+                        RecordId = item.Id,
                         ModuleId = moduleId,
                         ActionName = moduleActionName,
                         ActionComment = _Report
@@ -789,7 +866,7 @@
                     {
                         var ItemAction = new PostAction
                         {
-                            RecordId = Item.PaymentDetail.Id,
+                            RecordId = Item.Id,
                             ModuleId = moduleId,
                             ActionName = moduleActionName,
                             ActionComment = _Observacion
@@ -844,7 +921,7 @@
                 {
                     var _Action = new PostAction
                     {
-                        RecordId = item.PaymentDetail.Id,
+                        RecordId = item.Id,
                         ModuleId = moduleId,
                         ActionName = moduleActionName,
                         ActionComment = _Report
@@ -911,7 +988,7 @@
                     {
                         var _Action = new PostAction
                         {
-                            RecordId = item.PaymentDetail.Id,
+                            RecordId = item.Id,
                             ModuleId = moduleId,
                             ActionName = moduleActionName,
                             ActionComment = _Report

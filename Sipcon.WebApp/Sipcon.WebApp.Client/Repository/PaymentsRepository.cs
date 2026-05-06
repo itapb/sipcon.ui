@@ -165,12 +165,43 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<BankAccountsType>>> GetBankAccountsType(int Idsupplier)
+        public async Task<ApiResponse<List<BankAccountsType>>> GetBankAccounts(int Idsupplier)
         {
             ApiResponse<List<BankAccountsType>>? result;
             try
             {
                 var resultlist = await _http.GetFromJsonAsync<ApiResponse<List<BankAccountsType>>>($"api/Payment/GetBankAccounts?supplierId={Idsupplier}");
+
+                result = (resultlist is null) ? new ApiResponse<List<BankAccountsType>>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos."
+
+                } : new ApiResponse<List<BankAccountsType>>()
+                {
+                    Processed = resultlist.Processed,
+                    Total = resultlist.Total,
+                    Message = resultlist.Message,
+                    Data = resultlist.Data.ToList() ?? new List<BankAccountsType>()
+                };
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<BankAccountsType>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+            return result;
+        }
+
+        public async Task<ApiResponse<List<BankAccountsType>>> GetBankOrigin()
+        {
+            ApiResponse<List<BankAccountsType>>? result;
+            try
+            {
+                var resultlist = await _http.GetFromJsonAsync<ApiResponse<List<BankAccountsType>>>($"api/Payment/GetBank");
 
                 result = (resultlist is null) ? new ApiResponse<List<BankAccountsType>>()
                 {
@@ -253,19 +284,13 @@
                 url = (CurrencyId.HasValue) ? $"{url}&currencyId={CurrencyId}" : url;
                 url = (PaymentId.HasValue) ? $"{url}&typeId={PaymentId}" : url;
 
-                var resultList = await _http.GetFromJsonAsync<List<Payment>>(url);
+                result = await _http.GetFromJsonAsync<ApiResponse<List<Payment>>>(url);
 
-                result = (resultList is null) ? new ApiResponse<List<Payment>>()
+                result = (result is null) ? new ApiResponse<List<Payment>>()
                 {
                     Processed = false,
                     Message = "La respuesta del servidor no contiene datos."
-                } : new ApiResponse<List<Payment>>()
-                {
-                    Processed = true,
-                    Message = "",
-                    Data = resultList,
-                    Total = resultList.Count,
-                };
+                } : result;
 
             }
             catch (Exception ex)
@@ -281,7 +306,7 @@
 
         }
 
-        public async Task<ApiResponse<List<PaymentResumen>>> GetPaymentsResumen(int IdUser, int Idsupplier, int? IdDealer, string Filter = ""
+        public async Task<ApiResponse<List<PaymentResumen>>> GetPaymentsStatusResumen(int IdUser, int Idsupplier, int? IdDealer, string Filter = ""
                     , string DateFrom = "", string DateTo = "", int? EstatusId = null, int? CurrencyId = null
                     , int? PaymentId = null)
         {
@@ -309,6 +334,67 @@
             catch (Exception ex)
             {
                 result = new ApiResponse<List<PaymentResumen>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+
+        }
+
+        public async Task<ApiResponse<List<AccountPreview>>> GetAccountByPayment(int IdUser, int? IdPaymentDetail, int RowFrom = 0)
+        {
+            ApiResponse<List<AccountPreview>>? result;
+            try
+            {
+                var url = $"api/Payment/GetAccountByPayment?userId={IdUser}&rowfrom={RowFrom}";
+                url = (IdPaymentDetail.HasValue) ? $"{url}&paymentId={IdPaymentDetail}" : url;
+
+                result = await _http.GetFromJsonAsync<ApiResponse<List<AccountPreview>>>(url);
+
+                result = (result is null) ? new ApiResponse<List<AccountPreview>>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<AccountPreview>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+
+        }
+
+
+        public async Task<ApiResponse<List<Payment>>> GetPaymentDetails(int IdUser, int? IdPaymentDetail, int RowFrom = 0)
+        {
+            ApiResponse<List<Payment>>? result;
+            try
+            {
+                var url = $"api/Payment/GetPaymentDetailsById?userId={IdUser}&rowfrom={RowFrom}";
+                url = (IdPaymentDetail.HasValue) ? $"{url}&paymentDetailId={IdPaymentDetail}" : url;
+
+                result = await _http.GetFromJsonAsync<ApiResponse<List<Payment>>>(url);
+
+                result = (result is null) ? new ApiResponse<List<Payment>>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<Payment>>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
@@ -469,6 +555,62 @@
             return result;
         }
 
+        public async Task<ApiResponse<ActionResult>> CreatePayment(PaymentUpdate Payment, int IdUser)
+        {
+            ApiResponse<ActionResult>? result;
+            
+            try
+            {
+                var response = await _http.PostAsJsonAsync($"api/Payment/PostPayment?userId={IdUser}", Payment);
+
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = "El servidor devolvió una respuesta vacía."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+
+            }
+            return result;
+
+        }
+
+        public async Task<ApiResponse<ActionResult>> DeletePaymentDetails(List<PostAction> PostActions, int IdUser)
+        {
+            ApiResponse<ActionResult>? result;
+            List<PostAction> PostActionList = ([]);
+            try
+            {
+                var response = await _http.PostAsJsonAsync($"api/Payment/DeletePaymentDetails?userId={IdUser}", PostActions);
+
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = "El servidor devolvió una respuesta vacía."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+            return result;
+
+        }
 
     }
 
