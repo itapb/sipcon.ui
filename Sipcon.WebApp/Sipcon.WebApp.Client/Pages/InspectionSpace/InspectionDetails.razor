@@ -1,0 +1,175 @@
+﻿@using MudBlazor
+@using Sipcon.WebApp.Client.Components.Inspection
+@inject IInspectionService InspectionService
+@inject IDialogService DialogService
+
+<MudDialog>
+    <TitleContent>
+        <div class="d-flex align-center justify-space-between w-100">
+            <div class="d-flex align-center">
+                <div class="pa-2 mr-3 mud-theme-info rounded-lg shadow-sm">
+                    <MudIcon Icon="@Icons.Material.Filled.Assignment" Color="Color.Surface" Size="Size.Medium" />
+                </div>
+                <div>
+                    <MudText Typo="Typo.h6" Style="line-height: 1.2; font-weight: 800;">Resumen de Inspección</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Dark" Class="d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Numbers" Size="Size.Small" Class="mr-1" Style="font-size: 0.9rem;"/>
+                        ID Registro: @Id
+                    </MudText>
+                </div>
+            </div>
+        </div>
+    </TitleContent>
+
+    <DialogContent>
+        <div style="max-height: 75vh; overflow-y: auto; overflow-x: hidden;" class="pa-2">
+            @if (_loadingHeader)
+            {
+                <div class="d-flex flex-column align-center my-10">
+                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+                    <MudText Typo="Typo.body2" Class="mt-4" Color="Color.Dark">Sincronizando datos...</MudText>
+                </div>
+            }
+            else if (_header != null)
+            {
+                @* --- CABECERA DE INFORMACIÓN --- *@
+                 <InspectionHeaderSummary
+                     Header="_header" 
+                     RecordId="Id"
+                     OnViewAttachments="@(() => VerAdjuntosCabecera(Id))"
+                 />
+
+                @* --- TABS POR FASES --- *@
+                <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" PanelClass="mt-4" Color="Color.Info" ActivePanelIndexChanged="OnTabChanged">
+                    @foreach (var fase in _fases)
+                    {
+                        <MudTabPanel Text="@fase.Fase" 
+                                     Tag="@fase.FaseId" 
+                                     Icon="@(fase.IsCompleted == 1 ? Icons.Material.Filled.CheckCircle : null)"
+                                     IconColor="Color.Success"
+                        >
+                            <InspectionFeaturesList 
+                                Loading="_loadingFeatures" 
+                                FeaturesGrouped="_featuresGrouped" 
+                                OnViewAttachments="VerAdjuntos" 
+                             />
+                        </MudTabPanel>
+                    }
+                </MudTabs>
+            }
+        </div>
+    </DialogContent>
+</MudDialog>
+
+<style>
+    .group-header {
+        background: linear-gradient(90deg, var(--mud-palette-primary-hover) 0%, transparent 100%);
+        border-left: 4px solid var(--mud-palette-primary);
+    }
+    .item-hover:hover {
+        background-color: var(--mud-palette-action-hover);
+        transition: background-color 0.2s ease;
+    }
+    .border-b { border-bottom: 1px solid var(--mud-palette-divider); }
+    .border-b:last-child { border-bottom: none; }
+    .border-b-dashed { border-bottom: 1px dashed var(--mud-palette-divider); }
+    .fw-bold { font-weight: 700; }
+    .font-monospace { font-family: 'Roboto Mono', monospace; letter-spacing: -0.5px; }
+    .w-100 { width: 100%; }
+    .gap-2 { gap: 8px; }
+</style>
+
+@code {
+    [CascadingParameter] MudDialog MudDialog { get; set; } = default!;
+    [Parameter] public int Id { get; set; }
+
+    private InspectionDetail? _header;
+    private List<InspectionFase> _fases = new();
+    private List<InspectionFeatures> _features = new();
+    private IEnumerable<IGrouping<string?, InspectionFeatures>>? _featuresGrouped;
+
+    private bool _loadingHeader = true;
+    private bool _loadingFeatures = false;
+
+    protected override async Task OnInitializedAsync() => await LoadInitialData();
+
+    private async Task LoadInitialData()
+    {
+        _loadingHeader = true;
+
+        try 
+        {
+            var resHeader = await InspectionService.GetInspectionDetails(Id);
+
+            if (resHeader.Processed) _header = resHeader.Data;
+
+            var resFases = await InspectionService.GetInspectionFase(Id);
+
+            if (resFases.Processed) 
+            {
+                _fases = resFases.Data;
+                if (_fases.Any()) await LoadFeatures(_fases[0].FaseId);
+            }
+        } 
+        finally 
+        { 
+            _loadingHeader = false; 
+        }
+    }
+
+    private async Task LoadFeatures(int faseId)
+    {
+        _loadingFeatures = true;
+
+        StateHasChanged();
+
+        try 
+        {
+            var res = await InspectionService.GetInspectionFeatures(Id, faseId);
+
+            if (res.Processed) 
+            {
+                _features = res.Data;
+                _featuresGrouped = _features.GroupBy(x => x.FeatureType);
+            }
+        } 
+        finally 
+        {
+            _loadingFeatures = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnTabChanged(int index)
+    {
+        if (index >= 0 && index < _fases.Count) await LoadFeatures(_fases[index].FaseId);
+    }
+
+    private async Task VerAdjuntos(int id)
+    {
+        var parameters = new DialogParameters<InspectionFilesDialog> 
+        {
+            { x => x.RecordId, id },
+            { x => x.ModuleName, "INSPECCION-TIPOS-CARACTERISTICAS" }
+        };
+
+        await OpenDialog(parameters, "Evidencias de Característica");
+    }
+
+    private async Task VerAdjuntosCabecera(int id)
+    {
+        var parameters = new DialogParameters<InspectionFilesDialog> 
+        {
+            { x => x.RecordId, id },
+            { x => x.ModuleName, "INSPECCION-INSPECCION" }
+        };
+
+        await OpenDialog(parameters, "Documentos del Vehículo");
+    }
+
+    private async Task OpenDialog(DialogParameters parameters, string title)
+    {
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        await DialogService.ShowAsync<InspectionFilesDialog>(title, parameters, options);
+    }
+}

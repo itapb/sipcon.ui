@@ -43,20 +43,22 @@ CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 // =======================================================
 
 var backEndUrl = "";
-var env = builder.Configuration.GetValue<string>("Environment")!;
-if (env == "DEV")
-{
-    backEndUrl = builder.Configuration.GetValue<string>("BackEndUrlDEV")!;
-}
-if (env == "QA")
-{
-    backEndUrl = builder.Configuration.GetValue<string>("BackEndUrlQA")!;
-}
-if (env == "PROD")
-{
-    backEndUrl = builder.Configuration.GetValue<string>("BackEndUrl")!;
-}
-    
+var env = builder.Configuration.GetValue<string>("BackEndUrl")!;
+backEndUrl = builder.Configuration.GetValue<string>(env)!;
+
+//if (env == "DEV")
+//{
+//    backEndUrl = builder.Configuration.GetValue<string>("BackEndUrlDEV")!;
+//}
+//if (env == "QA")
+//{
+//    backEndUrl = builder.Configuration.GetValue<string>("BackEndUrlQA")!;
+//}
+//if (env == "PROD")
+//{
+//    backEndUrl = builder.Configuration.GetValue<string>("BackEndUrl")!;
+//}
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
@@ -82,6 +84,7 @@ builder.Services.AddScoped<IModelService, ModelRepository>();
 builder.Services.AddScoped<IModuleService, ModuleRepository>();
 builder.Services.AddScoped<IVehicleService, VehicleRepository>();
 builder.Services.AddScoped<IVehicleColorService, VehicleColorRepository>();
+builder.Services.AddScoped<IInspectionService, InspectionRepository>();
 builder.Services.AddScoped<IBrandService, BrandRepository>();
 builder.Services.AddScoped<IPolicyTypeService, PolicyTypeRepository>();
 builder.Services.AddScoped<ISupplierService, SupplierRepository>();
@@ -105,6 +108,8 @@ builder.Services.AddScoped<IAreaService, AreaRepository>();
 builder.Services.AddScoped<IFaseService, FaseRepository>();
 builder.Services.AddScoped<IFeatureTypeService, FeatureTypeRepository>();
 builder.Services.AddScoped<IFeatureService, FeatureRepository>();
+builder.Services.AddScoped<IFeatureOptionService, FeatureOptionRepository>();
+builder.Services.AddScoped<IFeatureValueTypeService, FeatureValueTypeRepository>();
 
 builder.Services.AddTransient<UtilModuleActions>();
 builder.Services.AddScoped(typeof(MasterComp<,>));
@@ -122,9 +127,12 @@ else
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
-app.UsePathBase(AppSettingsHelper.GetAppSetting("pathBase"));//app.UsePathBase("/sipconapp/");
 
-if (env == "PROD")
+var envPathBase = builder.Configuration.GetValue<string>("PathBase")!;
+app.UsePathBase(AppSettingsHelper.GetAppSetting(envPathBase));//app.UsePathBase("/sipconapp/");
+
+string[] urlWith = backEndUrl.Split(':', 2);
+if (urlWith[0] == "https")
 {
     app.UseHttpsRedirection();
 }

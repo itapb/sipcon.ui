@@ -1,12 +1,20 @@
 ﻿namespace Sipcon.WebApp.Client.Repository
 {
-    using Sipcon.WebApp.Client.Services;
+    using Sipcon.WebApp.Client.Helper;
     using Sipcon.WebApp.Client.Models;
+    using Sipcon.WebApp.Client.Services;
     using System.Net.Http.Json;
 
-    public class RateRepository(HttpClient http) : IRateService
+    public class RateRepository : IRateService
     {
-        private readonly HttpClient _http = http;
+        private readonly HttpClient _http;
+        private readonly UserSession _session;
+
+        public RateRepository(HttpClient http, UserSession session)
+        {
+            _http = http;
+            _session = session;
+        }
 
         public async Task<ApiResponse<List<Rate>>> GetRates(int? rowFrom = null, string? filter = null)
         {
@@ -38,59 +46,20 @@
             return result;
         }
 
-        public async Task<ApiResponse<ActionResult>> CreateRate(Rate Rate)
+        public async Task<ApiResponse<ActionResult>> SaveRate(Rate rate)
         {
             ApiResponse<ActionResult>? result;
-            List<Rate> rateList = [];
             try
             {
-                rateList.Add(Rate);
-                var response = await _http.PostAsJsonAsync($"api/Rate/PostRates", rateList);
+                var url = $"api/Rate/Post?userId={_session.UserId}";
+                var response = await _http.PostAsJsonAsync(url, rate);
+
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
-                result = (result is null) ? new ApiResponse<ActionResult>()
+                result ??= new ApiResponse<ActionResult>()
                 {
                     Processed = false,
                     Message = "El servidor devolvió una respuesta vacía."
-                } : result;
-            }
-            catch (Exception ex)
-            {
-                result = new ApiResponse<ActionResult>()
-                {
-                    Processed = false,
-                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
                 };
-            }
-            return result;
-        }
-
-        public async Task<ApiResponse<ActionResult>> UpdateRate(Rate Rate)
-        {
-            ApiResponse<ActionResult>? result;
-            try
-            {
-                var url = $"api/Rate/Update_Rate?id={Rate.Id}&nRate={Rate.NRate}";
-                var response = await _http.PostAsync(url, null);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    var updatedRate = await response.Content.ReadFromJsonAsync<Rate>();
-                    result = new ApiResponse<ActionResult>()
-                    {
-                        Processed = true,
-                        Data = null,
-                        Message = "Tasa actualizada correctamente"
-                    };
-                }
-                else
-                {
-                    var errorMessage = await response.Content.ReadAsStringAsync();
-                    result = new ApiResponse<ActionResult>()
-                    {
-                        Processed = false,
-                        Message = string.Concat("Error al actualizar: ", errorMessage)
-                    };
-                }
             }
             catch (Exception ex)
             {
