@@ -10,5 +10,6 @@ namespace Sipcon.WebApp.Client.Services
         Task<ApiResponse<InspectionDetail>> GetInspectionDetails(int inspectionId);
         Task<ApiResponse<List<InspectionFeatures>>> GetInspectionFeatures(int inspectionId, int faseId);
         Task<ApiResponse<List<InspectionFiles>>> GetInpectionFiles(int recordId, String moduleName);
+        Task<ApiResponse<List<byte>>> GeneratePDF(int inspectionId);
     }
 }
