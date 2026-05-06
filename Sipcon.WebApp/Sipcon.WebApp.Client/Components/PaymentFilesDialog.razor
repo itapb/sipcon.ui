@@ -1,5 +1,4 @@
-﻿@page "/paymentdetail"
-@page "/paymentdetail/{IdPayment}"
+﻿
 
 @using Sipcon.WebApp.Client.Pages
 @using Sipcon.WebApp.Client.Repository.Auth
@@ -13,138 +12,173 @@
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
 
+<MudDialog Class="blur dialog-background" ActionsClass="dialog-background-surface">
 
-<PageTitle>Aseguramiento de Ingreso</PageTitle>
+    <DialogContent>
 
-<MudContainer Style="position:relative;">
+        <MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
+            <MudText Typo="Typo.h6">
 
-    <MudStack Row="true">
-        <CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
-        <MudSpacer />
-        <MudSpacer />
-        
-    </MudStack>
+                <MudIcon Icon="@Icons.Material.Filled.UploadFile" Class="mr-3 mb-n1" />
+                @Title
 
-    <MudTabs Elevation="2" Rounded="true" Centered="false" ApplyEffectsToContainer="true" PanelClass="pa-2" Color="Color.Default">
-         @* ARCHIVOS  *@
-         <MudTabPanel Icon="@Icons.Material.Filled.Attachment" Text="ARCHIVOS" BadgeIcon="@Icons.Material.Filled.CloudUpload">
-            @* Attachment *@
-            <MudCard Elevation="2" Class="pa-1 mt-2">
-                <MudCardHeader Style="padding-bottom: 0px;">
-                    <CardHeaderContent>
-                        <MudStack Row="true">
-                            <MudIcon Icon="@Icons.Material.Outlined.FileUpload" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
-                            <MudText Typo="Typo.subtitle2">Archivos Adjuntos </MudText>
-                        </MudStack>
-                    </CardHeaderContent>
-                    <CardHeaderActions>
-                        <MudButton StartIcon="@Icons.Material.Filled.AttachFile" Variant="Variant.Outlined"
-                                   Size="Size.Small"
-                                   OnClick="() => ClickUploadFiles()">Adjuntar Archivo</MudButton>
-                        <MudButton StartIcon="@Icons.Material.Filled.KeyboardReturn" Variant="Variant.Filled" 
-                                   Color="Color.Dark" Size="Size.Small" IconColor="Color.Secondary"
-                                   Href="paymentreport">Volver</MudButton>
-                        
-                    </CardHeaderActions>
-                </MudCardHeader>
+            </MudText>
+        </MudContainer>
 
-                <MudCardContent Style="padding-top: 0px;">
+        <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
 
-                    <div id="unique_id_scroll_section" class="ma-0" style="height:230px;overflow: auto;">
-
-                        <MudContainer Class="dialog-background-surface py-1 pt-0 pa-1">
-                            <MudDivider />
-                            @if (_attachment.Count > 0)
-                            {
-                                <MudGrid Spacing="0" Justify="Justify.Center">
-
-                                    @foreach (var item in _attachment)
-                                    {
-                                        <MudItem xs="12" sm="4">
-                                            <MudLink OnClick="() => ClickPreviewImage(item.Id, item.FileName)" Color="Color.Info">  
-                                                <MudText Typo="Typo.caption">        
-                                                    <MudIcon Icon="@Icons.Custom.FileFormats.FileDocument" Color="Color.Inherit" Class="mr-2" />@item.FileName
-                                                </MudText>        
-                                            </MudLink>  
-                                        </MudItem>
-                                        <MudItem xs="12" sm="4">
-                                            <MudText Typo="Typo.caption">@item.DateCreate!.Value.ToString("F", CultureInfo.GetCultureInfo("es-VE"))</MudText>
-                                        </MudItem>
-                                        <MudItem xs="12" sm="4">
-                                            <div class="d-flex justify-left">
-                                                <MudStack Row="true">
-                                                    <MudTooltip Text="descargar">
-                                                        <MudIconButton Icon="@Icons.Material.Outlined.FileDownload" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickExportAttachment(item.Id, item.FileName)" />
-                                                    </MudTooltip>
-                                                    <MudTooltip Text="eliminar">
-                                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickDeleteAttachment(item.Id)" />
-                                                    </MudTooltip>
-                                                    <MudTooltip Text="vista previa">
-                                                        <MudIconButton Icon="@Icons.Material.Filled.Preview" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickPreviewImage(item.Id, item.FileName)"  />
-                                                    </MudTooltip>
-                                                </MudStack>
-                                            </div>
-                                        </MudItem>
-                                    }
-                                </MudGrid>
-                            }
-                        </MudContainer>
-                        <MudScrollToTop TopOffset="100"
-                                        Selector="#unique_id_scroll_section"
-                                        VisibleCssClass="visible absolute"
-                                        HiddenCssClass="invisible">
-
-                        </MudScrollToTop>
+            
+        @* Attachment *@
+        <MudCard Elevation="2" Class="pa-1 mt-2">
+            <MudCardHeader Style="padding-bottom: 0px;">
+                <CardHeaderContent>
+                    <MudStack Row="true">
+                        <MudIcon Icon="@Icons.Material.Outlined.FileUpload" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
+                        <MudText Typo="Typo.subtitle2">Comprobantes Cargados</MudText>
+                    </MudStack>
+                </CardHeaderContent>
+                <CardHeaderActions>
+                    <div class="d-flex justify-left">
+                            <MudStack Row="true" @onclick="() => ClickUploadFiles()">
+                                <MudText Typo="Typo.subtitle2" Class="mt-2">Agregar</MudText>
+                                <MudBadge Content="_attachment.Count()" Color="Color.Primary" Overlap="true"
+                                          Class="mr-6 mt-2" OnClick="() => ClickUploadFiles()">
+                                    <MudIcon Icon="@Icons.Material.Filled.AttachFile" Color="Color.Default" />
+                                </MudBadge>
+                            </MudStack>
+                            <MudButton StartIcon="@Icons.Material.Filled.KeyboardReturn" Variant="Variant.Text"
+                                       Color="Color.Dark" IconColor="Color.Secondary" IconSize="Size.Small" Size="Size.Small"
+                                       OnClick="() => OnClickCloseButton()">
+                                Cerrar
+                            </MudButton>
                     </div>
+                        
+                </CardHeaderActions>
+            </MudCardHeader>
 
-                    <MudDivider />
+            <MudCardContent Style="padding-top: 0px;">
 
-                </MudCardContent>
-            </MudCard>
-        </MudTabPanel>
+                <div id="unique_id_scroll_section" class="ma-0" style="height:230px;overflow: auto;">
 
-    </MudTabs>
+                    <MudContainer Class="dialog-background-surface py-1 pt-0 pa-1">
+                        <MudDivider />
+                        @if (_attachment.Count > 0)
+                        {
+                            <MudGrid Spacing="0" Justify="Justify.Center">
 
-    @if (!dataLoaded)
-    {
-        <MudOverlay Visible="isLoaded" DarkBackground="true" Absolute="true">
-            <MudProgressCircular Color="Color.Secondary" Indeterminate="true" />
-        </MudOverlay>
-    }
-</MudContainer>
+                                @foreach (var item in _attachment)
+                                {
+                                    <MudItem xs="12" sm="4">
+                                        <MudLink OnClick="() => ClickPreviewImage(item.Id, item.FileName)" Color="Color.Info">
+                                            <MudText Typo="Typo.caption">
+                                                <MudIcon Icon="@Icons.Custom.FileFormats.FileDocument" Color="Color.Inherit" Class="mr-2" />@item.FileName
+                                            </MudText>
+                                        </MudLink>
+                                    </MudItem>
+                                    <MudItem xs="12" sm="4">
+                                        <MudText Typo="Typo.caption">@item.DateCreate!.Value.ToString("F", CultureInfo.GetCultureInfo("es-VE"))</MudText>
+                                    </MudItem>
+                                    <MudItem xs="12" sm="4">
+                                        <div class="d-flex justify-left">
+                                            <MudStack Row="true">
+                                                <MudTooltip Text="descargar">
+                                                    <MudIconButton Icon="@Icons.Material.Outlined.FileDownload" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickExportAttachment(item.Id, item.FileName)" />
+                                                </MudTooltip>
+                                                <MudTooltip Text="eliminar">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickDeleteAttachment(item.Id)" />
+                                                </MudTooltip>
+                                                <MudTooltip Text="vista previa">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Preview" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickPreviewImage(item.Id, item.FileName)" />
+                                                </MudTooltip>
+                                            </MudStack>
+                                        </div>
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        }
+                    </MudContainer>
+                    <MudScrollToTop TopOffset="100"
+                                    Selector="#unique_id_scroll_section"
+                                    VisibleCssClass="visible absolute"
+                                    HiddenCssClass="invisible">
 
-<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success"
-                    onCloseNested="() => _nestedVisible = false"
-    ErrorMessage="@_nestedErrorMessage" 
-    Title="@("Reporte de Pago")" />
+                    </MudScrollToTop>
+                </div>
+
+                <MudDivider />
+
+                    @if (!_nestedVisible)
+                    {
+                        <MudPaper Class="ma-2 mt-6"  Elevation="1" >
+                            <MudContainer Style="padding: 6px;">
+                                <div class="d-flex">
+                                    <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="0">
+                    
+                                        <MudIcon Icon="@Icons.Material.Filled.Info" Color="@(_success ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
+                                        <MudText Class="nested"><p>@_nestedErrorMessage</p> </MudText>
+                    
+                                    </MudStack>
+
+                                    @* <div class="d-flex ml-auto">
+                                        <MudStack Row="false" AlignItems="AlignItems.End" Spacing="0">
+                        
+                                        </MudStack>
+                            
+                                    </div> *@
+
+                                </div>
+                            </MudContainer>
+     
+                        </MudPaper>
+
+    
+    
+                    }
+
+            </MudCardContent>
+        </MudCard>
+            
+           
+
+        @if (!dataLoaded)
+        {
+            <MudOverlay Visible="isLoaded" DarkBackground="true" Absolute="true">
+                <MudProgressCircular Color="Color.Secondary" Indeterminate="true" />
+            </MudOverlay>
+        }
+
+        </MudContainer>
+
+        
+
+    </DialogContent>
+    
+</MudDialog>
+
+
+    
+
 
 @code { 
     [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
-    [Parameter]
-    public string IdPayment { get; set; } = string.Empty;
+    
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter]public string IdPayment { get; set; } = string.Empty;
+    [Parameter] public string Title { get; set; } = string.Empty;
     
     private List<Attachment> _attachment { get; set; } = new List<Attachment>();
    
     private string _moduleName = "PAGOS-ASEGURAMIENTO";
     
-    private string _nestedErrorMessage = string.Empty;
-    private bool _nestedVisible;
-    string _strComment = string.Empty;
-    bool _success = false;
+    private string _nestedErrorMessage { get; set; } = string.Empty;
+    private bool _nestedVisible { get; set; } = true;
+    private bool _success { get; set; } = false;
     private bool dataLoaded = false;
     private bool isLoaded = false;
 
    
-    private List<BreadcrumbItem> _itemsNavigate =
-                [
-        new("Home", href: "", icon: Icons.Material.Filled.Home),
-        new("Portal de Pagos",href: "", icon: Icons.Material.Filled.Payments),
-        new("Aseguramiento de Ingreso",href: "paymentreport", icon: Icons.Material.Filled.Payments),
-        new("Detalle de Pago",  href: "paymentdetail", disabled: false, icon: Icons.Material.Filled.Payment),
-    ];
-
-
+   
     IList<IBrowserFile> _files = new List<IBrowserFile>();
     private void UploadFiles(IBrowserFile file)
     {
@@ -177,8 +211,16 @@
 
     }
 
+    private async Task OnClickCloseButton()
+    {
+       
+        MudDialog.Close(DialogResult.Ok(true));
+
+    }
+
     private async Task GetAttachments()
     {
+        _attachment = new List<Attachment>();
         var serviceResponse = await AttachmentService.GetAttachments(Convert.ToInt32(IdPayment), _moduleName);
         if (serviceResponse.Processed)
         {
@@ -202,13 +244,14 @@
             BackdropClick = false
         };
         bool? result = await DialogService.ShowMessageBox(
-            "Archivos Adjuntos",
+            "Comprobantes Agregados",
             $"Seguro de Eliminar Archivo? ",
             yesText: "Si", noText: "No", "", option);
 
         if (result == true)
         {
-
+            _nestedErrorMessage = string.Empty;
+            _nestedVisible = true;
             var serviceResponse = await AttachmentService.DeleteAttachment(IdAttachment, Session.UserId);
             if (serviceResponse.Processed)
             {
@@ -233,7 +276,9 @@
 
     private async Task ClickPreviewImage(int IdAttachment, string FileName)
     {
-           
+        _nestedErrorMessage = string.Empty;
+        _nestedVisible = true;
+
         DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true, NoHeader = false };
         var parameters = new DialogParameters<PreviewImageDialog> { { x => x.Title, "Vista Previa." } , { x => x.IdAttachment, IdAttachment.ToString() } , { x => x.NameAttachment, FileName } };
         var dialog = await DialogService.ShowAsync<PreviewImageDialog>("Vista Previa.", parameters, options);
@@ -245,6 +290,8 @@
 
     private async Task ClickExportAttachment(int IdAttachment, string FileName)
     {
+        _nestedErrorMessage = string.Empty;
+        _nestedVisible = true;
         var serviceResponse = await AttachmentService.GetAttachment(IdAttachment, Session.UserId);
         if (serviceResponse.Processed)
         {
@@ -291,10 +338,11 @@
 
     private async Task ClickUploadFiles()
     {
-
+        _nestedErrorMessage = string.Empty;
+        _nestedVisible = true;
         DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
-        var parameters = new DialogParameters<ImporFilesDialog> { { x => x.Title, "Adjuntar Archivo..." } };
-        var dialog = await DialogService.ShowAsync<ImporFilesDialog>("simple dialog", parameters, options);
+        var parameters = new DialogParameters<ImporFilesDialog> { { x => x.Title, "Cargar Comprobante" } };
+        var dialog = await DialogService.ShowAsync<ImporFilesDialog>("Cargar Comprobante", parameters, options);
 
         var result = await dialog.Result;
         if (!result!.Canceled)
@@ -387,9 +435,11 @@
 
     private void OpenNested()
     {
-        _nestedVisible = true;
+        _nestedVisible = false;
         StateHasChanged();
     }
+
+
     
 
 }

@@ -2,6 +2,7 @@
 
 @using System.Globalization
 @using System.Text.Json
+@using Sipcon.WebApp.Client.Components.Payments
 @using Sipcon.WebApp.Client.Repository.Auth
 
 
@@ -19,6 +20,9 @@
 <MudText Typo="Typo.h6">Reporte de Pagos</MudText>
 <MudText Typo="Typo.caption">Gestión de pagos por concesionario y tipo de documento </MudText>
 
+<MudDrawerContainer Class="mud-height-full">
+
+    @* **//Filtros *@
 <MudContainer Class="py-2 pt-2 pa-2 mt-2">
     <MudCard>
         <MudCardHeader>
@@ -31,6 +35,7 @@
         </MudCardHeader>
 
         <MudCardContent Style="padding-top: 0px;">
+               
 
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" >
                 <MudSelect T="SelectOption"
@@ -159,13 +164,35 @@
                 </MudDatePicker>
                 
             </MudStack>
-           
+                @* <MudStack>
+                    
+                    <MudText>Values: @(_selectedConcepts.ToList().Count > 0 ? string.Join("-", _selectedConcepts) : "")</MudText>
+                    @if (ConceptList != null)
+                    {
+                        <MudToggleGroup T="string" SelectionMode="SelectionMode.MultiSelection"
+                                        @bind-Values="_selectedConcepts"
+                                        @bind-Values:after="AfterAsyncExclusiveCheck"
+                                        SelectedClass="black white-text"
+                                        Color="Color.Secondary" CheckMark >
+                            @foreach (var action in ConceptList)
+                            {
+                                <MudToggleItem Value="@action.ValueStr" Text="@action.Text"
+                                               UnselectedIcon="@Icons.Material.Filled.CheckBoxOutlineBlank"
+                                               SelectedIcon="@Icons.Material.Filled.CheckBox"
+                                               Disabled="@_isExclusive" />
+
+                            }
+                        </MudToggleGroup>
+                    }
+                </MudStack>
+            *@
         </MudCardContent>
 
     </MudCard>
 
 </MudContainer>
 
+    @* **//Documents *@
 <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
      <MudCard>
         <MudCardHeader>
@@ -185,8 +212,6 @@
             <MudDataGrid @ref="DocumentsDataGrid"
                          T="Receivable"
                          ServerData="LoadGridData"
-                         SelectedItems="@selectedDocuments"
-                         SelectedItemsChanged="ClickSelectedItemsChanged"
                          MultiSelection="true"
                          Hover="false"
                          Dense="true"
@@ -212,13 +237,13 @@
                     <MudSpacer />
                     <MudButton StartIcon="@Icons.Material.Filled.Search" Variant="Variant.Filled" 
                                Size="Size.Small"
-                               OnClick="ClickRefreshSalesOrder">Buscar</MudButton>
+                               OnClick="ClickRefreshAsync">Buscar</MudButton>
                     <MudButton StartIcon="@Icons.Material.Filled.Download" Variant="Variant.Outlined"
                                Size="Size.Small"
                                OnClick="ExportItemsAsync">Exportar</MudButton>
                     <MudButton EndIcon="@Icons.Material.Filled.Paid" Variant="Variant.Filled" Disabled="@(!IsDocumentSelected)"
                                Color="Color.Dark" Size="Size.Small" IconColor="Color.Secondary"
-                            OnClick="ClickRefreshSalesOrder">Reportar Pago</MudButton>
+                               OnClick="ClickAddPayment">Reportar Pago</MudButton>
                 </ToolBarContent>
                 <ColGroup>
                     <col style="width: 2%;" />
@@ -235,15 +260,13 @@
                     <col style="width: 2%;" />
                 </ColGroup>
                 <Columns>
-                    @* DisabledFunc="@((Receivable item) => item.StatusName == "ABIERTO")" *@
-                    @* <SelectColumn T="Receivable"  /> *@
                     <TemplateColumn>
                         <HeaderTemplate>
                             <MudCheckBox @bind-Value="IsAllCheckBoxSelected" @bind-Value:after="AfterAsyncAllCheck" />
                         </HeaderTemplate>
                         <CellTemplate>
                             <MudCheckBox @bind-Value="context.Item.IsSelected" @bind-Value:after="AfterAsyncCheck"
-                                            Disabled="@(context.Item.StatusName.ToUpper() == "ABIERTO")" />
+                                            Disabled="@(context.Item.StatusName.ToUpper() == "BORRADOR")" />
                         </CellTemplate>
                     </TemplateColumn>
                    
@@ -335,11 +358,11 @@
                             </div>
                         </CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn Title="Emisión">
+                   @*  <TemplateColumn Title="Emisión">
                         <CellTemplate>
                             <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.DocumentDate.ToString("dd/MM/yyyy"))</MudText>
                         </CellTemplate>
-                    </TemplateColumn>
+                    </TemplateColumn> *@
                     <TemplateColumn Title="Vencimiento">
                         <CellTemplate>
                             <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.DocumentDueDate?.ToString("dd/MM/yyyy"))</MudText>
@@ -389,32 +412,42 @@
                             </div>
                         </CellTemplate>
                     </TemplateColumn>
+                    <TemplateColumn Title="Monto $">
+                        <CellTemplate>
+                            <div class="d-flex justify-center">
+                                <MudText Typo="Typo.caption" Align="Align.End" Color="Color.Success">
+                                    @("$" + context.Item.Amount?.ToString("N2"))
+                                </MudText>
+                            </div>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Saldo $">
+                        <CellTemplate>
+                            <div class="d-flex justify-center">
+                                <MudText Typo="Typo.caption" Align="Align.End" Color="Color.Success">
+                                    @("$" + context.Item.Balance?.ToString("N2"))
+                                </MudText>
+                                <MudIcon Icon="@Icons.Material.Filled.ArrowDownward" Color="Color.Success" Style="font-size: 1rem;" />
+                            </div>
+                        </CellTemplate>
+                    </TemplateColumn>
                     <TemplateColumn Title="Monto">
                         <CellTemplate>
                             <div class="d-flex justify-center">
                                 <MudText Typo="Typo.caption" Align="Align.End" Color="Color.Default">
-                                    @(context.Item.Amount?.ToString("N2"))
+                                    @(context.Item.AmountBs?.ToString("N2"))
                                 </MudText>
                             </div>
                         </CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn Title="Impuesto">
-                        <CellTemplate>
-                            <div class="d-flex justify-center">
-                                <MudText Typo="Typo.caption" Align="Align.End" Color="Color.Error">
-                                    @(context.Item.Rate?.ToString("N2"))
-                                </MudText>
-                            </div>
-                        </CellTemplate>
-                    </TemplateColumn>
+                    
                     <TemplateColumn Title="Saldo">
                         <CellTemplate>
                             <div class="d-flex justify-center">
-                                <MudText Typo="Typo.caption" Align="Align.End" Color="Color.Success"  
-                                    >
-                                    @(context.Item.Balance?.ToString("N2"))
+                                <MudText Typo="Typo.caption" Align="Align.End" Color="Color.Error">
+                                    @(context.Item.BalanceBs?.ToString("N2"))
                                 </MudText>
-                                <MudIcon Icon="@Icons.Material.Filled.ArrowDownward" Color="Color.Success" Style="font-size: 1rem;" />
+                                <MudIcon Icon="@Icons.Material.Filled.ArrowDownward" Color="Color.Error" Style="font-size: 1rem;" />
                             </div>
                         </CellTemplate>
                     </TemplateColumn>
@@ -427,9 +460,14 @@
                                     Variant variant = Variant.Text;
                                     string style = "";
                                     string txt = "";
+                                    if (context.Item.StatusName.ToUpper() == "BORRADOR")
+                                    {
+                                        color = Color.Warning;
+                                        txt = "Borrador";
+                                    }
                                     if (context.Item.StatusName.ToUpper() == "TRANSITO")
                                     {
-                                        color = Color.Dark;
+                                        color = Color.Primary;
                                         txt = "Transito";
                                     }
                                     else if (context.Item.StatusName.ToUpper() == "ABIERTO")
@@ -448,10 +486,7 @@
                                         txt = "Vencido";
                                         variant = Variant.Filled;
                                     }
-                                    else
-                                    {
-                                        color = Color.Warning;
-                                    }
+                                    
                                     style += ";font-size: 12px";
                                     style += ";font-style:italic";
 
@@ -463,18 +498,18 @@
                             </div>
                         </CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn StickyRight="true">
+                    @* <TemplateColumn StickyRight="true">
                         <CellTemplate>
                             @if (context.Item.StatusName != null)
                             {
-                                if (context.Item.StatusName.ToUpper() == "ABIERTO")
+                                if (context.Item.StatusName.ToUpper() == "BORRADOR")
                                 {
-                                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" />
+                                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditDocument(context.Item)" />
                                 }
                             }
                             
                         </CellTemplate>
-                    </TemplateColumn>
+                    </TemplateColumn> *@
 
                 </Columns>
                 <PagerContent>
@@ -484,13 +519,34 @@
 
         </MudCardContent>
     </MudCard>
+
+
 </MudContainer>
+    
+    
+    @if (DocumentSelecteds != null && DocumentSelecteds.Count > 0)
+    {
+        @* **//Reportar Pago *@
+        <MudDrawer @bind-Open="@_openDrawer" Width="950px" Anchor="Anchor.End" Elevation="1" Variant="@DrawerVariant.Temporary" OverlayAutoClose="false">
+    
+            <PaymentAccountDetail SelectedDocuments="@DocumentSelecteds" 
+                SelectedPaymentId="@IdPaymentPreviewSelected" 
+                OnClickCloseDetail="() => ClickClosedDrawer()">
+            </PaymentAccountDetail>
+        </MudDrawer>
+    }
+
+    <NestedDialogCustom IsVisible="@NestedVisible"
+                        Icon="@Icons.Material.Filled.Payments"
+                        Success="@Success"
+                        onCloseNested="() => NestedVisible = false"
+                        ErrorMessage="@NestedErrorMessage"
+                        Title="@("Reporte de Pagos")" />
+</MudDrawerContainer>
 
 
-<NestedDialogCustom IsVisible="@NestedVisible" Success="@Success"
-                    onCloseNested="() => NestedVisible = false"
-                    ErrorMessage="@NestedErrorMessage"
-                    Title="@("Reporte de Pagos")" />
+
+
 
 
 @code {
@@ -509,16 +565,16 @@
     private bool NestedVisible;
     private bool Success = false;
     private bool Loading = false;
-    private bool _open;
     private string SearchString = string.Empty;
-
+    private bool _openDrawer = false;
 
     private bool IsAllCheckBoxSelected = false;
     int PaymentCurrentPage = 0;
 
     private MudDataGrid<Receivable>? DocumentsDataGrid;
-    private HashSet<Receivable> selectedDocuments = new([]);
     private bool IsDocumentSelected = false;
+    private List<AccountPreview> DocumentSelecteds { get; set; } = new List<AccountPreview>();
+    private int IdPaymentPreviewSelected = 0;
 
     IMask maskDate = new DateMask("dd/MM/yyyy");
     private DateTime? _dateFrom { get; set; } = null;
@@ -533,6 +589,9 @@
     private SelectOption? SelectedStatus;
     private SelectOption? SelectedDocumentType;
     private SelectOption? SelectedConceptType;
+    // private IEnumerable<string> _selectedConcepts = new[] { "" };
+    private bool _isExclusive = false;
+
 
 
     protected override async Task OnInitializedAsync()
@@ -571,6 +630,7 @@
         await AuthenticationStateProvider.RefreshStaticVariables();
         Session.IsNewOrEdit = false;
         IsAllCheckBoxSelected = false;
+        IsDocumentSelected = false;
         Loading = true;
         var TotalItems = 0;
         var mOffset = state.Page * state.PageSize;
@@ -580,7 +640,7 @@
         StatusList = await ModuleActionsService.GetDocumentStatusSelectOption();
         DocumentList = await ModuleActionsService.GetDocumentTypeSelectOption();
         ConceptList = await ModuleActionsService.GetDocumentConceptSelectOption();
-        SelectedDocumentType = DocumentList?.FirstOrDefault();
+
 
         StateHasChanged();
 
@@ -612,7 +672,7 @@
             SelectedConceptType = ConceptList.FirstOrDefault();
         }
         string _conceptTypeId = SelectedConceptType?.ValueStr ?? "";
-        
+
         var serviceResponse = await PaymentsRepository.GetAccountReceivables(Session.UserId, Session.SupplierId, Session.DealerId, _documentTypeid, _conceptTypeId, mOffset, SearchString, _dateFromStr, _dateToStr, _estatusid, _datepayStr);
         if (serviceResponse.Processed)
         {
@@ -671,7 +731,7 @@
             SelectedConceptType = ConceptList.FirstOrDefault();
         }
         string _conceptTypeId = SelectedConceptType?.ValueStr ?? "";
-        
+
         var serviceResponse = await PaymentsRepository.ExportAccountReceivable(Session.UserId, Session.SupplierId, 
                     Session.DealerId, _documentTypeid, _conceptTypeId, SearchString, _dateFromStr, _dateToStr, 
                     _estatusid, _datepayStr);
@@ -684,6 +744,10 @@
             var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
             await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "DocumentsReport.xlsx");
 
+            DocumentsDataGrid?.FilteredItems.Where(s => s.IsSelected == true).ToList().ForEach(item => item.IsSelected = false);
+            IsDocumentSelected = false;
+
+            StateHasChanged();
         }
         else
         {
@@ -700,7 +764,7 @@
         StateHasChanged();
     }
 
-    
+
 
     private async Task HandleKeyDownSearch(KeyboardEventArgs e)
     {
@@ -714,26 +778,103 @@
     }
     private async Task AfterAsyncAllCheck()
     {
-        DocumentsDataGrid?.FilteredItems.Where(s => s.StatusName.ToUpper() != "ABIERTO" ).ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
+        DocumentsDataGrid?.FilteredItems.Where(s => s.StatusName.ToUpper() != "BORRADOR").ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
 
         IsDocumentSelected = DocumentsDataGrid?.FilteredItems.Where(s => s.IsSelected == true).ToList().Count > 0 ? true : false;
         await Task.CompletedTask;
+        StateHasChanged();
     }
-    
+
     private async Task AfterAsyncCheck()
     {
         IsDocumentSelected = DocumentsDataGrid?.FilteredItems.Where(s => s.IsSelected == true ).ToList().Count > 0 ? true : false;
         StateHasChanged();
     }
 
-    private async Task ClickSelectedItemsChanged(HashSet<Receivable> Items)
+    private void AfterAsyncExclusiveCheck()
     {
-        IsDocumentSelected = selectedDocuments.Any() ? true : false;
+        // _isExclusive = args == "B" ? true : false;
+        _isExclusive = true;
         StateHasChanged();
     }
 
-    private async Task ClickRefreshSalesOrder(MouseEventArgs args) => await DocumentsDataGrid!.ReloadServerData();
-    
+
+    private async Task ClickRefreshAsync(MouseEventArgs args)
+    {
+        await DocumentsDataGrid!.ReloadServerData();
+
+        IsDocumentSelected = DocumentsDataGrid?.FilteredItems.Where(s => s.IsSelected == true).ToList().Count > 0 ? true : false;
+       
+        StateHasChanged();
+
+    }
+
+    private async Task ClickAddPayment(MouseEventArgs args)
+    {
+        if (Session.DealerId != 0)
+        {
+            DocumentSelecteds = new List<AccountPreview>();
+            IdPaymentPreviewSelected = 0;
+            var _documentSelected = DocumentsDataGrid?.FilteredItems.Where(s => s.IsSelected == true).ToList();
+
+            if (_documentSelected?.Count > 0)
+            {
+                _documentSelected.ForEach(item => DocumentSelecteds.Add(new AccountPreview()
+                {
+                    Id = item.Id,
+                    Number = item.Number,
+                    ConceptName = item.ConceptName,
+                    TypeName = item.TypeName,
+                    Amount = item.Amount,
+                    DocumentDate = item.DocumentDate,
+                    DateRate = item.DateRate,
+                    Rate = item.Rate
+                }));
+                _openDrawer = !_openDrawer;
+            }
+        
+        }
+        else
+        {
+            Success = false;
+            NestedErrorMessage = "Seleccione un concesionario.";
+            OpenNested();
+        }
+        
+        StateHasChanged();
+
+    }
+
+    // private async Task ClickEditDocument(Receivable args)
+    // {
+    //     DocumentSelecteds = new List<AccountPreview>();
+    //     IdPaymentPreviewSelected = args.Id;
+
+    //     DocumentSelecteds.Add(new AccountPreview()
+    //     {
+    //         Id = args.Id,
+    //         Number = args.Number,
+    //         ConceptName = args.ConceptName,
+    //         TypeName = args.TypeName,
+    //         Amount = args.Amount,
+    //         DocumentDate = args.DocumentDate.ToLongDateString()
+    //     });
+    //     _openDrawer = !_openDrawer;
+        
+    //     StateHasChanged();
+    // }
+
+    private async Task ClickClosedDrawer()
+    {
+        IdPaymentPreviewSelected = 0;
+        DocumentsDataGrid?.FilteredItems.Where(s => s.IsSelected == true).ToList().ForEach(item => item.IsSelected = false);
+        IsDocumentSelected = false;
+        _openDrawer = !_openDrawer;
+        DocumentSelecteds = new List<AccountPreview>();
+
+        await DocumentsDataGrid!.ReloadServerData();
+        StateHasChanged();
+    }
 
     public void Dispose()
     {

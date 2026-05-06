@@ -7,19 +7,26 @@
         Dense="true"
         Bordered="false"
         Filterable="false"
-        Striped="true"
-        FixedHeader Height="calc(20vh - 40px)"
+        Striped="true" 
+        Class="mt-2"
+        FixedHeader Height="calc(28vh - 40px)"
 >
-<ToolBarContent>
+
+    @* <ToolBarContent >
+    @if (IsVisibleToolBar != null && IsVisibleToolBar == true)
+    {
         <MudStack Row="true">
             <MudIcon Icon="@Icons.Material.Filled.FilePresent" Color="Color.Default" Style="font-size: 1.5rem;"></MudIcon>
             <MudText Typo="Typo.subtitle2">Documentos Relacionados</MudText>
         </MudStack>
-</ToolBarContent>
+    }
+    </ToolBarContent> *@
+
+
     <Columns>
         <TemplateColumn Title="">
                 <CellTemplate>
-                    <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Style="font-weight:bold;">@("#" + context.Item.PaymentId.ToString().PadLeft(10, '0'))</MudText>
+                    <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Style="font-weight:bold;">@("#" + context.Item.Id.ToString().PadLeft(10, '0'))</MudText>
                 </CellTemplate>
             </TemplateColumn>
         <TemplateColumn Title="">
@@ -29,18 +36,10 @@
             </TemplateColumn>
         <TemplateColumn Title="">
                 <CellTemplate>
-                    <MudText Typo="Typo.caption" Align="Align.Left">@(Convert.ToDateTime(context.Item.DocumentDate).ToString("dd/MM/yyyy"))</MudText>
+                    <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.DateRate?.ToString("dd/MM/yyyy"))</MudText>
                 </CellTemplate>
             </TemplateColumn>
-        <TemplateColumn Title="">
-                <CellTemplate>
-                    <div class="d-flex justify-center">
-                        <MudText Typo="Typo.caption" Align="Align.End" Color="Color.Default">
-                            @(context.Item.Amount?.ToString("N2"))
-                        </MudText>
-                    </div>
-                </CellTemplate>
-            </TemplateColumn>
+        
         <TemplateColumn Title="">
             <CellTemplate>
                 <div class="d-flex justify-start">
@@ -125,6 +124,15 @@
             </CellTemplate>
         </TemplateColumn>
 
+        <TemplateColumn Title="">
+            <CellTemplate>
+                <div class="d-flex justify-center">
+                    <MudText Typo="Typo.caption" Align="Align.End" Color="Color.Default">
+                        @(context.Item.Amount?.ToString("N2"))
+                    </MudText>
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
     </Columns>
 </MudDataGrid>
 
@@ -132,10 +140,30 @@
 @code { 
 
     [Parameter] public IEnumerable<AccountPreview> DocumentDetails { get; set; } = new List<AccountPreview>();
+    [Parameter] public bool? IsVisibleToolBar { get; set; } = false;
 
     private MudDataGrid<AccountPreview>? DocumentPreviewDataGrid;
 
     private int _rowCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        
+        await ReloadPaymentReportGrid();
+        
+
+    }
+
+    
+
+    private async Task ReloadPaymentReportGrid()
+    {
+        if (DocumentPreviewDataGrid != null)
+        {
+            await DocumentPreviewDataGrid.ReloadServerData();
+        }
+    }
+
     
 
     private async Task<GridData<AccountPreview>> LoadGridData(GridState<AccountPreview> state)
