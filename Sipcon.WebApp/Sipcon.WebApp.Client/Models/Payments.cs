@@ -85,11 +85,13 @@ namespace Sipcon.WebApp.Client.Models
         public DateTime DateRate { get; set; }
         public DateTime? Date { get; set; } = null;
         public double? Amount { get; set; } = null;
+        public double? AmountBs { get; set; } = null;
         public double? Rate { get; set; } = null;
         public int? StatusId { get; set; } = null;
         public string StatusName { get; set; } = string.Empty;
         public int Id { get; set; } = 0;
         public bool IsActive { get; set; } = true;
+        public bool IsSelected { get; set; } = false;
 
     }
     public class PaymentUpdate

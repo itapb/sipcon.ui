@@ -165,12 +165,14 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<BankAccountsType>>> GetBankAccounts(int Idsupplier)
+        public async Task<ApiResponse<List<BankAccountsType>>> GetBankAccounts(int Idsupplier, int? IdCurrency = null)
         {
             ApiResponse<List<BankAccountsType>>? result;
             try
             {
-                var resultlist = await _http.GetFromJsonAsync<ApiResponse<List<BankAccountsType>>>($"api/Payment/GetBankAccounts?supplierId={Idsupplier}");
+                var url = $"api/Payment/GetBankAccounts?supplierId={Idsupplier}";
+                url = IdCurrency.HasValue ? $"{url}&idCurrency={IdCurrency}" : url;
+                var resultlist = await _http.GetFromJsonAsync<ApiResponse<List<BankAccountsType>>>(url);
 
                 result = (resultlist is null) ? new ApiResponse<List<BankAccountsType>>()
                 {

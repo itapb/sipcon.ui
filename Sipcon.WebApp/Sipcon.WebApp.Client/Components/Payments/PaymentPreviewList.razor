@@ -55,7 +55,7 @@
                 <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Reference</MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn Title="Monto">
+        <TemplateColumn Title="Monto (USD)">
             <CellTemplate>
                 <div class="d-flex justify-center">
                     <MudText Typo="Typo.caption" Align="Align.End">
@@ -75,7 +75,7 @@
                         if (context.Item.CurrencyName.ToUpper() == "BS - BOLIVAR")
                         {
                             color = Color.Warning;
-                            txt = "Bs.";
+                            txt = "Bs." + context.Item.AmountBs?.ToString("N2");
                         }
                         else if (context.Item.CurrencyName.ToUpper() == "$ - DOLAR")
                         {
