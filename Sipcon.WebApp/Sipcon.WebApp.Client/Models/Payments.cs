@@ -132,10 +132,11 @@ namespace Sipcon.WebApp.Client.Models
         public int PaymentId { get; set; } = 0;
         public string Number { get; set; } = string.Empty;
         public DateTime DocumentDate { get; set; }
-        //public string DocumentDate { get; set; } = string.Empty;
+        
         public double? Rate { get; set; } = null;
         public DateTime? DateRate { get; set; } = null;
         public double? Amount { get; set; } = null;
+        public double? AmountBs { get; set; } = null;
         public string ConceptName { get; set; } = string.Empty;
         public string TypeName { get; set; } = string.Empty;
 

@@ -24,22 +24,27 @@
 
 
     <Columns>
+        @* //ID *@
         <TemplateColumn Title="">
-                <CellTemplate>
-                    <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Style="font-weight:bold;">@("#" + context.Item.Id.ToString().PadLeft(10, '0'))</MudText>
-                </CellTemplate>
-            </TemplateColumn>
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" 
+                        Style="font-weight:bold;">@("#" + context.Item.Id.ToString().PadLeft(10, '0'))</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        @* //Referencia *@
         <TemplateColumn Title="">
-                <CellTemplate>
-                    <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Number</MudText>
-                </CellTemplate>
-            </TemplateColumn>
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" 
+                Style="font-weight:bold;">@context.Item.Number</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        @* //Fecha Pago *@
         <TemplateColumn Title="">
-                <CellTemplate>
-                    <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.DateRate?.ToString("dd/MM/yyyy"))</MudText>
-                </CellTemplate>
-            </TemplateColumn>
-        
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.DateRate?.ToString("dd/MM/yyyy"))</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        @* //Tipo Concepto *@
         <TemplateColumn Title="">
             <CellTemplate>
                 <div class="d-flex justify-start">
@@ -48,29 +53,19 @@
                         Color color = Color.Default;
                         string style = "";
                         string txt = "";
-                        if (context.Item.ConceptName.ToUpper() == "BASE")
-                        {
-                            color = Color.Dark;
-                            txt = "Base";
-                        }
-                        else if (context.Item.ConceptName.ToUpper() == "PLACA")
-                        {
-                            color = Color.Info;
-                            txt = "Placa";
-                        }
-                        else if (context.Item.ConceptName.ToUpper() == "IVA (25%)")
-                        {
-                            color = Color.Error;
-                            txt = "IVA (25%)";
-                        }
-                        else if (context.Item.ConceptName.ToUpper() == "RETENCION IVA (75%)")
-                        {
-                            color = Color.Primary;
-                            txt = "Retención IVA (75%)";
-                        }
 
-                        style += "font-size: 11px";
-                        style += ";font-style:italic";
+                        var pair = context.Item.ConceptName.ToUpper() switch
+                        {
+                            "BASE" => (txt: "Base", color: Color.Dark),
+                            "PLACA" => (txt: "Placa", color: Color.Info),
+                            "IVA (25%)" => (txt: "IVA (25%)", color: Color.Success),
+                            "RETENCION IVA (75%)" => (txt: "Retención IVA (75%)", color: Color.Warning),
+                            _ => (txt: "", color: Color.Error)
+                        };
+                        txt = pair.txt;
+                        color = pair.color;
+
+                        style += ";font-size: 11px;font-style:italic";
 
                         <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
                             @(txt)
@@ -80,6 +75,7 @@
                 </div>
             </CellTemplate>
         </TemplateColumn>
+        @* //Tipo Documento *@
         <TemplateColumn Title="">
             <CellTemplate>
                 <div class="d-flex justify-start">
@@ -88,32 +84,19 @@
                         Color color = Color.Default;
                         string style = "";
                         string txt = "";
-                        if (context.Item.TypeName.ToUpper() == "UNIDADES")
+
+                        var pair = context.Item.TypeName.ToUpper() switch
                         {
-                            color = Color.Dark;
-                            txt = "Unidades";
-                        }
-                        else if (context.Item.TypeName.ToUpper() == "REPUESTOS")
-                        {
-                            color = Color.Info;
-                            txt = "Repuestos";
-                        }
-                        else if (context.Item.TypeName.ToUpper() == "PROFORMA")
-                        {
-                            color = Color.Success;
-                            txt = "Proforma";
-                        }
-                        else if (context.Item.TypeName.ToUpper() == "OTROS GASTOS")
-                        {
-                            color = Color.Warning;
-                            txt = "Otros Gastos";
-                        }
-                        else
-                        {
-                            color = Color.Error;
-                        }
-                        style += "font-size: 11px";
-                        style += ";font-style:italic";
+                            "UNIDADES" => (txt: "Unidades", color: Color.Dark),
+                            "REPUESTOS" => (txt: "Repuestos", color: Color.Info),
+                            "PROFORMA" => (txt: "Proforma", color: Color.Success),
+                            "OTROS GASTOS" => (txt: "Otros Gastos", color: Color.Warning),
+                            _ => (txt: "", color: Color.Error)
+                        };
+                        txt = pair.txt;
+                        color = pair.color;
+
+                        style += ";font-size: 11px;font-style:italic";
 
                         <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
                             @(txt)
@@ -123,13 +106,34 @@
                 </div>
             </CellTemplate>
         </TemplateColumn>
-
+        @* //Monto *@
         <TemplateColumn Title="">
             <CellTemplate>
                 <div class="d-flex justify-center">
-                    <MudText Typo="Typo.caption" Align="Align.End" Color="Color.Default">
-                        @(context.Item.Amount?.ToString("N2"))
-                    </MudText>
+                    @if (context.Item.ConceptName != null)
+                    {
+                        Color color = Color.Default;
+                        string style = "";
+                        string txt = "";
+
+                        var pair = context.Item.ConceptName.ToUpper() switch
+                        {
+                            "BASE" => (txt: "$." + context.Item.Amount?.ToString("N2") ?? "", color: Color.Success),
+                            "PLACA" => (txt: "Bs." + context.Item.AmountBs?.ToString("N2") ?? "", color: Color.Warning),
+                            "IVA (25%)" => (txt: "Bs." + context.Item.AmountBs?.ToString("N2") ?? "", color: Color.Warning),
+                            "RETENCION IVA (75%)" => (txt: "Bs." + context.Item.AmountBs?.ToString("N2") ?? "", color: Color.Warning),
+                            _ => (txt: "", color: Color.Error)
+                        };
+                        txt = pair.txt;
+                        color = pair.color;
+
+                        style += ";font-size: 11px;font-style:italic";
+
+                        <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
+                            @(txt)
+                        </MudChip>
+                        
+                    }
                 </div>
             </CellTemplate>
         </TemplateColumn>
@@ -148,13 +152,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        
         await ReloadPaymentReportGrid();
-        
 
     }
-
-    
 
     private async Task ReloadPaymentReportGrid()
     {
@@ -164,8 +164,6 @@
         }
     }
 
-    
-
     private async Task<GridData<AccountPreview>> LoadGridData(GridState<AccountPreview> state)
     {
 
@@ -173,6 +171,5 @@
 
         return new GridData<AccountPreview> { TotalItems = DocumentDetails.Count(), Items = DocumentDetails };
     }
-
 
 }

@@ -249,7 +249,8 @@
                 </ToolBarContent>
                 <ColGroup>
                     <col style="width: 2%;" />
-                    <col style="width: 10%;" />
+                    <col style="width: 4%;" />
+                    <col style="width: 6%;" />
                     <col style="width: 10%;" />
                     <col style="width: 12%;" />
                     <col style="width: 10%;" />
@@ -271,10 +272,16 @@
                                          Disabled="@(_statusNotReportPay.Contains(context.Item.StatusName.ToUpper()))" />
                         </CellTemplate>
                     </TemplateColumn>
-                   
+                    <TemplateColumn Title="">
+                        <CellTemplate>
+                            <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" 
+                                        Style="font-weight:bold;">@("#" + context.Item.Id.ToString().PadLeft(10, '0'))</MudText>
+                        </CellTemplate>
+                    </TemplateColumn>
                     <TemplateColumn Title="Documento">
                         <CellTemplate>
-                            <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Number</MudText>
+                            <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" 
+                                        Style="font-weight:bold;">@context.Item.Number</MudText>
                         </CellTemplate>
                     </TemplateColumn>
                     <TemplateColumn Title="Tipo">
@@ -285,32 +292,19 @@
                                     Color color = Color.Default;
                                     string style = "";
                                     string txt = "";
-                                    if (context.Item.TypeName.ToUpper() == "UNIDADES")
+
+                                    var pair = context.Item.TypeName.ToUpper() switch
                                     {
-                                        color = Color.Dark;
-                                        txt = "Unidades";
-                                    }
-                                    else if (context.Item.TypeName.ToUpper() == "REPUESTOS")
-                                    {
-                                        color = Color.Info;
-                                        txt = "Repuestos";
-                                    }
-                                    else if (context.Item.TypeName.ToUpper() == "PROFORMA")
-                                    {
-                                        color = Color.Success;
-                                        txt = "Proforma";
-                                    }
-                                    else if (context.Item.TypeName.ToUpper() == "OTROS GASTOS")
-                                    {
-                                        color = Color.Warning;
-                                        txt = "Otros Gastos";
-                                    }
-                                    else
-                                    {
-                                        color = Color.Error;
-                                    }
-                                    style += ";font-size: 12px";
-                                    style += ";font-style:italic";
+                                        "UNIDADES" => (txt: "Unidades", color: Color.Dark),
+                                        "REPUESTOS" => (txt: "Repuestos", color: Color.Info),
+                                        "PROFORMA" => (txt: "Proforma", color: Color.Success),
+                                        "OTROS GASTOS" => (txt: "Otros Gastos", color: Color.Warning),
+                                        _ => (txt: "", color: Color.Error)
+                                    };
+                                    txt = pair.txt;
+                                    color = pair.color;
+
+                                    style += ";font-size: 12px;font-style:italic";
 
                                     <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
                                         @(txt)
@@ -328,29 +322,19 @@
                                     Color color = Color.Default;
                                     string style = "";
                                     string txt = "";
-                                    if (context.Item.ConceptName.ToUpper() == "BASE")
-                                    {
-                                        color = Color.Dark;
-                                        txt = "Base";
-                                    }
-                                    else if (context.Item.ConceptName.ToUpper() == "PLACA")
-                                    {
-                                        color = Color.Info;
-                                        txt = "Placa";
-                                    }
-                                    else if (context.Item.ConceptName.ToUpper() == "IVA (25%)")
-                                    {
-                                        color = Color.Error;
-                                        txt = "IVA (25%)";
-                                    }
-                                    else if (context.Item.ConceptName.ToUpper() == "RETENCION IVA (75%)")
-                                    {
-                                        color = Color.Primary;
-                                        txt = "Retención IVA (75%)";
-                                    }
 
-                                    style += "font-size: 12px";
-                                    style += ";font-style:italic";
+                                    var pair = context.Item.ConceptName.ToUpper() switch
+                                    {
+                                        "BASE" => (txt: "Base", color: Color.Success),
+                                        "PLACA" => (txt: "Placa", color: Color.Info),
+                                        "IVA (25%)" => (txt: "IVA (25%)", color: Color.Error),
+                                        "RETENCION IVA (75%)" => (txt: "Retención IVA (75%)", color: Color.Primary),
+                                        _ => (txt: "", color: Color.Error)
+                                    };
+                                    txt = pair.txt;
+                                    color = pair.color;
+
+                                    style += ";font-size: 12px;font-style:italic";
 
                                     <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
                                         @(txt)
@@ -414,6 +398,40 @@
                             </div>
                         </CellTemplate>
                     </TemplateColumn>
+                    <TemplateColumn Title="Estado">
+                        <CellTemplate>
+                            <div class="d-flex justify-start">
+                                @if (context.Item.StatusName != null)
+                                {
+                                    Color color = Color.Default;
+                                    Variant variant = Variant.Text;
+                                    string style = "";
+                                    string txt = "";
+
+                                    var pair = context.Item.StatusName.ToUpper() switch
+                                    {
+                                        "BORRADOR" => (txt: "Borrador", color: Color.Warning, variant = Variant.Text),
+                                        "TRANSITO" => (txt: "Transito", color: Color.Primary, variant = Variant.Text),
+                                        "ABIERTO" => (txt: "Abierto", color: Color.Info, variant = Variant.Text),
+                                        "PAGADO" => (txt: "Pagado", color: Color.Success, variant = Variant.Text),
+                                        "VENCIDO" => (txt: "Vencido", color: Color.Secondary, variant = Variant.Filled),
+                                        _ => (txt: "", color: Color.Error, variant = Variant.Filled)
+                                    };
+                                    txt = pair.txt;
+                                    color = pair.color;
+                                    variant = pair.Item3;
+                                                                                                                                               
+                                    style += "font-size: 12px;font-style:italic";
+                                    
+
+                                    <MudChip T="string" Variant="@variant" Color="@color" Style="@style">
+                                        @(txt)
+                                    </MudChip>
+                                }
+                   
+                            </div>
+                        </CellTemplate>
+                    </TemplateColumn>
                     <TemplateColumn Title="Monto $">
                         <CellTemplate>
                             <div class="d-flex justify-center">
@@ -453,53 +471,7 @@
                             </div>
                         </CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn Title="Estado">
-                        <CellTemplate>
-                            <div class="d-flex justify-start">
-                                @if (context.Item.StatusName != null)
-                                {
-                                    Color color = Color.Default;
-                                    Variant variant = Variant.Text;
-                                    string style = "";
-                                    string txt = "";
-                                    if (context.Item.StatusName.ToUpper() == "BORRADOR")
-                                    {
-                                        color = Color.Warning;
-                                        txt = "Borrador";
-                                    }
-                                    if (context.Item.StatusName.ToUpper() == "TRANSITO")
-                                    {
-                                        color = Color.Primary;
-                                        txt = "Transito";
-                                    }
-                                    else if (context.Item.StatusName.ToUpper() == "ABIERTO")
-                                    {
-                                        color = Color.Info;
-                                        txt = "Abierto";
-                                    }
-                                    else if (context.Item.StatusName.ToUpper() == "PAGADO")
-                                    {
-                                        color = Color.Success;
-                                        txt = "Pagado";
-                                    }
-                                    else if (context.Item.StatusName.ToUpper() == "VENCIDO")
-                                    {
-                                        color = Color.Secondary;
-                                        txt = "Vencido";
-                                        variant = Variant.Filled;
-                                    }
-                                    
-                                    style += ";font-size: 12px";
-                                    style += ";font-style:italic";
-
-                                    <MudChip T="string" Variant="@variant" Color="@color" Style="@style">
-                                        @(txt)
-                                    </MudChip>
-                                }
                    
-                            </div>
-                        </CellTemplate>
-                    </TemplateColumn>
                     @* <TemplateColumn StickyRight="true">
                         <CellTemplate>
                             @if (context.Item.StatusName != null)
@@ -839,6 +811,7 @@
                     ConceptName = item.ConceptName,
                     TypeName = item.TypeName,
                     Amount = item.Amount,
+                    AmountBs = item.AmountBs,
                     DocumentDate = item.DocumentDate,
                     DateRate = item.DateRate,
                     Rate = item.Rate

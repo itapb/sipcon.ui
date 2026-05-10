@@ -313,18 +313,24 @@
                 <ColGroup>
                     <col style="width: 2%;" />
                     <col style="width: 2%;" />
+                    @* "Fecha" *@
                     <col style="width: 5%;" />
+                    @* "Tipo" *@
                     <col style="width: 8%;" />
-                    <col style="width: 5%;" />
+                    @* "Banco" *@
                     <col style="width: 20%;" />
+                    @* "Referencia" *@
                     <col style="width: 10%;" />
-                    <col style="width: 10%;" />
+                    @* "Monto" *@
+                    <col style="width: 12%;" />
+                    @* "Estado" *@
                     <col style="width: 24%;" />
-                    <col style="width: 4%;" />
-                    <col style="width: 10%;" />
+                    @* "Concesionario" *@
+                    <col style="width: 12%;" />
+                    <col style="width: 5%;" />
                 </ColGroup>
                 <Columns>
-               @*      <SelectColumn T="Payment" /> *@
+               
                     <TemplateColumn>
                         <HeaderTemplate>
                             <MudCheckBox @bind-Value="IsAllCheckBoxSelected" @bind-Value:after="AfterAsyncAllCheck" />
@@ -334,9 +340,7 @@
                                          Disabled="@(context.Item.StatusName.ToUpper() == "BORRADOR")" />
                         </CellTemplate>
                     </TemplateColumn>
-                    @* ButtonDisabledFunc="@(context => context.StatusName.ToUpper() == "BORRADOR")" *@
                     <HierarchyColumn T="Payment" EnableHeaderToggle="false" />
-
                     <TemplateColumn Title="Fecha">
                         <CellTemplate>
                             <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.DateRate.ToString("dd/MM/yyyy"))</MudText>
@@ -371,24 +375,31 @@
                             </div>
                         </CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn Title="Moneda">
+                    <PropertyColumn Title="Banco" Sortable="false" ShowFilterIcon="false" Property="x => x.BankName.ToLower()" CellStyle="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 0;" />
+                    <TemplateColumn Title="Referencia">
                         <CellTemplate>
-                            <div class="d-flex justify-start">
+                            <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Reference</MudText>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Monto">
+                        <CellTemplate>
+                            <div class="d-flex justify-end">
                                 @if (context.Item.CurrencyName != null)
                                 {
                                     Color color = Color.Default;
                                     string style = "";
                                     string txt = "";
+
                                     var pair = context.Item.CurrencyName.ToUpper() switch
                                     {
-                                        "BS - BOLIVAR" => (txt: "Bs.", color: Color.Warning),
-                                        "$ - DOLAR" => (txt: "USD", color: Color.Success),
-                                        _               => (txt: "", color: Color.Error)
+                                        "BS - BOLIVAR" => (txt: "Bs." + context.Item.AmountBs?.ToString("N2") ?? "", color: Color.Warning),
+                                        "$ - DOLAR" => (txt: "$." + context.Item.Amount?.ToString("N2") ?? "", color: Color.Success),
+                                        _ => (txt: "", color: Color.Error)
                                     };
                                     txt = pair.txt;
                                     color = pair.color;
                                      
-                                    style += ";font-size: 12px; font-style:italic";
+                                    style += ";font-size: 11px; font-style:italic";
 
                                     <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
                                         @(txt)
@@ -398,22 +409,6 @@
                             </div>
                         </CellTemplate>
                     </TemplateColumn>
-                    <PropertyColumn Title="Banco" Sortable="false" ShowFilterIcon="false" Property="x => x.BankName.ToLower()" CellStyle="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 0;" />
-                    <TemplateColumn Title="Referencia">
-                        <CellTemplate>
-                            <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Reference</MudText>
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <TemplateColumn Title="Monto">
-                        <CellTemplate>
-                            <div class="d-flex justify-center">
-                                <MudText Typo="Typo.caption" Align="Align.End">
-                                    @(context.Item.Amount?.ToString("N2"))
-                                </MudText>
-                            </div>
-                        </CellTemplate>
-                    </TemplateColumn>
-                    
                     <TemplateColumn Title="Estado">
                         <CellTemplate>
                             <div class="d-flex justify-start">
