@@ -151,6 +151,12 @@
         DeclineOK,
         [StringValue("Problemas al Rechazar registros!...")]
         DeclineNotOK,
+
+        // Process
+        [StringValue("Registro Procesado Satisfactoriamente...")]
+        ProcessOK,
+        [StringValue("Problemas al Procesar registro!...")]
+        ProcessNotOK,
     }
 
 }

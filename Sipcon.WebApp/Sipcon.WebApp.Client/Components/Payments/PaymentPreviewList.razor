@@ -20,27 +20,18 @@
                         Color color = Color.Default;
                         string style = "";
                         string txt = "";
-                        if (context.Item.TypeName.ToUpper() == "RETENCION")
+
+                        var pair = context.Item.TypeName.ToUpper() switch
                         {
-                            color = Color.Dark;
-                            txt = "Retencion";
-                        }
-                        else if (context.Item.TypeName.ToUpper() == "TRANSFERENCIA")
-                        {
-                            color = Color.Info;
-                            txt = "Transferencia";
-                        }
-                        else if (context.Item.TypeName.ToUpper() == "EFECTIVO")
-                        {
-                            color = Color.Success;
-                            txt = "Efectivo";
-                        }
-                        else
-                        {
-                            color = Color.Error;
-                        }
-                        style += ";font-size: 12px";
-                        style += ";font-style:italic";
+                            "RETENCION" => (txt: "Retencion", color: Color.Dark),
+                            "TRANSFERENCIA" => (txt: "Transferencia", color: Color.Info),
+                            "EFECTIVO" => (txt: "Efectivo", color: Color.Success),
+                            _ => (txt: "", color: Color.Error)
+                        };
+                        txt = pair.txt;
+                        color = pair.color;
+
+                        style += ";font-size: 12px;font-style:italic";
 
                         <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
                             @(txt)
@@ -55,15 +46,6 @@
                 <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Reference</MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn Title="Monto">
-            <CellTemplate>
-                <div class="d-flex justify-center">
-                    <MudText Typo="Typo.caption" Align="Align.End">
-                        @(context.Item.Amount?.ToString("N2"))
-                    </MudText>
-                </div>
-            </CellTemplate>
-        </TemplateColumn>
         <TemplateColumn Title="Moneda">
             <CellTemplate>
                 <div class="d-flex justify-start">
@@ -72,22 +54,17 @@
                         Color color = Color.Default;
                         string style = "";
                         string txt = "";
-                        if (context.Item.CurrencyName.ToUpper() == "BS - BOLIVAR")
+
+                        var pair = context.Item.CurrencyName.ToUpper() switch
                         {
-                            color = Color.Warning;
-                            txt = "Bs.";
-                        }
-                        else if (context.Item.CurrencyName.ToUpper() == "$ - DOLAR")
-                        {
-                            color = Color.Success;
-                            txt = "USD";
-                        }
-                        else
-                        {
-                            color = Color.Error;
-                        }
-                        style += ";font-size: 12px";
-                        style += ";font-style:italic";
+                            "BS - BOLIVAR" => (txt: "Bs." + context.Item.AmountBs?.ToString("N2"), color: Color.Warning),
+                            "$ - DOLAR" => (txt: "$." + context.Item.Amount?.ToString("N2"), color: Color.Success),
+                            _ => (txt: "", color: Color.Error)
+                        };
+                        txt = pair.txt;
+                        color = pair.color;
+
+                        style += ";font-size: 11px;font-style:italic";
 
                         <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
                             @(txt)
@@ -102,24 +79,15 @@
                 <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.DateRate.ToString("dd/MM/yyyy"))</MudText>
             </CellTemplate>
         </TemplateColumn>
-       
-        @* <TemplateColumn StickyRight="true">
-            <CellTemplate>
-                <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.AttachFile" Href="@("paymentfiles/" + context.Item.Id)" />
-            </CellTemplate>
-        </TemplateColumn> *@
+        
         <TemplateColumn StickyRight="true">
             <CellTemplate>
-                @if (context.Item.StatusName != null)
+                @if (context.Item.StatusName != null && context.Item.StatusName.ToUpper() == "BORRADOR")
                 {
-                    if (context.Item.StatusName.ToUpper() == "BORRADOR")
-                    {
-                        <MudButtonGroup Size="@Size.Small" Variant="Variant.Text" Color="Color.Dark">
-                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => OnClickEditButton(context.Item)" />
-                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="() => OnClickDeleteButton(context.Item)" />
-                        </MudButtonGroup>
-                        
-                    }
+                    <MudButtonGroup Size="@Size.Small" Variant="Variant.Text" Color="Color.Dark">
+                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => OnClickEditButton(context.Item)" />
+                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="() => OnClickDeleteButton(context.Item)" />
+                    </MudButtonGroup>
                 }
             </CellTemplate>
         </TemplateColumn>
@@ -146,8 +114,6 @@
 
     }
 
-    
-
     private async Task ReloadPaymentReportGrid()
     {
         if (PaymentPreviewDataGrid != null)
@@ -155,8 +121,6 @@
             await PaymentPreviewDataGrid.ReloadServerData();
         }
     }
-
-    
 
     private async Task<GridData<Payment>> LoadGridData(GridState<Payment> state)
     {

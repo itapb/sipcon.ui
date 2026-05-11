@@ -584,11 +584,11 @@ namespace Sipcon.WebApp.Client.Utils
             return _itemsSelect;
         }
 
-        public async Task<List<SelectOption>> GetBankAccountSelectOption(int Idsupplier)
+        public async Task<List<SelectOption>> GetBankAccountSelectOption(int Idsupplier, int? IdCurrency = null)
         {
             List<SelectOption> _itemsSelect = new([]);
 
-            var moduleResponse = await PaymentService.GetBankAccounts(Idsupplier);
+            var moduleResponse = await PaymentService.GetBankAccounts(Idsupplier, IdCurrency);
             if (moduleResponse.Processed)
             {
                 List<BankAccountsType> _List = moduleResponse.Data ?? new List<BankAccountsType>();
