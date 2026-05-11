@@ -10,6 +10,7 @@
 @inject IJSRuntime JSRuntime
 @inject HubEventsService hubEventsService
 @implements IDisposable
+@inject IJSRuntime JS
 
 <PageTitle>Inspecciones</PageTitle>
 <CustomBreadcrumbs mItems="_itemsNavigate" />
@@ -103,6 +104,17 @@
                                Color="Color.Default"
                                Size="Size.Small"
                                OnClick="() => ClickEdit(context.Item)" 
+                 />
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn HeaderClass="mud-text-align-center" CellClass="mud-text-align-center">
+            <CellTemplate>
+                <MudIconButton Icon="@Icons.Material.Filled.PictureAsPdf"
+                               Variant="Variant.Text"
+                               Color="Color.Default"
+                               Size="Size.Small"
+                               OnClick="() => ClickFormat(context.Item)"            
                  />
             </CellTemplate>
         </TemplateColumn>
@@ -221,6 +233,32 @@
         if (result != null && !result.Canceled)
         {
             await ReloadServerData();
+        }
+    }
+    
+    private async Task ClickFormat(Inspection item)
+    {
+        try
+        {
+            var serviceResponse = await InspectionService.GeneratePDF(item.InspectionId);
+
+            if (serviceResponse.Processed && serviceResponse.Data != null)
+            {
+                var applicationName = string.Empty;
+
+                var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+                var fileUrl = $"data:{applicationName};base64,{base64File}";
+
+                await JS.InvokeVoidAsync("downloadFile", fileUrl, $"Inspeccion_{item.Area}_{item.InspectionId}.pdf");
+            }
+            else
+            {
+                var errorMessage = serviceResponse.Message ?? "No se pudo exportar el archivo.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error en la descarga: {ex.Message}");
         }
     }
 
