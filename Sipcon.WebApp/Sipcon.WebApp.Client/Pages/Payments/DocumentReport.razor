@@ -35,21 +35,83 @@
         </MudCardHeader>
 
         <MudCardContent Style="padding-top: 0px;">
+            
+            @if (ConceptList != null)
+            {
+                <MudToggleGroup T="string" SelectionMode="SelectionMode.MultiSelection"
+                                @bind-Values="_selectedConcepts"
+                                @bind-Values:after="AfterAsyncExclusiveCheck"
+                                SelectedClass="black white-text"
+                                Color="Color.Secondary" CheckMark >
+                    @foreach (var action in ConceptList)
+                    {
+                        switch (action.Text.ToUpper())
+                        {
+                            case "PLACA": 
+                            case "IVA (25%)": 
+                                <MudToggleItem Value="@action.ValueStr" Text="@action.Text"
+                                        UnselectedIcon="@Icons.Material.Filled.CheckBoxOutlineBlank"
+                                        SelectedIcon="@Icons.Material.Filled.CheckBox"
+                                        Disabled="@_IsExclusive" /> 
+                                        break;
+                            case "BASE":
+                                <MudToggleItem Value="@action.ValueStr" Text="@action.Text"
+                                        UnselectedIcon="@Icons.Material.Filled.CheckBoxOutlineBlank"
+                                        SelectedIcon="@Icons.Material.Filled.CheckBox"
+                                        Disabled="@_IsExclusiveBase" /> 
+                                break;
+                            case "RETENCION IVA (75%)": 
+                                <MudToggleItem Value="@action.ValueStr" Text="@action.Text"
+                                        UnselectedIcon="@Icons.Material.Filled.CheckBoxOutlineBlank"
+                                        SelectedIcon="@Icons.Material.Filled.CheckBox"
+                                        Disabled="@_IsExclusiveRetencion" /> 
+                                               
+                                break;
+                            default:  
+                                <MudToggleItem Value="@action.ValueStr" Text="@action.Text"
+                                        UnselectedIcon="@Icons.Material.Filled.CheckBoxOutlineBlank"
+                                        SelectedIcon="@Icons.Material.Filled.CheckBox"
+                                        />
+                                break;
+                        };
+                                
+                    }
+                </MudToggleGroup>
+            }
+        
+            <MudStack Row="true" Class="mt-2">
 
-               
-            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudDatePicker @ref="_pickerPay"
+                                @bind-Date="_datePay"
+                                Style="font-size: 12px;line-height: 15px;min-width: 120px;"
+                                Adornment="Adornment.End"
+                                AdornmentColor="Color.Default"
+                                Class="align-right"
+                                Label="Fecha Pago"
+                                Placeholder="dd/MM/yyyy"
+                                Variant="Variant.Outlined"
+                                PickerVariant="PickerVariant.Inline"
+                                Margin="Margin.Dense"
+                                DateFormat="dd/MM/yyyy"
+                                AutoClose="true">
+                    <PickerActions>
+                        <MudButton Class="mr-auto align-self-start" OnClick="@(() => _pickerPay.ClearAsync())">Borrar</MudButton>
+                        <MudButton OnClick="@(() => _pickerPay.CloseAsync(false))">Cancelar</MudButton>
+                    </PickerActions>
+                </MudDatePicker>
+
                 <MudSelect T="SelectOption"
-                           @bind-Value="SelectedDocumentType"
-                           ToStringFunc="@(e => e?.Text)"
-                           Style="font-size: 12px;line-height: 15px;min-width: 80px;"
-                           Typo="Typo.caption"
-                           Label="Tipo Documento"
-                           Placeholder="Tipo Documento"
-                           AdornmentColor="Color.Default"
-                           Variant="Variant.Outlined"
-                           Clearable="true"
-                           Dense="true"
-                           Margin="Margin.Dense">
+                            @bind-Value="SelectedDocumentType"
+                            ToStringFunc="@(e => e?.Text)"
+                            Style="font-size: 12px;line-height: 15px;min-width: 80px;"
+                            Typo="Typo.caption"
+                            Label="Tipo Documento"
+                            Placeholder="Tipo Documento"
+                            AdornmentColor="Color.Default"
+                            Variant="Variant.Outlined"
+                            Clearable="true"
+                            Dense="true"
+                            Margin="Margin.Dense">
                     @if (DocumentList != null)
                     {
                         @foreach (var action in DocumentList)
@@ -59,40 +121,19 @@
                     }
                 </MudSelect>
 
-                <MudSelect T="SelectOption"
-                           @bind-Value="SelectedConceptType"
-                           ToStringFunc="@(e => e?.Text)"
-                           Style="font-size: 12px;line-height: 15px;min-width: 80px;"
-                           Typo="Typo.caption"
-                           Label="Concepto"
-                           Placeholder="Todos los conceptos"
-                           AdornmentColor="Color.Default"
-                           Variant="Variant.Outlined"
-                           Clearable="true"
-                           Dense="true"
-                           Margin="Margin.Dense">
-                    @if (ConceptList != null)
-                    {
-                        @foreach (var action in ConceptList)
-                        {
-                            <MudSelectItem T="SelectOption" Value="@action">@action.Text</MudSelectItem>
-                        }
-                    }
-                </MudSelect>
-
 
                 <MudSelect T="SelectOption"
-                           @bind-Value="SelectedStatus"
-                           ToStringFunc="@(e => e?.Text)"
-                           Style="font-size: 12px;line-height: 15px;min-width: 80px;"
-                           Typo="Typo.caption"
-                           Label="Estado"
-                           Placeholder="Todos los estados"
-                           AdornmentColor="Color.Default"
-                           Variant="Variant.Outlined"
-                           Clearable="true"
-                           Dense="true"
-                           Margin="Margin.Dense">
+                            @bind-Value="SelectedStatus"
+                            ToStringFunc="@(e => e?.Text)"
+                            Style="font-size: 12px;line-height: 15px;min-width: 80px;"
+                            Typo="Typo.caption"
+                            Label="Estado"
+                            Placeholder="Todos los estados"
+                            AdornmentColor="Color.Default"
+                            Variant="Variant.Outlined"
+                            Clearable="true"
+                            Dense="true"
+                            Margin="Margin.Dense">
                     @if (StatusList != null)
                     {
                         @foreach (var action in StatusList)
@@ -103,22 +144,21 @@
                     }
                 </MudSelect>
             </MudStack>
-
             
             <MudStack Row="true">
                 <MudDatePicker @ref="_picker"
-                               @bind-Date="_dateFrom"
-                               Style="font-size: 12px;line-height: 15px;min-width: 80px;"
-                               Adornment="Adornment.End"
-                               AdornmentColor="Color.Default"
-                               Class="align-right"
-                               Label="Desde"
-                               Placeholder="dd/MM/yyyy"
-                               Variant="Variant.Outlined"
-                               PickerVariant="PickerVariant.Inline"
-                               Margin="Margin.Dense"
-                               DateFormat="dd/MM/yyyy"
-                               AutoClose="true">
+                                @bind-Date="_dateFrom"
+                                Style="font-size: 12px;line-height: 15px;min-width: 80px;"
+                                Adornment="Adornment.End"
+                                AdornmentColor="Color.Default"
+                                Class="align-right"
+                                Label="Desde"
+                                Placeholder="dd/MM/yyyy"
+                                Variant="Variant.Outlined"
+                                PickerVariant="PickerVariant.Inline"
+                                Margin="Margin.Dense"
+                                DateFormat="dd/MM/yyyy"
+                                AutoClose="true">
                     <PickerActions>
                         <MudButton Class="mr-auto align-self-start" OnClick="@(() => _picker.ClearAsync())">Borrar</MudButton>
                         <MudButton OnClick="@(() => _picker.CloseAsync(false))">Cancelar</MudButton>
@@ -126,72 +166,34 @@
                 </MudDatePicker>
 
                 <MudDatePicker @ref="_pickerTo"
-                               @bind-Date="_dateTo"
-                               Style="font-size: 12px;line-height: 15px;min-width: 80px;"
-                               Adornment="Adornment.End"
-                               AdornmentColor="Color.Default"
-                               Class="align-right"
-                               Label="Hasta"
-                               Placeholder="dd/MM/yyyy"
-                               Variant="Variant.Outlined"
-                               PickerVariant="PickerVariant.Inline"
-                               Margin="Margin.Dense"
-                               DateFormat="dd/MM/yyyy"
-                               AutoClose="true">
+                                @bind-Date="_dateTo"
+                                Style="font-size: 12px;line-height: 15px;min-width: 80px;"
+                                Adornment="Adornment.End"
+                                AdornmentColor="Color.Default"
+                                Class="align-right"
+                                Label="Hasta"
+                                Placeholder="dd/MM/yyyy"
+                                Variant="Variant.Outlined"
+                                PickerVariant="PickerVariant.Inline"
+                                Margin="Margin.Dense"
+                                DateFormat="dd/MM/yyyy"
+                                AutoClose="true">
                     <PickerActions>
                         <MudButton Class="mr-auto align-self-start" OnClick="@(() => _pickerTo.ClearAsync())">Borrar</MudButton>
                         <MudButton OnClick="@(() => _pickerTo.CloseAsync(false))">Cancelar</MudButton>
                     </PickerActions>
                 </MudDatePicker>
 
-                <MudDatePicker @ref="_pickerPay"
-                               @bind-Date="_datePay"
-                               Style="font-size: 12px;line-height: 15px;min-width: 120px;"
-                               Adornment="Adornment.End"
-                               AdornmentColor="Color.Default"
-                               Class="align-right"
-                               Label="Fecha Pago"
-                               Placeholder="dd/MM/yyyy"
-                               Variant="Variant.Outlined"
-                               PickerVariant="PickerVariant.Inline"
-                               Margin="Margin.Dense"
-                               DateFormat="dd/MM/yyyy"
-                               AutoClose="true">
-                    <PickerActions>
-                        <MudButton Class="mr-auto align-self-start" OnClick="@(() => _pickerPay.ClearAsync())">Borrar</MudButton>
-                        <MudButton OnClick="@(() => _pickerPay.CloseAsync(false))">Cancelar</MudButton>
-                    </PickerActions>
-                </MudDatePicker>
+                
 
                 <div class="d-flex justify-end">
                     <MudButton StartIcon="@Icons.Material.Filled.Search" Variant="Variant.Filled" Style="margin: 11px;"
-                               Size="Size.Small"
-                               OnClick="ClickRefreshDocuments">Buscar</MudButton>
+                                Size="Size.Small"
+                                OnClick="ClickRefreshDocuments">Buscar</MudButton>
                 </div>
                 
             </MudStack>
-            @* <MudStack>
-                    
-                    <MudText>Values: @(_selectedConcepts.ToList().Count > 0 ? string.Join("-", _selectedConcepts) : "")</MudText>
-                    @if (ConceptList != null)
-                    {
-                        <MudToggleGroup T="string" SelectionMode="SelectionMode.MultiSelection"
-                                        @bind-Values="_selectedConcepts"
-                                        @bind-Values:after="AfterAsyncExclusiveCheck"
-                                        SelectedClass="black white-text"
-                                        Color="Color.Secondary" CheckMark >
-                            @foreach (var action in ConceptList)
-                            {
-                                <MudToggleItem Value="@action.ValueStr" Text="@action.Text"
-                                               UnselectedIcon="@Icons.Material.Filled.CheckBoxOutlineBlank"
-                                               SelectedIcon="@Icons.Material.Filled.CheckBox"
-                                               Disabled="@_isExclusive" />
-
-                            }
-                        </MudToggleGroup>
-                    }
-                </MudStack>
-            *@
+            
         </MudCardContent>
 
     </MudCard>
@@ -560,9 +562,11 @@
     private List<SelectOption> ConceptList = new List<SelectOption>();
     private SelectOption? SelectedStatus;
     private SelectOption? SelectedDocumentType;
-    private SelectOption? SelectedConceptType;
-    // private IEnumerable<string> _selectedConcepts = new[] { "" };
-    private bool _isExclusive = false;
+    
+    private IEnumerable<string> _selectedConcepts = new[] { "B" };
+    private bool _IsExclusive = false;
+    private bool _IsExclusiveBase = false;
+    private bool _IsExclusiveRetencion = false;
 
     private List<string> _statusReportPay = new List<string>()
     {
@@ -580,10 +584,17 @@
     protected override async Task OnInitializedAsync()
     {
         await AuthenticationStateProvider.RefreshStaticVariables();
-        //await LoadDataAsync();
+        
+        _selectedConcepts = new[] { "B" };
+        _IsExclusiveBase = false;
+        _IsExclusiveRetencion = true;
+        _IsExclusive = true;
+       
         hubEventsService.OnDealerChanged += ReloadPaymentReportGrid;
         hubEventsService.OnSupplierChanged += ReloadPaymentReportGrid;
         await Task.CompletedTask;
+        StateHasChanged();
+
 
     }
 
@@ -624,7 +635,13 @@
         DocumentList = await ModuleActionsService.GetDocumentTypeSelectOption();
         ConceptList = await ModuleActionsService.GetDocumentConceptSelectOption();
 
-
+        if (_selectedConcepts.ToList().Count() == 0 )
+        {
+            _selectedConcepts = new[] { "B" };
+            _IsExclusiveBase = false;
+            _IsExclusiveRetencion = true;
+            _IsExclusive = true;
+        }
         StateHasChanged();
 
         int? idRespaldado = SelectedStatus?.Value;
@@ -645,16 +662,7 @@
         }
         string _documentTypeid = SelectedDocumentType?.ValueStr ?? "";
 
-        string? _auxConceptTypeId = SelectedConceptType?.ValueStr;
-        if (!string.IsNullOrEmpty(_auxConceptTypeId) && ConceptList != null)
-        {
-            SelectedConceptType = ConceptList.FirstOrDefault(x => x.ValueStr == _auxConceptTypeId);
-        }
-        else if (ConceptList != null)
-        {
-            SelectedConceptType = ConceptList.FirstOrDefault();
-        }
-        string _conceptTypeId = SelectedConceptType?.ValueStr ?? "";
+        string _conceptTypeId = string.Join("-", _selectedConcepts ?? Array.Empty<string>());
 
         var serviceResponse = await PaymentsRepository.GetAccountReceivables(Session.UserId, Session.SupplierId, Session.DealerId, _documentTypeid, _conceptTypeId, mOffset, SearchString, _dateFromStr, _dateToStr, _estatusid, _datepayStr);
         if (serviceResponse.Processed)
@@ -704,16 +712,8 @@
         }
         string _documentTypeid = SelectedDocumentType?.ValueStr ?? "";
 
-        string? _auxConceptTypeId = SelectedConceptType?.ValueStr;
-        if (!string.IsNullOrEmpty(_auxConceptTypeId) && ConceptList != null)
-        {
-            SelectedConceptType = ConceptList.FirstOrDefault(x => x.ValueStr == _auxConceptTypeId);
-        }
-        else if (ConceptList != null)
-        {
-            SelectedConceptType = ConceptList.FirstOrDefault();
-        }
-        string _conceptTypeId = SelectedConceptType?.ValueStr ?? "";
+        
+        string _conceptTypeId = string.Join("-", _selectedConcepts ?? Array.Empty<string>());
 
         var serviceResponse = await PaymentsRepository.ExportAccountReceivable(Session.UserId, Session.SupplierId, 
                     Session.DealerId, _documentTypeid, _conceptTypeId, SearchString, _dateFromStr, _dateToStr, 
@@ -778,8 +778,24 @@
 
     private void AfterAsyncExclusiveCheck()
     {
-        // _isExclusive = args == "B" ? true : false;
-        _isExclusive = true;
+       
+        _IsExclusive = false;
+        _IsExclusiveBase = false;
+        _IsExclusiveRetencion = false;
+
+        if(_selectedConcepts.Contains("B"))
+        {
+            _selectedConcepts = _selectedConcepts.Where(s => s == "B").ToArray();
+            _IsExclusiveRetencion = true;
+            _IsExclusive = true;
+        }
+        if(_selectedConcepts.Contains("R"))
+        {
+            _selectedConcepts = _selectedConcepts.Where(s => s == "R").ToArray();
+            _IsExclusiveBase = true;
+            _IsExclusive = true;
+        }
+
         StateHasChanged();
     }
 
