@@ -51,6 +51,14 @@
                                              Variant="Variant.Outlined"
                                              Margin="Margin.Dense"
                                              Culture="@CultureInfo.GetCultureInfo("es-VE")" />
+
+                            <MudNumericField @bind-Value="_rate.NAltRate"
+                                             Label="Tasa Alternativa"
+                                             Required="true"
+                                             Format="N2"
+                                             Variant="Variant.Outlined"
+                                             Margin="Margin.Dense"
+                                             Culture="@CultureInfo.GetCultureInfo("es-VE")" />
                         </MudCardContent>
                     </MudCard>
                 </MudItem>
@@ -91,15 +99,22 @@
     {
         if (_isEdit && RateItem != null)
         {
-            _rate = RateItem;
+            _rate = new Rate
+            {
+                Id = RateItem.Id,
+                DDate = RateItem.DDate,
+                NRate = RateItem.NRate,
+                NAltRate = RateItem.NAltRate
+            };
         }
         else
         {
             _rate = new Rate
             {
                 Id = 0,
+                DDate = DateTime.Today,
                 NRate = null,
-                DDate = DateTime.Today
+                NAltRate = null
             };
         }
     }
@@ -109,7 +124,7 @@
     private async Task Save()
     {
         // Validaciones del lado del cliente
-        if (_rate.NRate == null)
+        if (_rate.NRate == null || _rate.NAltRate == null)
         {
             await DialogService.ShowMessageBox(
                 "Validación",
@@ -119,7 +134,7 @@
             return;
         }
     
-        if (_rate.NRate < 0)
+        if ((_rate.NRate < 0) || (_rate.NAltRate < 0))
         {
             await DialogService.ShowMessageBox(
                 "Validación",
@@ -138,11 +153,22 @@
             );
             return;
         }
+
+        if (_rate.NAltRate == 0)
+        {
+            await DialogService.ShowMessageBox(
+                "Validación",
+                "LA TASA ALTERNATIVA NO PUEDE SER 0",
+                yesText: "OK"
+            );
+            return;
+        }
     
         var rateToSend = new Rate
         {
             Id = _rate.Id,
-            NRate = _rate.NRate
+            NRate = _rate.NRate,
+            NAltRate = _rate.NAltRate
         };
     
         var response = await RateService.SaveRate(rateToSend);
