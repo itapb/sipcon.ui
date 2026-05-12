@@ -7,6 +7,7 @@ namespace Sipcon.WebApp.Client.Models
         public int? Id { get; set; } = 0;
         public decimal? NRate { get; set; }
         public DateTime DDate { get; set; }
+        public decimal? NAltRate { get; set;}
 
     }
 }
