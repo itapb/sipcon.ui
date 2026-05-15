@@ -1,0 +1,146 @@
+﻿
+
+<MudDataGrid @ref="PaymentPreviewDataGrid"
+        T="Payment"
+        ServerData="LoadGridData"
+        Hover="false"
+        Dense="true"
+        Bordered="false"
+        Filterable="false"
+        Striped="false" 
+        FixedHeader Height="calc(68vh - 40px)"
+>
+    <Columns>
+        
+        <TemplateColumn Title="Tipo">
+            <CellTemplate>
+                <div class="d-flex justify-start">
+                    @if (context.Item.TypeName != null)
+                    {
+                        Color color = Color.Default;
+                        string style = "";
+                        string txt = "";
+
+                        var pair = context.Item.TypeName.ToUpper() switch
+                        {
+                            "RETENCION" => (txt: "Retencion", color: Color.Dark),
+                            "TRANSFERENCIA" => (txt: "Transferencia", color: Color.Info),
+                            "EFECTIVO" => (txt: "Efectivo", color: Color.Success),
+                            _ => (txt: "", color: Color.Error)
+                        };
+                        txt = pair.txt;
+                        color = pair.color;
+
+                        style += ";font-size: 12px;font-style:italic";
+
+                        <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
+                            @(txt)
+                        </MudChip>
+                    }
+                   
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Referencia">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Reference</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Moneda">
+            <CellTemplate>
+                <div class="d-flex justify-start">
+                    @if (context.Item.CurrencyName != null)
+                    {
+                        Color color = Color.Default;
+                        string style = "";
+                        string txt = "";
+
+                        var pair = context.Item.CurrencyName.ToUpper() switch
+                        {
+                            "BS - BOLIVAR" => (txt: "Bs." + context.Item.AmountBs?.ToString("N2"), color: Color.Warning),
+                            "$ - DOLAR" => (txt: "$." + context.Item.Amount?.ToString("N2"), color: Color.Success),
+                            _ => (txt: "", color: Color.Error)
+                        };
+                        txt = pair.txt;
+                        color = pair.color;
+
+                        style += ";font-size: 11px;font-style:italic";
+
+                        <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
+                            @(txt)
+                        </MudChip>
+                    }
+                   
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Fecha">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.DateRate.ToString("dd/MM/yyyy"))</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        
+        <TemplateColumn StickyRight="true">
+            <CellTemplate>
+                @if (context.Item.StatusName != null && context.Item.StatusName.ToUpper() == "BORRADOR")
+                {
+                    <MudButtonGroup Size="@Size.Small" Variant="Variant.Text" Color="Color.Dark">
+                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => OnClickEditButton(context.Item)" />
+                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="() => OnClickDeleteButton(context.Item)" />
+                    </MudButtonGroup>
+                }
+            </CellTemplate>
+        </TemplateColumn>
+
+    </Columns>
+</MudDataGrid>
+
+
+@code { 
+
+    [Parameter] public IEnumerable<Payment> PaymentDetails { get; set; } = new List<Payment>();
+    [Parameter] public EventCallback<Payment> OnClickPaymentEdit { get; set; }
+    [Parameter] public EventCallback<Payment> OnClickPaymentDelete { get; set; }
+
+    private MudDataGrid<Payment>? PaymentPreviewDataGrid;
+
+    private int _rowCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        
+        await ReloadPaymentReportGrid();
+        
+
+    }
+
+    private async Task ReloadPaymentReportGrid()
+    {
+        if (PaymentPreviewDataGrid != null)
+        {
+            await PaymentPreviewDataGrid.ReloadServerData();
+        }
+    }
+
+    private async Task<GridData<Payment>> LoadGridData(GridState<Payment> state)
+    {
+
+        _rowCount = state.Page * state.PageSize;
+
+        return new GridData<Payment> { TotalItems = PaymentDetails.Count(), Items = PaymentDetails };
+    }
+
+
+    private async Task OnClickEditButton(Payment payment)
+    {
+        await OnClickPaymentEdit.InvokeAsync(payment);
+        StateHasChanged();
+    }
+
+    private async Task OnClickDeleteButton(Payment payment)
+    {
+        await OnClickPaymentDelete.InvokeAsync(payment);
+        StateHasChanged();
+    }
+
+}

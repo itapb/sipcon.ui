@@ -1,0 +1,175 @@
+﻿
+
+<MudDataGrid @ref="DocumentPreviewDataGrid"
+        T="AccountPreview"
+        ServerData="LoadGridData"
+        Hover="false"
+        Dense="true"
+        Bordered="false"
+        Filterable="false"
+        Striped="true" 
+        Class="mt-2"
+        FixedHeader Height="calc(28vh - 40px)"
+>
+
+    @* <ToolBarContent >
+    @if (IsVisibleToolBar != null && IsVisibleToolBar == true)
+    {
+        <MudStack Row="true">
+            <MudIcon Icon="@Icons.Material.Filled.FilePresent" Color="Color.Default" Style="font-size: 1.5rem;"></MudIcon>
+            <MudText Typo="Typo.subtitle2">Documentos Relacionados</MudText>
+        </MudStack>
+    }
+    </ToolBarContent> *@
+
+
+    <Columns>
+        @* //ID *@
+        <TemplateColumn Title="">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" 
+                        Style="font-weight:bold;">@("#" + context.Item.Id.ToString().PadLeft(10, '0'))</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        @* //Referencia *@
+        <TemplateColumn Title="">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" 
+                Style="font-weight:bold;">@context.Item.Number</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        @* //Fecha Pago *@
+        <TemplateColumn Title="">
+            <CellTemplate>
+                <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.DateRate?.ToString("dd/MM/yyyy"))</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        @* //Tipo Concepto *@
+        <TemplateColumn Title="">
+            <CellTemplate>
+                <div class="d-flex justify-start">
+                    @if (context.Item.ConceptName != null)
+                    {
+                        Color color = Color.Default;
+                        string style = "";
+                        string txt = "";
+
+                        var pair = context.Item.ConceptName.ToUpper() switch
+                        {
+                            "BASE" => (txt: "Base", color: Color.Dark),
+                            "PLACA" => (txt: "Placa", color: Color.Info),
+                            "IVA (25%)" => (txt: "IVA (25%)", color: Color.Success),
+                            "RETENCION IVA (75%)" => (txt: "Retención IVA (75%)", color: Color.Warning),
+                            _ => (txt: "", color: Color.Error)
+                        };
+                        txt = pair.txt;
+                        color = pair.color;
+
+                        style += ";font-size: 11px;font-style:italic";
+
+                        <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
+                            @(txt)
+                        </MudChip>
+                    }
+                   
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
+        @* //Tipo Documento *@
+        <TemplateColumn Title="">
+            <CellTemplate>
+                <div class="d-flex justify-start">
+                    @if (context.Item.TypeName != null)
+                    {
+                        Color color = Color.Default;
+                        string style = "";
+                        string txt = "";
+
+                        var pair = context.Item.TypeName.ToUpper() switch
+                        {
+                            "UNIDADES" => (txt: "Unidades", color: Color.Dark),
+                            "REPUESTOS" => (txt: "Repuestos", color: Color.Info),
+                            "PROFORMA" => (txt: "Proforma", color: Color.Success),
+                            "OTROS GASTOS" => (txt: "Otros Gastos", color: Color.Warning),
+                            _ => (txt: "", color: Color.Error)
+                        };
+                        txt = pair.txt;
+                        color = pair.color;
+
+                        style += ";font-size: 11px;font-style:italic";
+
+                        <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
+                            @(txt)
+                        </MudChip>
+                    }
+                   
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
+        @* //Monto *@
+        <TemplateColumn Title="">
+            <CellTemplate>
+                <div class="d-flex justify-center">
+                    @if (context.Item.ConceptName != null)
+                    {
+                        Color color = Color.Default;
+                        string style = "";
+                        string txt = "";
+
+                        var pair = context.Item.ConceptName.ToUpper() switch
+                        {
+                            "BASE" => (txt: "$." + context.Item.Amount?.ToString("N2") ?? "", color: Color.Success),
+                            "PLACA" => (txt: "Bs." + context.Item.AmountBs?.ToString("N2") ?? "", color: Color.Warning),
+                            "IVA (25%)" => (txt: "Bs." + context.Item.AmountBs?.ToString("N2") ?? "", color: Color.Warning),
+                            "RETENCION IVA (75%)" => (txt: "Bs." + context.Item.AmountBs?.ToString("N2") ?? "", color: Color.Warning),
+                            _ => (txt: "", color: Color.Error)
+                        };
+                        txt = pair.txt;
+                        color = pair.color;
+
+                        style += ";font-size: 11px;font-style:italic";
+
+                        <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
+                            @(txt)
+                        </MudChip>
+                        
+                    }
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+</MudDataGrid>
+
+
+@code { 
+
+    [Parameter] public IEnumerable<AccountPreview> DocumentDetails { get; set; } = new List<AccountPreview>();
+    [Parameter] public bool? IsVisibleToolBar { get; set; } = false;
+
+    private MudDataGrid<AccountPreview>? DocumentPreviewDataGrid;
+
+    private int _rowCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadPaymentReportGrid();
+
+    }
+
+    private async Task ReloadPaymentReportGrid()
+    {
+        if (DocumentPreviewDataGrid != null)
+        {
+            await DocumentPreviewDataGrid.ReloadServerData();
+        }
+    }
+
+    private async Task<GridData<AccountPreview>> LoadGridData(GridState<AccountPreview> state)
+    {
+
+        _rowCount = state.Page * state.PageSize;
+
+        return new GridData<AccountPreview> { TotalItems = DocumentDetails.Count(), Items = DocumentDetails };
+    }
+
+}

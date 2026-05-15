@@ -584,23 +584,39 @@ namespace Sipcon.WebApp.Client.Utils
             return _itemsSelect;
         }
 
-        public async Task<List<SelectOption>> GetBankAccountSelectOption(int Idsupplier)
+        public async Task<List<SelectOption>> GetBankAccountSelectOption(int Idsupplier, int? IdCurrency = null)
         {
             List<SelectOption> _itemsSelect = new([]);
 
-            var moduleResponse = await PaymentService.GetBankAccountsType(Idsupplier);
+            var moduleResponse = await PaymentService.GetBankAccounts(Idsupplier, IdCurrency);
             if (moduleResponse.Processed)
             {
                 List<BankAccountsType> _List = moduleResponse.Data ?? new List<BankAccountsType>();
 
-                foreach (var item in _List.ToList())
+                foreach (var item in _List.OrderBy(x => x.Code).ToList())
                 {
-                    _itemsSelect.Add(new SelectOption(item.Code, item.Account));
+                    _itemsSelect.Add(new SelectOption(item.Id, item.Code + "-" + item.Account));
                 }
             }
             return _itemsSelect;
         }
 
+        public async Task<List<SelectOption>> GetBankOriginSelectOption()
+        {
+            List<SelectOption> _itemsSelect = new([]);
+
+            var moduleResponse = await PaymentService.GetBankOrigin();
+            if (moduleResponse.Processed)
+            {
+                List<BankAccountsType> _List = moduleResponse.Data ?? new List<BankAccountsType>();
+
+                foreach (var item in _List.OrderBy(x => x.Code).ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Id, item.Code + "-" + item.Name));
+                }
+            }
+            return _itemsSelect;
+        }
         public async Task<List<SelectOption>> GetStatusByModule(int IdUser, string ModuleName)
         {
             List<SelectOption> _itemsSelect = new([]);
