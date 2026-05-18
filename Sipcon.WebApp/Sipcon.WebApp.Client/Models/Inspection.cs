@@ -12,6 +12,7 @@ namespace Sipcon.WebApp.Client.Models
         public String? Model { get; set; }
         public String? Area { get; set; }
         public String? User { get; set; }
+        public String? Batch { get; set; }
         public Int32? Isclosed { get; set; }
     }
 
