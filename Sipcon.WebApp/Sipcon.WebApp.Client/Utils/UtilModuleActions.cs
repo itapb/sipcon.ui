@@ -628,7 +628,7 @@ namespace Sipcon.WebApp.Client.Utils
 
                 foreach (var item in _List.ToList())
                 {
-                    _itemsSelect.Add(new SelectOption(item.actionId, item.actionName));
+                    _itemsSelect.Add(new SelectOption(item.ActionId, item.ActionName));
                 }
             }
             return _itemsSelect;

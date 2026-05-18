@@ -122,7 +122,7 @@ namespace Sipcon.WebApp.Client.Services
                                                                      UserId = Session.UserId,
                                                                      RecordId = item.Id,
                                                                      ModuleId = Modules!.FirstOrDefault()?.Id,
-                                                                     actionName = actionName,
+                                                                     ActionName = actionName,
                                                                      ActionComment = "",
                                                                      RelatedId = 0
                                                                  }).ToList()
