@@ -48,6 +48,14 @@
                        Color="Color.Info"
                        OnClick="HandleOnClickRefresh" 
          />
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+            @foreach (var module in _itemsModules)
+            {
+                <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
+                             Label="@module.Text"
+                             OnClick="() => HandleMenuClick(module)" />
+            }
+        </MudMenu>
     </ToolBarContent>
 
     <Columns>
@@ -58,6 +66,8 @@
                 </MudText>
             </CellTemplate>
         </TemplateColumn>
+
+        <PropertyColumn Property="x => x.Batch" Title="LOTE" Sortable="false" Filterable="false" HeaderClass="mud-text-align-center" CellClass="mud-text-align-center" />
 
         <PropertyColumn Property="x => x.Area" Title="AREA" Sortable="false" Filterable="false" HeaderClass="mud-text-align-center" CellClass="mud-text-align-center" />
 
@@ -148,6 +158,9 @@
     private bool _nestedVisible;
     private bool _success;
     private bool _loading = true;
+    private List<ModuleAction> _itemsModules = new([]);
+    private List<SelectOption> _actions = new List<SelectOption>();
+    private string _moduleName = "INSPECCION-INSPECCION";
 
     private int _rowCount;
     private int _rowsTotal;
@@ -183,9 +196,39 @@
         return new GridData<Inspection> { TotalItems = _rowsTotal, Items = _items };
     }
 
+    private async Task HandleMenuClick(ModuleAction module)
+    {
+        switch (module.ActionName)
+        {
+            case "EXPORT":
+                await ExportItemsAsync();
+            break;
+        }
+    }
+
+    private async Task ExportItemsAsync()
+    {
+        // Firma: userId, supplierId, dealerId, filter
+        var serviceResponse = await InspectionService.ExportInspections(Session.SupplierId, _searchString);
+
+        if (serviceResponse.Processed)
+        {
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+            var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Inspecciones.xlsx");
+        }
+        else
+        {
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
+            OpenNested();
+        }
+    }
+
     private async Task GetItems()
     {
         _loading = true;
+        _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
 
         var res = await InspectionService.GetAllInspections(Session.SupplierId, _rowCount, _searchString);
 
