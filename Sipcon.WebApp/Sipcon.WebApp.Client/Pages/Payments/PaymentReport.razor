@@ -260,7 +260,7 @@
                 {
                     @foreach (var module in ItemsModules!)
                     {
-                        @if (module.Text.ToUpper() != "EXPORTAR")
+                        @if (module.Text.ToUpper() == "APROBAR" || module.Text.ToUpper() == "RECHAZAR")
                         {
                             <MudButton StartIcon="@(module.Icon ?? "")"
                                        Color="GetTimelineColor(module.Text.ToUpper())"
@@ -632,21 +632,14 @@
 
     private async Task ClickEditPayment(Payment args)
     {
-        if (Session.DealerId != 0)
-        {
+       
             DocumentSelecteds = new List<AccountPreview>();
             // IdPaymentPreviewSelected = args.PaymentId;
             IdPaymentPreviewSelected = args.Id;
 
             _openDrawer = !_openDrawer;
-        }
-        else
-        {
-            Success = false;
-            NestedErrorMessage = "Seleccione un concesionario.";
-            OpenNested();
-        }
-        StateHasChanged();
+        
+             StateHasChanged();
     }
 
     private async Task OnClickAttachamentButton(Payment args)
@@ -706,14 +699,8 @@
             case "APPROVE": //APROBAR
                 await ApproveItemsAsync(module.IdAction, module.ActionName);
                 break;
-            case "VALIDATE": //VALIDAR
-                await ValidateItemsAsync(module.IdAction, module.ActionName);
-                break;
             case "DECLINE": //RECHAZAR
                 await DeclineItemsAsync(module.IdAction, module.ActionName);
-                break;
-            case "PROCESS": //PROCESAR
-                await ProcessItemsAsync(module.IdAction, module.ActionName);
                 break;
             default:
                 Console.WriteLine($"{MessageEnum.ActionsError.GetStringValue()}: {module.ActionName}");
@@ -788,7 +775,7 @@
                     ActionList.Add(_Action);
                 }
 
-                var serviceResponse = await PaymentService.PaymentsActions(ActionList, Session.UserId);
+                var serviceResponse = await PaymentService.PaymentDetailsActions(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     Success = true;
@@ -809,71 +796,7 @@
         await Task.CompletedTask;
     }
 
-    private async Task ValidateItemsAsync(int moduleId, string moduleActionName)
-    {
-        if (selectedPaymens.Any())
-        {
-            var option = new DialogOptions
-            {
-                CloseButton = false,
-                MaxWidth = MaxWidth.Small,
-                FullWidth = true,
-                BackdropClick = false
-            };
-            bool? confir = await DialogService.ShowMessageBox(
-                "Validar Pago",
-                $"Seguro de Validar? ",
-                yesText: "Si", noText: "No", "", option);
-
-            if (confir == true)
-            {
-
-                DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
-                var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Validar Pago." } };
-                var dialog = await DialogService.ShowAsync<TextItemDialog>("Validar Pago", parameters, options);
-
-                StateHasChanged();
-
-                var result = await dialog.Result;
-                if (!result!.Canceled)
-                {
-                    var _Observacion = (string)(result.Data ?? string.Empty);
-                    List<PostAction> ActionList = ([]);
-
-                    foreach (var Item in selectedPaymens)
-                    {
-                        var ItemAction = new PostAction
-                        {
-                            RecordId = Item.Id,
-                            ModuleId = moduleId,
-                            ActionName = moduleActionName,
-                            ActionComment = _Observacion
-                        };
-                        ActionList.Add(ItemAction);
-                    }
-
-                    var serviceResponse = await PaymentService.PaymentsActions(ActionList, Session.UserId);
-                    if (serviceResponse.Processed)
-                    {
-
-                        Success = true;
-                        NestedErrorMessage = MessageEnum.ApproveOK.GetStringValue();
-                        
-                        await PaymentsDataGrid!.ReloadServerData();
-                        selectedPaymens = new List<Payment>();
-                    }
-                    else
-                    {
-                        Success = false;
-                        NestedErrorMessage = serviceResponse.Message ?? MessageEnum.ApproveNotOK.GetStringValue();
-                    }
-                    OpenNested();
-                }
-            }
-        }
-
-        await Task.CompletedTask;
-    }
+   
 
     private async Task DeclineItemsAsync(int moduleId, string moduleActionName)
     {
@@ -904,7 +827,7 @@
                     ActionList.Add(_Action);
                 }
 
-                var serviceResponse = await PaymentService.PaymentsActions(ActionList, Session.UserId);
+                var serviceResponse = await PaymentService.PaymentDetailsActions(ActionList, Session.UserId);
                 if (serviceResponse.Processed)
                 {
                     Success = true;
@@ -925,73 +848,7 @@
         await Task.CompletedTask;
     }
 
-    private async Task ProcessItemsAsync(int moduleId, string moduleActionName)
-    {
-        if (selectedPaymens.Any())
-        {
-            var option = new DialogOptions
-            {
-                CloseButton = false,
-                MaxWidth = MaxWidth.Small,
-                FullWidth = true,
-                BackdropClick = false
-            };
-            bool? confir = await DialogService.ShowMessageBox(
-                "Procesar Pago ",
-                $"Seguro de Procesar? ",
-                yesText: "Si", noText: "No", "", option);
-
-            if (confir == true)
-            {
-
-                DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
-                var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Procesar Pago." } };
-                var dialog = await DialogService.ShowAsync<TextItemDialog>("Procesar Pago", parameters, options);
-
-                StateHasChanged();
-
-                var result = await dialog.Result;
-                if (!result!.Canceled)
-                {
-                    var _Report = (string)(result.Data ?? string.Empty);
-                    List<PostAction> ActionList = ([]);
-
-                    foreach (var item in selectedPaymens)
-                    {
-                        var _Action = new PostAction
-                        {
-                            RecordId = item.Id,
-                            ModuleId = moduleId,
-                            ActionName = moduleActionName,
-                            ActionComment = _Report
-                        };
-                        ActionList.Add(_Action);
-                        
-                    }
-
-                    var serviceResponse = await PaymentService.PaymentsActions(ActionList, Session.UserId);
-                    if (serviceResponse.Processed)
-                    {
-
-                        Success = true;
-                        NestedErrorMessage = MessageEnum.ApproveOK.GetStringValue();
-
-                        await PaymentsDataGrid!.ReloadServerData();
-                        selectedPaymens = new List<Payment>();
-                    }
-                    else
-                    {
-                        Success = false;
-                        NestedErrorMessage = serviceResponse.Message ?? MessageEnum.ApproveNotOK.GetStringValue();
-                        
-                    }
-                    OpenNested();
-                }
-            }
-        }
-        
-        await Task.CompletedTask;
-    }
+    
    
     private void OpenNested()
     {
