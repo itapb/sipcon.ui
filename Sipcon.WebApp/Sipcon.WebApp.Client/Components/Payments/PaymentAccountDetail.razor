@@ -9,30 +9,6 @@
 @inject IJSRuntime JSRuntime
 
 <MudCard Class="ma-3" Style="background-color: #eff6ff80;">
-    @* //Total Cabecera *@
-    <MudCardHeader>
-        <CardHeaderContent>
-            <MudStack Row="true">
-                <MudIcon Icon="@Icons.Material.Filled.Payment" Style="color: #8b4c25;font-size: 1.5rem;"></MudIcon>
-                <MudText Typo="Typo.subtitle1" Style="color: #8b4c25;">@(_disabledSelect ? "Retenciones" : "Métodos de Pago")</MudText>
-            </MudStack>
-        </CardHeaderContent>
-        <CardHeaderActions>
-            <MudChip T="string" Variant="Variant.Filled" Color="Color.Dark" Label="true" Style="font-size: 16px;font-style:italic;">
-                @if (SelectedDocuments.Any(x => _ConceptNameList.Contains(x.ConceptName)))
-                {
-                    @(string.Concat("Total a Pagar: Bs. ", SelectedDocuments.ToList().Sum(x => x.AmountBs ?? 0).ToString("N2")))
-                }
-                else
-                {
-                    @(string.Concat("Total a Pagar: $ ", SelectedDocuments.ToList().Sum(x => x.Amount ?? 0).ToString("N2")))
-                }
-                
-            </MudChip>
-        </CardHeaderActions>
-    </MudCardHeader>
-
-    
     <MudCardContent Style="padding-top: 0px;">
         @* //Documents Selecteds *@
         <MudPaper Class="ma-2" Style="background-color: #f9fafb; border-radius:10px;">
@@ -109,27 +85,13 @@
                                         <span>Tipo de Moneda</span>
                                     </MudText> *@
                                 <MudSelect T="int?"
+                                           Label="Moneda"
+                                           Disabled="_isCurrencyLocked"
                                            Value="_model.CurrencyId"
-                                           ValueChanged="OnCurrencyTypeChanged"
-                                           Placeholder="Todas las Monedas"
-                                           Style="color: #8b4c25;font-size: 12px;line-height: 12px;min-width: 120px;background-color:#e8e8e8;"
-                                           Class="mt-0"
-                                           Clearable="true"
-                                           Dense="true"
-                                           Typo="Typo.caption"
-                                           AdornmentColor="Color.Default"
-                                           Variant="Variant.Outlined"
-                                           Margin="Margin.Dense"
-                                           For="@(() => _model.CurrencyId)"
-                                           Immediate="false"
-                                           ReadOnly="@(!_model.IsActive || _isReadOnly )"
-                                           Disabled="true">
-                                    @if (CurrencyList != null)
+                                           ValueChanged="OnCurrencyTypeChanged">
+                                    @foreach (var currency in CurrencyList)
                                     {
-                                        @foreach (var action in CurrencyList)
-                                        {
-                                            <MudSelectItem T="int?" Value="@action.Value" Style="color: #8b4c25;font-size: 12px;line-height: 12px;">@action.Text</MudSelectItem>
-                                        }
+                                        <MudSelectItem Value="@((int?)currency.Value)">@currency.Text</MudSelectItem>
                                     }
                                 </MudSelect>
 
@@ -333,12 +295,7 @@
                             <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled"
                                        Color="Color.Dark" Size="Size.Small" IconColor="Color.Secondary"
                                        FullWidth="true" OnClick="OnValidSubmit"
-                                       Disabled="@(!_model.IsActive || _isReadOnly || 
-                                            SelectedDocuments.Any(x => _ConceptNameList.Contains(x.ConceptName)) ?
-                                            SelectedDocuments.ToList().Sum(x => x.AmountBs ?? 0) -
-                                            PaymentList.ToList().Sum(x => x.AmountBs ?? 0) <= 0 :
-                                                                                   SelectedDocuments.ToList().Sum(x => x.Amount ?? 0) -
-                                                                                   PaymentList.ToList().Sum(x => x.Amount ?? 0) <= 0)"
+                                       Disabled="false"
                                        Class="mt-4">
                                 @(_model.Id != 0 ? "Guardar" : _disabledSelect ? "Agregar Retención" : "Agregar Pago")
                             </MudButton>
@@ -354,7 +311,7 @@
                 </MudCard>
 
                 @* //Payment Details *@
-                <MudCard Style="width: 50%;background-color: #f9fafb;border-radius:10px; min-height: 499px;">
+                <MudCard Style="width: 50%;border-radius:10px; min-height: 499px;">
                     <MudCardHeader Style="padding: 6px;padding-top: 10px;">
                         <CardHeaderContent>
                             <MudStack Row="true">
@@ -386,6 +343,9 @@
         <MudDivider Class="mt-2" />
 
         @* //Total Footer *@
+
+        @if (!_isLoading && !PaymentList.Any(x => x.StatusName != null && x.StatusName.ToUpper() == "PARA APROBAR"))
+            {
         <MudPaper Class="ma-2 mt-6" Style="background: transparent;" Elevation="0">
             <MudContainer Style="padding: 6px;">
                 <div class="d-flex">
@@ -459,8 +419,7 @@
                     <MudButton StartIcon="@Icons.Material.Filled.Payments" Variant="Variant.Filled"
                                Color="Color.Dark" Size="Size.Small" IconColor="Color.Secondary"
                                FullWidth="true" OnClick="OnClickProcessButton"
-                               Disabled="@((SelectedDocuments.ToList().Sum(x => x.Amount ?? 0) - 
-                                            PaymentList.ToList().Sum(x => x.Amount ?? 0)) > 0)"
+                               Disabled="false"
                                Class="mt-4">
                         @(_disabledSelect ? "Reportar Retención" : "Reportar Pago")
                     </MudButton>
@@ -468,7 +427,7 @@
             </MudContainer>
 
         </MudPaper>
-      
+        }
     </MudCardContent>
 
     <NestedDialogCustom IsVisible="@_nestedVisible" 
@@ -500,7 +459,9 @@
     private SelectOption? selectedBankOrigin = null;
     private SelectOption? selectedAccount = null;
     private double? _calculatedAmount = 0;
+    private bool _isCurrencyLocked = false;
     // private bool _isChanged = true;
+    private bool _isLoading = true;
 
     private string _errorMessageNested = string.Empty;
     private bool _nestedVisible = false;
@@ -530,7 +491,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-
+        _isLoading = true;
         if (SelectedDocuments.Count() > 0)
         {
             _panelContent = SelectedDocuments.ToList();
@@ -553,14 +514,13 @@
         }
 
         CleanModel().Wait(20);
-
+        _isLoading = false;
         StateHasChanged();
         await Task.CompletedTask;
     }
 
     private async Task GetDocuments()
     {
-
         SelectedDocuments = new List<AccountPreview>();
         _panelContent = new List<AccountPreview>();
 
@@ -572,12 +532,29 @@
             {
                 _panelContent = SelectedDocuments.ToList();
                 _IsAmountBS = SelectedDocuments.Any(x => _ConceptNameList.Contains(x.ConceptName)) ? true : false;
+
+                // 2. Evaluamos el bloqueo con la nueva variable
+                _isCurrencyLocked = SelectedDocuments.Any(x => _ConceptNameList.Contains(x.ConceptName));
+
+                if (_isCurrencyLocked)
+                {
+                    // Forzamos la selección visual a Bolívares
+                    selectedCurrency = CurrencyList.FirstOrDefault(p => p.Text.ToUpper() == "BS - BOLIVAR");
+                    if (selectedCurrency != null)
+                    {
+                        _model.CurrencyId = selectedCurrency.Value;
+                    }
+                }
+
                 await Task.Delay(20);
+            }
+            else
+            {
+                _isCurrencyLocked = false;
             }
         }
 
         StateHasChanged();
-
     }
 
     private async Task GetPayments()
@@ -680,6 +657,7 @@
                 PaymentList = new List<Payment>();
                 _successNested = true;
                 _errorMessageNested = serviceResponse.Message ?? MessageEnum.ProcessNotOK.GetStringValue();
+                OnClickCloseButton();
             }
             else
             {
@@ -778,11 +756,13 @@
         _disabledRetencion = true;
         _disabledSelect = false;
 
-        if (SelectedDocuments.Count(x => _ConceptNameList.Contains(x.ConceptName)) > 0)
+        // 4. Aseguramos el estado de bloqueo al editar el registro
+        _isCurrencyLocked = SelectedDocuments.Count(x => _ConceptNameList.Contains(x.ConceptName)) > 0;
+
+        if (_isCurrencyLocked)
         {
             selectedCurrency = CurrencyList.FirstOrDefault(p => p.Text.ToUpper() == "BS - BOLIVAR");
         }
-
 
         if (SelectedDocuments.Where(x => x.ConceptName.Trim() == "RETENCION IVA (75%)").Count() > 0)
         {
@@ -806,25 +786,21 @@
 
         _model = new PaymentUpdate()
         {
-
             TypeId = selectedPaymentType != null ? selectedPaymentType.Value : null,
             CurrencyId = selectedCurrency != null ? selectedCurrency.Value : null,
             BankOriginId = selectedBankOrigin != null ? selectedBankOrigin.Value : null,
             AccountId = selectedAccount != null ? selectedAccount.Value : null,
             Date = arg.DateRate,
             Reference = arg.Reference,
-            Amount = selectedCurrency != null && selectedCurrency.Text.ToUpper() == "BS - BOLIVAR" ? arg.AmountBs : arg.Amount, 
+            Amount = selectedCurrency != null && selectedCurrency.Text.ToUpper() == "BS - BOLIVAR" ? arg.AmountBs : arg.Amount,
             PaymentId = arg.PaymentId,
             Id = arg.Id,
             SupplierId = arg.SupplierId,
             DealerId = arg.DealerId,
             IsActive = arg.IsActive
-
         };
 
-      
-
-        _isReadOnly = arg.StatusName.ToUpper() == "BORRADOR" ? false : true;
+        _isReadOnly = !(arg.StatusName.ToUpper() == "BORRADOR" || arg.StatusName.ToUpper() == "P APROBAR");
 
         StateHasChanged();
     }
@@ -891,7 +867,10 @@
         _disabledRetencion = true;
         _disabledSelect = false;
 
-        if (SelectedDocuments.Count(x => _ConceptNameList.Contains(x.ConceptName)) > 0)
+        // 3. Evaluamos si el limpiar modelo debe mantener la moneda bloqueada en BS
+        _isCurrencyLocked = SelectedDocuments.Count(x => _ConceptNameList.Contains(x.ConceptName)) > 0;
+
+        if (_isCurrencyLocked)
         {
             selectedCurrency = CurrencyList.FirstOrDefault(p => p.Text.ToUpper() == "BS - BOLIVAR");
         }
@@ -902,7 +881,7 @@
             _disabledRetencion = false;
             _disabledSelect = true;
         }
-        
+
         selectedAccount = null;
         selectedBankOrigin = null;
         _model = new PaymentUpdate()
@@ -913,7 +892,6 @@
             BankOriginId = null,
             SupplierId = Session.SupplierId,
             DealerId = Session.DealerId,
-
         };
 
         await OnCurrencyTypeChanged(selectedCurrency?.Value);
@@ -922,18 +900,18 @@
         {
             _model.Date = PaymentList.FirstOrDefault()?.DateRate ?? DateTime.Now;
             _model.PaymentId = PaymentList.FirstOrDefault()?.PaymentId ?? 0;
-        }else{
+        }
+        else
+        {
             _model.Date = DateTime.Now;
-            _model.PaymentId =  0;
+            _model.PaymentId = 0;
 
             if (_panelContent.Count() > 0)
             {
                 _model.Date = _panelContent.Where(x => x.DateRate != null).FirstOrDefault()?.DateRate ?? DateTime.Now;
-
             }
         }
 
-       
         _isReadOnly = false;
         StateHasChanged();
     }

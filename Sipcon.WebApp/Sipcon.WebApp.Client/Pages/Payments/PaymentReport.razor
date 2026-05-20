@@ -17,12 +17,7 @@
 
 <CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
 
-<MudText Typo="Typo.h6">Aseguramiento de Ingreso</MudText>
-<MudText Typo="Typo.caption">Gestión de transferencias reportadas por concesionarios</MudText>
-
-
-
-<MudContainer Style="position:relative;padding: 0;">
+<MudContainer MaxWidth="MaxWidth.False" Gutters="false" Class="mt-2">
     
         @* //Filtros *@
     <MudCard Class="mt-4 pa-0">
@@ -143,7 +138,7 @@
         </MudCardContent>
     </MudCard>
 
-    <MudContainer Class="mt-4 pa-0">
+    <MudContainer MaxWidth="MaxWidth.False" Gutters="false" Class="mt-2">
         @* //Resumen *@
         <MudStack Row="true" Justify="Justify.Center" AlignItems="AlignItems.Center" Class="mud-width-full mud-height-full">
             <MudPaper Class="mud-height-full mud-width-full" Style="cursor: pointer;width: 25%;background-color: #f9fafb;" @onclick="() => ClickRefreshPaymentResument(null)">
@@ -187,15 +182,10 @@
                             txt = "Aprobado";
                             backgroundColor += "width: 25%;background-color: #f5f4fd;";
                             break;
-                        case "PARA VALIDAR": 
+                        case "PARA APROBAR": 
                             color = Color.Info;
-                            txt = "Para Validar";
+                            txt = "Para Aprobar";
                             backgroundColor += "width: 25%;background-color: #eff6ff;";
-                            break;
-                        case  "VALIDADO":
-                            color = Color.Success;
-                            txt = "Validado";
-                            backgroundColor += "width: 25%;background-color: #f0fdf4;";
                             break;
                         default:
                             color = Color.Error;
@@ -233,269 +223,230 @@
         </MudStack>
     </MudContainer>
 
-        @* //Detalle *@
     <MudCard Class="mt-4 pa-0">
-        <MudCardHeader>
-            <CardHeaderContent>
-                <MudStack Row="true">
-                    <MudIcon Icon="@Icons.Material.Filled.Payments" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
-                    <MudText Typo="Typo.h6">Transferencias Reportadas</MudText>
-                </MudStack>
-                <MudText Typo="Typo.caption">Revise y confirme las transferencias reportadas por los concesionarios</MudText>
-            </CardHeaderContent>
-            <CardHeaderActions>
-                                    
-            </CardHeaderActions>
-        </MudCardHeader>
-        <MudCardContent Style="padding-top: 0px;">
+        <MudDataGrid @ref="PaymentsDataGrid"
+                     T="Payment"
+                     ServerData="LoadGridData"
+                     MultiSelection="true"
+                     SortMode="SortMode.Multiple"
+                     Filterable="true"
+                     FixedHeader Height="calc(92vh - 350px)"
+                     Hideable="true"
+                     Bordered="false"
+                     Dense="true"
+                     Loading="Loading"
+                     @bind-CurrentPage="PaymentCurrentPage">
 
-            <MudDataGrid @ref="PaymentsDataGrid"
-                            T="Payment"
-                            ServerData="LoadGridData"
-                            MultiSelection="true"
-                            Hover="false"
-                            Dense="true"
-                            Bordered="false"
-                            Filterable="false"
-                            FixedHeader Height="calc(100vh - 240px)"
-                            Loading="Loading"
-                            @bind-CurrentPage="PaymentCurrentPage">
-        
-                <ToolBarContent>
-                    <MudTextField @bind-Value="SearchString"
-                                    OnKeyUp="HandleKeyDownSearch"
-                                    Variant="Variant.Filled"
-                                    Placeholder="Buscar por documento o tipo..."
-                                    Adornment="Adornment.Start"
-                                    AdornmentIcon="@Icons.Material.Filled.Search"
-                                    IconSize="Size.Small"
-                                    Style="font-size: 12px; line-height: 1px;max-width: 840px"
-                                    Immediate="true"
-                                    Typo="Typo.caption">
-                    </MudTextField>
-                    <MudSpacer />
-        
-                   
-                    <MudButton StartIcon="@Icons.Material.Filled.Download" Variant="Variant.Outlined"
-                                Size="Size.Small"
-                                OnClick="ExportItemsAsync"
-                               Class="mr-2">Exportar</MudButton>
-                    
-                    @if (selectedPaymens.Count > 0)
-                    { 
-                        foreach (var module in ItemsModules!)
+            <ToolBarContent>
+                <MudTextField @bind-Value="SearchString"
+                              OnKeyUp="HandleKeyDownSearch"
+                              Variant="Variant.Filled"
+                              Placeholder="Buscar por documento o tipo..."
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Small"
+                              Style="font-size: 12px; line-height: 1px;max-width: 840px"
+                              Immediate="true"
+                              Typo="Typo.caption">
+                </MudTextField>
+                <MudSpacer />
+
+                <MudButton StartIcon="@Icons.Material.Filled.Download" Variant="Variant.Outlined"
+                           Size="Size.Small"
+                           OnClick="ExportItemsAsync"
+                           Class="mr-2">Exportar</MudButton>
+
+                @if (selectedPaymens.Count > 0)
+                {
+                    @foreach (var module in ItemsModules!)
+                    {
+                        @if (module.Text.ToUpper() != "EXPORTAR")
                         {
-                            @if (module.Text.ToUpper() != "EXPORTAR")
-                            {
-                                <MudButton StartIcon="@(module.Icon ?? "")"
-                                           Color="GetTimelineColor(module.Text.ToUpper())"
-                                           Variant="Variant.Outlined"
-                                           Size="Size.Small"
-                                           OnClick="() => HandleMenuClick(module)"
-                                           Disabled="@(!selectedPaymens.Any())"
-                                           Class="mr-2">@module.Text</MudButton>
-                            }
-
+                            <MudButton StartIcon="@(module.Icon ?? "")"
+                                       Color="GetTimelineColor(module.Text.ToUpper())"
+                                       Variant="Variant.Outlined"
+                                       Size="Size.Small"
+                                       OnClick="() => HandleMenuClick(module)"
+                                       Disabled="@(!selectedPaymens.Any())"
+                                       Class="mr-2">@module.Text</MudButton>
                         }
                     }
-                        
-                   
-                    @* <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
-                        @foreach (var module in ItemsModules!)
+                }
+            </ToolBarContent>
+
+            <Columns>
+                @* 1. Selección Checkbox: Centrado *@
+                <TemplateColumn HeaderClass="dt-center" CellClass="dt-center">
+                    <HeaderTemplate>
+                        <MudCheckBox @bind-Value="IsAllCheckBoxSelected" @bind-Value:after="AfterAsyncAllCheck" />
+                    </HeaderTemplate>
+                    <CellTemplate>
+                        <MudCheckBox @bind-Value="context.Item.IsSelected" @bind-Value:after="AfterAsyncCheck"
+                                     Disabled="@(context.Item.StatusName.ToUpper() == "BORRADOR")" />
+                    </CellTemplate>
+                </TemplateColumn>
+
+                @* 2. Columna de Jerarquía (Desplegable) *@
+                <HierarchyColumn T="Payment" EnableHeaderToggle="false" />
+
+                @* 3. Fecha: Izquierda *@
+                <TemplateColumn Title="Fecha" HeaderClass="dt-left" CellClass="dt-left">
+                    <CellTemplate>
+                        <MudText Typo="Typo.caption">@(context.Item.DateRate.ToString("dd/MM/yyyy"))</MudText>
+                    </CellTemplate>
+                </TemplateColumn>
+
+                @* 4. Tipo: Izquierda *@
+                <TemplateColumn Title="Tipo" HeaderClass="dt-left" CellClass="dt-left">
+                    <CellTemplate>
+                        @if (context.Item.TypeName != null)
                         {
-                            <MudMenuItem Icon="@(module.Icon ?? "")"
-                                            Label="@module.Text"
-                                            OnClick="() => HandleMenuClick(module)"
-                                            Disabled="@(!selectedPaymens.Any())" />
+                            Color color = Color.Default;
+                            string style = ";font-size: 12px;font-style:italic";
+                            string txt = context.Item.TypeName.ToUpper() switch
+                            {
+                                    "RETENCION" => "Retencion",
+                                    "TRANSFERENCIA" => "Transferencia",
+                                    "EFECTIVO" => "Efectivo",
+                                _ => ""
+                            };
+                            color = context.Item.TypeName.ToUpper() switch
+                            {
+                                    "RETENCION" => Color.Dark,
+                                    "TRANSFERENCIA" => Color.Info,
+                                    "EFECTIVO" => Color.Success,
+                                _ => Color.Error
+                            };
+
+                            <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
+                                @(txt)
+                            </MudChip>
                         }
-                    </MudMenu> *@
-                </ToolBarContent>
-                <ColGroup>
-                    <col style="width: 2%;" />
-                    <col style="width: 2%;" />
-                    @* "Fecha" *@
-                    <col style="width: 5%;" />
-                    @* "Tipo" *@
-                    <col style="width: 8%;" />
-                    @* "Banco" *@
-                    <col style="width: 20%;" />
-                    @* "Referencia" *@
-                    <col style="width: 10%;" />
-                    @* "Monto" *@
-                    <col style="width: 12%;" />
-                    @* "Estado" *@
-                    <col style="width: 24%;" />
-                    @* "Concesionario" *@
-                    <col style="width: 12%;" />
-                    <col style="width: 5%;" />
-                </ColGroup>
-                <Columns>
-               
-                    <TemplateColumn>
-                        <HeaderTemplate>
-                            <MudCheckBox @bind-Value="IsAllCheckBoxSelected" @bind-Value:after="AfterAsyncAllCheck" />
-                        </HeaderTemplate>
-                        <CellTemplate>
-                            <MudCheckBox @bind-Value="context.Item.IsSelected" @bind-Value:after="AfterAsyncCheck"
-                                         Disabled="@(context.Item.StatusName.ToUpper() == "BORRADOR")" />
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <HierarchyColumn T="Payment" EnableHeaderToggle="false" />
-                    <TemplateColumn Title="Fecha">
-                        <CellTemplate>
-                            <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.DateRate.ToString("dd/MM/yyyy"))</MudText>
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <TemplateColumn Title="Tipo">
-                        <CellTemplate>
-                            <div class="d-flex justify-start">
-                                @if (context.Item.TypeName != null)
-                                {
-                                    Color color = Color.Default;
-                                    string style = "";
-                                    string txt = "";
+                    </CellTemplate>
+                </TemplateColumn>
 
-                                    var pair = context.Item.TypeName.ToUpper() switch
-                                    {
-                                        "RETENCION"     => (txt: "Retencion", color: Color.Dark),
-                                        "TRANSFERENCIA" => (txt: "Transferencia", color: Color.Info),
-                                        "EFECTIVO"      => (txt: "Efectivo", color: Color.Success),
-                                        _               => (txt: "", color: Color.Error)
-                                    };
-                                    txt = pair.txt;
-                                    color = pair.color;
+                @* 5. Banco: Izquierda (PropertyColumn usa HeaderClass/CellClass igual) *@
+                <PropertyColumn Title="Banco" Sortable="false" ShowFilterIcon="false" Property="x => x.BankName"
+                                HeaderClass="dt-left" CellClass="dt-left" CellStyle="white-space: nowrap; min-width: 200px;" />
 
-                                    style += ";font-size: 12px;font-style:italic";
+                @* 6. Referencia: Izquierda *@
+                <TemplateColumn Title="Referencia" HeaderClass="dt-left" CellClass="dt-left">
+                    <CellTemplate>
+                        <MudText Typo="Typo.caption" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Reference</MudText>
+                    </CellTemplate>
+                </TemplateColumn>
 
-                                    <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
-                                        @(txt)
-                                    </MudChip>
-                                }
-                   
-                            </div>
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <PropertyColumn Title="Banco" Sortable="false" ShowFilterIcon="false" Property="x => x.BankName.ToLower()" CellStyle="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 0;" />
-                    <TemplateColumn Title="Referencia">
-                        <CellTemplate>
-                            <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Reference</MudText>
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <TemplateColumn Title="Monto">
-                        <CellTemplate>
-                            <div class="d-flex justify-end">
-                                @if (context.Item.CurrencyName != null)
-                                {
-                                    Color color = Color.Default;
-                                    string style = "";
-                                    string txt = "";
+                @* 7. Monto (Multi-moneda): Derecha *@
+                <TemplateColumn Title="Monto" HeaderClass="dt-right" CellClass="dt-right">
+                    <CellTemplate>
+                        @if (context.Item.CurrencyName != null)
+                        {
+                            Color color = Color.Default;
+                            string style = ";font-size: 11px; font-style:italic";
+                            string txt = context.Item.CurrencyName.ToUpper() switch
+                            {
+                                    "BS - BOLIVAR" => "Bs. " + (context.Item.AmountBs?.ToString("N2") ?? "0.00"),
+                                    "$ - DOLAR" => "$ " + (context.Item.Amount?.ToString("N2") ?? "0.00"),
+                                _ => ""
+                            };
+                            color = context.Item.CurrencyName.ToUpper() switch
+                            {
+                                    "BS - BOLIVAR" => Color.Warning,
+                                    "$ - DOLAR" => Color.Success,
+                                _ => Color.Error
+                            };
 
-                                    var pair = context.Item.CurrencyName.ToUpper() switch
-                                    {
-                                        "BS - BOLIVAR" => (txt: "Bs." + context.Item.AmountBs?.ToString("N2") ?? "", color: Color.Warning),
-                                        "$ - DOLAR" => (txt: "$." + context.Item.Amount?.ToString("N2") ?? "", color: Color.Success),
-                                        _ => (txt: "", color: Color.Error)
-                                    };
-                                    txt = pair.txt;
-                                    color = pair.color;
-                                     
-                                    style += ";font-size: 11px; font-style:italic";
+                            <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
+                                @(txt)
+                            </MudChip>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
 
-                                    <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
-                                        @(txt)
-                                    </MudChip>
-                                }
-                   
-                            </div>
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <TemplateColumn Title="Estado">
-                        <CellTemplate>
-                            <div class="d-flex justify-start">
-                                @if (context.Item.StatusName != null)
-                                {
-                                    Color color = Color.Default;
-                                    string style = "";
-                                    string txt = "";
-                                    var pair = context.Item.StatusName.ToUpper() switch
-                                    {
-                                        "BORRADOR" => (txt: "Borrador", color: Color.Warning),
-                                        "APROBADO" => (txt: "Aprobado", color: Color.Primary),
-                                        "PARA VALIDAR" => (txt: "Para Validar", color: Color.Info),
-                                        "VALIDADO" => (txt: "Validado", color: Color.Success),
 
-                                        _ => (txt: "", color: Color.Error)
-                                    };
-                                    txt = pair.txt;
-                                    color = pair.color;
-                                                                                                                                               
-                                    style += "font-size: 12px;font-style:italic";
+                @* 8. Concesionario: Izquierda *@
+                <PropertyColumn Title="Concesionario" Sortable="false" ShowFilterIcon="false" Property="x => x.DealerName"
+                                HeaderClass="dt-left" CellClass="dt-left" CellStyle="white-space: nowrap; min-width: 200px;" />
+                 @* 9. Estado: Izquierda *@
+                <TemplateColumn Title="Estado" HeaderClass="dt-left" CellClass="dt-left">
+                    <CellTemplate>
+                        @if (context.Item.StatusName != null)
+                        {
+                            Color color = Color.Default;
+                            string style = "font-size: 12px;font-style:italic";
+                            string txt = context.Item.StatusName.ToUpper() switch
+                            {
+                                    "BORRADOR" => "Borrador",
+                                    "APROBADO" => "Aprobado",
+                                    "PARA APROBAR" => "Para Aprobar",
+                                    "VALIDADO" => "Validado",
+                                _ => ""
+                            };
+                            color = context.Item.StatusName.ToUpper() switch
+                            {
+                                    "BORRADOR" => Color.Warning,
+                                    "APROBADO" => Color.Primary,
+                                    "PARA APROBAR" => Color.Info,
+                                    "VALIDADO" => Color.Success,
+                                _ => Color.Error
+                            };
 
-                                    <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
-                                        @(txt)
-                                    </MudChip>
-                                }
-                   
-                            </div>
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <PropertyColumn Title="Concesionario" Sortable="false" ShowFilterIcon="false" Property="x => x.DealerName.ToLower()" CellStyle="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 0;" />
-                    <TemplateColumn StickyRight="true">
-                        <CellTemplate>
-                            <MudButtonGroup Size="@Size.Small" Variant="Variant.Text" Color="Color.Dark">
-                                @if (context.Item.StatusName != null)
-                                {
-                                    if (context.Item.StatusName.ToUpper() == "BORRADOR")
-                                    {
-                                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => ClickEditPayment(context.Item)" />
-                                    }
-                                }
-                                <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.AttachFile" OnClick="() => OnClickAttachamentButton(context.Item)" />
-                            </MudButtonGroup>
-                            
-                        </CellTemplate>
-                    </TemplateColumn>
+                            <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
+                                @(txt)
+                            </MudChip>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
 
-                </Columns>
-                <ChildRowContent>
-                    
-                    <MudStack Row="true" Justify="Justify.Center" AlignItems="AlignItems.Center" Class="mud-width-full mud-height-full">
-                        <MudCard Style="width: 30%; min-height:176px;">
-                            <MudCardHeader Style="padding-top: 8px;">
-                                <CardHeaderContent>
-                                    <MudText Typo="Typo.button" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">
-                                        @("#" + context.Item.Id.ToString().PadLeft(10, '0'))
-                                    </MudText>
-                                </CardHeaderContent>
-                            </MudCardHeader>
-                            <MudCardContent Style="padding-top: 0px;">
-                                <MudText Style="font-weight:bold;" Typo="Typo.body2">Cuenta Nro. : <MudText Inline="true" Typo="Typo.caption">@context.Item.AccountNumber</MudText></MudText>
-                                <MudText Style="font-weight:bold;" Typo="Typo.body2">Banco       : <MudText Inline="true" Typo="Typo.caption">@context.Item.BankName</MudText></MudText>
-                                @if (context.Item.TypeName.ToUpper() == "TRANSFERENCIA")
-                                {
-                                    <MudText Style="font-weight:bold;" Typo="Typo.body2">Banco Origen: <MudText Inline="true" Typo="Typo.caption">@context.Item.BankOriginName</MudText></MudText>
-                       
-                                }
-                            </MudCardContent>
-                        </MudCard>
-                    
-                        <MudCard Style="width: 70%; min-height:176px;">
-                  
-                            <MudCardContent Style="padding-top: 0px;" Class="">
-                                
-                                <DocumentPreviewList DocumentDetails="context.Item.AccountPreview" IsVisibleToolBar="true" />
+                @* 10. Acciones fijas: Centrado o Derecha según gusto (se usó centrado) *@
+                <TemplateColumn StickyRight="true" HeaderClass="dt-center" CellClass="dt-center">
+                    <CellTemplate>
+                        <MudButtonGroup Size="@Size.Small" Variant="Variant.Text" Color="Color.Dark">
+                            @if (context.Item.StatusName != null &&
+                                                        (context.Item.StatusName.ToUpper() == "BORRADOR" ||
+                                                        (context.Item.StatusName.ToUpper() == "PARA APROBAR" && ItemsModules.Any(x => x.Text.ToUpper() == "APROBAR"))))
+                            {
+                                <MudIconButton Size="@Size.Small"
+                                               Icon="@Icons.Material.Outlined.Edit"
+                                               OnClick="() => ClickEditPayment(context.Item)" />
+                            }
+                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.AttachFile" OnClick="() => OnClickAttachamentButton(context.Item)" />
+                        </MudButtonGroup>
+                    </CellTemplate>
+                </TemplateColumn>
 
-                            </MudCardContent>
-                        </MudCard>
-                    </MudStack>
-                    
-                </ChildRowContent>
-                <PagerContent>
-                    <MudDataGridPager T="Payment" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
-                </PagerContent>
-            </MudDataGrid>
+            </Columns>
+            <ChildRowContent>
+                <MudStack Row="true" Justify="Justify.Center" AlignItems="AlignItems.Center" Class="mud-width-full mud-height-full">
+                    <MudCard Style="width: 30%; min-height:176px;">
+                        <MudCardHeader Style="padding-top: 8px;">
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.button" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">
+                                    @("#" + context.Item.Id.ToString().PadLeft(10, '0'))
+                                </MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent Style="padding-top: 0px;">
+                            <MudText Style="font-weight:bold;" Typo="Typo.body2">Cuenta Nro. : <MudText Inline="true" Typo="Typo.caption">@context.Item.AccountNumber</MudText></MudText>
+                            <MudText Style="font-weight:bold;" Typo="Typo.body2">Banco       : <MudText Inline="true" Typo="Typo.caption">@context.Item.BankName</MudText></MudText>
+                            @if (context.Item.TypeName.ToUpper() == "TRANSFERENCIA")
+                            {
+                                <MudText Style="font-weight:bold;" Typo="Typo.body2">Banco Origen: <MudText Inline="true" Typo="Typo.caption">@context.Item.BankOriginName</MudText></MudText>
+                            }
+                        </MudCardContent>
+                    </MudCard>
 
-        </MudCardContent>
+                    <MudCard Style="width: 70%; min-height:176px;">
+                        <MudCardContent Style="padding-top: 0px;">
+                            <DocumentPreviewList DocumentDetails="context.Item.AccountPreview" IsVisibleToolBar="true" />
+                        </MudCardContent>
+                    </MudCard>
+                </MudStack>
+            </ChildRowContent>
+            <PagerContent>
+                <MudDataGridPager T="Payment" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+            </PagerContent>
+        </MudDataGrid>
     </MudCard>
 
 </MudContainer>
@@ -533,7 +484,7 @@
                [
         new("Home", href: "", icon: Icons.Material.Filled.Home),
         new("Portal de Pagos",href: "", icon: Icons.Material.Filled.Payments),
-        new("Aseguramiento de Ingreso",  href: "paymentreport", disabled: false, icon: Icons.Material.Filled.Payment),
+        new("Gestion de Pagos",  href: "paymentreport", disabled: false, icon: Icons.Material.Filled.Payment),
     ];
 
     private string ModuleName = "PAGOS-ASEGURAMIENTO";
@@ -575,9 +526,7 @@
     {
         return status switch
         {
-            "VALIDAR" => Color.Success,
             "RECHAZAR" => Color.Error,
-            "PROCESAR" => Color.Info,
             "APROBAR" => Color.Warning,
             _ => Color.Default
         };
