@@ -52,8 +52,11 @@ namespace Sipcon.WebApp.Client.Models
         public int Id { get; set; } = 0;
         public bool IsActive { get; set; } = true;
         public bool IsSelected { get; set; } = false;
-      
-       
+        public int PaymentDetailId { get; set; } = 0;
+        public int? TransactionStatusId { get; set; } = null;
+        public string TransactionStatusName { get; set; } = string.Empty;
+
+
     }
 
 

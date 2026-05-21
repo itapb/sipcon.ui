@@ -1,4 +1,4 @@
-﻿
+﻿@inject IDialogService DialogService
 
 <MudDataGrid @ref="PaymentPreviewDataGrid"
         T="Payment"
@@ -82,13 +82,19 @@
         
         <TemplateColumn StickyRight="true">
             <CellTemplate>
-                @if (context.Item.StatusName != null && context.Item.StatusName.ToUpper() == "BORRADOR")
-                {
+                
                     <MudButtonGroup Size="@Size.Small" Variant="Variant.Text" Color="Color.Dark">
+                    @if (context.Item.StatusName != null && (context.Item.StatusName.ToUpper() == "BORRADOR" || context.Item.StatusName.ToUpper() == "PARA APROBAR"))
+                    {
                         <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => OnClickEditButton(context.Item)" />
-                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="() => OnClickDeleteButton(context.Item)" />
+                    }
+                      @if (context.Item.StatusName != null && context.Item.StatusName.ToUpper() == "BORRADOR")
+                    {
+                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="() => OnClickDeleteButton(context.Item)" />
+                    }
+                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.AttachFile" OnClick="() => OnClickAttachamentButton(context.Item)" />
                     </MudButtonGroup>
-                }
+                
             </CellTemplate>
         </TemplateColumn>
 
@@ -141,6 +147,23 @@
     {
         await OnClickPaymentDelete.InvokeAsync(payment);
         StateHasChanged();
+    }
+
+    private async Task OnClickAttachamentButton(Payment args)
+    {
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = false, NoHeader = true };
+        var parameters = new DialogParameters<PaymentFilesDialog> { { x => x.Title, "Agregar Comprobantes" }, { x => x.IdPayment, args.Id.ToString() } };
+        var dialog = await DialogService.ShowAsync<PaymentFilesDialog>("Agregar Comprobantes", parameters, options);
+
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            await PaymentPreviewDataGrid!.ReloadServerData();
+
+        }
+        StateHasChanged();
+        await Task.CompletedTask;
     }
 
 }
