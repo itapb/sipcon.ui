@@ -492,31 +492,37 @@
     protected override async Task OnInitializedAsync()
     {
         _isLoading = true;
+
         if (SelectedDocuments.Count() > 0)
         {
             _panelContent = SelectedDocuments.ToList();
         }
-
 
         PaymentTypeList = await ModuleActionsService.GetPaymentSelectOption();
         CurrencyList = await ModuleActionsService.GetCurrencySelectOption();
         BankOriginList = await ModuleActionsService.GetBankOriginSelectOption();
         AccountList = await ModuleActionsService.GetBankAccountSelectOption(Session.SupplierId, selectedCurrency?.Value);
 
-
-
         if (SelectedPaymentId != 0)
         {
             await GetDocuments();
-            await Task.CompletedTask;
             await GetPayments();
 
+            // Buscamos el objeto exacto por ID en la lista cargada
+            var paymentArg = PaymentList.FirstOrDefault(x => x.Id == SelectedPaymentId);
+
+            if (paymentArg != null)
+            {
+                await OnPaymentEdit(paymentArg);
+            }
+        }
+        else
+        {
+            await CleanModel();
         }
 
-        CleanModel().Wait(20);
         _isLoading = false;
         StateHasChanged();
-        await Task.CompletedTask;
     }
 
     private async Task GetDocuments()
