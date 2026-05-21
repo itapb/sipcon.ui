@@ -22,21 +22,23 @@
         @* //Filtros *@
     <MudCard Class="mt-4 pa-0">
         <MudCardContent Style="padding-top: 0px;">
-   
+
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mt-2">
-            
+
+                @* 1. Tipo de Pago *@
                 <MudSelect T="SelectOption"
-                            @bind-Value="SelectedPayment"
-                            ToStringFunc="@(e => e?.Text)"
-                            Style="font-size: 12px;line-height: 15px;min-width: 80px;"
-                            Typo="Typo.caption"
-                            Label="Tipo de Pago"
-                            Placeholder="Todas los tipos"
-                            AdornmentColor="Color.Default"
-                            Variant="Variant.Outlined"
-                            Clearable="true"
-                            Dense="true"
-                            Margin="Margin.Dense">
+                           Value="SelectedPayment"
+                           ValueChanged="@(async (value) => { SelectedPayment = value; await ClickRefreshPayments(null!); })"
+                           ToStringFunc="@(e => e?.Text)"
+                           Style="font-size: 12px;line-height: 15px;min-width: 80px;"
+                           Typo="Typo.caption"
+                           Label="Tipo de Pago"
+                           Placeholder="Todas los tipos"
+                           AdornmentColor="Color.Default"
+                           Variant="Variant.Outlined"
+                           Clearable="true"
+                           Dense="true"
+                           Margin="Margin.Dense">
                     @if (PaymentList != null)
                     {
                         @foreach (var action in PaymentList)
@@ -46,19 +48,20 @@
                     }
                 </MudSelect>
 
-
+                @* 2. Estado *@
                 <MudSelect T="SelectOption"
-                            @bind-Value="SelectedStatus"
-                            ToStringFunc="@(e => e?.Text)"
-                            Style="font-size: 12px;line-height: 15px;min-width: 80px;"
-                            Typo="Typo.caption"
-                            Label="Estado"
-                            Placeholder="Todos los estados"
-                            AdornmentColor="Color.Default"
-                            Variant="Variant.Outlined"
-                            Clearable="true"
-                            Dense="true"
-                            Margin="Margin.Dense">
+                           Value="SelectedStatus"
+                           ValueChanged="@(async (value) => { SelectedStatus = value; await ClickRefreshPayments(null!); })"
+                           ToStringFunc="@(e => e?.Text)"
+                           Style="font-size: 12px;line-height: 15px;min-width: 80px;"
+                           Typo="Typo.caption"
+                           Label="Estado"
+                           Placeholder="Todos los estados"
+                           AdornmentColor="Color.Default"
+                           Variant="Variant.Outlined"
+                           Clearable="true"
+                           Dense="true"
+                           Margin="Margin.Dense">
                     @if (StatusList != null)
                     {
                         @foreach (var action in StatusList)
@@ -68,18 +71,20 @@
                     }
                 </MudSelect>
 
+                @* 3. Moneda *@
                 <MudSelect T="SelectOption"
-                            @bind-Value="SelectedCurrency"
-                            ToStringFunc="@(e => e?.Text)"
-                            Style="font-size: 12px;line-height: 15px;min-width: 80px;"
-                            Typo="Typo.caption"
-                            Label="Moneda"
-                            Placeholder="Todas las Monedas"
-                            AdornmentColor="Color.Default"
-                            Variant="Variant.Outlined"
-                            Clearable="true"
-                            Dense="true"
-                            Margin="Margin.Dense">
+                           Value="SelectedCurrency"
+                           ValueChanged="@(async (value) => { SelectedCurrency = value; await ClickRefreshPayments(null!); })"
+                           ToStringFunc="@(e => e?.Text)"
+                           Style="font-size: 12px;line-height: 15px;min-width: 80px;"
+                           Typo="Typo.caption"
+                           Label="Moneda"
+                           Placeholder="Todas las Monedas"
+                           AdornmentColor="Color.Default"
+                           Variant="Variant.Outlined"
+                           Clearable="true"
+                           Dense="true"
+                           Margin="Margin.Dense">
                     @if (CurrencyList != null)
                     {
                         @foreach (var action in CurrencyList)
@@ -89,50 +94,56 @@
                     }
                 </MudSelect>
             </MudStack>
+
             <MudStack Row="true">
+                @* 4. Fecha Desde *@
                 <MudDatePicker @ref="_picker"
-                                @bind-Date="_dateFrom"
-                                Style="font-size: 12px;line-height: 15px;min-width: 80px;"
-                                Adornment="Adornment.End"
-                                AdornmentColor="Color.Default"
-                                Class="align-right"
-                                Label="Desde"
-                                Placeholder="dd/MM/yyyy"
-                                Variant="Variant.Outlined"
-                                PickerVariant="PickerVariant.Inline"
-                                Margin="Margin.Dense"
-                                DateFormat="dd/MM/yyyy"
-                                AutoClose="true">
+                               Date="_dateFrom"
+                               DateChanged="@(async (date) => { _dateFrom = date; await ClickRefreshPayments(null!); })"
+                               Style="font-size: 12px;line-height: 15px;min-width: 80px;"
+                               Adornment="Adornment.End"
+                               AdornmentColor="Color.Default"
+                               Class="align-right"
+                               Label="Desde"
+                               Placeholder="dd/MM/yyyy"
+                               Variant="Variant.Outlined"
+                               PickerVariant="PickerVariant.Inline"
+                               Margin="Margin.Dense"
+                               DateFormat="dd/MM/yyyy"
+                               AutoClose="true">
                     <PickerActions>
-                        <MudButton Class="mr-auto align-self-start" OnClick="@(() => _picker.ClearAsync())">Borrar</MudButton>
+                        <MudButton Class="mr-auto align-self-start" OnClick="@(async () => { await _picker.ClearAsync(); _dateFrom = null; await ClickRefreshPayments(null!); })">Borrar</MudButton>
                         <MudButton OnClick="@(() => _picker.CloseAsync(false))">Cancelar</MudButton>
                     </PickerActions>
                 </MudDatePicker>
 
+                @* 5. Fecha Hasta *@
                 <MudDatePicker @ref="_pickerTo"
-                                @bind-Date="_dateTo"
-                                Style="font-size: 12px;line-height: 15px;min-width: 80px;"
-                                Adornment="Adornment.End"
-                                AdornmentColor="Color.Default"
-                                Class="align-right"
-                                Label="Hasta"
-                                Placeholder="dd/MM/yyyy"
-                                Variant="Variant.Outlined"
-                                PickerVariant="PickerVariant.Inline"
-                                Margin="Margin.Dense"
-                                DateFormat="dd/MM/yyyy"
-                                AutoClose="true">
+                               Date="_dateTo"
+                               DateChanged="@(async (date) => { _dateTo = date; await ClickRefreshPayments(null!); })"
+                               Style="font-size: 12px;line-height: 15px;min-width: 80px;"
+                               Adornment="Adornment.End"
+                               AdornmentColor="Color.Default"
+                               Class="align-right"
+                               Label="Hasta"
+                               Placeholder="dd/MM/yyyy"
+                               Variant="Variant.Outlined"
+                               PickerVariant="PickerVariant.Inline"
+                               Margin="Margin.Dense"
+                               DateFormat="dd/MM/yyyy"
+                               AutoClose="true">
                     <PickerActions>
-                        <MudButton Class="mr-auto align-self-start" OnClick="@(() => _pickerTo.ClearAsync())">Borrar</MudButton>
+                        <MudButton Class="mr-auto align-self-start" OnClick="@(async () => { await _pickerTo.ClearAsync(); _dateTo = null; await ClickRefreshPayments(null!); })">Borrar</MudButton>
                         <MudButton OnClick="@(() => _pickerTo.CloseAsync(false))">Cancelar</MudButton>
                     </PickerActions>
                 </MudDatePicker>
+
                 <div class="d-flex justify-end">
                     <MudButton StartIcon="@Icons.Material.Filled.Search" Variant="Variant.Filled" Style="margin: 11px;"
                                Size="Size.Small"
                                OnClick="ClickRefreshPayments">Buscar</MudButton>
                 </div>
-                
+
             </MudStack>
 
         </MudCardContent>
