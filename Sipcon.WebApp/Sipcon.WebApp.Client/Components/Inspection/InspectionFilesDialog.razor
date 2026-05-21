@@ -37,30 +37,38 @@
             <MudList T="string" Clickable="true" Dense="true" Class="pa-0">
                 @foreach (var file in _files)
                 {
+                    string name = file.fileName ?? "";
+                    string shortenedName = name.Length > 21 
+                        ? $"{name.Substring(0, 15)}...{name.Substring(name.Length - 6)}" 
+                        : name;
+
+
                     <MudListItem Class="px-2 py-3 border-b">
-                        <div class="d-flex align-center justify-space-between w-100">
+                        <div class="d-flex align-center justify-space-between">
                             <div class="d-flex align-center">
                                 <MudIcon Icon="@GetFileIcon(file.fileName)" Color="Color.Info" Class="mr-3" />
                                 <div class="d-flex flex-column">
-                                    <MudText Typo="Typo.body2" Style="font-weight: 500;">@file.fileName</MudText>
+                                    <MudText Typo="Typo.body2" Style="font-weight: 500;">@shortenedName</MudText>
                                     <MudText Typo="Typo.caption" Color="Color.Secondary">
                                         @file.dateCreate?.ToString("dd/MM/yyyy HH:mm")
                                     </MudText>
                                 </div>
                             </div>
 
-                            <MudIconButton Icon="@Icons.Material.Filled.Download" 
-                                           Size="Size.Small" 
-                                           Color="Color.Info" 
-                                           Variant="Variant.Outlined"
-                                           Disabled="_downloading"
-                                           OnClick="@(() => DescargarAdjunto(file))" />
+                            <div>
+                                <MudIconButton Icon="@Icons.Material.Filled.Download" 
+                                               Size="Size.Small" 
+                                               Color="Color.Info" 
+                                               Variant="Variant.Outlined"
+                                               Disabled="_downloading"
+                                               OnClick="@(() => DescargarAdjunto(file))" />
 
-                           <MudIconButton Icon="@Icons.Material.Filled.Preview" 
-                                           Size="Size.Small" 
-                                           Color="Color.Info"
-                                           Variant="Variant.Outlined"
-                                           OnClick="@(() => PreviewAdjunto(file))" />
+                               <MudIconButton Icon="@Icons.Material.Filled.Preview" 
+                                               Size="Size.Small" 
+                                               Color="Color.Info"
+                                               Variant="Variant.Outlined"
+                                               OnClick="@(() => PreviewAdjunto(file))" />
+                            </div>
                         </div>
                     </MudListItem>
                 }

@@ -169,5 +169,32 @@ namespace Sipcon.WebApp.Client.Repository
 
             return result;
         }
+
+        public async Task<ApiResponse<List<byte>>> ExportInspections(int supplierId, string filter = "")
+        {
+            ApiResponse<List<byte>> result;
+            try
+            {
+                var url = $"api/Inspections/Export?&supplierId={supplierId}";
+                if (!string.IsNullOrEmpty(filter)) url += $"&filter={filter}";
+
+                var response = await _http.GetAsync(url);
+                var fileContent = await response.Content.ReadAsByteArrayAsync();
+
+                result = fileContent is null || fileContent.Length == 0
+                    ? new ApiResponse<List<byte>> { Processed = false, Message = "Error al exportar data.", Data = [] }
+                    : new ApiResponse<List<byte>> { Processed = true, Message = string.Empty, Data = fileContent.ToList() };
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<byte>>
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message),
+                    Data = []
+                };
+            }
+            return result;
+        }
     }
 }
