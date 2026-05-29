@@ -274,7 +274,8 @@
                             "UNIDADES" => "Unidades",
                             "REPUESTOS" => "Repuestos",
                             "PROFORMA" => "Proforma",
-                            "OTROS GASTOS" => "Otros Gastos",
+                            "OTROS" => "Otros Gastos",
+                            "GASTOS ADMINISTRATIVOS" => "Gastos Administrativos",
                             _ => ""
                         };
                         color = context.Item.TypeName.ToUpper() switch
@@ -282,7 +283,8 @@
                             "UNIDADES" => Color.Dark,
                             "REPUESTOS" => Color.Info,
                             "PROFORMA" => Color.Success,
-                            "OTROS GASTOS" => Color.Warning,
+                            "OTROS" => Color.Warning,
+                            "GASTOS ADMINISTRATIVOS" => Color.Secondary,
                             _ => Color.Error
                         };
 
@@ -324,14 +326,21 @@
                 </CellTemplate>
             </TemplateColumn>
 
-            @* 5. Vencimiento: Izquierda *@
+             @* 6. Emision: Izquierda *@
+            <TemplateColumn Title="Emision" HeaderClass="dt-left" CellClass="dt-left">
+                <CellTemplate>
+                    <MudText Typo="Typo.caption">@(context.Item.DocumentDate.ToString("dd/MM/yyyy"))</MudText>
+                </CellTemplate>
+            </TemplateColumn>
+
+            @* 7. Vencimiento: Izquierda *@
             <TemplateColumn Title="Vencimiento" HeaderClass="dt-left" CellClass="dt-left">
                 <CellTemplate>
                     <MudText Typo="Typo.caption">@(context.Item.DocumentDueDate?.ToString("dd/MM/yyyy"))</MudText>
                 </CellTemplate>
             </TemplateColumn>
 
-            @* 6. Días Mora: Derecha para alinearse con números *@
+            @* 8. Días Mora: Derecha para alinearse con números *@
             <TemplateColumn Title="Días Mora" HeaderClass="dt-right" CellClass="dt-right">
                 <CellTemplate>
                     @if (context.Item.DocumentDueDate != null)
@@ -357,7 +366,7 @@
                 </CellTemplate>
             </TemplateColumn>
 
-            @* 7. Monto $: Derecha *@
+            @* 9. Monto $: Derecha *@
             <TemplateColumn Title="Monto $" HeaderClass="dt-right" CellClass="dt-right">
                 <CellTemplate>
                     <MudText Typo="Typo.caption" Color="Color.Success">
@@ -366,7 +375,7 @@
                 </CellTemplate>
             </TemplateColumn>
 
-            @* 8. Saldo $: Derecha *@
+            @* 10. Saldo $: Derecha *@
             <TemplateColumn Title="Saldo $" HeaderClass="dt-right" CellClass="dt-right">
                 <CellTemplate>
                     <div style="display: inline-flex; align-items: center; gap: 4px;">
@@ -378,7 +387,7 @@
                 </CellTemplate>
             </TemplateColumn>
 
-            @* 9. Monto Bs: Derecha *@
+            @* 11. Monto Bs: Derecha *@
             <TemplateColumn Title="Monto" HeaderClass="dt-right" CellClass="dt-right">
                 <CellTemplate>
                     <MudText Typo="Typo.caption" Color="Color.Default">
@@ -387,7 +396,7 @@
                 </CellTemplate>
             </TemplateColumn>
             
-            @* 10. Saldo Bs: Derecha *@
+            @* 12. Saldo Bs: Derecha *@
             <TemplateColumn Title="Saldo" HeaderClass="dt-right" CellClass="dt-right">
                 <CellTemplate>
                     <div style="display: inline-flex; align-items: center; gap: 4px;">
@@ -398,7 +407,7 @@
                     </div>
                 </CellTemplate>
             </TemplateColumn>
-             @* 8. Estado: Izquierda *@
+             @* 13. Estado: Izquierda *@
                 <TemplateColumn Title="Estado" HeaderClass="dt-left" CellClass="dt-left">
                       <CellTemplate>
                             <div class="d-flex justify-start">
@@ -467,7 +476,7 @@
                         </CellTemplate>
                 </TemplateColumn>
 
-           @* 10. Acciones fijas: Centrado o Derecha según gusto (se usó centrado) *@
+           @* 14. Acciones fijas: Centrado o Derecha según gusto (se usó centrado) *@
                 <TemplateColumn  HeaderClass="dt-left" CellClass="dt-left">
                     <CellTemplate>
                         <MudButtonGroup Size="@Size.Small" Variant="Variant.Text" Color="Color.Dark">
@@ -479,6 +488,14 @@
                     </CellTemplate>
                 </TemplateColumn>
 
+
+                @* 15. Documento: Izquierda *@
+            <TemplateColumn Title="Documento" HeaderClass="dt-left" CellClass="dt-left">
+                <CellTemplate>
+                    <MudText Typo="Typo.caption" Inline="true" Color="Color.Primary" 
+                             Style="font-weight:bold;">@context.Item.</MudText>
+                </CellTemplate>
+            </TemplateColumn>
             
 
         </Columns>
