@@ -33,6 +33,7 @@ namespace Sipcon.WebApp.Client.Models
     {
         public int SupplierId { get; set; }
         public int? DealerId { get; set; } = null;
+        public string DealerName { get; set; } = string.Empty;
         public string TypeCode { get; set; } = string.Empty;
         public string TypeName { get; set; } = string.Empty;
         public string ConceptCode { get; set; } = string.Empty;
