@@ -166,24 +166,27 @@
                             </MudStack>
           
                             <MudStack Row="true">
-        
-                                <div class="mud-width-full">
-                                    <MudText Typo="Typo.caption" Style="color: #8b4c25">
-                                        <span>@( _disabledSelect ? "Nro. Retención" : "Nro. Referencia")</span>
-                                    </MudText>
-                                    <MudTextField @bind-Value="_model.Reference"
-                                                  Typo="Typo.caption"
-                                                  Variant="Variant.Outlined"
-                                                  Placeholder=@(_disabledSelect ? "Número de retención" : "Número de referencia")
-                                                  Style="color: #8b4c25;font-size: 12px; line-height: 0px;min-width: 120px;background-color:#e8e8e8;"
-                                                  Class="mt-0"
-                                                  For="@(() => _model.Reference)"
-                                                  Immediate="false"
-                                                  ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                                  Disabled="@(!_model.IsActive || _isReadOnly)">
-                                    </MudTextField>
-                                </div>
 
+                                @if (selectedPaymentType != null && selectedPaymentType.Text.ToUpper() != "EFECTIVO")
+                                {
+                                    <div class="mud-width-full">
+                                        <MudText Typo="Typo.caption" Style="color: #8b4c25">
+                                            <span>@(_disabledSelect ? "Nro. Retención" : "Nro. Referencia")</span>
+                                        </MudText>
+                                        <MudTextField @bind-Value="_model.Reference"
+                                        Typo="Typo.caption"
+                                        Variant="Variant.Outlined"
+                                        Placeholder=@(_disabledSelect ? "Número de retención" : "Número de referencia")
+                                        Style="color: #8b4c25;font-size: 12px; line-height: 0px;min-width: 120px;background-color:#e8e8e8;"
+                                        Class="mt-0"
+                                        MaxLength="16"
+                                        For="@(() => _model.Reference)"
+                                        Immediate="false"
+                                        ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                        Disabled="@(!_model.IsActive || _isReadOnly)">
+                                        </MudTextField>
+                                    </div>
+                                 }
                                 <div class="mud-width-full">
                                     <MudText Typo="Typo.caption" Style="color: #8b4c25">
                                         <span>@(selectedCurrency != null && selectedCurrency.Text.ToUpper() == "$ - DOLAR" ? "Monto en Dólares (USD)" : "Monto en Bs")</span>
@@ -477,6 +480,11 @@
         "PLACA" ,
         "IVA (25%)",
         "RETENCION IVA (75%)",
+    };
+
+    private List<string> _typeDocumentList = new List<string>()
+    {
+        "PROFORMA"
     };
 
     PaymentValidator _modelValidator = new PaymentValidator();
@@ -797,7 +805,7 @@
             BankOriginId = selectedBankOrigin != null ? selectedBankOrigin.Value : null,
             AccountId = selectedAccount != null ? selectedAccount.Value : null,
             Date = arg.DateRate,
-            Reference = arg.Reference,
+            Reference = string.IsNullOrWhiteSpace(arg.Reference) ? null : arg.Reference,
             Amount = selectedCurrency != null && selectedCurrency.Text.ToUpper() == "BS - BOLIVAR" ? arg.AmountBs : arg.Amount,
             PaymentId = arg.PaymentId,
             Id = arg.Id,
@@ -886,6 +894,12 @@
             selectedPaymentType = PaymentTypeList.FirstOrDefault(p => p.Text.ToUpper() == "RETENCION");
             _disabledRetencion = false;
             _disabledSelect = true;
+        }
+
+        if (SelectedDocuments.Where(x => x.TypeName.Trim() == "PROFORMA").Count() > 0)
+        {
+            selectedCurrency = CurrencyList.FirstOrDefault(p => p.Text.ToUpper() == "$ - DOLAR");
+            _isCurrencyLocked=true;
         }
 
         selectedAccount = null;
@@ -1072,9 +1086,8 @@
 
 
             RuleFor(x => x.Reference)
-                .NotEmpty().WithMessage("Campo requerido");
-
-           
+             .NotEmpty().WithMessage("Campo requerido.")
+             .Matches(@"^[0-9]{8,16}$").WithMessage("El campo debe ser numérico de 8 a 16 dígitos.");
 
             RuleFor(x => x.Date)
                 .NotEmpty().WithMessage("Campo requerido")

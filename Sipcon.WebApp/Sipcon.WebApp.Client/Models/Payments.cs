@@ -104,7 +104,7 @@ namespace Sipcon.WebApp.Client.Models
         public int DealerId { get; set; } 
         public int? CurrencyId { get; set; } = null;
         public int? TypeId { get; set; } = null;
-        public string Reference { get; set; } = string.Empty;
+        public string? Reference { get; set; } = null;
         public int? AccountId { get; set; } = null;
         public int? BankOriginId { get; set; } = null;
         public int Id { get; set; } = 0;
