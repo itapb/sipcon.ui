@@ -57,6 +57,7 @@ namespace Sipcon.WebApp.Client.Models
         public int? TransactionStatusId { get; set; } = null;
         public string TransactionStatusName { get; set; } = string.Empty;
 
+        public double? FullAmount { get; set; } = null;
 
     }
 
