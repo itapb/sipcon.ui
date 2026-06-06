@@ -370,14 +370,15 @@
                 </CellTemplate>
             </TemplateColumn>
 
-             @* 9. Monto $: Derecha *@
-            <TemplateColumn Title="Monto $" HeaderClass="dt-right" CellClass="dt-right">
+            @* 9. Monto $: Derecha *@
+            <TemplateColumn Title="Monto Factura $" HeaderClass="dt-right" CellClass="dt-right">
                 <CellTemplate>
                     <MudText Typo="Typo.caption" Color="Color.Success">
-                        @("$" + context.Item.FullAmount?.ToString("N2"))
+                        @("$" + context.Item.AmountFull?.ToString("N2"))
                     </MudText>
                 </CellTemplate>
             </TemplateColumn>
+
 
             @* 9. Monto $: Derecha *@
             <TemplateColumn Title="Monto $" HeaderClass="dt-right" CellClass="dt-right">
@@ -662,7 +663,7 @@
 
         IEnumerable<Receivable> Data;
 
-        StatusList = await ModuleActionsService.GetDocumentStatusSelectOption();
+        StatusList = await ModuleActionsService.GetStatusByModule(Session.UserId, ModuleName);
         DocumentList = await ModuleActionsService.GetDocumentTypeSelectOption();
         ConceptList = await ModuleActionsService.GetDocumentConceptSelectOption();
 

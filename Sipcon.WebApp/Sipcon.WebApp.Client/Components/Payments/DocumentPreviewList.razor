@@ -1,4 +1,6 @@
 ﻿
+@inject IPaymentService PaymentService
+@inject ISnackbar Snackbar
 
 <MudDataGrid @ref="DocumentPreviewDataGrid"
         T="AccountPreview"
@@ -24,28 +26,21 @@
 
 
     <Columns>
-        @* //ID *@
-        <TemplateColumn Title="">
-            <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" 
-                        Style="font-weight:bold;">@("#" + context.Item.Id.ToString().PadLeft(10, '0'))</MudText>
-            </CellTemplate>
-        </TemplateColumn>
         @* //Referencia *@
-        <TemplateColumn Title="">
+        <TemplateColumn Title="Documento">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" 
                 Style="font-weight:bold;">@context.Item.Number</MudText>
             </CellTemplate>
         </TemplateColumn>
         @* //Fecha Pago *@
-        <TemplateColumn Title="">
+        <TemplateColumn Title="Fecha Tasa">
             <CellTemplate>
                 <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.DateRate?.ToString("dd/MM/yyyy"))</MudText>
             </CellTemplate>
         </TemplateColumn>
         @* //Tipo Concepto *@
-        <TemplateColumn Title="">
+        <TemplateColumn Title="Concepto">
             <CellTemplate>
                 <div class="d-flex justify-start">
                     @if (context.Item.ConceptName != null)
@@ -75,39 +70,8 @@
                 </div>
             </CellTemplate>
         </TemplateColumn>
-        @* //Tipo Documento *@
-        <TemplateColumn Title="">
-            <CellTemplate>
-                <div class="d-flex justify-start">
-                    @if (context.Item.TypeName != null)
-                    {
-                        Color color = Color.Default;
-                        string style = "";
-                        string txt = "";
-
-                        var pair = context.Item.TypeName.ToUpper() switch
-                        {
-                            "UNIDADES" => (txt: "Unidades", color: Color.Dark),
-                            "REPUESTOS" => (txt: "Repuestos", color: Color.Info),
-                            "PROFORMA" => (txt: "Proforma", color: Color.Success),
-                            "OTROS GASTOS" => (txt: "Otros Gastos", color: Color.Warning),
-                            _ => (txt: "", color: Color.Error)
-                        };
-                        txt = pair.txt;
-                        color = pair.color;
-
-                        style += ";font-size: 11px;font-style:italic";
-
-                        <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
-                            @(txt)
-                        </MudChip>
-                    }
-                   
-                </div>
-            </CellTemplate>
-        </TemplateColumn>
         @* //Monto *@
-        <TemplateColumn Title="">
+        <TemplateColumn Title="Saldo Pendiente">
             <CellTemplate>
                 <div class="d-flex justify-center">
                     @if (context.Item.ConceptName != null)
@@ -137,14 +101,49 @@
                 </div>
             </CellTemplate>
         </TemplateColumn>
+
+        <TemplateColumn Title="Monto Abonado">
+            <CellTemplate>
+                <div class="d-flex justify-center">
+                    @if (context.Item.ConceptName?.ToUpper() == "BASE")
+                    {
+                        <MudTextField T="double?"
+                                      Immediate="true"
+                                      Value="@context.Item.PaidAmount"
+                                      ValueChanged="@((double? val) => context.Item.PaidAmount = val)"
+                                      OnBlur="@(() => UpdatePaidAmount(context.Item))"
+                                      @onkeydown="@(async (args) => { if (args.Key == "Enter") await UpdatePaidAmount(context.Item); })"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Adornment="Adornment.Start"
+                                      AdornmentText="$"
+                                      AdornmentIcon="@(_isSuccess ? Icons.Material.Filled.Check : Icons.Material.Filled.AttachMoney)"
+                                      AdornmentColor="@(_isSuccess ? Color.Success : Color.Default)"
+                                      Style="font-size: 11px; width: 100px;"
+                                      Disabled="@(context.Item.PaymentId == 0)" />
+                    }
+                    else
+                    {
+                        <MudChip T="string" Variant="Variant.Text" Color="Color.Warning" Style="font-size: 11px;font-style:italic">
+                            @("Bs." + (context.Item.PaidAmountBs?.ToString("N2") ?? "0.00"))
+                        </MudChip>
+                    }
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
+
     </Columns>
 </MudDataGrid>
 
 
 @code { 
-
+    [Inject] private UserSession Session { get; set; } = null!;
     [Parameter] public IEnumerable<AccountPreview> DocumentDetails { get; set; } = new List<AccountPreview>();
     [Parameter] public bool? IsVisibleToolBar { get; set; } = false;
+    [Parameter] public EventCallback OnAmountUpdated { get; set; }
+    private bool _isSuccess = false;
+    private int _lastSavedId = -1;
+    private bool _isSaving = false;
 
     private MudDataGrid<AccountPreview>? DocumentPreviewDataGrid;
 
@@ -170,6 +169,64 @@
         _rowCount = state.Page * state.PageSize;
 
         return new GridData<AccountPreview> { TotalItems = DocumentDetails.Count(), Items = DocumentDetails };
+    }
+
+
+
+    private async Task UpdatePaidAmount(AccountPreview item)
+    {
+        // 1. Evitar ejecuciones simultáneas y evitar re-procesar el mismo registro inmediatamente
+        if (_isSaving || _lastSavedId == item.Id)
+        {
+            // Si el blur ocurre justo después del enter, simplemente ignoramos el blur
+            // reseteamos el lastSavedId para permitir cambios futuros
+            if (_lastSavedId == item.Id) _lastSavedId = -1;
+            return;
+        }
+
+        _isSaving = true;
+        _lastSavedId = item.Id;
+
+        try
+        {
+            var dto = new PostPaidAmount
+            {
+                Id = item.Id,
+                PaymentId = item.PaymentId,
+                PaidAmount = item.PaidAmount
+            };
+
+            var serviceResponse = await PaymentService.UpdatePaidAmount(dto, Session.UserId);
+
+            if (serviceResponse.Processed)
+            {
+                _isSuccess = true;
+                StateHasChanged();
+                await Task.Delay(1000);
+                _isSuccess = false;
+                StateHasChanged();
+            
+                await DocumentPreviewDataGrid.ReloadServerData();
+
+                await OnAmountUpdated.InvokeAsync();
+                await DocumentPreviewDataGrid.ReloadServerData();
+            }
+            else
+            {
+                Snackbar.Add(serviceResponse.Message ?? "Error al actualizar", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error crítico: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+            // Limpiamos el ID después de un breve momento para permitir re-edición
+            await Task.Delay(500);
+            _lastSavedId = -1;
+        }
     }
 
 }
