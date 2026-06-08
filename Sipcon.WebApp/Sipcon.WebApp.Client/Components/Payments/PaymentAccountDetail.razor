@@ -37,7 +37,7 @@
                         
                         @if (_panelContent.Count > 0)
                         {
-                            <DocumentPreviewList DocumentDetails="_panelContent" IsVisibleToolBar="false" />
+                            <DocumentPreviewList DocumentDetails="_panelContent" IsVisibleToolBar="false" OnAmountUpdated="RefreshTotals" />
                         }
                         
                         
@@ -68,7 +68,7 @@
                                 <MudButton StartIcon="@Icons.Material.Filled.Close" Variant="Variant.Text"
                                            Color="Color.Dark" IconColor="Color.Secondary" IconSize="Size.Small" Size="Size.Small"
                                            OnClick="() => OnClickCancelButton()">
-                                    Cancelar
+                                    Limpiar
                                 </MudButton>
                             }
                             
@@ -314,7 +314,7 @@
                 </MudCard>
 
                 @* //Payment Details *@
-                <MudCard Style="width: 50%;border-radius:10px; min-height: 499px;">
+                <MudCard Style="width: 50%;border-radius:10px; min-height: 300px;">
                     <MudCardHeader Style="padding: 6px;padding-top: 10px;">
                         <CardHeaderContent>
                             <MudStack Row="true">
@@ -370,11 +370,11 @@
                                 <MudText Typo="Typo.subtitle1" Style="font-weight:bold;" Inline="true">
                                     @if (SelectedDocuments.Any(x => _ConceptNameList.Contains(x.ConceptName)))
                                     {
-                                        @(string.Concat("Bs. ", SelectedDocuments.ToList().Sum(x => x.AmountBs ?? 0).ToString("N2")))
+                                        @(string.Concat("Bs. ", SelectedDocuments.ToList().Sum(x => x.PaidAmountBs ?? 0).ToString("N2")))
                                     }
                                     else
                                     {
-                                        @(string.Concat("$ ", SelectedDocuments.ToList().Sum(x => x.Amount ?? 0).ToString("N2")))
+                                        @(string.Concat("$ ", SelectedDocuments.ToList().Sum(x => x.PaidAmount ?? 0).ToString("N2")))
                                     }
                                     
                                 </MudText>
@@ -400,12 +400,12 @@
                                 <MudText Typo="Typo.h6" Style="color: #a1231b;font-weight:bold;" Inline="true">
                                     @if (SelectedDocuments.Any(x => _ConceptNameList.Contains(x.ConceptName)))
                                     {
-                                        @(string.Concat("Bs. ", (SelectedDocuments.ToList().Sum(x => x.AmountBs ?? 0) -
+                                        @(string.Concat("Bs. ", (SelectedDocuments.ToList().Sum(x => x.PaidAmountBs ?? 0) -
                                                                 PaymentList.ToList().Sum(x => x.AmountBs ?? 0)).ToString("N2")))
                                     }
                                     else
                                     {
-                                        @(string.Concat("$ ", (SelectedDocuments.ToList().Sum(x => x.Amount ?? 0) -
+                                        @(string.Concat("$ ", (SelectedDocuments.ToList().Sum(x => x.PaidAmount ?? 0) -
                                                                 PaymentList.ToList().Sum(x => x.Amount ?? 0)).ToString("N2")))
                                     }
                                     
@@ -419,13 +419,17 @@
             </MudContainer>
             <MudContainer Style="padding: 6px; padding-top: 0px;">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-0">
-                    <MudButton StartIcon="@Icons.Material.Filled.Payments" Variant="Variant.Filled"
-                               Color="Color.Dark" Size="Size.Small" IconColor="Color.Secondary"
-                               FullWidth="true" OnClick="OnClickProcessButton"
-                               Disabled="false"
-                               Class="mt-4">
-                        @(_disabledSelect ? "Reportar Retención" : "Reportar Pago")
-                    </MudButton>
+                        <MudButton StartIcon="@Icons.Material.Filled.Payments"
+                                   Variant="Variant.Filled"
+                                   Color="Color.Dark"
+                                   Size="Size.Small"
+                                   IconColor="Color.Secondary"
+                                   FullWidth="true"
+                                   OnClick="OnClickProcessButton"
+                                   Disabled="@(CalculateOutstandingBalance() != 0)"
+                                   Class="mt-4">
+                            @(_disabledSelect ? "Reportar Retención" : "Reportar Pago")
+                        </MudButton>
                 </MudStack>
             </MudContainer>
 
@@ -740,6 +744,7 @@
                     }
 
                     GetPayments().Wait(20);
+                    GetDocuments().Wait(20);
 
                     // CleanModel().Wait(20);
                     StateHasChanged();
@@ -936,6 +941,23 @@
         StateHasChanged();
     }
 
+
+    private double CalculateOutstandingBalance()
+    {
+        double balance = 0;
+    
+        if (SelectedDocuments.Any(x => _ConceptNameList.Contains(x.ConceptName)))
+        {
+            balance = SelectedDocuments.Sum(x => x.PaidAmountBs ?? 0) - PaymentList.Sum(x => x.AmountBs ?? 0);
+        }
+        else
+        {
+            balance = SelectedDocuments.Sum(x => x.PaidAmount ?? 0) - PaymentList.Sum(x => x.Amount ?? 0);
+        }
+    
+        return Math.Round(balance, 2);
+    }
+
     private async Task OnCurrencyTypeChanged(int? newValue)
     {
         _model.CurrencyId = newValue;
@@ -1041,6 +1063,11 @@
             await OnClickCloseButton();
         }
         
+    }
+
+    private void RefreshTotals()
+    {
+        StateHasChanged();
     }
 
     public class SelectValidator<T> : AbstractValidator<T>

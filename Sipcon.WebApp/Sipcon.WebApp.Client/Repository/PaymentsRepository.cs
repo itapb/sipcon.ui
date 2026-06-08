@@ -586,6 +586,37 @@
 
         }
 
+        public async Task<ApiResponse<ActionResult>> UpdatePaidAmount(PostPaidAmount PaidAmount, int IdUser)
+        {
+            ApiResponse<ActionResult>? result;
+
+            try
+            {
+                var response = await _http.PostAsJsonAsync($"api/Payment/PostPaidAmount?userId={IdUser}", PaidAmount);
+
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = "El servidor devolvió una respuesta vacía."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+
+            }
+            return result;
+
+        }
+
+
+
         public async Task<ApiResponse<ActionResult>> DeletePaymentDetails(List<PostAction> PostActions, int IdUser)
         {
             ApiResponse<ActionResult>? result;

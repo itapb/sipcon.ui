@@ -29,6 +29,8 @@
         public Task<ApiResponse<ActionResult>> CreatePayment(PaymentUpdate Payment, int IdUser);
         public Task<ApiResponse<ActionResult>> DeletePaymentDetails(List<PostAction> PostActions, int IdUser);
 
+        public Task<ApiResponse<ActionResult>> UpdatePaidAmount(PostPaidAmount PaidAmount, int IdUser);
+
 
 
     }
