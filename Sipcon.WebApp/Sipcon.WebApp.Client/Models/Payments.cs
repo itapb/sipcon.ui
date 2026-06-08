@@ -56,7 +56,7 @@ namespace Sipcon.WebApp.Client.Models
         public int PaymentDetailId { get; set; } = 0;
         public int? TransactionStatusId { get; set; } = null;
         public string TransactionStatusName { get; set; } = string.Empty;
-
+        public double? AmountFull { get; set; } = null;
 
     }
 
@@ -143,8 +143,20 @@ namespace Sipcon.WebApp.Client.Models
         public double? AmountBs { get; set; } = null;
         public string ConceptName { get; set; } = string.Empty;
         public string TypeName { get; set; } = string.Empty;
+        public double? PaidAmount { get; set; } = null;
+        public double? PaidAmountBs { get; set; } = null;
 
     }
+
+    public class PostPaidAmount
+    {
+        public int Id { get; set; } = 0;
+        public int PaymentId { get; set; } = 0;
+        public double? PaidAmount { get; set; } = null;
+      
+
+    }
+
 
 
 }
