@@ -61,6 +61,7 @@ builder.Services.AddScoped<IAuthorizeService, AuthenticationProviderJWT>(x => x.
 
 builder.Services.AddScoped<IDemandService, DemandRepository>();
 
+builder.Services.AddScoped<IFigoService, FigoRepository>();
 builder.Services.AddScoped<IModelService, ModelRepository>();
 builder.Services.AddScoped<IModuleService, ModuleRepository>();
 builder.Services.AddScoped<IVehicleService, VehicleRepository>();
