@@ -145,6 +145,7 @@ namespace Sipcon.WebApp.Client.Models
         public string TypeName { get; set; } = string.Empty;
         public double? PaidAmount { get; set; } = null;
         public double? PaidAmountBs { get; set; } = null;
+        public string TransactionStatusName { get; set; } = string.Empty;
 
     }
 

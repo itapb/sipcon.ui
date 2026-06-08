@@ -1,6 +1,7 @@
 ﻿
 @inject IPaymentService PaymentService
 @inject ISnackbar Snackbar
+@using System.Globalization
 
 <MudDataGrid @ref="DocumentPreviewDataGrid"
         T="AccountPreview"
@@ -117,6 +118,10 @@
                                       Margin="Margin.Dense"
                                       Adornment="Adornment.Start"
                                       AdornmentText="$"
+                                      Culture="@CultureInfo.GetCultureInfo("en-US")"
+                                      InputMode="InputMode.numeric"
+                                      Pattern="^[0-9.]*$"
+                                      ReadOnly="@(context.Item.TransactionStatusName?.ToUpper() == "POR REVISION")"
                                       AdornmentIcon="@(_isSuccess ? Icons.Material.Filled.Check : Icons.Material.Filled.AttachMoney)"
                                       AdornmentColor="@(_isSuccess ? Color.Success : Color.Default)"
                                       Style="font-size: 11px; width: 100px;"

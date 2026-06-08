@@ -116,7 +116,7 @@
                                                Margin="Margin.Dense"
                                                For="@(() => _model.TypeId)"
                                                Immediate="false"
-                                               ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                               ReadOnly="@(!_model.IsActive || _isReadOnlyAmount)"
                                                Disabled="@_disabledSelect">
                                         @if (PaymentTypeList != null)
                                         {
@@ -207,8 +207,7 @@
                                                      MaxLength="18"
                                                      For="@(() => _model.Amount)"
                                                      Immediate="false"
-                                                     ReadOnly="@(!_model.IsActive || _isReadOnly )"
-                                                      />
+                                                     ReadOnly="@(!_model.IsActive || _isReadOnlyAmount )"                               />
 
                                 </div>
        
@@ -474,6 +473,7 @@
     private bool _nestedVisible = false;
     private bool _successNested = false;
     bool _isReadOnly = false;
+    bool _isReadOnlyAmount = false;
     bool _isExpanded = false;
     bool _disabledRetencion = false;
     bool _disabledSelect = false;
@@ -820,6 +820,7 @@
         };
 
         _isReadOnly = !(arg.StatusName.ToUpper() == "BORRADOR" || arg.StatusName.ToUpper() == "PARA APROBAR");
+        _isReadOnlyAmount = !(arg.StatusName.ToUpper() == "BORRADOR");
 
         StateHasChanged();
     }
