@@ -116,7 +116,7 @@
                                                Margin="Margin.Dense"
                                                For="@(() => _model.TypeId)"
                                                Immediate="false"
-                                               ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                               ReadOnly="@(!_model.IsActive || _isReadOnlyAmount)"
                                                Disabled="@_disabledSelect">
                                         @if (PaymentTypeList != null)
                                         {
@@ -207,8 +207,7 @@
                                                      MaxLength="18"
                                                      For="@(() => _model.Amount)"
                                                      Immediate="false"
-                                                     ReadOnly="@(!_model.IsActive || _isReadOnly )"
-                                                      />
+                                                     ReadOnly="@(!_model.IsActive || _isReadOnlyAmount )"                               />
 
                                 </div>
        
@@ -367,17 +366,20 @@
                         <MudStack Row="false" AlignItems="AlignItems.End" Spacing="0">
                             <MudText Typo="Typo.caption" Align="Align.End">
                                 <span>Total a Pagar:</span>
-                                <MudText Typo="Typo.subtitle1" Style="font-weight:bold;" Inline="true">
-                                    @if (SelectedDocuments.Any(x => _ConceptNameList.Contains(x.ConceptName)))
-                                    {
-                                        @(string.Concat("Bs. ", SelectedDocuments.ToList().Sum(x => x.PaidAmountBs ?? 0).ToString("N2")))
-                                    }
-                                    else
-                                    {
-                                        @(string.Concat("$ ", SelectedDocuments.ToList().Sum(x => x.PaidAmount ?? 0).ToString("N2")))
-                                    }
-                                    
-                                </MudText>
+                                    <MudText Typo="Typo.subtitle1" Style="font-weight:bold;" Inline="true">
+                                        @if (SelectedDocuments.Any(x => _ConceptNameList.Contains(x.ConceptName)))
+                                        {
+                                            @(string.Concat("Bs. ", SelectedDocuments
+                                                .Sum(x => (x.PaidAmountBs ?? 0) > 0 ? x.PaidAmountBs.Value : x.AmountBs ?? 0)
+                                                .ToString("N2")))
+                                        }
+                                        else
+                                        {
+                                            @(string.Concat("$ ", SelectedDocuments
+                                                .Sum(x => (x.PaidAmount ?? 0) > 0 ? x.PaidAmount.Value : x.Amount ?? 0)
+                                                .ToString("N2")))
+                                        }
+                                    </MudText>
                             </MudText>
                             
                             <MudText Typo="Typo.caption" Align="Align.End" Class="mt-0">
@@ -400,12 +402,12 @@
                                 <MudText Typo="Typo.h6" Style="color: #a1231b;font-weight:bold;" Inline="true">
                                     @if (SelectedDocuments.Any(x => _ConceptNameList.Contains(x.ConceptName)))
                                     {
-                                        @(string.Concat("Bs. ", (SelectedDocuments.ToList().Sum(x => x.PaidAmountBs ?? 0) -
+                                            @(string.Concat("Bs. ", (SelectedDocuments.ToList().Sum(x => (x.PaidAmountBs ?? 0) > 0 ? x.PaidAmountBs.Value : x.AmountBs ?? 0) -
                                                                 PaymentList.ToList().Sum(x => x.AmountBs ?? 0)).ToString("N2")))
                                     }
                                     else
                                     {
-                                        @(string.Concat("$ ", (SelectedDocuments.ToList().Sum(x => x.PaidAmount ?? 0) -
+                                            @(string.Concat("$ ", (SelectedDocuments.ToList().Sum(x => (x.PaidAmount ?? 0) > 0 ? x.PaidAmount.Value : x.Amount ?? 0) -
                                                                 PaymentList.ToList().Sum(x => x.Amount ?? 0)).ToString("N2")))
                                     }
                                     
@@ -474,6 +476,7 @@
     private bool _nestedVisible = false;
     private bool _successNested = false;
     bool _isReadOnly = false;
+    bool _isReadOnlyAmount = false;
     bool _isExpanded = false;
     bool _disabledRetencion = false;
     bool _disabledSelect = false;
@@ -820,6 +823,7 @@
         };
 
         _isReadOnly = !(arg.StatusName.ToUpper() == "BORRADOR" || arg.StatusName.ToUpper() == "PARA APROBAR");
+        _isReadOnlyAmount = !(arg.StatusName.ToUpper() == "BORRADOR");
 
         StateHasChanged();
     }
@@ -948,11 +952,11 @@
     
         if (SelectedDocuments.Any(x => _ConceptNameList.Contains(x.ConceptName)))
         {
-            balance = SelectedDocuments.Sum(x => x.PaidAmountBs ?? 0) - PaymentList.Sum(x => x.AmountBs ?? 0);
+            balance = SelectedDocuments.Sum(x => (x.PaidAmountBs ?? 0) > 0 ? x.PaidAmountBs.Value : x.AmountBs ?? 0) - PaymentList.Sum(x => x.AmountBs ?? 0);
         }
         else
         {
-            balance = SelectedDocuments.Sum(x => x.PaidAmount ?? 0) - PaymentList.Sum(x => x.Amount ?? 0);
+            balance = SelectedDocuments.Sum(x => (x.PaidAmount ?? 0) > 0 ? x.PaidAmount.Value : x.Amount ?? 0) - PaymentList.Sum(x => x.Amount ?? 0);
         }
     
         return Math.Round(balance, 2);
