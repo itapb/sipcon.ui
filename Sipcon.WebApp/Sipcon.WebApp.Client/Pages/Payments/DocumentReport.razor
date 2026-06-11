@@ -77,128 +77,103 @@
                     }
                 </MudToggleGroup>
             }
+<MudStack Row="true"
+          Class="mt-2"
+          AlignItems="AlignItems.Center"
+          Spacing="1">
 
-            <MudStack Row="true" Class="mt-2">
+    <MudDatePicker @ref="_pickerPay"
+                   Date="_datePay"
+                   DateChanged="@(async (date) => { _datePay = date; await ClickRefreshDocuments(); })"
+                   Style="font-size:12px;line-height:15px;min-width:120px;"
+                   Adornment="Adornment.End"
+                   AdornmentColor="Color.Default"
+                   Class="align-right"
+                   Label="Fecha Pago"
+                   Placeholder="dd/MM/yyyy"
+                   Variant="Variant.Outlined"
+                   PickerVariant="PickerVariant.Inline"
+                   Margin="Margin.Dense"
+                   DateFormat="dd/MM/yyyy"
+                   AutoClose="true" />
 
-                @* 2. Fecha Pago *@
-                <MudDatePicker @ref="_pickerPay"
-                               Date="_datePay"
-                               DateChanged="@(async (date) => { _datePay = date; await ClickRefreshDocuments(); })"
-                               Style="font-size: 12px;line-height: 15px;min-width: 120px;"
-                               Adornment="Adornment.End"
-                               AdornmentColor="Color.Default"
-                               Class="align-right"
-                               Label="Fecha Pago"
-                               Placeholder="dd/MM/yyyy"
-                               Variant="Variant.Outlined"
-                               PickerVariant="PickerVariant.Inline"
-                               Margin="Margin.Dense"
-                               DateFormat="dd/MM/yyyy"
-                               AutoClose="true">
-                    <PickerActions>
-                        <MudButton Class="mr-auto align-self-start" OnClick="@(async () => { await _pickerPay.ClearAsync(); _datePay = null; await ClickRefreshDocuments(); })">Borrar</MudButton>
-                        <MudButton OnClick="@(() => _pickerPay.CloseAsync(false))">Cancelar</MudButton>
-                    </PickerActions>
-                </MudDatePicker>
 
-                @* 3. Tipo Documento *@
-                <MudSelect T="SelectOption"
-                           Value="SelectedDocumentType"
-                           ValueChanged="@(async (value) => { SelectedDocumentType = value; await ClickRefreshDocuments(); })"
-                           ToStringFunc="@(e => e?.Text)"
-                           Style="font-size: 12px;line-height: 15px;min-width: 80px;"
-                           Typo="Typo.caption"
-                           Label="Tipo Documento"
-                           Placeholder="Tipo Documento"
-                           AdornmentColor="Color.Default"
-                           Variant="Variant.Outlined"
-                           Clearable="true"
-                           Dense="true"
-                           Margin="Margin.Dense">
-                    @if (DocumentList != null)
-                    {
-                        @foreach (var action in DocumentList)
-                        {
-                            <MudSelectItem T="SelectOption" Value="@action">@action.Text</MudSelectItem>
-                        }
-                    }
-                </MudSelect>
+    <MudSelect T="SelectOption"
+               Value="SelectedDocumentType"
+               ValueChanged="@(async (value) => { SelectedDocumentType = value; await ClickRefreshDocuments(); })"
+               ToStringFunc="@(e => e?.Text)"
+               Style="font-size:12px;line-height:15px;min-width:100px;"
+               Label="Tipo Documento"
+               Variant="Variant.Outlined"
+               Clearable="true"
+               Dense="true"
+               Margin="Margin.Dense">
 
-                @* 4. Estado *@
-                <MudSelect T="SelectOption"
-                           Value="SelectedStatus"
-                           ValueChanged="@(async (value) => { SelectedStatus = value; await ClickRefreshDocuments(); })"
-                           ToStringFunc="@(e => e?.Text)"
-                           Style="font-size: 12px;line-height: 15px;min-width: 80px;"
-                           Typo="Typo.caption"
-                           Label="Estado"
-                           Placeholder="Todos los estados"
-                           AdornmentColor="Color.Default"
-                           Variant="Variant.Outlined"
-                           Clearable="true"
-                           Dense="true"
-                           Margin="Margin.Dense">
-                    @if (StatusList != null)
-                    {
-                        @foreach (var action in StatusList)
-                        {
-                            <MudSelectItem T="SelectOption" Value="@action">@action.Text</MudSelectItem>
-                        }
-                    }
-                </MudSelect>
-            </MudStack>
+        @foreach (var action in DocumentList ?? [])
+        {
+            <MudSelectItem T="SelectOption" Value="@action">
+                @action.Text
+            </MudSelectItem>
+        }
 
-            <MudStack Row="true">
-                @* 5. Desde *@
-                <MudDatePicker @ref="_picker"
-                               Date="_dateFrom"
-                               DateChanged="@(async (date) => { _dateFrom = date; await ClickRefreshDocuments(); })"
-                               Style="font-size: 12px;line-height: 15px;min-width: 80px;"
-                               Adornment="Adornment.End"
-                               AdornmentColor="Color.Default"
-                               Class="align-right"
-                               Label="Desde"
-                               Placeholder="dd/MM/yyyy"
-                               Variant="Variant.Outlined"
-                               PickerVariant="PickerVariant.Inline"
-                               Margin="Margin.Dense"
-                               DateFormat="dd/MM/yyyy"
-                               AutoClose="true">
-                    <PickerActions>
-                        <MudButton Class="mr-auto align-self-start" OnClick="@(async () => { await _picker.ClearAsync(); _dateFrom = null; await ClickRefreshDocuments(); })">Borrar</MudButton>
-                        <MudButton OnClick="@(() => _picker.CloseAsync(false))">Cancelar</MudButton>
-                    </PickerActions>
-                </MudDatePicker>
+    </MudSelect>
 
-                @* 6. Hasta *@
-                <MudDatePicker @ref="_pickerTo"
-                               Date="_dateTo"
-                               DateChanged="@(async (date) => { _dateTo = date; await ClickRefreshDocuments(); })"
-                               Style="font-size: 12px;line-height: 15px;min-width: 80px;"
-                               Adornment="Adornment.End"
-                               AdornmentColor="Color.Default"
-                               Class="align-right"
-                               Label="Hasta"
-                               Placeholder="dd/MM/yyyy"
-                               Variant="Variant.Outlined"
-                               PickerVariant="PickerVariant.Inline"
-                               Margin="Margin.Dense"
-                               DateFormat="dd/MM/yyyy"
-                               AutoClose="true">
-                    <PickerActions>
-                        <MudButton Class="mr-auto align-self-start" OnClick="@(async () => { await _pickerTo.ClearAsync(); _dateTo = null; await ClickRefreshDocuments(); })">Borrar</MudButton>
-                        <MudButton OnClick="@(() => _pickerTo.CloseAsync(false))">Cancelar</MudButton>
-                    </PickerActions>
-                </MudDatePicker>
 
-                @* Dejas el botón original intacto por si quieren refrescar manualmente *@
-                <div class="d-flex justify-end">
-                    <MudButton StartIcon="@Icons.Material.Filled.Search" Variant="Variant.Filled" Style="margin: 11px;"
-                               Size="Size.Small"
-                               OnClick="ClickRefreshDocuments">Buscar</MudButton>
-                </div>
+    <MudSelect T="SelectOption"
+               Value="SelectedStatus"
+               ValueChanged="@(async (value) => { SelectedStatus = value; await ClickRefreshDocuments(); })"
+               ToStringFunc="@(e => e?.Text)"
+               Style="font-size:12px;line-height:15px;min-width:100px;"
+               Label="Estado"
+               Variant="Variant.Outlined"
+               Clearable="true"
+               Dense="true"
+               Margin="Margin.Dense">
 
-            </MudStack>
+        @foreach (var action in StatusList ?? [])
+        {
+            <MudSelectItem T="SelectOption" Value="@action">
+                @action.Text
+            </MudSelectItem>
+        }
+
+    </MudSelect>
+
+
+    <MudDatePicker @ref="_picker"
+                   Date="_dateFrom"
+                   DateChanged="@(async (date) => { _dateFrom = date; await ClickRefreshDocuments(); })"
+                   Style="font-size:12px;line-height:15px;min-width:90px;"
+                   Label="Desde"
+                   Placeholder="dd/MM/yyyy"
+                   Variant="Variant.Outlined"
+                   PickerVariant="PickerVariant.Inline"
+                   Margin="Margin.Dense"
+                   DateFormat="dd/MM/yyyy"
+                   AutoClose="true" />
+
+
+    <MudDatePicker @ref="_pickerTo"
+                   Date="_dateTo"
+                   DateChanged="@(async (date) => { _dateTo = date; await ClickRefreshDocuments(); })"
+                   Style="font-size:12px;line-height:15px;min-width:90px;"
+                   Label="Hasta"
+                   Placeholder="dd/MM/yyyy"
+                   Variant="Variant.Outlined"
+                   PickerVariant="PickerVariant.Inline"
+                   Margin="Margin.Dense"
+                   DateFormat="dd/MM/yyyy"
+                   AutoClose="true" />
+
+
+    <MudButton StartIcon="@Icons.Material.Filled.Search"
+               Variant="Variant.Filled"
+               Size="Size.Small"
+               OnClick="ClickRefreshDocuments">
+        Buscar
+    </MudButton>
+
+</MudStack>
 
         </MudCardContent>
 

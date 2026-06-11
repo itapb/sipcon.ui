@@ -106,7 +106,7 @@
         <TemplateColumn Title="Monto Abonado">
             <CellTemplate>
                 <div class="d-flex justify-center">
-                    @if (context.Item.ConceptName?.ToUpper() == "BASE")
+                    @if (context.Item.ConceptName?.ToUpper() == "BASE" && (context.Item.Detail == true || context.Item.Detail == null))
                     {
                         <MudTextField T="double?"
                                       Immediate="true"
@@ -129,9 +129,24 @@
                     }
                     else
                     {
-                        <MudChip T="string" Variant="Variant.Text" Color="Color.Warning" Style="font-size: 11px;font-style:italic">
-                            @("Bs." + (context.Item.PaidAmountBs?.ToString("N2") ?? "0.00"))
-                        </MudChip>
+                        @if (context.Item.ConceptName?.ToUpper() == "BASE")
+                        {
+                            <MudChip T="string"
+                                     Variant="Variant.Text"
+                                     Color="Color.Warning"
+                                     Style="font-size: 11px;font-style:italic">
+                                @("$" + (context.Item.PaidAmount?.ToString("N2") ?? context.Item.Amount?.ToString("N2")))
+                            </MudChip>
+                        }
+                        else
+                        {
+                            <MudChip T="string"
+                                     Variant="Variant.Text"
+                                     Color="Color.Warning"
+                                     Style="font-size: 11px;font-style:italic">
+                                @("Bs." + (context.Item.PaidAmountBs?.ToString("N2") ?? context.Item.AmountBs?.ToString("N2")))
+                            </MudChip>
+                        }
                     }
                 </div>
             </CellTemplate>
