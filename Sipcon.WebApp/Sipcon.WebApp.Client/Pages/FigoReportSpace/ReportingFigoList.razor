@@ -95,10 +95,13 @@
                                     {
                                         case "DATE":
                                             <MudDatePicker Label="@config.Field"
-                                                           Date="(DateTime?)_filterValues[config.Field]"
-                                                           DateChanged="@((DateTime? v) => _filterValues[config.Field] = v)"
+                                                           Date="@(_filterValues.ContainsKey(config.Field) && _filterValues[config.Field] is string s
+                                                                                  ? DateTime.ParseExact(s, "MM/dd/yyyy", null)
+                                                                                  : DateTime.Today)"
+                                                           DateChanged="@((DateTime? v) => _filterValues[config.Field] = v?.ToString("MM/dd/yyyy") ?? DateTime.Today.ToString("MM/dd/yyyy"))"
                                                            DateFormat="dd/MM/yyyy"
-                                                           Variant="Variant.Outlined" Margin="Margin.Dense" />
+                                                           Variant="Variant.Outlined"
+                                                           Margin="Margin.Dense" />
                                             break;
 
                                         case "INT":
@@ -303,6 +306,13 @@
             foreach (var field in _dynamicFields.Where(x => x.ActionType == "F"))
             {
                 _filterValues[field.Field] = null;
+
+                if (field.FieldType == "DATE")
+                {
+                    // Asignamos hoy con el formato esperado por tu SQL (MM/dd/yyyy)
+                    _filterValues[field.Field] = DateTime.Today.ToString("MM/dd/yyyy");
+                }
+
             }
         }
 
@@ -355,6 +365,7 @@
             _Report = new List<Dictionary<string, object>>();
             // No reseteamos _columns aquí para evitar que el Grid parpadee desapareciendo cabeceras
             StateHasChanged();
+            string jsonString = JsonSerializer.Serialize(_filterValues);
 
             _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
             _actions = await ModuleActionsService.GetStatusByModule(Session.UserId, _moduleName);
@@ -366,34 +377,14 @@
             }
 
             int? _estatusid = _selectedAction?.Value;
-            string _dateFromStr = _dateFrom?.ToString("yyyy-MM-dd") ?? string.Empty;
-            string _dateToStr = _dateTo?.ToString("yyyy-MM-dd") ?? string.Empty;
 
-            var serviceResponse = await ReportingService.GetReports(
-                _reportingTypeValue ?? 0,
-                Session.SupplierId,
-                Session.UserId,
-                _rowCount,
-                _searchString,
-                _dateFromStr,
-                _dateToStr,
-                Session.DealerId,
-                _estatusid);
+            var serviceResponse = await FigoService.GetReportsFigo(Session.UserId, _reportingTypeValue ?? 0, jsonString);
 
             if (serviceResponse.Processed)
             {
                 _Report = serviceResponse.Data ?? new List<Dictionary<string, object>>();
                 _rowsTotal = serviceResponse.Total;
 
-                // if (_Report.Any())
-                // {
-                //     var nuevasColumnas = _Report.First().Keys.ToList();
-                //     // Solo actualizamos columnas si hay un cambio real de estructura
-                //     if (!_columns.SequenceEqual(nuevasColumnas))
-                //     {
-                //         _columns = nuevasColumnas;
-                //     }
-                // }
                 if (_Report.Any())
                 {
                     var nuevasColumnas = _Report.First().Keys.ToList();
@@ -500,10 +491,11 @@
         int? idRespaldado = _selectedAction?.Value;
         if (idRespaldado.HasValue && _actions != null) { _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
         int? _estatusid = _selectedAction?.Value;
-        string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
-        string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
+        StateHasChanged();
+        string jsonString = JsonSerializer.Serialize(_filterValues);
 
-        var serviceResponse = await ReportingService.Export(_reportingTypeValue ?? 0, Session.SupplierId, Session.UserId, _searchString, _dateFromStr, _dateToStr, Session.DealerId, _estatusid);
+
+        var serviceResponse = await FigoService.Export(Session.UserId, _reportingTypeValue ?? 0, jsonString);
         if (serviceResponse.Processed)
         {
             _success = true;
