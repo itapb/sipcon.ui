@@ -10,4 +10,14 @@ namespace Sipcon.WebApp.Client.Models
         
     }
 
+
+    public class ReportingTypeFigo
+    {
+        public int Id { get; set; } = 0;
+        public string NameReport { get; set; } = string.Empty;
+        public int AccessGroupId { get; set; }
+        public Boolean? IsPdfReport { get; set; }
+
+    }
+
 }
