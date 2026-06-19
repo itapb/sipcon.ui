@@ -1,0 +1,545 @@
+@page "/ReportingFigo"
+
+@using System.Globalization
+@using System.Text.Json
+@using Sipcon.WebApp.Client.Repository.Auth
+@using System.Dynamic;
+@using Sipcon.WebApp.Client.Utils
+@using FluentValidation
+
+
+@inject IReportingService ReportingService
+@inject IFigoService FigoService
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager UriHelper
+@inject HubEventsService hubEventsService
+@implements IDisposable
+
+
+<PageTitle>Reportes</PageTitle>
+<CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
+
+<MudDataGrid @ref="_mudDataGrid"
+             T="Dictionary<string, object>"
+             ServerData="LoadGridData"
+             @key="@(_columns.Count)"
+             Loading="_loading"
+             Height="calc(92vh - 235px)"
+             FixedHeader="true"
+             Dense="true"
+             Hover="true"
+             Striped="true"
+             SortMode="SortMode.Multiple"
+             @bind-CurrentPage="_currentPage">
+    <ToolBarContent>
+        <MudTextField @bind-Value="_searchString"
+                      Style="font-size: 14px;line-height: 0.8rem;"
+                      Placeholder="buscar"
+                      Adornment="Adornment.Start"
+                      Immediate="true"
+                      Typo="Typo.caption"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      OnAdornmentClick="() => ClickSearch()"
+                      IconSize="Size.Medium" Class="mt-0"
+                      OnKeyUp="HandleKeyDownSearch">
+        </MudTextField>
+
+        <MudSelect T="int?"
+                   Value="@_reportingTypeValue"
+                   ValueChanged="@(async (int? id) => await OnReportTypeChanged(id))"
+                   Style="font-size: 14px; line-height: 0.8rem; min-width: 160px; max-width: 160px; margin-left: 10px;"
+                   Placeholder="Seleccione Reporte"
+                   Margin="Margin.Dense"
+                   Variant="Variant.Outlined">
+            @foreach (var model in _reportingTypeList)
+            {
+                <MudSelectItem Value="@((int?)model.Value)">@model.Text</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSpacer />
+        <MudMenu Icon="@Icons.Material.Filled.FilterList"
+                 Color="Color.Info"
+                 AnchorOrigin="Origin.BottomRight"
+                 TransformOrigin="Origin.TopRight"
+                 Style="margin-right: 10px;">
+
+            <div class="pa-4" style="min-width: 350px; max-width: 450px;">
+                <div class="d-flex justify-space-between align-center mb-3">
+                    <MudText Typo="Typo.subtitle2">Filtros de Reporte</MudText>
+                    <MudIconButton Icon="@Icons.Material.Filled.Refresh" Size="Size.Small" OnClick="ResetFilters" Title="Limpiar Filtros" />
+                </div>
+                <MudDivider Class="mb-3" />
+
+                <div style="max-height: 400px; overflow-y: auto;" class="pr-2">
+                    <MudGrid Spacing="2">
+                        @{
+                            // Agrupamos y ordenamos apenas se abre el menú
+                            var groupedFields = _dynamicFields
+                                .Where(x => x.ActionType == "F")
+                                .GroupBy(x => x.FieldType)
+                                .OrderBy(x => x.Key == "DATE" ? 0 : (x.Key == "INT" ? 1 : 2));
+                        }
+
+                        @foreach (var group in groupedFields)
+                        {
+                            <MudItem xs="12" Class="mt-2">
+                            </MudItem>
+
+                            @foreach (var config in group)
+                            {
+                                <MudItem xs="12" sm="6">
+                                    @switch (group.Key)
+                                    {
+                                        case "DATE":
+                                            <MudDatePicker Label="@config.Field"
+                                                           Date="(DateTime?)_filterValues[config.Field]"
+                                                           DateChanged="@((DateTime? v) => _filterValues[config.Field] = v)"
+                                                           DateFormat="dd/MM/yyyy"
+                                                           Variant="Variant.Outlined" Margin="Margin.Dense" />
+                                            break;
+
+                                        case "INT":
+                                            <MudNumericField Typo="Typo.caption"
+                                                             Label="@config.Field"
+                                                             Value="@(_filterValues[config.Field]?.ToString())"
+                                                             ValueChanged="@((string v) => _filterValues[config.Field] = v)"
+                                                             MaxLength="10"
+                                                             Variant="Variant.Outlined"
+                                                             Margin="Margin.Dense"
+                                                             HideSpinButtons="true"
+                                                             Pattern="[0-9]*"
+                                                             Format="N0"
+                                                             Culture="@CultureInfo.GetCultureInfo("es-VE")"
+                                                             Immediate="true" />
+                                            break;
+
+                                        case "VARCHAR":
+                                            <MudTextField Label="@config.Field"
+                                                          Value="@(_filterValues[config.Field]?.ToString())"
+                                                          ValueChanged="@((string v) => _filterValues[config.Field] = v)"
+                                                          Variant="Variant.Outlined"
+                                                          Margin="Margin.Dense" />
+                                            break;
+                                    }
+                                </MudItem>
+                            }
+                        }
+                    </MudGrid>
+                </div>
+
+                <MudButton FullWidth="true" Color="Color.Primary" Variant="Variant.Filled" Class="mt-4" OnClick="() => ClickSearch()">Aplicar Filtros</MudButton>
+            </div>
+        </MudMenu>
+
+        <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Info" OnClick="() => ClickSearch()"></MudIconButton>
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
+    
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+            @foreach (var module in _itemsModules)
+            {
+                <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
+                             Label="@module.Text"
+                             OnClick="() => HandleMenuClick(module)" />
+            }
+        </MudMenu>
+    </ToolBarContent>
+
+    <Columns>
+        @if (_columns != null && _columns.Any())
+        {
+            @foreach (var col in _columns)
+            {
+                <TemplateColumn T="Dictionary<string, object>" Title="@col">
+                    <CellTemplate>
+                        @{
+                            // Acceso ultra-seguro al valor del diccionario
+                            string displayValue = "";
+                            if (context.Item.TryGetValue(col, out var val) && val != null)
+                            {
+                                // Manejo de JsonElement por si el API devuelve tipos complejos
+                                displayValue = val is JsonElement element ? element.ToString() : val.ToString();
+                            }
+                            <MudText Typo="Typo.caption">@displayValue</MudText>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+            }
+        }
+    </Columns>
+
+    <PagerContent>
+        <MudDataGridPager PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+    </PagerContent>
+</MudDataGrid>
+
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success"
+                    onCloseNested="() => _nestedVisible = false"
+                    ErrorMessage="@_nestedErrorMessage"
+                    Title="@("Reportes")" />
+
+
+
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
+
+    private List<Dictionary<string, object>> _Report = new();
+    private List<string> _columns = new();
+    private MudDataGrid<Dictionary<string, object>>? _mudDataGrid;
+
+    private Dictionary<string, object> _filterValues = new();
+
+    // 2. Lista de configuración (la que recibes del backend)
+    private List<ReportConfig> _dynamicFields = new();
+
+    private string _nestedErrorMessage = string.Empty;
+    private bool _nestedVisible;
+    bool _success = false;
+    bool _open;
+
+    private int _currentPage = 0;
+    private int _rowCount = 0;
+    private int _rowsTotal = 0;
+
+    private int? _reportingTypeValue = null;
+    private string _searchString = string.Empty;
+    private DateTime? _dateFrom { get; set; } = null;
+    private DateTime? _dateTo { get; set; } = null;
+    private bool _loading = true;
+    private string _moduleName = "REPORTES-REPORTES";
+    private List<SelectOption> _actions = new List<SelectOption>();
+    private SelectOption? _selectedAction;
+
+    IMask maskDate = new DateMask("dd/MM/yyyy");
+
+    private MudDatePicker _picker = new MudDatePicker();
+    private MudDatePicker _pickerTo = new MudDatePicker();
+
+    private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
+    public IEnumerable<SelectOption> _reportingTypeList { get; set; } = ([]);
+
+    private List<BreadcrumbItem> _itemsNavigate =
+                [
+        new("Home", href: "", icon: Icons.Material.Filled.Home),
+        new("Reportes",href: "", icon: Icons.Material.Filled.ReportProblem),
+        new("Reportes Figo",  href: "ReportingFigo", disabled: false, icon: Icons.Material.Filled.ReportProblem),
+    ];
+
+
+
+
+    // The validation rules (overkill, I know, but very fluent):
+    SelectValidator<int> _SelectValidator = new SelectValidator<int>(x => x
+        .NotEmpty().NotNull().WithMessage("Campo requerido")
+        .GreaterThan(0).WithMessage("Seleccione un Concesionario."));
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+
+        hubEventsService.OnSupplierChanged += ReloadServerData;
+        hubEventsService.OnDealerChanged += ReloadServerData;
+
+        // Nota: El Grid llamará a LoadGridData automáticamente al renderizarse
+        // porque está configurado con ServerData.
+    }
+
+    private async Task ReloadServerData()
+    {
+        if (_mudDataGrid != null)
+        {
+            _open = false;
+            _currentPage = 0;
+            // IMPORTANTE: ReloadServerData() disparará internamente LoadGridData
+            await _mudDataGrid.ReloadServerData();
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public void Dispose()
+    {
+        hubEventsService.OnDealerChanged -= ReloadServerData;
+        hubEventsService.OnSupplierChanged -= ReloadServerData;
+    }
+
+    private async Task<GridData<Dictionary<string, object>>> LoadGridData(GridState<Dictionary<string, object>> state)
+    {
+
+        await AuthenticationStateProvider.RefreshStaticVariables();
+
+        // Sincronizamos paginación
+        _rowCount = state.Page * state.PageSize;
+        _currentPage = state.Page;
+
+        // Como pediste: Cargamos la lista de tipos aquí
+        _reportingTypeList = await ModuleActionsService.GetReportingTypeFigo(Session.UserId);
+
+        // Cargamos los datos del reporte
+        await GetReporting();
+
+        return new GridData<Dictionary<string, object>>
+        {
+            TotalItems = _rowsTotal,
+            Items = _Report
+        };
+    }
+
+    private async Task OnReportTypeChanged(int? reportId)
+    {
+        _loading = true;
+        _reportingTypeValue = reportId; // Guardamos el valor seleccionado
+
+        // 1. Cargamos la configuración de filtros según el nuevo ID
+        var response = await FigoService.GetFilterReport(Session.UserId, reportId?? 0);
+    
+        if (response != null && response.Processed)
+        {
+            _dynamicFields = response.Data;
+            _filterValues.Clear();
+            foreach (var field in _dynamicFields.Where(x => x.ActionType == "F"))
+            {
+                _filterValues[field.Field] = null;
+            }
+        }
+
+        // 2. IMPORTANTE: Forzamos la recarga del Grid
+        // Esto disparará LoadGridData nuevamente con el nuevo tipo de reporte seleccionado
+        if (_mudDataGrid != null)
+        {
+            await _mudDataGrid.ReloadServerData();
+        }
+    
+        _loading = false;
+        StateHasChanged();
+    }
+
+    
+
+    // 4. MÉTODOS AUXILIARES PARA EVITAR EL ERROR CS0445
+    // Estos métodos actúan como puente seguro entre la UI y el Dictionary
+
+    private DateTime? GetDateValue(string key) =>
+        _filterValues.ContainsKey(key) ? (DateTime?)_filterValues[key] : null;
+
+    private void SetDateValue(string key, DateTime? val) => _filterValues[key] = val;
+
+    private string GetStringValue(string key) =>
+        _filterValues.ContainsKey(key) ? _filterValues[key]?.ToString() : string.Empty;
+
+    private void SetStringValue(string key, string val) => _filterValues[key] = val;
+
+    private decimal GetDecimalValue(string key) =>
+        _filterValues.ContainsKey(key) && _filterValues[key] != null ? Convert.ToDecimal(_filterValues[key]) : 0;
+
+    private void SetDecimalValue(string key, decimal val) => _filterValues[key] = val;
+
+    // 5. Método de Reseteo (que ya tienes en el botón)
+    private async Task ResetFilters()
+    {
+        foreach (var key in _filterValues.Keys.ToList())
+        {
+            _filterValues[key] = null;
+        }
+        await _mudDataGrid.ReloadServerData();
+    }
+
+    private async Task GetReporting()
+    {
+        try
+        {
+            _loading = true;
+            _Report = new List<Dictionary<string, object>>();
+            // No reseteamos _columns aquí para evitar que el Grid parpadee desapareciendo cabeceras
+            StateHasChanged();
+
+            _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
+            _actions = await ModuleActionsService.GetStatusByModule(Session.UserId, _moduleName);
+
+            int? idRespaldado = _selectedAction?.Value;
+            if (idRespaldado.HasValue && _actions != null)
+            {
+                _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado);
+            }
+
+            int? _estatusid = _selectedAction?.Value;
+            string _dateFromStr = _dateFrom?.ToString("yyyy-MM-dd") ?? string.Empty;
+            string _dateToStr = _dateTo?.ToString("yyyy-MM-dd") ?? string.Empty;
+
+            var serviceResponse = await ReportingService.GetReports(
+                _reportingTypeValue ?? 0,
+                Session.SupplierId,
+                Session.UserId,
+                _rowCount,
+                _searchString,
+                _dateFromStr,
+                _dateToStr,
+                Session.DealerId,
+                _estatusid);
+
+            if (serviceResponse.Processed)
+            {
+                _Report = serviceResponse.Data ?? new List<Dictionary<string, object>>();
+                _rowsTotal = serviceResponse.Total;
+
+                // if (_Report.Any())
+                // {
+                //     var nuevasColumnas = _Report.First().Keys.ToList();
+                //     // Solo actualizamos columnas si hay un cambio real de estructura
+                //     if (!_columns.SequenceEqual(nuevasColumnas))
+                //     {
+                //         _columns = nuevasColumnas;
+                //     }
+                // }
+                if (_Report.Any())
+                {
+                    var nuevasColumnas = _Report.First().Keys.ToList();
+
+                    // Reemplazo manual de SequenceEqual para evitar el error de .NET 10
+                    bool sonIguales = _columns.Count == nuevasColumnas.Count;
+                    if (sonIguales)
+                    {
+                        for (int i = 0; i < _columns.Count; i++)
+                        {
+                            if (_columns[i] != nuevasColumnas[i])
+                            {
+                                sonIguales = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    // Solo actualizamos si detectamos un cambio real
+                    if (!sonIguales)
+                    {
+                        _columns = nuevasColumnas;
+                    }
+                }
+            }
+            else
+            {
+                _success = false;
+                _nestedErrorMessage = serviceResponse.Message ?? "Error al obtener datos";
+                OpenNested();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error en GetReporting: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleKeyDownSearch(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            if (_searchString.Length >= 3 || string.IsNullOrEmpty(_searchString))
+            {
+                await ClickSearch();
+            }
+        }
+    }
+
+    private async Task ClickSearch()
+    {
+        if (_mudDataGrid != null)
+        {
+            await _mudDataGrid.ReloadServerData();
+        }
+    }
+
+    private async Task HandleOnClickRefresh()
+    {
+        _searchString = string.Empty;
+        _dateFrom = null;
+        _dateTo = null;
+        if (_picker != null) await _picker.ClearAsync();
+        if (_pickerTo != null) await _pickerTo.ClearAsync();
+
+        _open = false;
+        if (_mudDataGrid != null)
+        {
+            await _mudDataGrid.ReloadServerData();
+        }
+    }
+
+    private void OpenNested()
+    {
+        _nestedVisible = true;
+        StateHasChanged();
+    }
+
+
+
+    private async Task HandleMenuClick(ModuleAction module)
+    {
+        switch (module.ActionName)
+        {
+            case "EXPORT":
+                await ExportItemsAsync();
+                break;
+            default:
+                Console.WriteLine($"{MessageEnum.ActionsError.GetStringValue()}: {module.ActionName}");
+                break;
+        }
+    }
+
+    private async Task ExportItemsAsync()
+    {
+
+        //fechas y filtros
+        _actions = await ModuleActionsService.GetStatusByModule(Session.UserId, _moduleName);
+        int? idRespaldado = _selectedAction?.Value;
+        if (idRespaldado.HasValue && _actions != null) { _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
+        int? _estatusid = _selectedAction?.Value;
+        string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
+        string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
+
+        var serviceResponse = await ReportingService.Export(_reportingTypeValue ?? 0, Session.SupplierId, Session.UserId, _searchString, _dateFromStr, _dateToStr, Session.DealerId, _estatusid);
+        if (serviceResponse.Processed)
+        {
+            _success = true;
+            _nestedErrorMessage = "";
+
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+            var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Reporte.xlsx");
+
+        }
+        else
+        {
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
+            OpenNested();
+        }
+    }
+
+    public class SelectValidator<T> : AbstractValidator<T>
+    {
+
+        public SelectValidator(Action<IRuleBuilderInitial<T, T>> rule)
+        {
+            rule(RuleFor(x => x));
+        }
+
+
+        private IEnumerable<string> ValidateValue(T arg)
+        {
+            var result = Validate(arg);
+            if (result.IsValid)
+                return new string[0];
+            return result.Errors.Select(e => e.ErrorMessage);
+        }
+
+        public Func<T, IEnumerable<string>> Validation => ValidateValue;
+
+    }
+}

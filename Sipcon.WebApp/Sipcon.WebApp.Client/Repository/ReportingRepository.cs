@@ -42,6 +42,39 @@
         }
 
 
+
+        public async Task<ApiResponse<List<ReportingTypeFigo>>> GetReportingTypeFigo(int IdUser, int RowFrom = 0)
+        {
+            ApiResponse<List<ReportingTypeFigo>>? result;
+            try
+            {
+                var resultlist = await _http.GetFromJsonAsync<ApiResponse<List<ReportingTypeFigo>>>($"api/Figo/ReportsFigo?userId={IdUser}&rowFrom={RowFrom}");
+
+                result = (resultlist is null) ? new ApiResponse<List<ReportingTypeFigo>>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos."
+
+                } : new ApiResponse<List<ReportingTypeFigo>>()
+                {
+                    Processed = resultlist.Processed,
+                    Total = resultlist.Total,
+                    Message = resultlist.Message,
+                    Data = resultlist.Data.ToList() ?? new List<ReportingTypeFigo>()
+                };
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<ReportingTypeFigo>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+            return result;
+        }
+
+
         public async Task<ApiResponse<List<Dictionary<string, object>>>> GetReports(int IdReporting, int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "", int? IdDealer = null, int? EstatusId = null)
         {
             // Cambiamos el tipo de la respuesta a Dictionary
