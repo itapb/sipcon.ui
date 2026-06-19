@@ -270,12 +270,12 @@ namespace Sipcon.WebApp.Client.Utils
 
         }
 
-        public async Task<List<SelectOption>> GetReportingType(int IdSupplier)
+        public async Task<List<SelectOption>> GetReportingType(int idUser)
         {
             List<SelectOption> _itemsSelect = new([]);
 
 
-            var moduleResponse = await ReportingService.GetReportingType(IdSupplier, 0);
+            var moduleResponse = await ReportingService.GetReportingType(idUser, 0);
             if (moduleResponse.Processed)
             {
                 List<ReportingType> _List = moduleResponse.Data ?? new List<ReportingType>();
@@ -283,6 +283,26 @@ namespace Sipcon.WebApp.Client.Utils
                 foreach (var item in _List.ToList())
                 {
                     _itemsSelect.Add(new SelectOption(item.Id, item.Name));
+                }
+            }
+            return _itemsSelect;
+
+        }
+
+
+        public async Task<List<SelectOption>> GetReportingTypeFigo(int idUser)
+        {
+            List<SelectOption> _itemsSelect = new([]);
+
+
+            var moduleResponse = await ReportingService.GetReportingTypeFigo(idUser, 0);
+            if (moduleResponse.Processed)
+            {
+                List<ReportingTypeFigo> _List = moduleResponse.Data ?? new List<ReportingTypeFigo>();
+
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Id, item.NameReport));
                 }
             }
             return _itemsSelect;
