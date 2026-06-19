@@ -3,6 +3,7 @@ namespace Sipcon.WebApp.Client.Repository
     using Sipcon.WebApp.Client.Models;
     using Sipcon.WebApp.Client.Services;
     using System.Net.Http.Json;
+    using static System.Runtime.InteropServices.JavaScript.JSType;
 
     public class FigoRepository(HttpClient http) : IFigoService
     {
@@ -99,5 +100,37 @@ namespace Sipcon.WebApp.Client.Repository
 
             return result;
         }
+
+        public async Task<ApiResponse<List<ReportConfig>>> GetFilterReport(int userId, int reportId, int? RowFrom = 0)
+        {
+            ApiResponse<List<ReportConfig>>? result;
+            try
+            {
+                var url = $"/api/Figo/ReportsFilters?userId={userId}&reportId={reportId}&rowFrom={RowFrom}";
+
+
+                result = await _http.GetFromJsonAsync<ApiResponse<List<ReportConfig>>>(url);
+
+                result = result is null ? new ApiResponse<List<ReportConfig>>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos.",
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<ReportConfig>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+
+        }
+
+
     }
 }
