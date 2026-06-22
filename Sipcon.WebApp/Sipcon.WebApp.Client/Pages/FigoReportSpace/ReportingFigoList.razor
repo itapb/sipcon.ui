@@ -378,7 +378,7 @@
 
             int? _estatusid = _selectedAction?.Value;
 
-            var serviceResponse = await FigoService.GetReportsFigo(Session.UserId, _reportingTypeValue ?? 0, jsonString);
+            var serviceResponse = await FigoService.GetReportsFigo(Session.UserId, Session.SupplierId, _rowCount, _reportingTypeValue ?? 0, jsonString);
 
             if (serviceResponse.Processed)
             {
@@ -495,7 +495,7 @@
         string jsonString = JsonSerializer.Serialize(_filterValues);
 
 
-        var serviceResponse = await FigoService.Export(Session.UserId, _reportingTypeValue ?? 0, jsonString);
+        var serviceResponse = await FigoService.Export(Session.UserId,Session.SupplierId, _reportingTypeValue ?? 0, jsonString);
         if (serviceResponse.Processed)
         {
             _success = true;
