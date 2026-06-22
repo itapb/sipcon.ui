@@ -154,8 +154,8 @@
                                                    PickerVariant="PickerVariant.Inline"
                                                    Margin="Margin.Dense"
                                                    For="@(() => _model.Date)"
-                                                   ReadOnly="@(!_model.IsActive || _isReadOnly||!_disableddate)"
-                                                   Disabled="@(_disableddate)">
+                                                   ReadOnly="@(!_hasRetention)"
+                                                   Disabled="@(!_hasRetention)">
                                         <PickerActions>
                                             <MudButton Class="mr-auto align-self-start" OnClick="@(() => _pickerDatePayment.ClearAsync())">Borrar</MudButton>
                                             <MudButton OnClick="@(() => _pickerDatePayment.CloseAsync(false))">Cancelar</MudButton>
@@ -471,6 +471,7 @@
     private bool _isCurrencyLocked = false;
     // private bool _isChanged = true;
     private bool _isLoading = true;
+    bool _hasRetention => SelectedDocuments.Any(x => x.ConceptName == "RETENCION IVA (75%)");
 
     private string _errorMessageNested = string.Empty;
     private bool _nestedVisible = false;
@@ -479,7 +480,6 @@
     bool _isReadOnlyAmount = false;
     bool _isExpanded = false;
     bool _disabledRetencion = false;
-    bool _disableddate = true;
     bool _disabledSelect = false;
     bool _IsAmountBS = false;
 
@@ -777,7 +777,6 @@
         selectedCurrency = CurrencyList.FirstOrDefault(p => p.Text.ToUpper() == arg.CurrencyName.ToUpper());
         selectedPaymentType = PaymentTypeList.FirstOrDefault(p => p.Text.ToUpper() == arg.TypeName.ToUpper());
         _disabledRetencion = true;
-        _disableddate = true;
         _disabledSelect = false;
 
         // 4. Aseguramos el estado de bloqueo al editar el registro
@@ -792,7 +791,6 @@
         {
             selectedPaymentType = PaymentTypeList.FirstOrDefault(p => p.Text.ToUpper() == "RETENCION");
             _disabledRetencion = false;
-            _disableddate = false;
             _disabledSelect = true;
         }
 
@@ -815,7 +813,7 @@
             CurrencyId = selectedCurrency != null ? selectedCurrency.Value : null,
             BankOriginId = selectedBankOrigin != null ? selectedBankOrigin.Value : null,
             AccountId = selectedAccount != null ? selectedAccount.Value : null,
-            Date = arg.DateRate,
+            Date = arg.Date,
             Reference = string.IsNullOrWhiteSpace(arg.Reference) ? null : arg.Reference,
             Amount = selectedCurrency != null && selectedCurrency.Text.ToUpper() == "BS - BOLIVAR" ? arg.AmountBs : arg.Amount,
             PaymentId = arg.PaymentId,
