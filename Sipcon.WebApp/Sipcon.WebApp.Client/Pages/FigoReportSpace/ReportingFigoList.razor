@@ -189,7 +189,7 @@
     [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
 
-    private List<Dictionary<string, object>> _Report = new();
+    private List<Dictionary<string, object>> _ReportFigo = new();
     private List<string> _columns = new();
     private MudDataGrid<Dictionary<string, object>>? _mudDataGrid;
 
@@ -269,26 +269,33 @@
         hubEventsService.OnSupplierChanged -= ReloadServerData;
     }
 
+    private bool _loadingGrid = false;
+
     private async Task<GridData<Dictionary<string, object>>> LoadGridData(GridState<Dictionary<string, object>> state)
     {
+        if (_loadingGrid)
+            return new GridData<Dictionary<string, object>>();
 
-        await AuthenticationStateProvider.RefreshStaticVariables();
+        _loadingGrid = true;
 
-        // Sincronizamos paginación
-        _rowCount = state.Page * state.PageSize;
-        _currentPage = state.Page;
-
-        // Como pediste: Cargamos la lista de tipos aquí
-        _reportingTypeList = await ModuleActionsService.GetReportingTypeFigo(Session.UserId);
-
-        // Cargamos los datos del reporte
-        await GetReporting();
-
-        return new GridData<Dictionary<string, object>>
+        try
         {
-            TotalItems = _rowsTotal,
-            Items = _Report
-        };
+            _rowCount = state.Page;
+            _currentPage = state.Page;
+            _reportingTypeList = await ModuleActionsService.GetReportingTypeFigo(Session.UserId);
+
+            await GetReporting();
+
+            return new GridData<Dictionary<string, object>>
+            {
+                TotalItems = _rowsTotal,
+                Items = _ReportFigo
+            };
+        }
+        finally
+        {
+            _loadingGrid = false;
+        }
     }
 
     private async Task OnReportTypeChanged(int? reportId)
@@ -316,8 +323,6 @@
             }
         }
 
-        // 2. IMPORTANTE: Forzamos la recarga del Grid
-        // Esto disparará LoadGridData nuevamente con el nuevo tipo de reporte seleccionado
         if (_mudDataGrid != null)
         {
             await _mudDataGrid.ReloadServerData();
@@ -362,7 +367,7 @@
         try
         {
             _loading = true;
-            _Report = new List<Dictionary<string, object>>();
+            _ReportFigo = new List<Dictionary<string, object>>();
             // No reseteamos _columns aquí para evitar que el Grid parpadee desapareciendo cabeceras
             StateHasChanged();
             string jsonString = JsonSerializer.Serialize(_filterValues);
@@ -382,12 +387,12 @@
 
             if (serviceResponse.Processed)
             {
-                _Report = serviceResponse.Data ?? new List<Dictionary<string, object>>();
+                _ReportFigo = serviceResponse.Data ?? new List<Dictionary<string, object>>();
                 _rowsTotal = serviceResponse.Total;
 
-                if (_Report.Any())
+                if (_ReportFigo.Any())
                 {
-                    var nuevasColumnas = _Report.First().Keys.ToList();
+                    var nuevasColumnas = _ReportFigo.First().Keys.ToList();
 
                     // Reemplazo manual de SequenceEqual para evitar el error de .NET 10
                     bool sonIguales = _columns.Count == nuevasColumnas.Count;
