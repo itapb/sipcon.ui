@@ -155,7 +155,7 @@
                                                    Margin="Margin.Dense"
                                                    For="@(() => _model.Date)"
                                                    ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                                   Disabled="true">
+                                                   Disabled="@(_disableddate)">
                                         <PickerActions>
                                             <MudButton Class="mr-auto align-self-start" OnClick="@(() => _pickerDatePayment.ClearAsync())">Borrar</MudButton>
                                             <MudButton OnClick="@(() => _pickerDatePayment.CloseAsync(false))">Cancelar</MudButton>
@@ -479,6 +479,7 @@
     bool _isReadOnlyAmount = false;
     bool _isExpanded = false;
     bool _disabledRetencion = false;
+    bool _disableddate = true;
     bool _disabledSelect = false;
     bool _IsAmountBS = false;
 
@@ -776,6 +777,7 @@
         selectedCurrency = CurrencyList.FirstOrDefault(p => p.Text.ToUpper() == arg.CurrencyName.ToUpper());
         selectedPaymentType = PaymentTypeList.FirstOrDefault(p => p.Text.ToUpper() == arg.TypeName.ToUpper());
         _disabledRetencion = true;
+        _disableddate = true;
         _disabledSelect = false;
 
         // 4. Aseguramos el estado de bloqueo al editar el registro
@@ -790,6 +792,7 @@
         {
             selectedPaymentType = PaymentTypeList.FirstOrDefault(p => p.Text.ToUpper() == "RETENCION");
             _disabledRetencion = false;
+            _disableddate = false;
             _disabledSelect = true;
         }
 
