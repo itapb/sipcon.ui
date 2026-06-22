@@ -9,60 +9,6 @@ namespace Sipcon.WebApp.Client.Repository
     {
         private readonly HttpClient _http = http;
 
-        public async Task<ApiResponse<List<FIGO_Reporte_RelacionCxC>>> GetRelacionCxC(string _activeCurrency, string _searchString)
-        {
-            ApiResponse<List<FIGO_Reporte_RelacionCxC>>? result;
-            try
-            {
-                var url = $"api/Figo/ReportCxC?Currency=" +_activeCurrency;
-                if (!string.IsNullOrEmpty(_searchString)) url += $"&Filter={_searchString}";
-
-
-                result = await _http.GetFromJsonAsync<ApiResponse<List<FIGO_Reporte_RelacionCxC>>>(url);
-                result ??= new ApiResponse<List<FIGO_Reporte_RelacionCxC>>
-                {
-                    Processed = false,
-                    Message = "La respuesta del servidor no contiene datos."
-                };
-            }
-            catch (Exception ex)
-            {
-                result = new ApiResponse<List<FIGO_Reporte_RelacionCxC>>
-                {
-                    Processed = false,
-                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
-                };
-            }
-            return result;
-        }
-
-        public async Task<ApiResponse<List<byte>>> ExportRelacionCxCExcel(string _activeCurrency, string _searchString)
-        {
-            ApiResponse<List<byte>> result;
-            try
-            {
-                var url = $"api/Figo/ExportReportCxC?Currency=" + _activeCurrency;
-                if (!string.IsNullOrEmpty(_searchString)) url += $"&Filter={_searchString}";
-
-                var response = await _http.GetAsync(url);
-                var fileContent = await response.Content.ReadAsByteArrayAsync();
-
-                result = fileContent is null || fileContent.Length == 0
-                    ? new ApiResponse<List<byte>> { Processed = false, Message = "Error al exportar data.", Data = [] }
-                    : new ApiResponse<List<byte>> { Processed = true, Message = string.Empty, Data = fileContent.ToList() };
-            }
-            catch (Exception ex)
-            {
-                result = new ApiResponse<List<byte>>
-                {
-                    Processed = false,
-                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message),
-                    Data = []
-                };
-            }
-            return result;
-        }
-
         public async Task<ApiResponse<List<byte>>> ExportRelacionCxCPDF(string _activeCurrency, string _searchString)
         {
             ApiResponse<List<byte>> result;
@@ -129,6 +75,79 @@ namespace Sipcon.WebApp.Client.Repository
 
             return result;
 
+        }
+
+
+        public async Task<ApiResponse<List<Dictionary<string, object>>>> GetReportsFigo(int userId,int reportId,string jsonParameters)
+        {
+            // Cambiamos el tipo de la respuesta a Dictionary
+            ApiResponse<List<Dictionary<string, object>>>? result;
+
+            try
+            {
+                var url = $"/api/Figo/GetReportsContent?userId={userId}&reportId={reportId}&jsonParameters={jsonParameters}";
+
+                // La magia ocurre aquí: Dictionary es nativo para el JSON de .NET
+                result = await _http.GetFromJsonAsync<ApiResponse<List<Dictionary<string, object>>>>(url);
+
+                if (result is null)
+                {
+                    result = new ApiResponse<List<Dictionary<string, object>>>()
+                    {
+                        Processed = false,
+                        Message = "La respuesta del servidor no contiene datos.",
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<Dictionary<string, object>>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+        }
+
+
+
+        public async Task<ApiResponse<List<byte>>> Export(int userId, int reportId, string jsonParameters)
+        {
+            ApiResponse<List<byte>> result;
+            string fileUrl = string.Empty;
+
+            try
+            {
+                var url = $"api/Figo/Export?userId={userId}&reportId={reportId}&jsonParameters={jsonParameters}";
+
+                var response = await _http.GetAsync(url);
+
+                var fileContent = await response.Content.ReadAsByteArrayAsync();
+                result = (fileContent is null) ? new ApiResponse<List<byte>>()
+                {
+                    Processed = false,
+                    Message = "Error al Exportar Data.",
+                    Data = []
+                } : new ApiResponse<List<byte>>()
+                {
+                    Processed = true,
+                    Message = "",
+                    Data = fileContent.ToList()
+                };
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<byte>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message),
+                    Data = []
+                };
+            }
+
+            return result;
         }
 
 
