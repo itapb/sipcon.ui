@@ -87,7 +87,7 @@ namespace Sipcon.WebApp.Client.Models
         public string BankOriginName { get; set; } = string.Empty;
         public string Reference { get; set; } = string.Empty;
         public DateTime DateRate { get; set; }
-        public DateTime? Date { get; set; } = null;
+        public DateTime Date { get; set; } 
         public double? Amount { get; set; } = null;
         public double? AmountBs { get; set; } = null;
         public double? Rate { get; set; } = null;
@@ -96,6 +96,7 @@ namespace Sipcon.WebApp.Client.Models
         public int Id { get; set; } = 0;
         public bool IsActive { get; set; } = true;
         public bool IsSelected { get; set; } = false;
+        public DateTime? CreatedDate { get; set; } = null;
 
     }
     public class PaymentUpdate
