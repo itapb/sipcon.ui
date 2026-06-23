@@ -303,14 +303,33 @@
                                 HeaderClass="dt-left" Groupable="true" Grouping="true" GroupExpanded="true" CellClass="dt-left" CellStyle="white-space: nowrap; min-width: 200px;" />
 
                 @* 3. Fecha: Izquierda *@
-                <TemplateColumn Title="Fecha" HeaderClass="dt-left" CellClass="dt-left">
+                <TemplateColumn Title="Fecha Emision" HeaderClass="dt-left no-wrap"  CellClass="dt-center" CellStyle="white-space: nowrap; min-width: 200px;"
+                                Style="min-width:120px;">
                     <CellTemplate>
-                        <MudText Typo="Typo.caption">@(context.Item.DateRate.ToString("dd/MM/yyyy"))</MudText>
+                        <MudText Typo="Typo.caption">@(context.Item.Date.ToString("dd/MM/yyyy"))</MudText>
                     </CellTemplate>
                 </TemplateColumn>
 
+                <TemplateColumn Title="Fecha Registro"
+                                HeaderClass="dt-left no-wrap"
+                                CellClass="dt-center"
+                                CellStyle="white-space: nowrap; min-width: 200px;"
+                                Style="min-width:120px;">
+
+                    <CellTemplate>
+
+                        <MudText Typo="Typo.caption">
+                            @(context.Item.CreatedDate.HasValue
+                                ? context.Item.CreatedDate.Value.ToString("dd/MM/yyyy")
+                                : "")
+                        </MudText>
+
+                    </CellTemplate>
+
+                </TemplateColumn>
+                
                 @* 4. Tipo: Izquierda *@
-                <TemplateColumn Title="Tipo" HeaderClass="dt-left" CellClass="dt-left">
+                <TemplateColumn Title="Tipo" HeaderClass="dt-left" CellClass="dt-center">
                     <CellTemplate>
                         @if (context.Item.TypeName != null)
                         {
@@ -343,14 +362,14 @@
                                 HeaderClass="dt-left" CellClass="dt-left" CellStyle="white-space: nowrap; min-width: 200px;" />
 
                 @* 6. Referencia: Izquierda *@
-                <TemplateColumn Title="Referencia" HeaderClass="dt-left" CellClass="dt-left">
+                <TemplateColumn Title="Referencia" HeaderClass="dt-center" CellClass="dt-center">
                     <CellTemplate>
                         <MudText Typo="Typo.caption" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Reference</MudText>
                     </CellTemplate>
                 </TemplateColumn>
 
                 @* 7. Monto (Multi-moneda): Derecha *@
-                <TemplateColumn Title="Monto" HeaderClass="dt-right" CellClass="dt-right">
+                <TemplateColumn Title="Monto" HeaderClass="dt-right" CellClass="dt-center">
                     <CellTemplate>
                         @if (context.Item.CurrencyName != null)
                         {
