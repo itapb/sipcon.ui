@@ -30,6 +30,7 @@
              FixedHeader="true"
              Dense="true"
              Hover="true"
+             RowStyleFunc="EvaluateRowStyle" @key="@(_columns.Count)"
              Striped="true"
              SortMode="SortMode.Multiple"
              @bind-CurrentPage="_currentPage">
@@ -76,7 +77,6 @@
                 <div style="max-height: 400px; overflow-y: auto;" class="pr-2">
                     <MudGrid Spacing="2">
                         @{
-                            // Agrupamos y ordenamos apenas se abre el menú
                             var groupedFields = _dynamicFields
                                 .Where(x => x.ActionType == "F")
                                 .GroupBy(x => x.FieldType)
@@ -85,9 +85,6 @@
 
                         @foreach (var group in groupedFields)
                         {
-                            <MudItem xs="12" Class="mt-2">
-                            </MudItem>
-
                             @foreach (var config in group)
                             {
                                 <MudItem xs="12" sm="6">
@@ -95,9 +92,7 @@
                                     {
                                         case "DATE":
                                             <MudDatePicker Label="@config.Field"
-                                                           Date="@(_filterValues.ContainsKey(config.Field) && _filterValues[config.Field] is string s
-                                                                                  ? DateTime.ParseExact(s, "MM/dd/yyyy", null)
-                                                                                  : DateTime.Today)"
+                                                           Date="@(_filterValues.ContainsKey(config.Field) && _filterValues[config.Field] is string s ? DateTime.ParseExact(s, "MM/dd/yyyy", null) : DateTime.Today)"
                                                            DateChanged="@((DateTime? v) => _filterValues[config.Field] = v?.ToString("MM/dd/yyyy") ?? DateTime.Today.ToString("MM/dd/yyyy"))"
                                                            DateFormat="dd/MM/yyyy"
                                                            Variant="Variant.Outlined"
@@ -130,6 +125,27 @@
                                 </MudItem>
                             }
                         }
+
+                        @* NUEVA SECCIÓN: AGRUPAR POR *@
+                        @if (_groupingFields != null && _groupingFields.Any())
+                        {
+                            <MudItem xs="12" Class="mt-3">
+                                <MudText Typo="Typo.subtitle2">Agrupar por</MudText>
+                                <MudDivider Class="mt-1 mb-2" />
+                            </MudItem>
+
+                            @foreach (var groupConfig in _groupingFields)
+                            {
+                                <MudItem xs="12" sm="6" Class="py-0">
+                                    <MudCheckBox T="bool"
+                                                 Label="@groupConfig.Field"
+                                                 Value="@GetGroupState(groupConfig.Field)"
+                                                 ValueChanged="@((bool val) => ToggleGroupField(groupConfig.Field, val))"
+                                                 Color="Color.Primary"
+                                                 Dense="true" />
+                                </MudItem>
+                            }
+                        }
                     </MudGrid>
                 </div>
 
@@ -158,14 +174,39 @@
                 <TemplateColumn T="Dictionary<string, object>" Title="@col">
                     <CellTemplate>
                         @{
-                            // Acceso ultra-seguro al valor del diccionario
-                            string displayValue = "";
-                            if (context.Item.TryGetValue(col, out var val) && val != null)
+                            var item = context.Item;
+                            bool isFirstColumn = col == _columns.First();
+
+                            // 1. Si es una fila de cabecera de grupo
+                            if (item.ContainsKey("IsHeaderGroupRow"))
                             {
-                                // Manejo de JsonElement por si el API devuelve tipos complejos
-                                displayValue = val is JsonElement element ? element.ToString() : val.ToString();
+                                if (isFirstColumn)
+                                {
+                                    string groupKey = item["HeaderGroupTitle"]?.ToString() ?? "";
+                                    bool isExpanded = _expandedGroups.Contains(groupKey);
+
+                                    @* Contenedor con estilos para evitar saltos de línea (nowrap) *@
+                                    <div class="d-flex align-center" style="padding: 2px 0px; gap: 4px; white-space: nowrap;">
+                                        <MudIconButton Icon="@(isExpanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)"
+                                                       Size="Size.Small"
+                                                       Color="Color.Primary"
+                                                       Class="pa-1"
+                                                       OnClick="() => ToggleGroupExpansion(groupKey)" />
+                                        <MudText Typo="Typo.subtitle2" Color="Color.Primary" Style="white-space: nowrap;">
+                                            <strong>📁 @groupKey</strong>
+                                        </MudText>
+                                    </div>
+                                }
                             }
-                            <MudText Typo="Typo.caption">@displayValue</MudText>
+                            else // 2. Registro de datos ordinario
+                            {
+                                string displayValue = "";
+                                if (item.TryGetValue(col, out var val) && val != null)
+                                {
+                                    displayValue = val is JsonElement element ? element.ToString() : val.ToString();
+                                }
+                                <MudText Typo="Typo.caption">@displayValue</MudText>
+                            }
                         }
                     </CellTemplate>
                 </TemplateColumn>
@@ -190,13 +231,17 @@
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
 
     private List<Dictionary<string, object>> _ReportFigo = new();
+    private List<Dictionary<string, object>> _processedRows = new();
     private List<string> _columns = new();
     private MudDataGrid<Dictionary<string, object>>? _mudDataGrid;
+    private HashSet<string> _expandedGroups = new();
 
     private Dictionary<string, object> _filterValues = new();
+    private Dictionary<string, bool> _selectedGroups = new();
 
     // 2. Lista de configuración (la que recibes del backend)
     private List<ReportConfig> _dynamicFields = new();
+    private List<ReportConfig> _groupingFields = new();
 
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
@@ -284,12 +329,16 @@
             _currentPage = state.Page;
             _reportingTypeList = await ModuleActionsService.GetReportingTypeFigo(Session.UserId);
 
+            // 1. Llama al backend para llenar _ReportFigo
             await GetReporting();
+
+            // 2. Procesa la lista en memoria según los checkboxes activos antes de mandarla al Grid
+            ProcessActiveGroups();
 
             return new GridData<Dictionary<string, object>>
             {
                 TotalItems = _rowsTotal,
-                Items = _ReportFigo
+                Items = _processedRows // <-- IMPORTANTE: Cambiamos _ReportFigo por _processedRows
             };
         }
         finally
@@ -298,37 +347,155 @@
         }
     }
 
+
+    private void ToggleGroupExpansion(string groupKey)
+    {
+        if (_expandedGroups.Contains(groupKey))
+        {
+            _expandedGroups.Remove(groupKey);
+        }
+        else
+        {
+            _expandedGroups.Add(groupKey);
+        }
+        StateHasChanged(); // Fuerza al Grid a revaluar los estilos de fila
+    }
+
+    // 3. Función que oculta o muestra la fila completa en el DOM
+    private string EvaluateRowStyle(Dictionary<string, object> item, int rowNumber)
+    {
+        if (item == null) return string.Empty;
+
+        if (item.ContainsKey("BelongsToGroup"))
+        {
+            string parentGroup = item["BelongsToGroup"]?.ToString() ?? "";
+       
+            // Si el grupo padre NO está en el HashSet, ocultamos la fila entera (display: none)
+            if (!string.IsNullOrEmpty(parentGroup) && !_expandedGroups.Contains(parentGroup))
+            {
+                return "display: none;";
+            }
+        }
+
+        if (item.ContainsKey("IsHeaderGroupRow"))
+        {
+            return "background-color: var(--mud-palette-background-grey);";
+        }
+
+        return string.Empty;
+    }
+
+    private void ProcessActiveGroups()
+    {
+        _processedRows.Clear();
+
+        var activeGroupFields = _selectedGroups.Where(x => x.Value).Select(x => x.Key).ToList();
+
+        if (!activeGroupFields.Any() || !_ReportFigo.Any())
+        {
+            _processedRows = new List<Dictionary<string, object>>(_ReportFigo);
+            return;
+        }
+
+        var groupedData = _ReportFigo.GroupBy(row =>
+            string.Join(" | ", activeGroupFields.Select(f => row.ContainsKey(f) && row[f] != null ? row[f].ToString() : "N/A"))
+        );
+
+        foreach (var group in groupedData)
+        {
+            string groupKey = group.Key;
+
+            // ❌ ELIMINADO: Ya no forzamos el Add a _expandedGroups aquí.
+            // Al no agregarlo, el grupo iniciará CERRADO.
+
+            // Creamos el registro virtual de cabecera
+            var headerRow = new Dictionary<string, object>
+        {
+            { "IsHeaderGroupRow", true },
+            { "HeaderGroupTitle", groupKey }
+        };
+       
+            _processedRows.Add(headerRow);
+       
+            // Añadimos los registros reales
+            foreach (var row in group)
+            {
+                row["BelongsToGroup"] = groupKey;
+                _processedRows.Add(row);
+            }
+        }
+    }
+
     private async Task OnReportTypeChanged(int? reportId)
     {
         _loading = true;
-        _reportingTypeValue = reportId; // Guardamos el valor seleccionado
+        _reportingTypeValue = reportId;
 
-        // 1. Cargamos la configuración de filtros según el nuevo ID
-        var response = await FigoService.GetFilterReport(Session.UserId, reportId?? 0);
-    
+        var response = await FigoService.GetFilterReport(Session.UserId, reportId ?? 0);
+   
         if (response != null && response.Processed)
         {
             _dynamicFields = response.Data;
             _filterValues.Clear();
-            foreach (var field in _dynamicFields.Where(x => x.ActionType == "F"))
+       
+            _groupingFields.Clear();
+            _selectedGroups.Clear();
+            _expandedGroups.Clear(); // Limpiamos los estados de expansión anteriores
+
+            foreach (var field in _dynamicFields)
             {
-                _filterValues[field.Field] = null;
-
-                if (field.FieldType == "DATE")
+                // Filtro para campos de entrada (F)
+                if (field.ActionType == "F")
                 {
-                    // Asignamos hoy con el formato esperado por tu SQL (MM/dd/yyyy)
-                    _filterValues[field.Field] = DateTime.Today.ToString("MM/dd/yyyy");
+                    _filterValues[field.Field] = (field.FieldType == "DATE")
+                        ? DateTime.Today.ToString("MM/dd/yyyy")
+                        : null;
                 }
-
+           
+                // Campos de Agrupación (A)
+                if (field.ActionType == "A")
+                {
+                    _groupingFields.Add(field);
+                    _selectedGroups[field.Field] = false;
+                }
             }
         }
 
+        // CRUCIAL: Primero aseguramos que las variables de control vuelvan a su estado inicial
+        _loadingGrid = false;
+
+        // Forzamos al MudDataGrid a disparar NUEVAMENTE el método 'LoadGridData'
         if (_mudDataGrid != null)
         {
             await _mudDataGrid.ReloadServerData();
         }
-    
+   
         _loading = false;
+        StateHasChanged();
+    }
+
+    private bool GetGroupState(string fieldName)
+    {
+        return _selectedGroups.TryGetValue(fieldName, out var isChecked) && isChecked;
+    }
+
+    // Método que guarda el cambio cuando el usuario marca o desmarca el check
+    private async Task ToggleGroupField(string fieldName, bool isChecked)
+    {
+        _selectedGroups[fieldName] = isChecked;
+
+        // 1. Limpiamos los estados de expansión para que el nuevo agrupamiento inicie CERRADO
+        _expandedGroups.Clear();
+
+        // 2. Apagamos el candado de carga por seguridad antes de invocar la recarga
+        _loadingGrid = false;
+
+        // 3. Forzamos al MudDataGrid a ejecutar 'LoadGridData' y procesar 'ProcessActiveGroups'
+        if (_mudDataGrid != null)
+        {
+            await _mudDataGrid.ReloadServerData();
+        }
+
         StateHasChanged();
     }
 
@@ -359,6 +526,8 @@
         {
             _filterValues[key] = null;
         }
+        _filterValues.Clear();
+        _selectedGroups.Clear();
         await _mudDataGrid.ReloadServerData();
     }
 
