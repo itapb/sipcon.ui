@@ -52,7 +52,7 @@ namespace Sipcon.WebApp.Client.Repository
             ApiResponse<List<ReportConfig>>? result;
             try
             {
-                var url = $"/api/Figo/ReportsFilters?userId={userId}&reportId={reportId}&rowFrom={RowFrom}";
+                var url = $"api/Figo/ReportsFilters?userId={userId}&reportId={reportId}&rowFrom={RowFrom}";
 
 
                 result = await _http.GetFromJsonAsync<ApiResponse<List<ReportConfig>>>(url);
@@ -85,7 +85,7 @@ namespace Sipcon.WebApp.Client.Repository
 
             try
             {
-                var url = $"/api/Figo/GetReportsContent?userId={userId}&supplierId={idSupplier}&rowFrom={rowFrom}&reportId={reportId}&jsonParameters={jsonParameters}";
+                var url = $"api/Figo/GetReportsContent?userId={userId}&supplierId={idSupplier}&rowFrom={rowFrom}&reportId={reportId}&jsonParameters={jsonParameters}";
 
                 // La magia ocurre aquí: Dictionary es nativo para el JSON de .NET
                 result = await _http.GetFromJsonAsync<ApiResponse<List<Dictionary<string, object>>>>(url);
