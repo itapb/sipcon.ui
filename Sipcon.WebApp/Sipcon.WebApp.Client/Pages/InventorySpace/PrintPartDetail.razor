@@ -1,0 +1,122 @@
+﻿@using Sipcon.WebApp.Client.Models
+<MudDialog Style="background-color: transparent; box-shadow: none;">
+    <DialogContent>
+        <MudGrid Spacing="0">
+            <MudItem xs="12">
+                <MudPaper Elevation="2" Class="jpv1-dialog-background-title pa-3" Square="true">
+                    <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                        <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                            <MudStack Row="true">
+                                <MudText Typo="Typo.h6" Color="Color.Info">Impresión de Repuestos</MudText>
+                            </MudStack>
+                            <MudStack Row="true" Spacing="2">
+                                <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Print" Size="Size.Small" OnClick="ConfirmClick" />
+                                <MudFab Color="Color.Error" StartIcon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="CancelClick" />
+                            </MudStack>
+                        </MudStack>
+                    </MudPaper>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12">
+                <MudDataGrid T="Part"
+                             Items="@SelectedParts"
+                             Filterable="false"
+                             FixedHeader="true"
+                             Height="calc(100vh - 262px)">
+                    <Columns>
+                        <PropertyColumn Property="x => x.InnerCode" Title="CÓDIGO" />
+                        <PropertyColumn Property="x => x.Description" Title="DESCRIPCION" />
+                        <TemplateColumn Title="CANTIDAD">
+                            <CellTemplate>
+                                <MudNumericField @bind-Value="context.Item.PrintQty"
+                                                 Variant="Variant.Outlined"
+                                                 Min="0"
+                                                 Max="999"
+                                                 Error="@(context.Item.PrintQty < 1 || context.Item.PrintQty == null)"
+                                                 ErrorText="La cantidad debe ser mayor a 0"
+                                                 Immediate="true"
+                                                 Style="width: 100px;"
+                                                 />
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public List<Part> SelectedParts { get; set; } = new();
+
+    private async Task ConfirmClick()
+    {
+        // Validar que hayan seleccionados
+        if (SelectedParts == null || SelectedParts.Count == 0)
+        {
+            await DialogService.ShowMessageBox("Advertencia", "No hay repuestos seleccionados.", "OK");
+            return;
+        }
+
+        // Validar cantidades > 0
+        var invalidItems = SelectedParts.Where(x => (x.PrintQty ?? 0) <= 0).ToList();
+        if (invalidItems.Any())
+        {
+            await DialogService.ShowDialog("Los repuestos deben tener cantidad mayor a 0.",
+                    "Advertencia", "OK", Color.Error, Icons.Material.Filled.Warning);
+            return;
+        }
+        
+        List<Printqueue> printQueue = new();
+        foreach (var item in SelectedParts)
+        {
+            printQueue.Add(new Printqueue
+            {
+                RecordId = item.Id ?? 0,
+                Type = "P", 
+                Code = item.InnerCode ?? "",
+                Description = item.Description ?? "",
+                Quantity = item.PrintQty ?? 1,
+                PrintedDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                Supplier = "",
+                CodePair = "",
+                DescriptionPair = "",
+                Note = "",
+                NotePair = ""
+            });
+        }
+
+        // Enviar a la API
+        var result = await Http.PostAsync(
+            $"api/Print/PostPrintQueue?userId={Session.UserId}",
+            new StringContent(System.Text.Json.JsonSerializer.Serialize(printQueue),
+                null, "application/json"));
+
+        if (result.IsSuccessStatusCode)
+        {
+            await DialogService.ShowMessageBox("Éxito", "Repuestos enviados a impresión exitosamente.", "OK");
+
+            MudDialog?.Close(DialogResult.Ok(true));
+        }
+        else if (result.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflictContent = await result.Content.ReadFromJsonAsync<WebApiResponse<object>>();
+            await DialogService.ShowMessageBox("Error", conflictContent?.message ?? "Conflicto al procesar la impresión.", "OK");
+        }
+        else
+        {
+            var errorMessage = await result.Content.ReadAsStringAsync();
+            await DialogService.ShowMessageBox("Error", $"Error: {errorMessage}", "OK");
+        }
+    }
+
+    private void CancelClick()
+    {
+        MudDialog?.Close(DialogResult.Cancel());
+    }
+}
