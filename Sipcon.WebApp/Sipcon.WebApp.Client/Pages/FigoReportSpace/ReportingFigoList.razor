@@ -115,11 +115,33 @@
                                             break;
 
                                         case "VARCHAR":
-                                            <MudTextField Label="@config.Field"
-                                                          Value="@(_filterValues[config.Field]?.ToString())"
-                                                          ValueChanged="@((string v) => _filterValues[config.Field] = v)"
-                                                          Variant="Variant.Outlined"
-                                                          Margin="Margin.Dense" />
+                                            @* NUEVO: Si el VARCHAR viene con opciones desde el backend, usamos MudSelect *@
+                                            @if (config.Options != null && config.Options.Any())
+                                            {
+                                                <MudSelect T="string"
+                                                           Label="@config.Field"
+                                                           Value="@(_filterValues[config.Field]?.ToString())"
+                                                           ValueChanged="@((string v) => _filterValues[config.Field] = v)"
+                                                           Variant="Variant.Outlined"
+                                                           Margin="Margin.Dense"
+                                                           Dense="true">
+                                                    <MudSelectItem T="string" Value="@(null)">Seleccione...</MudSelectItem>
+                                                    @foreach (var option in config.Options)
+                                                    {
+                                                        @* 'option.Value' guarda "USD" o "BS" y 'option.Name' muestra "DOLAR" o "BOLIVARES" *@
+                                                        <MudSelectItem T="string" Value="@option.Value">@option.Name</MudSelectItem>
+                                                    }
+                                                </MudSelect>
+                                            }
+                                            else
+                                            {
+                                                @* Si es VARCHAR plano sin opciones, se mantiene como texto tradicional *@
+                                                <MudTextField Label="@config.Field"
+                                                              Value="@(_filterValues[config.Field]?.ToString())"
+                                                              ValueChanged="@((string v) => _filterValues[config.Field] = v)"
+                                                              Variant="Variant.Outlined"
+                                                              Margin="Margin.Dense" />
+                                            }
                                             break;
                                     }
                                 </MudItem>
@@ -152,7 +174,6 @@
                 <MudButton FullWidth="true" Color="Color.Primary" Variant="Variant.Filled" Class="mt-4" OnClick="() => ClickSearch()">Aplicar Filtros</MudButton>
             </div>
         </MudMenu>
-
         <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Info" OnClick="() => ClickSearch()"></MudIconButton>
         <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
     
@@ -426,32 +447,58 @@
         }
     }
 
+
     private async Task OnReportTypeChanged(int? reportId)
     {
         _loading = true;
         _reportingTypeValue = reportId;
 
+        // 1. Traemos los filtros/campos dinámicos como siempre
         var response = await FigoService.GetFilterReport(Session.UserId, reportId ?? 0);
-   
+ 
         if (response != null && response.Processed)
         {
             _dynamicFields = response.Data;
             _filterValues.Clear();
-       
+     
             _groupingFields.Clear();
             _selectedGroups.Clear();
-            _expandedGroups.Clear(); // Limpiamos los estados de expansión anteriores
+            _expandedGroups.Clear();
+
+            // 2. Traemos las opciones de filtros desde el backend
+            var optionsResponse = await FigoService.GetFilterOptions(Session.UserId, reportId ?? 0);
+            List<FilterOptionDto> allOptions = null;
+
+            if (optionsResponse != null && optionsResponse.Processed)
+            {
+                allOptions = optionsResponse.Data;
+            }
 
             foreach (var field in _dynamicFields)
             {
+                // 3. Asignamos las opciones correspondientes a cada filtro dinámico
+                if (allOptions != null)
+                {
+                    field.Options = allOptions
+                        .Where(o => o.FilterReportId == field.Id)
+                        .ToList();
+                }
+
                 // Filtro para campos de entrada (F)
                 if (field.ActionType == "F")
                 {
-                    _filterValues[field.Field] = (field.FieldType == "DATE")
-                        ? DateTime.Today.ToString("MM/dd/yyyy")
-                        : null;
+                    if (field.Options != null && field.Options.Any())
+                    {
+                        _filterValues[field.Field] = null; // Default para los MudSelects: "Seleccione..."
+                    }
+                    else
+                    {
+                        _filterValues[field.Field] = (field.FieldType == "DATE")
+                            ? DateTime.Today.ToString("MM/dd/yyyy")
+                            : null;
+                    }
                 }
-           
+       
                 // Campos de Agrupación (A)
                 if (field.ActionType == "A")
                 {
@@ -461,17 +508,22 @@
             }
         }
 
-        // CRUCIAL: Primero aseguramos que las variables de control vuelvan a su estado inicial
+        // --- CORRECCIÓN CRUCIAL DE FLUJO ---
+    
         _loadingGrid = false;
+        _loading = false;
 
-        // Forzamos al MudDataGrid a disparar NUEVAMENTE el método 'LoadGridData'
+        // 1. Forzamos a Blazor a pintar primero la nueva botonera, selects y filtros dinámicos en el HTML
+        StateHasChanged();
+
+        // 2. Cedemos el control un milisegundo para asegurar que los componentes de la interfaz existan en el DOM
+        await Task.Delay(5);
+
+        // 3. Ahora que el escenario está limpio y listo, le ordenamos al Grid invocar a LoadGridData
         if (_mudDataGrid != null)
         {
             await _mudDataGrid.ReloadServerData();
         }
-   
-        _loading = false;
-        StateHasChanged();
     }
 
     private bool GetGroupState(string fieldName)
@@ -552,7 +604,7 @@
 
             int? _estatusid = _selectedAction?.Value;
 
-            var serviceResponse = await FigoService.GetReportsFigo(Session.UserId, Session.SupplierId, _rowCount, _reportingTypeValue ?? 0, jsonString);
+            var serviceResponse = await FigoService.GetReportsFigo(Session.UserId, Session.SupplierId, _rowCount, _reportingTypeValue ?? 0, jsonString, _searchString);
 
             if (serviceResponse.Processed)
             {

@@ -77,15 +77,45 @@ namespace Sipcon.WebApp.Client.Repository
 
         }
 
+        public async Task<ApiResponse<List<FilterOptionDto>>> GetFilterOptions(int userId, int reportId, int? RowFrom = null)
+        {
+            ApiResponse<List<FilterOptionDto>>? result;
+            try
+            {
+                var url = $"api/Figo/ReportsOptions?userId={userId}&reportId={reportId}&rowFrom={RowFrom}";
 
-        public async Task<ApiResponse<List<Dictionary<string, object>>>> GetReportsFigo(int userId, int idSupplier, int rowFrom, int reportId,string jsonParameters)
+
+                result = await _http.GetFromJsonAsync<ApiResponse<List<FilterOptionDto>>>(url);
+
+                result = result is null ? new ApiResponse<List<FilterOptionDto>>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos.",
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<FilterOptionDto>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+
+        }
+
+
+        public async Task<ApiResponse<List<Dictionary<string, object>>>> GetReportsFigo(int userId, int idSupplier, int rowFrom, int reportId,string jsonParameters,string? filter =null)
         {
             // Cambiamos el tipo de la respuesta a Dictionary
             ApiResponse<List<Dictionary<string, object>>>? result;
 
             try
             {
-                var url = $"api/Figo/GetReportsContent?userId={userId}&supplierId={idSupplier}&rowFrom={rowFrom}&reportId={reportId}&jsonParameters={jsonParameters}";
+                var url = $"api/Figo/GetReportsContent?userId={userId}&supplierId={idSupplier}&rowFrom={rowFrom}&reportId={reportId}&jsonParameters={jsonParameters}&filter={filter}";
 
                 // La magia ocurre aquí: Dictionary es nativo para el JSON de .NET
                 result = await _http.GetFromJsonAsync<ApiResponse<List<Dictionary<string, object>>>>(url);
