@@ -104,7 +104,7 @@ namespace Sipcon.WebApp.Client.Models
         public Int32? Available { get; set; } = 0;
         public string? AlterDescription { get; set; } = string.Empty;
         public Int32? UseQty { get; set; } = 0;
-        
 
+        public int? PrintQty { get; set; } = 1;
     }
 }
