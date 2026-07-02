@@ -143,14 +143,14 @@ namespace Sipcon.WebApp.Client.Repository
 
 
 
-        public async Task<ApiResponse<List<byte>>> Export(int userId,int supplierId, int reportId, string jsonParameters)
+        public async Task<ApiResponse<List<byte>>> Export(int userId,int supplierId, int reportId, string jsonParameters, string? filter = null)
         {
             ApiResponse<List<byte>> result;
             string fileUrl = string.Empty;
 
             try
             {
-                var url = $"api/Figo/Export?userId={userId}&supplierId={supplierId}&reportId={reportId}&jsonParameters={jsonParameters}";
+                var url = $"api/Figo/Export?userId={userId}&supplierId={supplierId}&reportId={reportId}&jsonParameters={jsonParameters}&filter={filter}";
 
                 var response = await _http.GetAsync(url);
 
