@@ -50,7 +50,7 @@
         <MudSelect T="int?"
                    Value="@_reportingTypeValue"
                    ValueChanged="@(async (int? id) => await OnReportTypeChanged(id))"
-                   Style="font-size: 14px; line-height: 0.8rem; min-width: 160px; max-width: 160px; margin-left: 10px;"
+                   Style="font-size: 14px; line-height: 0.8rem; min-width: 300px; max-width: 300px; margin-left: 10px;"
                    Placeholder="Seleccione Reporte"
                    Margin="Margin.Dense"
                    Variant="Variant.Outlined">
@@ -176,6 +176,13 @@
         </MudMenu>
         <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Info" OnClick="() => ClickSearch()"></MudIconButton>
         <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
+        @if (_showPdfButton)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.PictureAsPdf"
+                           Color="Color.Info"
+                           Size="Size.Medium"
+                           OnClick="ClickExportPdf" />
+        }
     
         <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
             @foreach (var module in _itemsModules)
@@ -268,6 +275,7 @@
     private bool _nestedVisible;
     bool _success = false;
     bool _open;
+   
 
     private int _currentPage = 0;
     private int _rowCount = 0;
@@ -289,6 +297,8 @@
 
     private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
     public IEnumerable<SelectOption> _reportingTypeList { get; set; } = ([]);
+    private List<ReportingTypeFigo> _reportingTypeFigo = new();
+    private bool _showPdfButton = false;
 
     private List<BreadcrumbItem> _itemsNavigate =
                 [
@@ -348,7 +358,11 @@
         {
             _rowCount = state.Page;
             _currentPage = state.Page;
-            _reportingTypeList = await ModuleActionsService.GetReportingTypeFigo(Session.UserId);
+            _reportingTypeFigo = await ModuleActionsService.GetReportingTypeFigo(Session.UserId);
+
+            _reportingTypeList = _reportingTypeFigo
+                .Select(x => new SelectOption(x.Id, x.NameReport))
+                .ToList();
 
             // 1. Llama al backend para llenar _ReportFigo
             await GetReporting();
@@ -453,19 +467,22 @@
         _loading = true;
         _reportingTypeValue = reportId;
 
+        // Buscar el reporte seleccionado
+        var reporting = _reportingTypeFigo.FirstOrDefault(x => x.Id == reportId);
+        _showPdfButton = reporting?.IsPdfReport ?? false;
+
         // 1. Traemos los filtros/campos dinámicos como siempre
         var response = await FigoService.GetFilterReport(Session.UserId, reportId ?? 0);
- 
+
         if (response != null && response.Processed)
         {
             _dynamicFields = response.Data;
             _filterValues.Clear();
-     
+
             _groupingFields.Clear();
             _selectedGroups.Clear();
             _expandedGroups.Clear();
 
-            // 2. Traemos las opciones de filtros desde el backend
             var optionsResponse = await FigoService.GetFilterOptions(Session.UserId, reportId ?? 0);
             List<FilterOptionDto> allOptions = null;
 
@@ -476,7 +493,6 @@
 
             foreach (var field in _dynamicFields)
             {
-                // 3. Asignamos las opciones correspondientes a cada filtro dinámico
                 if (allOptions != null)
                 {
                     field.Options = allOptions
@@ -484,22 +500,20 @@
                         .ToList();
                 }
 
-                // Filtro para campos de entrada (F)
                 if (field.ActionType == "F")
                 {
                     if (field.Options != null && field.Options.Any())
                     {
-                        _filterValues[field.Field] = null; // Default para los MudSelects: "Seleccione..."
+                        _filterValues[field.Field] = null;
                     }
                     else
                     {
-                        _filterValues[field.Field] = (field.FieldType == "DATE")
+                        _filterValues[field.Field] = field.FieldType == "DATE"
                             ? DateTime.Today.ToString("MM/dd/yyyy")
                             : null;
                     }
                 }
-       
-                // Campos de Agrupación (A)
+
                 if (field.ActionType == "A")
                 {
                     _groupingFields.Add(field);
@@ -508,18 +522,13 @@
             }
         }
 
-        // --- CORRECCIÓN CRUCIAL DE FLUJO ---
-    
         _loadingGrid = false;
         _loading = false;
 
-        // 1. Forzamos a Blazor a pintar primero la nueva botonera, selects y filtros dinámicos en el HTML
         StateHasChanged();
 
-        // 2. Cedemos el control un milisegundo para asegurar que los componentes de la interfaz existan en el DOM
         await Task.Delay(5);
 
-        // 3. Ahora que el escenario está limpio y listo, le ordenamos al Grid invocar a LoadGridData
         if (_mudDataGrid != null)
         {
             await _mudDataGrid.ReloadServerData();
@@ -708,6 +717,32 @@
                 break;
         }
     }
+
+    private async Task ClickExportPdf()
+    {
+        string jsonString = JsonSerializer.Serialize(_filterValues);
+        var serviceResponse = await FigoService.ExportPDF(Session.UserId, Session.SupplierId, _rowCount, _reportingTypeValue ?? 0, jsonString, _searchString);
+        if (serviceResponse.Processed)
+        {
+            _success = true;
+            _nestedErrorMessage = "";
+
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+            var fileUrl = $"data:application/pdf;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, $"Reporte.pdf");
+
+        }
+        else
+        {
+            // Console.WriteLine(serviceResponse.Message);
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
+            
+            OpenNested();
+
+        }
+    }
+
 
     private async Task ExportItemsAsync()
     {

@@ -9,13 +9,12 @@ namespace Sipcon.WebApp.Client.Repository
     {
         private readonly HttpClient _http = http;
 
-        public async Task<ApiResponse<List<byte>>> ExportRelacionCxCPDF(string _activeCurrency, string _searchString)
+        public async Task<ApiResponse<List<byte>>> ExportPDF(int userId, int idSupplier, int rowFrom, int reportId, string jsonParameters, string? filter = null)
         {
             ApiResponse<List<byte>> result;
             try
             {
-                var url = $"api/Figo/ExportReportCxCPdf?Currency=" + _activeCurrency;
-                if (!string.IsNullOrEmpty(_searchString)) url += $"&Filter={_searchString}";
+                var url = $"api/Figo/ExportPdf?userId={userId}&supplierId={idSupplier}&rowFrom={rowFrom}&reportId={reportId}&jsonParameters={jsonParameters}&filter={filter}";
 
                 var response = await _http.GetAsync(url);
                 var fileContent = await response.Content.ReadAsByteArrayAsync();

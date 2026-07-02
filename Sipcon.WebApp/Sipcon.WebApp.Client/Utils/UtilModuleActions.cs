@@ -290,23 +290,13 @@ namespace Sipcon.WebApp.Client.Utils
         }
 
 
-        public async Task<List<SelectOption>> GetReportingTypeFigo(int idUser)
+        public async Task<List<ReportingTypeFigo>> GetReportingTypeFigo(int idUser)
         {
-            List<SelectOption> _itemsSelect = new([]);
-
-
             var moduleResponse = await ReportingService.GetReportingTypeFigo(idUser, 0);
-            if (moduleResponse.Processed)
-            {
-                List<ReportingTypeFigo> _List = moduleResponse.Data ?? new List<ReportingTypeFigo>();
 
-                foreach (var item in _List.ToList())
-                {
-                    _itemsSelect.Add(new SelectOption(item.Id, item.NameReport));
-                }
-            }
-            return _itemsSelect;
-
+            return moduleResponse.Processed
+                ? moduleResponse.Data ?? new List<ReportingTypeFigo>()
+                : new List<ReportingTypeFigo>();
         }
 
         public async Task<List<SelectOption>> GetSupplierOption(int IdUser, int IdBrand = 0)
