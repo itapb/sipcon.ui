@@ -71,6 +71,40 @@
                 </div>
             </CellTemplate>
         </TemplateColumn>
+
+        @* //Tipo Concepto *@
+        <TemplateColumn Title="Tipo">
+            <CellTemplate>
+                <div class="d-flex justify-start">
+                    @if (context.Item.TypeName != null)
+                    {
+                        Color color = Color.Default;
+                        string style = "";
+                        string txt = "";
+
+                        var pair = context.Item.TypeName.ToUpper() switch
+                        {
+                            "UNIDADES" => (txt: "Unidades", color: Color.Dark),
+                            "REPUESTOS" => (txt: "Repuestos", color: Color.Info),
+                            "PROFORMA" => (txt: "Proforma", color: Color.Success),
+                            "OTROS" => (txt: "Otros", color: Color.Primary),
+                            "GASTOS ADMINISTRATIVOS" => (txt: "Gastos Administrativos", color: Color.Warning),
+                            _ => (txt: "", color: Color.Error)
+                        };
+                        txt = pair.txt;
+                        color = pair.color;
+
+                        style += ";font-size: 11px;font-style:italic";
+
+                        <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
+                            @(txt)
+                        </MudChip>
+                    }
+                   
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
+
         @* //Monto *@
         <TemplateColumn Title="Saldo Pendiente">
             <CellTemplate>
