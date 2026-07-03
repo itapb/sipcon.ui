@@ -9,13 +9,12 @@ namespace Sipcon.WebApp.Client.Repository
     {
         private readonly HttpClient _http = http;
 
-        public async Task<ApiResponse<List<byte>>> ExportRelacionCxCPDF(string _activeCurrency, string _searchString)
+        public async Task<ApiResponse<List<byte>>> ExportPDF(int userId, int idSupplier, int rowFrom, int reportId, string jsonParameters, string? filter = null)
         {
             ApiResponse<List<byte>> result;
             try
             {
-                var url = $"api/Figo/ExportReportCxCPdf?Currency=" + _activeCurrency;
-                if (!string.IsNullOrEmpty(_searchString)) url += $"&Filter={_searchString}";
+                var url = $"api/Figo/ExportPdf?userId={userId}&supplierId={idSupplier}&rowFrom={rowFrom}&reportId={reportId}&jsonParameters={jsonParameters}&filter={filter}";
 
                 var response = await _http.GetAsync(url);
                 var fileContent = await response.Content.ReadAsByteArrayAsync();
@@ -77,15 +76,45 @@ namespace Sipcon.WebApp.Client.Repository
 
         }
 
+        public async Task<ApiResponse<List<FilterOptionDto>>> GetFilterOptions(int userId, int reportId, int? RowFrom = null)
+        {
+            ApiResponse<List<FilterOptionDto>>? result;
+            try
+            {
+                var url = $"api/Figo/ReportsOptions?userId={userId}&reportId={reportId}&rowFrom={RowFrom}";
 
-        public async Task<ApiResponse<List<Dictionary<string, object>>>> GetReportsFigo(int userId, int idSupplier, int rowFrom, int reportId,string jsonParameters)
+
+                result = await _http.GetFromJsonAsync<ApiResponse<List<FilterOptionDto>>>(url);
+
+                result = result is null ? new ApiResponse<List<FilterOptionDto>>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos.",
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<FilterOptionDto>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+
+        }
+
+
+        public async Task<ApiResponse<List<Dictionary<string, object>>>> GetReportsFigo(int userId, int idSupplier, int rowFrom, int reportId,string jsonParameters,string? filter =null)
         {
             // Cambiamos el tipo de la respuesta a Dictionary
             ApiResponse<List<Dictionary<string, object>>>? result;
 
             try
             {
-                var url = $"api/Figo/GetReportsContent?userId={userId}&supplierId={idSupplier}&rowFrom={rowFrom}&reportId={reportId}&jsonParameters={jsonParameters}";
+                var url = $"api/Figo/GetReportsContent?userId={userId}&supplierId={idSupplier}&rowFrom={rowFrom}&reportId={reportId}&jsonParameters={jsonParameters}&filter={filter}";
 
                 // La magia ocurre aquí: Dictionary es nativo para el JSON de .NET
                 result = await _http.GetFromJsonAsync<ApiResponse<List<Dictionary<string, object>>>>(url);
@@ -113,14 +142,14 @@ namespace Sipcon.WebApp.Client.Repository
 
 
 
-        public async Task<ApiResponse<List<byte>>> Export(int userId,int supplierId, int reportId, string jsonParameters)
+        public async Task<ApiResponse<List<byte>>> Export(int userId,int supplierId, int reportId, string jsonParameters, string? filter = null)
         {
             ApiResponse<List<byte>> result;
             string fileUrl = string.Empty;
 
             try
             {
-                var url = $"api/Figo/Export?userId={userId}&supplierId={supplierId}&reportId={reportId}&jsonParameters={jsonParameters}";
+                var url = $"api/Figo/Export?userId={userId}&supplierId={supplierId}&reportId={reportId}&jsonParameters={jsonParameters}&filter={filter}";
 
                 var response = await _http.GetAsync(url);
 
