@@ -1,4 +1,5 @@
-﻿<div id="scrollableGridContentStyled" style="overflow-y: auto;  padding: 8px; background-color: #f0f0f0;">
+﻿
+<div id="scrollableGridContentStyled" style="overflow-y: auto;  padding: 8px; background-color: #f0f0f0;">
     <MudGrid Spacing="2">
         <MudItem xs="12" sm="9">
             <MudStack>
@@ -72,6 +73,22 @@
                                 <MudItem xs="12">
                                     <MudTextField ReadOnly="true" @bind-Value="MasterSalesOrder.VehicleVin" Label="@("Vehiculo" + (!String.IsNullOrEmpty(MasterSalesOrder.VehicleCustomer) ? $" ({MasterSalesOrder.VehicleCustomer})" : ""))" Adornment="Adornment.Start" AdornmentIcon="@(IsCreatedSalesOrder ? Icons.Material.Filled.Search : "")" Variant="Variant.Text" OnAdornmentClick="VehicleInvoicesClick" RequiredError="Campo requerido" Required="@((MasterSalesOrder!.TypeId == 1 || MasterSalesOrder!.TypeId == 2))" Disabled="@(MasterSalesOrder!.TypeId == 3)" @ref="VehicleVinRef"></MudTextField>
                                 </MudItem>
+                                @if (MasterSalesOrder.GroupId == 3)
+                                {
+                                    <MudItem xs="12">
+                                        <MudTextField @bind-Value="MasterSalesOrder.Customer"
+                                            Label="@($"Cliente {(string.IsNullOrWhiteSpace(MasterSalesOrder.CustomerVat) ? "" : $"({MasterSalesOrder.CustomerVat})")}")"
+                                            ReadOnly="@(MasterSalesOrder.CustomerId == MasterSalesOrder.SupplierId)"
+                                            Adornment="Adornment.Start"
+                                            AdornmentIcon="@(IsCreatedSalesOrder && MasterSalesOrder.CustomerId != MasterSalesOrder.SupplierId
+                                                        ? Icons.Material.Filled.Search
+                                                        : null)"
+                                            OnAdornmentClick="CustomerClick"
+                                            Variant="Variant.Text"
+                                            Disabled="@(!IsCreatedSalesOrder)">
+                                          </MudTextField>
+                                    </MudItem>
+                                }
                                 <MudItem xs="12"><MudTextField ReadOnly="true" @bind-Value="MasterSalesOrder.Reference" Label="Referencia" Variant="Variant.Text" RequiredError="Campo requerido." Required="@(SaleOrderTypeSelected?.Id == 1)" /></MudItem>
                                 <MudItem xs="12"><MudTextField ReadOnly="@(!IsCreatedSalesOrder)" @bind-Value="MasterSalesOrder.Comment" Label="Comentario" Variant="Variant.Text" /></MudItem>
                             }
@@ -103,6 +120,7 @@
     }
 </style>
 @code { [Inject] private UserSession Session { get; set; } = null!;
+    [Inject] IContactService ContactService { get; set; } = default!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
@@ -155,6 +173,7 @@
         var tempVehicleId = MasterSalesOrder!.VehicleId;
         var tempVehicleVin = MasterSalesOrder.VehicleVin;
         var tempVehicleCustomer = MasterSalesOrder.VehicleCustomer;
+        var tempCustomerId = MasterSalesOrder.CustomerId;
 
         NewSalesOrderDetails AnewSalesOrderrDetail = new NewSalesOrderDetails
         {
@@ -177,6 +196,7 @@
            MasterSalesOrder.VehicleId = tempVehicleId;
            MasterSalesOrder.VehicleVin = tempVehicleVin;
            MasterSalesOrder.VehicleCustomer = tempVehicleCustomer;
+            MasterSalesOrder.CustomerId = tempCustomerId;
         }
        
     }
@@ -388,6 +408,53 @@
             throw new Exception(errorMessage);
         }
     }
+
+    private async Task CustomerClick()
+    {
+            form?.ResetValidation();
+
+            DialogOptions options = new()
+            {
+                MaxWidth = MaxWidth.Medium,
+                BackdropClick = false,
+                NoHeader = true
+            };
+
+            var parameters = new DialogParameters<ContactsCatalog>
+            {
+                { x => x.ContactId, 0 },
+                { x => x.ContactName, "" },
+                { x => x.ContactType, "C" },
+                { x => x.Title, "Clientes" }
+            };
+
+            var dialog = await DialogService.ShowAsync<ContactsCatalog>("Clientes", parameters, options);
+            var result = await dialog.Result;
+
+            if (!result.Canceled && result.Data != null)
+            {
+                dynamic selectedContact = result.Data;
+
+                MasterSalesOrder.CustomerId = selectedContact.ContactId;
+
+                await GetCustomerById();
+            }
+    }
+
+      private async Task GetCustomerById()
+    {
+        if (MasterSalesOrder.CustomerId is null || MasterSalesOrder.CustomerId == 0)
+            return;
+
+        var response = await ContactService.GetContact(MasterSalesOrder.CustomerId.Value);
+
+        if (response?.Data == null)
+            return;
+
+        MasterSalesOrder.Customer = $"{response.Data.FirstName} {response.Data.LastName}".Trim();
+        MasterSalesOrder.CustomerVat = response.Data.Vat;
+    }
+
 
     private async Task OnSaleOrderTypeValueChanged(SaleOrderType selectedSaleOrderType)
     {

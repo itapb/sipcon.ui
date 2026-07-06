@@ -24,6 +24,11 @@ namespace Sipcon.WebApp.Client.Models
         public int? VehicleId { get; set; } = 0;               
         public string? VehicleVin { get; set; }        
         public string? VehicleCustomer { get; set; }
+        public int? CustomerId { get; set; }
+        public string? Customer { get; set; }
+        public string? CustomerVat { get; set; }
+        public int? GroupId { get; set; }
+
 
     }
 }
