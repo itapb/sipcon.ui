@@ -82,6 +82,11 @@ namespace Sipcon.WebApp.Client.Models
 
         public string? SaleOrderType { get; set; }
 
+        public int? CustomerInvoiceId { get; set; }
+
+        public string? CustomerInvoice { get; set; }
+        public string? CustomerVat { get; set; }
+
 
     }
 }
