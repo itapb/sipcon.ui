@@ -206,6 +206,15 @@
                           Immediate="true"
                           Typo="Typo.caption">
             </MudTextField>
+                 @if (_selectedConcepts?.Contains("B") == true)
+                {
+                    <MudCheckBox T="bool"
+                                 @bind-Value="_showMigration"
+                                 @bind-Value:after="AfterMigrationChanged"
+                                 Label="Mostrar Migración" />
+                }
+
+
             <MudSpacer />
          
             <MudButton StartIcon="@Icons.Material.Filled.Download" Variant="Variant.Outlined"
@@ -215,6 +224,8 @@
             <MudButton EndIcon="@Icons.Material.Filled.Paid" Variant="Variant.Filled" Disabled="@(!IsDocumentSelected)"
                        Color="Color.Dark" Size="Size.Small" IconColor="Color.Secondary"
                        OnClick="ClickAddPayment">@(_isRetencion ? "Reportar Retención" : "Reportar Pago")</MudButton>
+
+                          
         </ToolBarContent>
       
         <Columns>
@@ -570,7 +581,8 @@
     private List<SelectOption> ConceptList = new List<SelectOption>();
     private SelectOption? SelectedStatus;
     private SelectOption? SelectedDocumentType;
-    
+    private bool _showMigration = false;
+
     private IEnumerable<string> _selectedConcepts = new[] { "B" };
     private bool _IsExclusive = false;
     private bool _IsExclusiveBase = false;
@@ -675,6 +687,7 @@
         if (serviceResponse.Processed)
         {
             Data = serviceResponse.Data;
+            Data = Data.Where(x => (x.IsMigration ?? false) == _showMigration).ToList();
             TotalItems = serviceResponse.Total;
 
             if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Receivable> sortDefinition)
@@ -698,6 +711,16 @@
         return new GridData<Receivable> { TotalItems = TotalItems, Items = Data };
     }
 
+    private async Task AfterMigrationChanged()
+    {
+        IsAllCheckBoxSelected = false;
+        IsDocumentSelected = false;
+        _isRetencion = false;
+
+        DocumentSelecteds.Clear();
+
+        await DocumentsDataGrid!.ReloadServerData();
+    }
 
     private async Task ExportItemsAsync()
     {
