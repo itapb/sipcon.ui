@@ -475,7 +475,10 @@
     {
         if (IsCreatedSalesOrder)
         {
-            string ServiceFailType = (SaleOrderTypeSelected?.Id == 1) ? "G" : (SaleOrderTypeSelected?.Id == 2) ? "L" : "";
+            string ServiceFailType = (SaleOrderTypeSelected?.Id == 1) ? "G"
+                        : (SaleOrderTypeSelected?.Id == 2) ? "L"
+                        : (SaleOrderTypeSelected?.Id == 7) ? "U"
+                        : "";
 
             DialogOptions options2 = new DialogOptions { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
             var dialogReference = await DialogService.ShowAsync<SalesOrderReportFailCatalog>("", new DialogParameters { ["ServiceFailType"] = ServiceFailType }, options2);
