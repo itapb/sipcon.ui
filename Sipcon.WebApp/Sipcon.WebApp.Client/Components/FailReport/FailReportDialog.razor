@@ -151,8 +151,11 @@
                                 <MudCardContent Style="padding-top: 0px;" Class="mt-2">
                                     <MudStack Row="true">
 
-                                        <MudSwitch @bind-Value="_model.Paralyzed" LabelPlacement="Placement.Start" Color="Color.Success" ReadOnly="@(!_model.IsActive || _isReadOnly)">
-                                                <MudText Typo="Typo.caption">Vehiculo paralizado</MudText>
+                                        <MudSwitch @bind-Value="_model.Paralyzed"
+                                                   LabelPlacement="Placement.Start"
+                                                   Color="Color.Success"
+                                                   ReadOnly="@(!_model.IsActive || _isReadOnly || _model.ReportTypeId == 7)">
+                                            <MudText Typo="Typo.caption">Vehículo paralizado</MudText>
                                         </MudSwitch>
                                         <MudSpacer />
                                         <MudSpacer />
@@ -161,21 +164,23 @@
                                     <MudStack Row="true">
                                          
                                        
-                                        <MudSelect @bind-Value="_model.ReportTypeId"
-                                                   style="font-size: 14px"
-                                                   Label="Tipo Reporte"
-                                                   Typo="Typo.caption"
-                                                   AdornmentColor="Color.Default"
-                                                   Margin="Margin.Dense" 
-                                                   ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                                   Disabled="@(!_model.VehicleId.HasValue)"
-                                                   For="@(() => _model.ReportTypeId)"
-                                                   Immediate="true">
-                                            @foreach (var item in _FailReportTypeList)
-                                            {
-                                                <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
-                                            }
-                                        </MudSelect>
+                                      <MudSelect T="int?"
+                                               Value="_model.ReportTypeId"
+                                               ValueChanged="OnReportTypeChanged"
+                                               Style="font-size: 14px"
+                                               Label="Tipo Reporte"
+                                               Typo="Typo.caption"
+                                               Margin="Margin.Dense"
+                                               ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                               Disabled="@(!_model.VehicleId.HasValue)"
+                                               For="@(() => _model.ReportTypeId)"
+                                               Immediate="true">
+
+                                        @foreach (var item in _FailReportTypeList)
+                                        {
+                                            <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
+                                        }
+                                    </MudSelect>
 
                                         <MudButton StartIcon="@Icons.Material.Filled.Add" 
                                                    Variant="Variant.Outlined"
@@ -667,6 +672,16 @@
         StateHasChanged();
         await Task.CompletedTask;
 
+    }
+
+    private void OnReportTypeChanged(int? value)
+    {
+        _model.ReportTypeId = value;
+
+        if (value == 7)
+        {
+            _model.Paralyzed = true;
+        }
     }
 
 
