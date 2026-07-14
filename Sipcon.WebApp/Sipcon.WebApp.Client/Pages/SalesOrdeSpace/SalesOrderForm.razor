@@ -261,6 +261,7 @@
         var vin = MasterSalesOrder?.VehicleVin;
         var customer = MasterSalesOrder?.VehicleCustomer;
         var vehicleId = MasterSalesOrder?.VehicleId;
+        var paralized = MasterSalesOrder?.Paralyzed;
 
         var dialogReference = await DialogService.ShowAsync(typeof(SalesOrderPartsCatalog), "", new DialogParameters { ["SalesOrderId"] = MasterSalesOrder!.Id }, options);
         if ((await dialogReference.Result) is DialogResult dialogResult && !dialogResult.Canceled)
@@ -273,7 +274,8 @@
             MasterSalesOrder.Comment = tempComment;
             MasterSalesOrder.VehicleVin = vin;
             MasterSalesOrder.VehicleCustomer = customer;
-            MasterSalesOrder.VehicleId = vehicleId;                
+            MasterSalesOrder.VehicleId = vehicleId; 
+            MasterSalesOrder.Paralyzed = paralized;
         }
 
     }
