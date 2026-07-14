@@ -71,7 +71,7 @@
                                     </MudSelect>
                                 </MudItem>
                                 <MudItem xs="12">
-                                    <MudTextField ReadOnly="true" @bind-Value="MasterSalesOrder.VehicleVin" Label="@("Vehiculo" + (!String.IsNullOrEmpty(MasterSalesOrder.VehicleCustomer) ? $" ({MasterSalesOrder.VehicleCustomer})" : ""))" Adornment="Adornment.Start" AdornmentIcon="@(IsCreatedSalesOrder ? Icons.Material.Filled.Search : "")" Variant="Variant.Text" OnAdornmentClick="VehicleInvoicesClick" RequiredError="Campo requerido" Required="@((MasterSalesOrder!.TypeId == 1 || MasterSalesOrder!.TypeId == 2))" Disabled="@(MasterSalesOrder!.TypeId == 3)" @ref="VehicleVinRef"></MudTextField>
+                                    <MudTextField ReadOnly="true" @bind-Value="MasterSalesOrder.VehicleVin" Label="@("Vehiculo" + (!String.IsNullOrEmpty(MasterSalesOrder.VehicleCustomer) ? $" ({MasterSalesOrder.VehicleCustomer})" : ""))" Adornment="Adornment.Start" AdornmentIcon="@(IsCreatedSalesOrder ? Icons.Material.Filled.Search : "")" Variant="Variant.Text" OnAdornmentClick="VehicleInvoicesClick" RequiredError="Campo requerido" Required="@((MasterSalesOrder!.TypeId == 1 || MasterSalesOrder!.TypeId == 2|| MasterSalesOrder!.TypeId == 7))" Disabled="@(MasterSalesOrder!.TypeId == 3)" @ref="VehicleVinRef"></MudTextField>
                                 </MudItem>
                                 @if (MasterSalesOrder.GroupId == 3)
                                 {
@@ -475,7 +475,10 @@
     {
         if (IsCreatedSalesOrder)
         {
-            string ServiceFailType = (SaleOrderTypeSelected?.Id == 1) ? "G" : (SaleOrderTypeSelected?.Id == 2) ? "L" : "";
+            string ServiceFailType = (SaleOrderTypeSelected?.Id == 1) ? "G"
+                        : (SaleOrderTypeSelected?.Id == 2) ? "L"
+                        : (SaleOrderTypeSelected?.Id == 7) ? "U"
+                        : "";
 
             DialogOptions options2 = new DialogOptions { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
             var dialogReference = await DialogService.ShowAsync<SalesOrderReportFailCatalog>("", new DialogParameters { ["ServiceFailType"] = ServiceFailType }, options2);
