@@ -1,0 +1,66 @@
+﻿@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<div id="@_elementId" style="width:100%; height:80vh;"></div>
+
+@code {
+    [Parameter, EditorRequired] public string ReportId { get; set; } = default!;
+    [Parameter, EditorRequired] public string EmbedUrl { get; set; } = default!;
+    [Parameter, EditorRequired] public string AccessToken { get; set; } = default!;
+
+    private readonly string _elementId = $"pbi-report-{Guid.NewGuid():N}";
+    private DotNetObjectReference<PbiEmbed>? _dotnetRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotnetRef = DotNetObjectReference.Create(this);
+
+            var config = new
+            {
+                reportId = ReportId,
+                embedUrl = EmbedUrl,
+                accessToken = AccessToken
+            };
+
+            await JS.InvokeVoidAsync("powerbiInterop.embedReport", _elementId, config, _dotnetRef);
+        }
+    }
+
+    [JSInvokable]
+    public Task OnReportLoaded()
+    {
+        Console.WriteLine("Report loaded");
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnReportRendered()
+    {
+        Console.WriteLine("Report rendered");
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnReportError(string message)
+    {
+        Console.WriteLine($"Report error: {message}");
+        return Task.CompletedTask;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_dotnetRef is not null)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("powerbiInterop.resetReport", _elementId);
+            }
+            catch (JSDisconnectedException) { }
+
+            _dotnetRef.Dispose();
+        }
+    }
+}

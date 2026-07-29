@@ -1,0 +1,199 @@
+﻿@page "/PowerBI"
+
+@inject IPowerBIService PowerBIService
+@inject ISnackbar Snackbar
+
+<PageTitle>Reportes - Power BI</PageTitle>
+
+@if (_loadingList)
+{
+    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else
+{
+    <div style="display:flex; flex-direction:column; height:calc(110vh - 130px); gap:5px;">
+
+        <!-- Filtros -->
+            <MudGrid Spacing="4" Justify="Justify.FlexStart" AlignItems="Center.Center">
+                <MudItem xs="12" sm="5">
+                    <MudSelect T="string" Label="Área de trabajo"
+                               Value="_selectedWorkspaceId"
+                               ValueChanged="OnWorkspaceChanged"
+                               Variant="Variant.Outlined"
+                               Dense="true">
+                        @foreach (var item in _workspaces)
+                        {
+                            <MudSelectItem Value="@item.WorkSpaceId">@item.WorkSpace</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="12" sm="5">
+                    <MudSelect T="string" Label="Reporte"
+                               @bind-Value="_selectedReportId"
+                               Variant="Variant.Outlined"
+                               Dense="true"
+                               Disabled="@(string.IsNullOrEmpty(_selectedWorkspaceId))">
+                        @foreach (var item in _filteredReports)
+                        {
+                            <MudSelectItem Value="@item.ReportId">@item.Report</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem  Class="d-flex justify-end">
+                    <MudIconButton Icon="@Icons.Material.Filled.Search"
+                                   Size="Size.Large"
+                                   Color="Color.Info"
+                                   Variant="Variant.Filled"
+                                   Disabled="@(!CanSearch || _loadingReport)"
+                                   OnClick="GetReport" />
+                </MudItem>
+            </MudGrid>
+
+        <!-- Rpeorte -->
+        <MudPaper Elevation="1"
+                  Class="flex-grow-1 d-flex align-center justify-center overflow-hidden"
+                  Style="@ContainerStyle">
+
+            @if (_loadingReport)
+            {
+                <div class="d-flex flex-column align-center">
+                    <MudProgressCircular Indeterminate="true" Size="Size.Large" Color="Color.Primary" />
+                    <MudText Typo="Typo.body2" Class="mt-3">Cargando reporte...</MudText>
+                </div>
+            }
+            else if (HasReportLoaded)
+            {
+                <PbiEmbed ReportId="@_reportId" EmbedUrl="@_embedUrl" AccessToken="@_accessToken" />
+            }
+            else
+            {
+                <div class="d-flex flex-column align-center">
+                    <MudIcon Icon="@Icons.Material.Filled.InsertChartOutlined" Size="Size.Large" Color="Color.Default" />
+                    <MudText Typo="Typo.body1" Class="mt-2" Color="Color.Secondary">
+                        Selecciona un área de trabajo y un reporte, luego presiona buscar
+                    </MudText>
+                </div>
+            }
+        </MudPaper>
+    </div>
+}
+
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
+
+    private bool _loadingList = true;
+    private bool _loadingReport;
+
+    private List<PowerBI_Reports> _allItems = new();
+    private List<PowerBI_Reports> _workspaces = new();
+    private List<PowerBI_Reports> _filteredReports = new();
+
+    private string? _selectedWorkspaceId;
+    private string? _selectedReportId;
+
+    private string? _accessToken;
+    private string? _embedUrl;
+    private string? _reportId;
+
+    private bool CanSearch =>
+        !string.IsNullOrWhiteSpace(_selectedWorkspaceId) &&
+        !string.IsNullOrWhiteSpace(_selectedReportId);
+
+    private bool HasReportLoaded =>
+        !string.IsNullOrEmpty(_reportId) &&
+        !string.IsNullOrEmpty(_embedUrl) &&
+        !string.IsNullOrEmpty(_accessToken);
+
+    // Un estilo personalizado
+    private string ContainerStyle => HasReportLoaded
+        ? "border:1px solid var(--mud-palette-lines-default); border-radius:8px;"
+        : "border:2px dashed var(--mud-palette-lines-default); border-radius:8px;";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetItems();
+    }
+
+    private async Task GetItems()
+    {
+        _loadingList = true;
+        try
+        {
+            var response = await PowerBIService.GetReportsPowerBI(Session.UserId);
+            if (response.Processed)
+            {
+                _allItems = response.Data ?? new();
+                _workspaces = _allItems
+                    .GroupBy(x => x.WorkSpaceId)
+                    .Select(g => g.First())
+                    .OrderBy(x => x.WorkSpace)
+                    .ToList();
+            }
+            else
+            {
+                Snackbar.Add(response.Message ?? "No se pudieron cargar los reportes.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al cargar los reportes: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loadingList = false;
+        }
+    }
+
+    private void OnWorkspaceChanged(string? workspaceId)
+    {
+        _selectedWorkspaceId = workspaceId;
+        _selectedReportId = null;
+
+        _filteredReports = string.IsNullOrEmpty(workspaceId)
+            ? new()
+            : _allItems.Where(x => x.WorkSpaceId == workspaceId).ToList();
+    }
+
+    private async Task GetReport()
+    {
+        if (!CanSearch)
+        {
+            Snackbar.Add("Selecciona un área de trabajo y un reporte.", Severity.Warning);
+            return;
+        }
+
+        _loadingReport = true;
+
+        try
+        {
+            var tokenResponse = await PowerBIService.GetTokenPowerBI();
+            if (tokenResponse is null || !tokenResponse.Processed || tokenResponse.Data?.Token is null)
+            {
+                Snackbar.Add(tokenResponse?.Message ?? "No se pudo obtener el token de acceso.", Severity.Error);
+                return;
+            }
+
+            var accessToken = tokenResponse.Data.Token;
+
+            var reportResponse = await PowerBIService.GetReportPortal(_selectedReportId!, accessToken);
+            if (reportResponse is null || !reportResponse.Processed || reportResponse.Data is null)
+            {
+                Snackbar.Add(reportResponse?.Message ?? "No se pudo cargar el reporte.", Severity.Error);
+                return;
+            }
+
+            _accessToken = accessToken;
+            _embedUrl = reportResponse.Data.embedUrl;
+            _reportId = reportResponse.Data.ReportId;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error inesperado al cargar el reporte: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loadingReport = false;
+        }
+    }
+}

@@ -91,6 +91,7 @@ builder.Services.AddScoped<IFaseService, FaseRepository>();
 builder.Services.AddScoped<IFeatureTypeService, FeatureTypeRepository>();
 builder.Services.AddScoped<IFeatureService, FeatureRepository>();
 builder.Services.AddScoped<IPaymentService, PaymentsRepository>();
+builder.Services.AddScoped<IPowerBIService, PowerBIRepository>();
 builder.Services.AddScoped<IInventoryCountService, InventoryCountRepository>();
 
 builder.Services.AddScoped<IFeatureOptionService, FeatureOptionRepository>();

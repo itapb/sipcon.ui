@@ -112,6 +112,7 @@ builder.Services.AddScoped<IFeatureOptionService, FeatureOptionRepository>();
 builder.Services.AddScoped<IFeatureValueTypeService, FeatureValueTypeRepository>();
 builder.Services.AddScoped<IInventoryCountService, InventoryCountRepository>();
 
+builder.Services.AddScoped<IPowerBIService, PowerBIRepository>();
 
 builder.Services.AddTransient<UtilModuleActions>();
 builder.Services.AddScoped(typeof(MasterComp<,>));
