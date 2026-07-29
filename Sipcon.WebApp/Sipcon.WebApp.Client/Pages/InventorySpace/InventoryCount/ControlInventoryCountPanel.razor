@@ -1,0 +1,147 @@
+﻿@page "/inventoryCounDetail"
+@page "/inventoryCounDetail/{inventoryCountId:int}"
+
+@inject UtilModuleActions ModuleActionsService
+@inject IInventoryCountService InventoryService // Ajusta según el nombre real de tu servicio
+
+<PageTitle>Detalle de Conteo</PageTitle>
+<CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
+
+@* --- SECCIÓN DE CABECERA MEJORADA CON TARJETAS --- *@
+@if (_loadingHeader)
+{
+    <MudProgressLinear Color="Color.Info" Indeterminate="true" Class="my-3" />
+}
+else if (_inventoryHeader != null)
+{
+    <MudGrid Class="mb-4" Spacing="2">
+        @* Tarjeta 1: Identificador / Descripción *@
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Elevation="2" Class="pa-3 border-solid border-2 mud-border-primary" Style="height: 100%; border-left-width: 6px !important;">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                    <MudAvatar Color="Color.Primary"  Size="Size.Medium">
+                        <MudIcon Icon="@Icons.Material.Filled.Inventory2" />
+                    </MudAvatar>
+                    <div>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary bold">CÓDIGO / DESCRIPCIÓN</MudText>
+                        <MudText Typo="Typo.h6" Style="line-height: 1.2;"><b>@_inventoryHeader.Description</b></MudText>
+                    </div>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        @* Tarjeta 2: Tipo y Estado *@
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="2" Class="pa-3" Style="height: 100%;">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <div>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary bold">TIPO</MudText>
+                        <div>
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text"
+                                     Color="@(_inventoryHeader.Type?.ToUpper() == "CICLICO" ? Color.Info : Color.Success)">
+                                <b>@(_inventoryHeader.Type?.ToUpper() ?? "SIN TIPO")</b>
+                            </MudChip>
+                        </div>
+                    </div>
+                    <MudDivider Vertical="true" FlexItem="true" Class="mx-2" />
+                    <div>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary bold">ESTADO</MudText>
+                        <div>
+                            <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small">
+                                @(_inventoryHeader.StatusName?.ToUpper() ?? "GENERADO")
+                            </MudChip>
+                        </div>
+                    </div>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        @* Tarjeta 3: Fechas Clave *@
+        <MudItem xs="12" md="5">
+            <MudPaper Elevation="2" Class="pa-3" Style="height: 100%;">
+                <MudGrid Spacing="1" AlignItems="AlignItems.Center">
+                    <MudItem xs="6">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Color="Color.Info" Size="Size.Small" />
+                            <div>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">APERTURA (A)</MudText>
+                                <MudText Typo="Typo.body2"><b>@(_inventoryHeader.PreInventoryDate?.ToString("dd/MM/yyyy") ?? "-")</b></MudText>
+                            </div>
+                        </MudStack>
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@Icons.Material.Filled.EventAvailable" Color="Color.Success" Size="Size.Small" />
+                            <div>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">CREACIÓN (C)</MudText>
+                                <MudText Typo="Typo.body2"><b>@(_inventoryHeader.Created.ToString("dd/MM/yyyy"))</b></MudText>
+                            </div>
+                        </MudStack>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@* --- PESTAÑAS (PROGRESO / CONTROL) --- *@
+<MudTabs Elevation="3" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-4" Color="Color.Primary" Centered="false">
+    
+    <MudTabPanel Icon="@Icons.Material.Filled.BarChart" Text="PROGRESO">
+        <InventoryCountDetailList InventoryCountId="@InventoryCountId" />
+    </MudTabPanel>
+
+    @* <MudTabPanel Icon="@Icons.Material.Filled.Assignment" Text="CONTROL">
+        <InventoryCountControlList InventoryCountId="@InventoryCountId" />
+    </MudTabPanel> 
+ *@
+</MudTabs>
+
+@code {
+    [Parameter] public int InventoryCountId { get; set; }
+    [Inject] private UserSession Session { get; set; } = null!;
+
+    private string _moduleName = "INVENTARIO-CONTEO";
+    private List<ModuleAction> _itemsModules = new();
+    private InventoryCount? _inventoryHeader;
+    private bool _loadingHeader = true;
+
+    private List<BreadcrumbItem> _itemsNavigate = [
+        new("Home", href: "", icon: Icons.Material.Filled.Home),
+        new("Inventario", href: "", icon: Icons.Material.Filled.Speed),
+        new("Conteo de Inventario", href: "", icon: Icons.Material.Filled.Speed),
+        new("Detalle de Conteo", href: "inventoryCounDetail", disabled: false, icon: Icons.Material.Filled.FormatListNumbered),
+    ];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadHeaderData();
+        await GetModuleActions();
+    }
+
+    private async Task LoadHeaderData()
+    {
+        _loadingHeader = true;
+        try
+        {
+            if (InventoryCountId > 0)
+            {
+                var response = await InventoryService.GetOneInventoryCount(Session.SupplierId, Session.UserId, InventoryCountId);
+                _inventoryHeader = response?.Data?.FirstOrDefault();
+            }
+        }
+        catch (Exception ex)
+        {
+            // Manejo de errores
+        }
+        finally
+        {
+            _loadingHeader = false;
+        }
+    }
+
+    private async Task GetModuleActions()
+    {
+        _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
+    }
+}

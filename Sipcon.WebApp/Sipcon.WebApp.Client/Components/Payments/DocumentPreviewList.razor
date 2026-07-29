@@ -140,26 +140,25 @@
         <TemplateColumn Title="Monto Abonado">
             <CellTemplate>
                 <div class="d-flex justify-center">
-                    @if (context.Item.ConceptName?.ToUpper() == "BASE" && context.Item.TypeName?.ToUpper() != "OTROS"  && context.Item.TypeName?.ToUpper() != "GASTOS ADMINISTRATIVOS"  && (context.Item.Detail == true || context.Item.Detail == null))
+                    @if (context.Item.ConceptName?.ToUpper() == "BASE" && context.Item.TypeName?.ToUpper() != "OTROS" && context.Item.TypeName?.ToUpper() != "GASTOS ADMINISTRATIVOS" && (context.Item.Detail == true || context.Item.Detail == null))
                     {
-                        <MudTextField T="double?"
-                                      Immediate="true"
-                                      Value="@context.Item.PaidAmount"
-                                      ValueChanged="@((double? val) => context.Item.PaidAmount = val)"
-                                      OnBlur="@(() => UpdatePaidAmount(context.Item))"
-                                      @onkeydown="@(async (args) => { if (args.Key == "Enter") await UpdatePaidAmount(context.Item); })"
-                                      Variant="Variant.Outlined"
-                                      Margin="Margin.Dense"
-                                      Adornment="Adornment.Start"
-                                      AdornmentText="$"
-                                      Culture="@CultureInfo.GetCultureInfo("en-US")"
-                                      InputMode="InputMode.numeric"
-                                      Pattern="^[0-9.]*$"
-                                      ReadOnly="@(context.Item.TransactionStatusName?.ToUpper() == "POR REVISION")"
-                                      AdornmentIcon="@(_isSuccess ? Icons.Material.Filled.Check : Icons.Material.Filled.AttachMoney)"
-                                      AdornmentColor="@(_isSuccess ? Color.Success : Color.Default)"
-                                      Style="font-size: 11px; width: 100px;"
-                                      Disabled="@(context.Item.PaymentId == 0)" />
+                        <MudNumericField T="double?"
+                                         Value="context.Item.PaidAmount"
+                                         ValueChanged="@((double? val) => context.Item.PaidAmount = val)"
+                                         Culture="@System.Globalization.CultureInfo.InvariantCulture"
+                                         Format="N2"
+                                         HideSpinButtons="true"
+                                         OnBlur="@(() => UpdatePaidAmount(context.Item))"
+                                         OnKeyDown="@(async (KeyboardEventArgs args) => { if (args.Key == "Enter") await UpdatePaidAmount(context.Item); })"
+                                         Variant="Variant.Outlined"
+                                         Margin="Margin.Dense"
+                                         Adornment="Adornment.Start"
+                                         AdornmentText="$"
+                                         ReadOnly="@(context.Item.TransactionStatusName?.ToUpper() == "POR REVISION")"
+                                         AdornmentIcon="@(_isSuccess ? Icons.Material.Filled.Check : Icons.Material.Filled.AttachMoney)"
+                                         AdornmentColor="@(_isSuccess ? Color.Success : Color.Default)"
+                                         Style="font-size: 11px; width: 100px; text-align: right;"
+                                         Disabled="@(context.Item.PaymentId == 0)" />
                     }
                     else
                     {
@@ -169,7 +168,7 @@
                                      Variant="Variant.Text"
                                      Color="Color.Warning"
                                      Style="font-size: 11px;font-style:italic">
-                                @("$" + (context.Item.PaidAmount?.ToString("N2") ?? context.Item.Amount?.ToString("N2")))
+                                @("$" + (context.Item.PaidAmount?.ToString("N2", System.Globalization.CultureInfo.InvariantCulture) ?? context.Item.Amount?.ToString("N2", System.Globalization.CultureInfo.InvariantCulture)))
                             </MudChip>
                         }
                         else
@@ -178,7 +177,7 @@
                                      Variant="Variant.Text"
                                      Color="Color.Warning"
                                      Style="font-size: 11px;font-style:italic">
-                                @("Bs." + (context.Item.PaidAmountBs?.ToString("N2") ?? context.Item.AmountBs?.ToString("N2")))
+                                @("Bs." + (context.Item.PaidAmountBs?.ToString("N2", System.Globalization.CultureInfo.InvariantCulture) ?? context.Item.AmountBs?.ToString("N2", System.Globalization.CultureInfo.InvariantCulture)))
                             </MudChip>
                         }
                     }
