@@ -24,7 +24,7 @@
                 url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
                 url = string.IsNullOrEmpty(DateFrom) ? url : $"{url}&fromDate={DateFrom}";
                 url = string.IsNullOrEmpty(DateTo) ? url : $"{url}&upToDate={DateTo}";
-                url = (EstatusId.HasValue) ? $"{url}&estatusId={EstatusId}" : url;
+                url = (EstatusId.HasValue) ? $"{url}&estatusId={EstatusId}" : url; 
 
 
                 result = await _http.GetFromJsonAsync<ApiResponse<List<InventoryCount>>>(url);
@@ -150,6 +150,37 @@
             catch (Exception ex)
             {
                 result = new ApiResponse<List<GetInventoryCountDetail>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+
+        }
+
+
+        public async Task<ApiResponse<List<InventoryCountType>>> GetInventoryCountTypes(int IdUser)
+        {
+            ApiResponse<List<InventoryCountType>>? result;
+
+            try
+            {
+                var url = $"api/InventoryCount/GetInventoryCountTypes?userId={IdUser}";
+                result = await _http.GetFromJsonAsync<ApiResponse<List<InventoryCountType>>>(url);
+
+
+                result = (result is null) ? new ApiResponse<List<InventoryCountType>>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<InventoryCountType>>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)

@@ -11,5 +11,7 @@
         public Task<ApiResponse<List<InventoryCount>>> GetOneInventoryCount(int IdSupplier, int IdUser, int InventoryCountId);
 
         public Task<ApiResponse<List<GetInventoryCountDetail>>> GetInventoryCountDetails(int IdSupplier, int IdUser,int inventoryCountId , int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "",int? EstatusId = null);
+
+        public Task<ApiResponse<List<InventoryCountType>>> GetInventoryCountTypes(int IdUser);
     }
 }
