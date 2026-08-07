@@ -1,9 +1,10 @@
-﻿    @page "/count"
+﻿@page "/count"
 
 
 @using Sipcon.WebApp.Client.Repository.Auth
 @using System.Text.Json
 @using System.Globalization;
+@using Sipcon.WebApp.Client.Components.InventoryCount
 
 
 @inject IInventoryCountService InventoryCountService
@@ -16,11 +17,11 @@
 
 
 
-<PageTitle>Count</PageTitle>
+<PageTitle>Conteo de Inventario</PageTitle>
 <CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
 
 <MudDataGrid @ref="_mudDataGrid"
-             T="InventoryCount"
+             T="GetInventoryCount"
              MultiSelection="true" 
              SelectedItems="@selectedInventoryCount"
              SortMode="SortMode.Multiple"
@@ -35,7 +36,7 @@
              ServerData="LoadGridData">
 
     <ToolBarContent>
-         <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="ClickAddFailReport"></MudIconButton> 
+         <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="ClickAddInventoryCount"></MudIconButton> 
        <MudTextField @bind-Value="_searchString" 
                       Style="font-size: 14px;line-height: 0.8rem;"
                     Placeholder="buscar" 
@@ -135,11 +136,11 @@
         </MudMenu>
     </ToolBarContent>
  <Columns>
-    <SelectColumn T="InventoryCount" />
+    <SelectColumn T="GetInventoryCount" />
 
     <PropertyColumn Property="x => x.Description" Title="DESCRIPCIÓN" Align="Align.Center" Filterable="false" />
 
-    <TemplateColumn T="InventoryCount" Title="TIPO DE INVENTARIO" Align="Align.Center">
+    <TemplateColumn T="GetInventoryCount" Title="TIPO DE INVENTARIO" Align="Align.Center">
     <CellTemplate>
         <MudChip T="string" 
                  Color="@(context.Item.Type?.ToUpper() == "CICLICO" ? Color.Info : (context.Item.Type?.ToUpper() == "FISICO" ? Color.Success : Color.Default))" 
@@ -151,7 +152,7 @@
 </TemplateColumn>
 
     @* Fecha Creación *@
-    <TemplateColumn T="InventoryCount" Title="CREACIÓN" Align="Align.Center">
+    <TemplateColumn T="GetInventoryCount" Title="CREACIÓN" Align="Align.Center">
         <CellTemplate>
             <MudText Typo="Typo.body2" Class="mud-text-secondary">
                 @context.Item.Created.ToString("dd/MM/yyyy HH:mm")
@@ -160,7 +161,7 @@
     </TemplateColumn>
 
     @* Fecha Pre-Inventario *@
-    <TemplateColumn T="InventoryCount" Title="INICIO PRE-CONTEO" Align="Align.Center">
+    <TemplateColumn T="GetInventoryCount" Title="INICIO PRE-CONTEO" Align="Align.Center">
         <CellTemplate>
             <MudText Typo="Typo.body2">
                 @(context.Item.PreInventoryDate?.ToString("dd/MM/yyyy HH:mm") ?? "-")
@@ -169,7 +170,7 @@
     </TemplateColumn>
 
     @* Fecha Inventario *@
-    <TemplateColumn T="InventoryCount" Title="INICIO CONTEO" Align="Align.Center">
+    <TemplateColumn T="GetInventoryCount" Title="INICIO CONTEO" Align="Align.Center">
         <CellTemplate>
             <MudText Typo="Typo.body2">
                 @(context.Item.InventoryDate?.ToString("dd/MM/yyyy HH:mm") ?? "-")
@@ -178,7 +179,7 @@
     </TemplateColumn>
 
      @* Fecha Finzalizacion *@
-    <TemplateColumn T="InventoryCount" Title="FINALIZACION CONTEO" Align="Align.Center">
+    <TemplateColumn T="GetInventoryCount" Title="FINALIZACION CONTEO" Align="Align.Center">
         <CellTemplate>
             <MudText Typo="Typo.body2">
                 @(context.Item.FinishDate?.ToString("dd/MM/yyyy HH:mm") ?? "-")
@@ -229,7 +230,15 @@
                         <MudButtonGroup Size="@Size.Small" Variant="Variant.Text" Color="Color.Dark">
                            
                                 <MudIconButton Icon="@Icons.Material.Filled.FileOpen" Variant="Variant.Text" Color="Color.Success" Size="Size.Small" Href="@("inventoryCounDetail/" + context.Item.Id)"  />
-                                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Href="@("inventoryCounDetail/" + context.Item.Id)"  />
+                                 
+                                @if (context.Item.StatusName?.ToUpper() == "BORRADOR")
+                                        {
+                                            <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                                                           Variant="Variant.Text" 
+                                                           Color="Color.Primary" 
+                                                           Size="Size.Small" 
+                                                           OnClick="() => ClickEditInventoryCount(context.Item)" />
+                                        }
                         </MudButtonGroup>
                     </CellTemplate>
                 </TemplateColumn>
@@ -243,18 +252,19 @@
 <NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success"
                     onCloseNested="() => _nestedVisible = false"
                     ErrorMessage="@_nestedErrorMessage" 
-                    Title="@("InventoryCount")" />
+                    Title="@("count")" />
 
 
 
-@code { [Inject] private UserSession Session { get; set; } = null!;
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
-    private IEnumerable<InventoryCount> _count = new List<InventoryCount>();
+    private IEnumerable<GetInventoryCount> _count = new List<GetInventoryCount>();
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
     bool _success = false;
-   private CultureInfo _esCulture = new CultureInfo("es-ES");
-   
+    private CultureInfo _esCulture = new CultureInfo("es-ES");
+
 
     private int _rowCount = 0;
     private int _rowsTotal = 0; 
@@ -263,7 +273,7 @@
     private bool _loading = true;
     private string _moduleName = "INVENTARIO-CONTEO";
     private bool _isGrouped;
-    
+
     //Fechas y filtrados po estatus 
     bool _open;
     IMask maskDate = new DateMask("dd/MM/yyyy");
@@ -275,11 +285,11 @@
     private SelectOption? _selectedAction;
     private bool _hasActiveFilters => _dateFrom.HasValue || _dateTo.HasValue || _selectedAction != null;
 
-    private MudDataGrid<InventoryCount>? _mudDataGrid;
-    private HashSet<InventoryCount> selectedInventoryCount = new([]);
+    private MudDataGrid<GetInventoryCount>? _mudDataGrid;
+    private HashSet<GetInventoryCount> selectedInventoryCount = new([]);
     private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
-    
-   List<BreadcrumbItem> _itemsNavigate = [new("Home", href: "", icon: Icons.Material.Filled.Home), new("Inventario", href: "InventoryCount", icon: Icons.Material.Filled.Inventory), new("Conteo", href: "InventoryCount", icon: Icons.Material.Filled.Map)];
+
+    List<BreadcrumbItem> _itemsNavigate = [new("Home", href: "", icon: Icons.Material.Filled.Home), new("Inventario", href: "count", icon: Icons.Material.Filled.Inventory), new("Conteo", href: "count", icon: Icons.Material.Filled.Map)];
     protected override async Task OnInitializedAsync()
     {
         await AuthenticationStateProvider.RefreshStaticVariables();
@@ -289,7 +299,7 @@
         await Task.CompletedTask;
     }
 
-    
+
 
     private async Task ReloadServerData()
     {
@@ -306,33 +316,33 @@
     }
 
 
-    private async Task<GridData<InventoryCount>> LoadGridData(GridState<InventoryCount> state)
+    private async Task<GridData<GetInventoryCount>> LoadGridData(GridState<GetInventoryCount> state)
     {
         await AuthenticationStateProvider.RefreshStaticVariables();
 
         _rowCount = state.Page * state.PageSize;
 
-        await GetKardex();
+        await GetInventoryCount();
 
-        return new GridData<InventoryCount> { TotalItems = _rowsTotal, Items = _count };
+        return new GridData<GetInventoryCount> { TotalItems = _rowsTotal, Items = _count };
     }
 
-    private async Task GetKardex()
+    private async Task GetInventoryCount()
     {
         _loading = true;
-        _count = new List<InventoryCount>();
+        _count = new List<GetInventoryCount>();
         _rowsTotal = 0;
-        
+
         _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
-        
+
         //fechas y filtros
         _actions = await ModuleActionsService.GetStatusByModule(Session.UserId, _moduleName);  
         int? idRespaldado = _selectedAction?.Value;
-         if (idRespaldado.HasValue && _actions != null)   {  _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
-         int? _estatusid = _selectedAction?.Value;
-         string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
+        if (idRespaldado.HasValue && _actions != null)   {  _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
+        int? _estatusid = _selectedAction?.Value;
+        string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
         string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
-        
+
         var serviceResponse = await InventoryCountService.GetInventoryCount(Session.SupplierId, Session.UserId, _rowCount, _searchString,_dateFromStr,_dateToStr, _estatusid);
         if (serviceResponse.Processed)
         {
@@ -350,7 +360,41 @@
         _loading = false;
     }
 
-     private void ClearFilters()
+    private async Task ClickAddInventoryCount()
+    {
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+
+        var parameters = new DialogParameters<InventoryCountDialog> { { x => x.InventoryCountId, 0 }, { x => x.SupplierId, Session.SupplierId }, { x => x.ActionsModal, ActionsEnum.Create } };
+        var dialog = await DialogService.ShowAsync<InventoryCountDialog>("simple dialog", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            await _mudDataGrid!.ReloadServerData();
+            StateHasChanged();
+        }
+
+        await Task.CompletedTask;
+    }
+
+    private async Task ClickEditInventoryCount(GetInventoryCount item)
+    {
+
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+        var parameters = new DialogParameters<InventoryCountDialog> { { x => x.InventoryCountId, 0 }, { x => x.SupplierId, Session.SupplierId }, { x => x.ActionsModal, ActionsEnum.Edit } };
+        var dialog = await DialogService.ShowAsync<InventoryCountDialog>("simple dialog", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            await _mudDataGrid!.ReloadServerData();
+            StateHasChanged();
+        }
+
+        await Task.CompletedTask;
+    }
+
+    private void ClearFilters()
     {
         _dateFrom = null;
         _dateTo = null;
@@ -362,11 +406,11 @@
     {
         if (e.Key == "Enter")
         {
-           // if (_searchString.Length >= 3 || _searchString == string.Empty)
-           // {
-                Console.WriteLine($"Buscando: {_searchString}");
-                await _mudDataGrid!.ReloadServerData();
-          //  }
+            // if (_searchString.Length >= 3 || _searchString == string.Empty)
+            // {
+            Console.WriteLine($"Buscando: {_searchString}");
+            await _mudDataGrid!.ReloadServerData();
+            //  }
 
         }
     }
@@ -374,11 +418,11 @@
     private async Task ClickSearch()
     {
 
-       // if (_searchString.Length >= 3 ||  _dateFrom.HasValue ||  _dateTo.HasValue ||  _selectedAction != null)
+        // if (_searchString.Length >= 3 ||  _dateFrom.HasValue ||  _dateTo.HasValue ||  _selectedAction != null)
         //{
-            Console.WriteLine($"Buscando: {_searchString}");
-            await _mudDataGrid!.ReloadServerData();
-     
+        Console.WriteLine($"Buscando: {_searchString}");
+        await _mudDataGrid!.ReloadServerData();
+
 
     }
 
@@ -387,7 +431,7 @@
 
     private async Task HandleOnClickRefresh()
     {
-       _searchString = string.Empty; // Limpia el MudTextField
+        _searchString = string.Empty; // Limpia el MudTextField
         _selectedAction = null;       // Limpia el MudSelect
         _dateFrom = null;             // Limpia el primer MudDatePicker
         _dateTo = null;
@@ -395,14 +439,14 @@
     }
 
 
-    
-   
+
+
     private void OpenNested()
     {
         _nestedVisible = true;
         StateHasChanged();
     }
-    
+
 
 
     private async Task HandleMenuClick(ModuleAction module)
@@ -412,6 +456,22 @@
             case "EXPORT":
                 await ExportItemsAsync();
                 break;
+            case "AVAILABLE":
+                await AvailableItemsAsync(module.IdAction, module.ActionName);
+                break;
+            case "ACTIVATE":
+                await ActivateItemsAsync(module.IdAction, module.ActionName);
+                break;
+            case "PROCESS":
+                await ProcessItemsAsync(module.IdAction, module.ActionName);
+                break;
+            case "GENERATE":
+                await GenerateItemsAsync(module.IdAction, module.ActionName);
+                break;
+            case "DECLINE":
+                await DeclineItemsAsync(module.IdAction, module.ActionName);
+                break;
+
             default:
                 Console.WriteLine($"{MessageEnum.ActionsError.GetStringValue()}: {module.ActionName}");
                 break;
@@ -422,9 +482,9 @@
     private async Task ExportItemsAsync()
     {
         int? idRespaldado = _selectedAction?.Value;
-         if (idRespaldado.HasValue && _actions != null)   {  _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
-         int? _estatusid = _selectedAction?.Value;
-         string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
+        if (idRespaldado.HasValue && _actions != null)   {  _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
+        int? _estatusid = _selectedAction?.Value;
+        string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
         string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
 
         var serviceResponse = await InventoryCountService.ExportInventoryCount(Session.SupplierId, Session.UserId, _searchString,_dateFromStr,_dateToStr);
@@ -443,22 +503,310 @@
             // Console.WriteLine(serviceResponse.Message);
             _success = false;
             _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue();
-            
+
             OpenNested();
 
         }
     }
 
+    private async Task GenerateItemsAsync(int moduleId, string moduleActionName)
+    {
+        Console.WriteLine("Generar Conteo de Inventario...");
+        if (selectedInventoryCount.Any())
+        {
+            var option = new DialogOptions
+                {
+                    CloseButton = false,
+                    MaxWidth = MaxWidth.Small,
+                    FullWidth = true,
+                    BackdropClick = false
+                };
+            bool? result = await DialogService.ShowMessageBox(
+                "Generar finalizacion Conteo de Inventario",
+                $"Seguro de Generar Conteo de Inventario? ",
+                yesText: "Si", noText: "No", "", option);
+
+            if (result == true)
+            {
+                List<PostAction> ActionList = ([]);
+
+                foreach (var Item in selectedInventoryCount)
+                {
+                    var ItemAction = new PostAction
+                        {
+                            RecordId = Item.Id,
+                            ModuleId = moduleId,
+                            ActionName = moduleActionName
+                        };
+                    ActionList.Add(ItemAction);
+                }
+
+                var serviceResponse = await InventoryCountService.ActionsInventoryCount(ActionList, Session.UserId);
+                if (serviceResponse.Processed)
+                {
+
+                    _success = true;
+                    _nestedErrorMessage = MessageEnum.GenerateOK.GetStringValue();
+
+                    await _mudDataGrid!.ReloadServerData();
+                }
+                else
+                {
+                    // Console.WriteLine(serviceResponse.Message);
+                    _success = false;
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GenerateNotOK.GetStringValue();
+                }
+                OpenNested();
+            }
+
+        }
+
+        selectedInventoryCount = new([]);
+        await Task.CompletedTask;
+
+        }
 
 
-    private Func<Policy, string> _cellStyleFunc => x =>
+    private async Task ActivateItemsAsync(int moduleId, string moduleActionName)
+    {
+        Console.WriteLine("Activar Conteo de Inventario...");
+        if (selectedInventoryCount.Any())
+        {
+            var option = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false
+            };
+            bool? result = await DialogService.ShowMessageBox(
+                "Activar Conteo de Inventario",
+                $"Seguro de Activar Conteo de Inventario? ",
+                yesText: "Si", noText: "No", "", option);
+
+            if (result == true)
+            {
+                List<PostAction> ActionList = ([]);
+
+                foreach (var Item in selectedInventoryCount)
+                {
+                    var ItemAction = new PostAction
+                    {
+                        RecordId = Item.Id,
+                        ModuleId = moduleId,
+                        ActionName = moduleActionName
+                    };
+                    ActionList.Add(ItemAction);
+                }
+
+                var serviceResponse = await InventoryCountService.ActionsInventoryCount(ActionList, Session.UserId);
+                if (serviceResponse.Processed)
+                {
+
+                    _success = true;
+                    _nestedErrorMessage = MessageEnum.GenerateOK.GetStringValue();
+
+                    await _mudDataGrid!.ReloadServerData();
+                }
+                else
+                {
+                    // Console.WriteLine(serviceResponse.Message);
+                    _success = false;
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GenerateNotOK.GetStringValue();
+                }
+                OpenNested();
+            }
+
+        }
+
+        selectedInventoryCount = new([]);
+        await Task.CompletedTask;
+
+    }
+
+
+    private async Task AvailableItemsAsync(int moduleId, string moduleActionName)
+    {
+        Console.WriteLine("Activar Pre-Conteo de Inventario...");
+        if (selectedInventoryCount.Any())
+        {
+            var option = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false
+            };
+            bool? result = await DialogService.ShowMessageBox(
+                "Activar Pre-Conteo de Inventario",
+                $"Seguro de Activar Pre-Conteo de Inventario? ",
+                yesText: "Si", noText: "No", "", option);
+
+            if (result == true)
+            {
+                List<PostAction> ActionList = ([]);
+
+                foreach (var Item in selectedInventoryCount)
+                {
+                    var ItemAction = new PostAction
+                    {
+                        RecordId = Item.Id,
+                        ModuleId = moduleId,
+                        ActionName = moduleActionName
+                    };
+                    ActionList.Add(ItemAction);
+                }
+
+                var serviceResponse = await InventoryCountService.ActionsInventoryCount(ActionList, Session.UserId);
+                if (serviceResponse.Processed)
+                {
+
+                    _success = true;
+                    _nestedErrorMessage = MessageEnum.GenerateOK.GetStringValue();
+
+                    await _mudDataGrid!.ReloadServerData();
+                }
+                else
+                {
+                    // Console.WriteLine(serviceResponse.Message);
+                    _success = false;
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GenerateNotOK.GetStringValue();
+                }
+                OpenNested();
+            }
+
+        }
+
+        selectedInventoryCount = new([]);
+        await Task.CompletedTask;
+
+    }
+
+    private async Task ProcessItemsAsync(int moduleId, string moduleActionName)
+    {
+        Console.WriteLine("Procesar Ajuste de Inventario...");
+        if (selectedInventoryCount.Any())
+        {
+            var option = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false
+            };
+            bool? result = await DialogService.ShowMessageBox(
+                "Procesar Ajuste de Inventario",
+                $"Seguro de Ajustar Inventario? ",
+                yesText: "Si", noText: "No", "", option);
+
+            if (result == true)
+            {
+                List<PostAction> ActionList = ([]);
+
+                foreach (var Item in selectedInventoryCount)
+                {
+                    var ItemAction = new PostAction
+                    {
+                        RecordId = Item.Id,
+                        ModuleId = moduleId,
+                        ActionName = moduleActionName
+                    };
+                    ActionList.Add(ItemAction);
+                }
+
+                var serviceResponse = await InventoryCountService.ActionsInventoryCount(ActionList, Session.UserId);
+                if (serviceResponse.Processed)
+                {
+
+                    _success = true;
+                    _nestedErrorMessage = MessageEnum.GenerateOK.GetStringValue();
+
+                    await _mudDataGrid!.ReloadServerData();
+                }
+                else
+                {
+                    // Console.WriteLine(serviceResponse.Message);
+                    _success = false;
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GenerateNotOK.GetStringValue();
+                }
+                OpenNested();
+            }
+
+        }
+
+        selectedInventoryCount = new([]);
+        await Task.CompletedTask;
+
+    }
+
+
+    private async Task DeclineItemsAsync(int moduleId, string moduleActionName)
+    {
+        Console.WriteLine("Anular Conteo de Inventario...");
+        if (selectedInventoryCount.Any())
+        {
+            var option = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false
+            };
+            bool? result = await DialogService.ShowMessageBox(
+                "Anular Conteo de Inventario",
+                $"Seguro de Anular Conteo de Inventario? ",
+                yesText: "Si", noText: "No", "", option);
+
+            if (result == true)
+            {
+                List<PostAction> ActionList = ([]);
+
+                foreach (var Item in selectedInventoryCount)
+                {
+                    var ItemAction = new PostAction
+                    {
+                        RecordId = Item.Id,
+                        ModuleId = moduleId,
+                        ActionName = moduleActionName
+                    };
+                    ActionList.Add(ItemAction);
+                }
+
+                var serviceResponse = await InventoryCountService.ActionsInventoryCount(ActionList, Session.UserId);
+                if (serviceResponse.Processed)
+                {
+
+                    _success = true;
+                    _nestedErrorMessage = MessageEnum.GenerateOK.GetStringValue();
+
+                    await _mudDataGrid!.ReloadServerData();
+                }
+                else
+                {
+                    // Console.WriteLine(serviceResponse.Message);
+                    _success = false;
+                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GenerateNotOK.GetStringValue();
+                }
+                OpenNested();
+            }
+
+        }
+
+        selectedInventoryCount = new([]);
+        await Task.CompletedTask;
+
+    }
+
+
+
+    private Func<GetInventoryCount, string> _cellStyleFunc => x =>
     {
         string style = "";
 
-        if (x.EstatusName.ToUpper() == "BORRADOR")
+        if (x.StatusName.ToUpper() == "BORRADOR")
             style += "";
 
-        else if (x.EstatusName.ToUpper() == "ACTIVADO")
+        else if (x.StatusName.ToUpper() == "ACTIVADO")
         {
             style += "color:#fff";
 
@@ -467,7 +815,7 @@
         }
 
 
-        else if (x.EstatusName.ToUpper() == "BLOQUEADO")
+        else if (x.StatusName.ToUpper() == "BLOQUEADO")
         {
             style += "color:#fff";
             style += ";background-color:#757575";

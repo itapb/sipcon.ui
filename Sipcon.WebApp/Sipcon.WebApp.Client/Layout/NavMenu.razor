@@ -1,276 +1,248 @@
 ﻿@* @attribute [Authorize]
 @using Microsoft.AspNetCore.Authorization *@
 
-<AuthorizeView > 
-     <Authorized>
-        <MudNavMenu>
+<AuthorizeView>
+    <Authorized>
+        <MudNavMenu Class="mud-width-full py-2 mud-background-gray dark-theme" Margin="Margin.Dense">
+            
+            @* CONTACTOS *@
             @if (_ModuleNames.Any(s => s.Contains("CONTACTOS-")))
             {
-                <MudNavLink Href="contacts" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.ImportContacts" IconColor="Color.Info">Contactos</MudNavLink>
+                <MudNavLink Href="contacts" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.ContactPhone" IconColor="Color.Warning">
+                    Contactos
+                </MudNavLink>
             }
-            
+
+            @* VEHÍCULOS *@
             @if (_ModuleNames.Any(s => s.Contains("VEHICULOS-")))
             {
-                <MudNavGroup Title="Vehiculos" Icon="@Icons.Material.Filled.DirectionsCar" IconColor="Color.Info">
-
-                    @if (_ModuleNames.Contains("VEHICULOS-VEHICULOS"))
+                <MudNavGroup Title="Vehículos" Icon="@Icons.Material.Filled.DirectionsCar" IconColor="Color.Warning" Expanded="false">
+                    @if (_ModuleNames.Any(s => s.Contains("VEHICULOS-VEHICULOS")))
                     {
-                        <MudNavLink Href="vehicles">Vehiculos</MudNavLink>
+                        <MudNavLink Href="vehicles" Icon="@Icons.Material.Filled.MinorCrash" IconColor="Color.Default">Vehículos</MudNavLink>
                     }
-                    @if (_ModuleNames.Contains("VEHICULOS-MODELOS"))
+                    @if (_ModuleNames.Any(s => s.Contains("VEHICULOS-MODELOS")))
                     {
-                        <MudNavLink Href="models">Modelos</MudNavLink>
+                        <MudNavLink Href="models" Icon="@Icons.Material.Filled.CarRepair" IconColor="Color.Default">Modelos</MudNavLink>
                     }
-                    @if (_ModuleNames.Contains("VEHICULO-MANODEOBRA"))
+                    @if (_ModuleNames.Any(s => s.Contains("VEHICULO-MANODEOBRA")))
                     {
-                        <MudNavLink Href="labortime">Mano de Obra</MudNavLink>
+                        <MudNavLink Href="labortime" Icon="@Icons.Material.Filled.BuildCircle" IconColor="Color.Default">Mano de Obra</MudNavLink>
                     }
-                    
                 </MudNavGroup>
-
             }
-             
 
+            @* PÓLIZAS *@
             @if (_ModuleNames.Any(s => s.Contains("POLIZAS-")))
             {
-                <MudNavGroup Title="Polizas" Icon="@Icons.Custom.FileFormats.FileDocument" IconColor="Color.Info">
-
-                    @if (_ModuleNames.Contains("POLIZAS-POLIZAS"))
+                <MudNavGroup Title="Pólizas" Icon="@Icons.Material.Filled.Verified" IconColor="Color.Warning" Expanded="false">
+                    @if (_ModuleNames.Any(s => s.Contains("POLIZAS-POLIZAS")))
                     {
-                        <MudNavLink Href="policy">Polizas</MudNavLink>
+                        <MudNavLink Href="policy" Icon="@Icons.Material.Filled.Description" IconColor="Color.Default">Pólizas</MudNavLink>
                     }
-                    @if (_ModuleNames.Contains("POLIZAS-TIPOS"))
+                    @if (_ModuleNames.Any(s => s.Contains("POLIZAS-TIPOS")))
                     {
-                        <MudNavLink Href="policytypes">Tipos</MudNavLink>
+                        <MudNavLink Href="policytypes" Icon="@Icons.Material.Filled.Class" IconColor="Color.Default">Tipos</MudNavLink>
                     }
                 </MudNavGroup>
             }
-           
+
+            @* SERVICIOS *@
             @if (_ModuleNames.Any(s => s.Contains("SERVICIOS-")))
             {
-                <MudNavGroup Title="Servicios" Icon="@Icons.Material.Filled.Speed" IconColor="Color.Info">
-                    @if (_ModuleNames.Contains("SERVICIOS-ASISTENCIA TECNICA"))
+                <MudNavGroup Title="Servicios Taller" Icon="@Icons.Material.Filled.HomeRepairService" IconColor="Color.Warning" Expanded="false">
+                    @if (_ModuleNames.Any(s => s.Contains("SERVICIOS-ASISTENCIA TECNICA")))
                     {
-                        <MudNavLink Href="assistence">Asistencia Tecnica</MudNavLink>
+                        <MudNavLink Href="assistence" Icon="@Icons.Material.Filled.TaxiAlert" IconColor="Color.Default">Asistencia Técnica</MudNavLink>
                     }
-                    @if (_ModuleNames.Contains("SERVICIOS-LICENCIA"))
+                    @if (_ModuleNames.Any(s => s.Contains("SERVICIOS-LICENCIA")))
                     {
-                        <MudNavLink Href="license">Licencias</MudNavLink>
+                        <MudNavLink Href="license" Icon="@Icons.Material.Filled.Pin" IconColor="Color.Default">Licencias</MudNavLink>
                     }
-                    @if (_ModuleNames.Contains("SERVICIOS-MANTENIMIENTO"))
+                    @if (_ModuleNames.Any(s => s.Contains("SERVICIOS-MANTENIMIENTO")))
                     {
-                        <MudNavLink Href="maintenance">Mantenimiento</MudNavLink>
+                        <MudNavLink Href="maintenance" Icon="@Icons.Material.Filled.Construction" IconColor="Color.Default">Mantenimiento</MudNavLink>
                     }
-                    @if (_ModuleNames.Contains("SERVICIOS-REPORTE FALLA"))
+                    @if (_ModuleNames.Any(s => s.Contains("SERVICIOS-REPORTE FALLA")))
                     {
-                        <MudNavLink Href="failreport">Reporte Falla</MudNavLink>
+                        <MudNavLink Href="failreport" Icon="@Icons.Material.Filled.CarCrash" IconColor="Color.Default">Reporte de Falla</MudNavLink>
                     }
-                    @if (_ModuleNames.Contains("SERVICIOS-CONCILIACION SRG"))
+                    @if (_ModuleNames.Any(s => s.Contains("SERVICIOS-CONCILIACION SRG")))
                     {
-                        <MudNavLink Href="reportdms">Conciliación SRG</MudNavLink>
+                        <MudNavLink Href="reportdms" Icon="@Icons.Material.Filled.SyncAlt" IconColor="Color.Default">Conciliación SRG</MudNavLink>
                     }
                 </MudNavGroup>
             }
+
+            @* INSPECCIÓN *@
             @if (_ModuleNames.Any(s => s.Contains("INSPECCION-")))
             {
-                <MudNavGroup Title="Inspeccion" Icon="@Icons.Material.Filled.FactCheck" IconColor="Color.Info">
-                    @if (_ModuleNames.Contains("INSPECCION-INSPECCION"))
+                <MudNavGroup Title="Inspección" Icon="@Icons.Material.Filled.FactCheck" IconColor="Color.Warning" Expanded="false">
+                    @if (_ModuleNames.Any(s => s.Contains("INSPECCION-INSPECCION")))
                     {
-                        <MudNavLink Href="inspections">Ver inspecciones</MudNavLink>
+                        <MudNavLink Href="inspections" Icon="@Icons.Material.Filled.Rule" IconColor="Color.Default">Ver Inspecciones</MudNavLink>
                     }
-                    @if (_ModuleNames.Contains("INSPECCION-AREA"))
+                    @if (_ModuleNames.Any(s => s.Contains("INSPECCION-AREA")))
                     {
-                        <MudNavLink Href="area">Áreas</MudNavLink>
+                        <MudNavLink Href="area" Icon="@Icons.Material.Filled.PinDrop" IconColor="Color.Default">Áreas</MudNavLink>
                     }
-                    @if (_ModuleNames.Contains("INSPECCION-FASE"))
+                    @if (_ModuleNames.Any(s => s.Contains("INSPECCION-FASE")))
                     {
-                        <MudNavLink Href="fase">Fases</MudNavLink>  
+                        <MudNavLink Href="fase" Icon="@Icons.Material.Filled.AltRoute" IconColor="Color.Default">Fases</MudNavLink>
                     }
-                    @if (_ModuleNames.Contains("INSPECCION-TIPOS-CARACTERISTICAS"))
+                    @if (_ModuleNames.Any(s => s.Contains("INSPECCION-TIPOS-CARACTERISTICAS")))
                     {
-                        <MudNavLink Href="featureType">Tipos de Características</MudNavLink>
+                        <MudNavLink Href="featureType" Icon="@Icons.Material.Filled.Category" IconColor="Color.Default">Tipos de Características</MudNavLink>
                     }
-                    @if (_ModuleNames.Contains("INSPECCION-CARACTERISTICAS"))
+                    @if (_ModuleNames.Any(s => s.Contains("INSPECCION-CARACTERISTICAS")))
                     {
-                        <MudNavLink Href="feature">Características</MudNavLink>
+                        <MudNavLink Href="feature" Icon="@Icons.Material.Filled.ChecklistRtl" IconColor="Color.Default">Características</MudNavLink>
                     }
                 </MudNavGroup>
             }
+
+            @* INVENTARIO Y REPUESTOS *@
             @if (_ModuleNames.Any(s => s.Contains("INVENTARIO-")))
             {
-                <MudNavGroup Title="Inventario" Icon="@Icons.Material.Filled.Inventory" IconColor="Color.Info">
-                    @if (_ModuleNames.Contains("INVENTARIO-REPUESTOS"))
+                <MudNavGroup Title="Inventario y Repuestos" Icon="@Icons.Material.Filled.PrecisionManufacturing" IconColor="Color.Warning" Expanded="false">
+                    @if (_ModuleNames.Any(s => s.Contains("INVENTARIO-REPUESTOS")))
                     {
-                        <MudNavLink Href="parts">Repuestos</MudNavLink>
+                        <MudNavLink Href="parts" Icon="@Icons.Material.Filled.Build" IconColor="Color.Default">Repuestos</MudNavLink>
                     }
-                    @if (_ModuleNames.Contains("INVENTARIO-REPUESTOS-CONSULTA"))
+                    @if (_ModuleNames.Any(s => s.Contains("INVENTARIO-REPUESTOS-CONSULTA")))
                     {
-                        <MudNavLink Href="partsinquiry">Consulta de Partes</MudNavLink>
+                        <MudNavLink Href="partsinquiry" Icon="@Icons.Material.Filled.ManageSearch" IconColor="Color.Default">Consulta de Partes</MudNavLink>
                     }
-
-                    @if (_ModuleNames.Contains("INVENTARIO-INVENTARIO"))
+                    @if (_ModuleNames.Any(s => s.Contains("INVENTARIO-INVENTARIO")))
                     {
-                        <MudNavLink Href="stocktaking">Inventario</MudNavLink>
+                        <MudNavLink Href="stocktaking" Icon="@Icons.Material.Filled.Inventory2" IconColor="Color.Default">Inventario Stock</MudNavLink>
                     }
-
-                    @if (_ModuleNames.Contains("INVENTARIO-ALMACEN"))
+                    @if (_ModuleNames.Any(s => s.Contains("INVENTARIO-ALMACEN")))
                     {
-                        <MudNavLink Href="warehouses">Almacen</MudNavLink>
+                        <MudNavLink Href="warehouses" Icon="@Icons.Material.Filled.Garage" IconColor="Color.Default">Almacén</MudNavLink>
                     }
-
-                    @if (_ModuleNames.Contains("INVENTARIO-ZONAS"))
+                    @if (_ModuleNames.Any(s => s.Contains("INVENTARIO-ZONAS")))
                     {
-                        <MudNavLink Href="zones">Zonas</MudNavLink>
+                        <MudNavLink Href="zones" Icon="@Icons.Material.Filled.Grid3x3" IconColor="Color.Default">Zonas</MudNavLink>
                     }
-   
-                    @if (_ModuleNames.Contains("INVENTARIO-UBICACIONES"))
+                    @if (_ModuleNames.Any(s => s.Contains("INVENTARIO-UBICACIONES")))
                     {
-                        <MudNavLink Href="locations">Ubicaciones</MudNavLink>
+                        <MudNavLink Href="locations" Icon="@Icons.Material.Filled.Place" IconColor="Color.Default">Ubicaciones</MudNavLink>
                     }
-                    
-                   @*  <MudNavLink Href="test">Kardex</MudNavLink> *@
-
-                    @if (_ModuleNames.Contains("INVENTARIO-PROCESOS-RECEPCION"))
+                    @if (_ModuleNames.Any(s => s.Contains("INVENTARIO-PROCESOS-RECEPCION")))
                     {
-                        <MudNavLink Href="reception">Recepcion</MudNavLink>
+                        <MudNavLink Href="reception" Icon="@Icons.Material.Filled.MoveToInbox" IconColor="Color.Default">Recepción</MudNavLink>
                     }
-
-                    @if (_ModuleNames.Contains("INVENTARIO-PROCESOS-TRASLADO"))
+                    @if (_ModuleNames.Any(s => s.Contains("INVENTARIO-PROCESOS-TRASLADO")))
                     {
-                        <MudNavLink Href="move">Traslado</MudNavLink>
+                        <MudNavLink Href="move" Icon="@Icons.Material.Filled.LocalShipping" IconColor="Color.Default">Traslado</MudNavLink>
                     }
-
-                    @if (_ModuleNames.Contains("INVENTARIO-PROCESOS-RECOLECCION"))
+                    @if (_ModuleNames.Any(s => s.Contains("INVENTARIO-PROCESOS-RECOLECCION")))
                     {
-                        <MudNavLink Href="collection">Recoleccion</MudNavLink>
+                        <MudNavLink Href="collection" Icon="@Icons.Material.Filled.ShoppingBag" IconColor="Color.Default">Recolección (Picking)</MudNavLink>
                     }
-
-                    @if (_ModuleNames.Contains("INVENTARIO-PROCESOS-AJUSTE"))
+                    @if (_ModuleNames.Any(s => s.Contains("INVENTARIO-PROCESOS-AJUSTE")))
                     {
-                        <MudNavLink Href="adjustment">Ajuste</MudNavLink>
+                        <MudNavLink Href="adjustment" Icon="@Icons.Material.Filled.Tune" IconColor="Color.Default">Ajuste de Stock</MudNavLink>
                     }
-
-
-                    @* @if (_ModuleNames.Contains("INVENTARIO-PROCESOS-BACKORDER"))
+                    @if (_ModuleNames.Any(s => s.Contains("INVENTARIO-PROCESOS-CONTROLDESPACHO")))
                     {
-                        <MudNavLink Href="backorders">BackOrders</MudNavLink>
-                    } *@
-                    @if (_ModuleNames.Contains("INVENTARIO-PROCESOS-CONTROLDESPACHO"))
-                    {
-                        <MudNavLink Href="dispatchcontrol">Control Despacho</MudNavLink>
-                    }    
-
-                    @if (_ModuleNames.Contains("INVENTARIO-PROCESOS-CONTROLFACTURACION"))
-                    {
-                        <MudNavLink Href="invoicecontrol">Control Facturacion</MudNavLink>
-                    }   
-                    
-                    @if (_ModuleNames.Contains("INVENTARIO-KARDEX"))
-                    {
-                        <MudNavLink Href="kardex">Kardex</MudNavLink>
+                        <MudNavLink Href="dispatchcontrol" Icon="@Icons.Material.Filled.DepartureBoard" IconColor="Color.Default">Control Despacho</MudNavLink>
                     }
-                     @if (_ModuleNames.Contains("INVENTARIO-CONTEO"))
+                    @if (_ModuleNames.Any(s => s.Contains("INVENTARIO-PROCESOS-CONTROLFACTURACION")))
                     {
-                        <MudNavLink Href="count">Conteo de Inventario</MudNavLink>
+                        <MudNavLink Href="invoicecontrol" Icon="@Icons.Material.Filled.ReceiptLong" IconColor="Color.Default">Control Facturación</MudNavLink>
                     }
-    
+                    @if (_ModuleNames.Any(s => s.Contains("INVENTARIO-KARDEX")))
+                    {
+                        <MudNavLink Href="kardex" Icon="@Icons.Material.Filled.MenuBook" IconColor="Color.Default">Kardex</MudNavLink>
+                    }
+                    @if (_ModuleNames.Any(s => s.Contains("INVENTARIO-CONTEO")))
+                    {
+                        <MudNavLink Href="count" Icon="@Icons.Material.Filled.Calculate" IconColor="Color.Default">Conteo de Inventario</MudNavLink>
+                    }
                 </MudNavGroup>
             }
 
+            @* PORTAL DE PAGOS *@
             @if (_ModuleNames.Any(s => s.Contains("PAGOS-")))
+            {
+                <MudNavGroup Title="Portal de Pagos" Icon="@Icons.Material.Filled.PointOfSale" IconColor="Color.Warning" Expanded="false">
+                    @if (_ModuleNames.Any(s => s.Contains("PAGOS-TASAS")))
                     {
-                        <MudNavGroup Title="Portal de Pagos" Icon="@Icons.Material.Filled.AccountBalance" IconColor="Color.Info">
-
-                            @if (_ModuleNames.Contains("PAGOS-TASAS"))
-                            {
-                                <MudNavLink Href="ratelist">Tasas</MudNavLink>
-                            }
-                            
-                            @if (_ModuleNames.Contains("PAGOS-REPORTE"))
-                            { 
-                                <MudNavLink Href="documentreport">Documentos por Pagar</MudNavLink>
-                            }
-
-                            @if (_ModuleNames.Contains("PAGOS-ASEGURAMIENTO"))
-                            { 
-                                <MudNavLink Href="paymentreport">Gestion de Pagos</MudNavLink>
-                            } 
-       
-                        </MudNavGroup>
+                        <MudNavLink Href="ratelist" Icon="@Icons.Material.Filled.CurrencyExchange" IconColor="Color.Default">Tasas</MudNavLink>
                     }
-           
+                    @if (_ModuleNames.Any(s => s.Contains("PAGOS-REPORTE")))
+                    {
+                        <MudNavLink Href="documentreport" Icon="@Icons.Material.Filled.RequestQuote" IconColor="Color.Default">Documentos por Pagar</MudNavLink>
+                    }
+                    @if (_ModuleNames.Any(s => s.Contains("PAGOS-ASEGURAMIENTO")))
+                    {
+                        <MudNavLink Href="paymentreport" Icon="@Icons.Material.Filled.Payments" IconColor="Color.Default">Gestión de Pagos</MudNavLink>
+                    }
+                </MudNavGroup>
+            }
+
+            @* PEDIDOS *@
             @if (_ModuleNames.Any(s => s.Contains("PEDIDOS-")))
             {
-                <MudNavGroup Title="Pedidos" Icon="@Icons.Material.Filled.ShoppingCart" IconColor="Color.Info">
-
-                    @if (_ModuleNames.Contains("PEDIDOS-PEDIDOS"))
+                <MudNavGroup Title="Pedidos" Icon="@Icons.Material.Filled.ShoppingCart" IconColor="Color.Warning" Expanded="false">
+                    @if (_ModuleNames.Any(s => s.Contains("PEDIDOS-PEDIDOS")))
                     {
-                        <MudNavLink Href="salesorder">Pedidos</MudNavLink>
+                        <MudNavLink Href="salesorder" Icon="@Icons.Material.Filled.AddShoppingCart" IconColor="Color.Default">Pedidos</MudNavLink>
                     }
-
-                    @if (_ModuleNames.Contains("PEDIDOS-RECEPCION"))
+                    @if (_ModuleNames.Any(s => s.Contains("PEDIDOS-RECEPCION")))
                     {
-                        <MudNavLink Href="dispatchguides">Recepcion</MudNavLink>
+                        <MudNavLink Href="dispatchguides" Icon="@Icons.Material.Filled.MarkunreadMailbox" IconColor="Color.Default">Recepción</MudNavLink>
                     }
-
-                    @if (_ModuleNames.Contains("PEDIDOS-RECLAMOS"))
+                    @if (_ModuleNames.Any(s => s.Contains("PEDIDOS-RECLAMOS")))
                     {
-                        <MudNavLink Href="claimorder">Reclamo</MudNavLink>
+                        <MudNavLink Href="claimorder" Icon="@Icons.Material.Filled.Report" IconColor="Color.Default">Reclamo</MudNavLink>
                     }
-
                 </MudNavGroup>
             }
-           
-            
+
+            @* SEGURIDAD *@
             @if (_ModuleNames.Any(s => s.Contains("SEGURIDAD-")))
             {
-                <MudNavGroup Title="Seguridad" Icon="@Icons.Material.Filled.Security" IconColor="Color.Info">
-
-
-                    @if (_ModuleNames.Contains("SEGURIDAD-CONTACTOS"))
+                <MudNavGroup Title="Seguridad" Icon="@Icons.Material.Filled.AdminPanelSettings" IconColor="Color.Warning" Expanded="false">
+                    @if (_ModuleNames.Any(s => s.Contains("SEGURIDAD-CONTACTOS")))
                     {
-                        <MudNavLink Href="accessuser">Usuarios</MudNavLink>
+                        <MudNavLink Href="accessuser" Icon="@Icons.Material.Filled.People" IconColor="Color.Default">Usuarios</MudNavLink>
+                        <MudNavLink Href="accesscontact" Icon="@Icons.Material.Filled.Badge" IconColor="Color.Default">Contactos</MudNavLink>
                     }
-
-                    @if (_ModuleNames.Contains("SEGURIDAD-CONTACTOS"))
+                    @if (_ModuleNames.Any(s => s.Contains("SEGURIDAD-ROLES")))
                     {
-                        <MudNavLink Href="accesscontact">Contactos</MudNavLink>
+                        <MudNavLink Href="accessgroup" Icon="@Icons.Material.Filled.Security" IconColor="Color.Default">Roles</MudNavLink>
                     }
-
-                    @if (_ModuleNames.Contains("SEGURIDAD-ROLES"))
-                    {
-                        <MudNavLink Href="accessgroup">Roles</MudNavLink>
-                    }
-                   
                 </MudNavGroup>
             }
 
-             @if (_ModuleNames.Any(s => s.Contains("REPORTES-")))
+            @* REPORTES *@
+            @if (_ModuleNames.Any(s => s.Contains("REPORTES-")) || _ModuleNames.Any(s => s.Contains("POWERBI-")))
             {
-                <MudNavGroup Title="Reportes" Icon="@Icons.Material.Filled.ReportProblem" IconColor="Color.Info">
-                    @if (_ModuleNames.Contains("REPORTES-REPORTES"))
+                <MudNavGroup Title="Reportes & Analítica" Icon="@Icons.Material.Filled.BarChart" IconColor="Color.Warning" Expanded="false">
+                    @if (_ModuleNames.Any(s => s.Contains("REPORTES-REPORTES")))
                     {
-                        <MudNavLink Href="reporting">Reportes</MudNavLink>
+                        <MudNavLink Href="reporting" Icon="@Icons.Material.Filled.Assessment" IconColor="Color.Default">Reportes General</MudNavLink>
                     }
-
-                    @if (_ModuleNames.Contains("REPORTES-INTT"))
+                    @if (_ModuleNames.Any(s => s.Contains("REPORTES-INTT")))
                     {
-                        <MudNavLink Href="intt">INTT</MudNavLink>
+                        <MudNavLink Href="intt" Icon="@Icons.Material.Filled.DirectionsBus" IconColor="Color.Default">INTT</MudNavLink>
                     }
-
-                    @if (_ModuleNames.Contains("REPORTES-FIGO"))
+                    @if (_ModuleNames.Any(s => s.Contains("REPORTES-FIGO")))
                     {
-                        <MudNavLink Href="ReportingFigo">Reportes Figo</MudNavLink>
+                        <MudNavLink Href="ReportingFigo" Icon="@Icons.Material.Filled.Analytics" IconColor="Color.Default">Reportes Figo</MudNavLink>
                     }
-
                     @if (_ModuleNames.Any(s => s.Contains("POWERBI-")))
                     {
-                        <MudNavLink Href="PowerBI">Power BI</MudNavLink>
+                        <MudNavLink Href="PowerBI" Icon="@Icons.Material.Filled.Insights" IconColor="Color.Default">Power BI</MudNavLink>
                     }
                 </MudNavGroup>
             }
+
         </MudNavMenu>
-    </Authorized> 
+    </Authorized>
 </AuthorizeView>
 
 @code { [Inject] private UserSession Session { get; set; } = null!;

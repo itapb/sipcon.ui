@@ -12,111 +12,141 @@
 
 
 <MudForm Model="@_model" @ref="@form" Validation="@(_modelValidator.ValidateValue)" ValidationDelay="0">
-    <MudDialog Class="blur dialog-background" ActionsClass="dialog-background-surface pa-4" MaxWidth="MaxWidth.Medium" FullWidth="true">
+	<MudDialog Class="blur dialog-background" ActionsClass="dialog-background-surface">
 
-        @* --- TÍTULO Y CABECERA DEL DIÁLOGO --- *@
-        <TitleContent>
-            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="w-100 pr-2">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                    <MudIcon Icon="@Icons.Material.Filled.Inventory2" Color="Color.Info" Style="font-size: 2.2rem;" />
-                    <div>
-                        <MudText Typo="Typo.h6"><b>@(_model.Id != 0 ? $"Editar Conteo #{_model.Id}" : "Nuevo Conteo de Inventario")</b></MudText>
-                        <MudText Typo="Typo.caption" Class="mud-text-secondary">Gestión de datos de cabecera</MudText>
-                    </div>
-                </MudStack>
+		<DialogContent>
 
-                @* Estado de la Póliza / Conteo *@
-                @if (_model.Id != 0 && !string.IsNullOrEmpty(_model.StatusName))
-                {
-                    <MudChip T="string" 
-                             Color="@GetStatusColor(_model.StatusName)" 
-                             Variant="Variant.Filled" 
-                             Size="Size.Small">
-                        <b>@_model.StatusName.ToUpper()</b>
-                    </MudChip>
-                }
-            </MudStack>
-        </TitleContent>
+			<MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
 
-        @* --- CONTENIDO DEL FORMULARIO --- *@
-        <DialogContent>
-            <div id="unique_id_scroll_section" class="ma-0 py-2">
-                <MudGrid Spacing="2">
-                    
-                    @* Campo: Descripción *@
-                    <MudItem xs="12">
-                        <MudTextField @bind-Value="_model.Description"
-                                      For="@(() => _model.Description)"
-                                      Label="Descripción / Folio del Conteo"
-                                      Placeholder="Ej. CONTEO ANUAL ALMACÉN PRINCIPAL"
-                                      Variant="Variant.Outlined"
-                                      Margin="Margin.Dense"
-                                      Adornment="Adornment.Start"
-                                      AdornmentIcon="@Icons.Material.Filled.Notes"
-                                      AdornmentColor="Color.Info" />
-                    </MudItem>
+				<MudCard>
 
-                    @* Campo: Tipo de Inventario *@
-                    <MudItem xs="12" sm="6">
-                        <MudSelect T="string"
-                                   @bind-Value="_model.Type"
-                                   For="@(() => _model.Type)"
-                                   Label="Tipo de Inventario"
-                                   Variant="Variant.Outlined"
-                                   Margin="Margin.Dense"
-                                   AdornmentIcon="@Icons.Material.Filled.Category"
-                                   AdornmentColor="Color.Info"
-                                   Dense="true">
-                            <MudSelectItem Value="@("CICLICO")">CÍCLICO</MudSelectItem>
-                            <MudSelectItem Value="@("FISICO")">FÍSICO </MudSelectItem>
-                        </MudSelect>
-                    </MudItem>
+					<MudCardHeader>
+						<CardHeaderContent>
+							<MudGrid Spacing="0" Justify="Justify.Center">
+								<MudItem xs="12" sm="4">
+										<MudHidden @bind-value="InventoryCountId" />
 
-                    @* Campo: Estado (Solo lectura o Selección) *@
-                    <MudItem xs="12" sm="6">
-                        <MudTextField Value="@(_model.StatusName ?? "GENERADO")"
-                                      Label="Estatus Inicial"
-                                      Variant="Variant.Outlined"
-                                      Margin="Margin.Dense"
-                                      ReadOnly="true"
-                                      Adornment="Adornment.Start"
-                                      AdornmentIcon="@Icons.Material.Filled.Flag"
-                                      AdornmentColor="Color.Info" />
-                    </MudItem>
+								
+								</MudItem>
+
+								<MudItem xs="12" sm="2">
+
+								</MudItem>
+								<MudItem xs="12" sm="6">
+									<div class="d-flex justify-right" style="justify-content: end;">
+
+										<MudButton OnClick="Cancel">Cancelar</MudButton>
+										<MudFab StartIcon="@Icons.Material.Filled.Save" Label="Aceptar" OnClick="@(async () => await OnValidSubmit())" Color="Color.Info" Size="Size.Small" />
 
 
-                 
-                </MudGrid>
-            </div>
+									</div>
+								</MudItem>
+							</MudGrid>
 
-            @* Modal Anidado de Error/Confirmación *@
-            <MudDialog @bind-Visible="_nestedModalVisible">
-                <TitleContent>
-                    <MudStack Row="true" AlignItems="AlignItems.Center">
-                        <MudIcon Icon="@(_successModal ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Error)" 
-                                 Color="@(_successModal ? Color.Success : Color.Error)" 
-                                 Style="font-size: 2rem;" />
-                        <MudText Typo="Typo.h6">Notificación</MudText>
-                    </MudStack>
-                </TitleContent>
-                <DialogContent>
-                    <MudText Class="my-2">@_errorModalMessage</MudText>
-                </DialogContent>
-                <DialogActions>
-                    <MudButton Color="Color.Info" OnClick="CloseNestedModal" Variant="Variant.Filled" Class="px-8">Aceptar</MudButton>
-                </DialogActions>
-            </MudDialog>
-        </DialogContent>
 
-        @* --- BOTONES DE ACCIÓN DE DIÁLOGO --- *@
-        <DialogActions>
-            <MudButton OnClick="Cancel" Variant="Variant.Text" Color="Color.Secondary">Cancelar</MudButton>
-            <MudButton OnClick="OnValidSubmit" Variant="Variant.Filled" Color="Color.Info" StartIcon="@Icons.Material.Filled.Save">
-                Guardar
-            </MudButton>
-        </DialogActions>
+						</CardHeaderContent>
 
-    </MudDialog>
+					</MudCardHeader>
+
+				</MudCard>
+
+			</MudContainer>
+
+			<MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
+				<MudGrid Spacing="1" Justify="Justify.Center">
+
+					<MudItem xs="12" sm="4">
+						<MudCard>
+
+							<MudCardContent Style="padding-top: 0px;">
+								<div class="d-flex justify-center">
+
+									<MudTooltip Text="Imagen Conteo de Inventario">
+										<MudImage Src="@(_model.SupplierId == 4069 ? "Images/changan_marca.jpeg" : "Images/foton_marca.jpeg")" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg "
+												  FallbackSrc="@(_model.SupplierId == 4069 ? "Images/changan_emblema.png": "Images/foton_emblema.jpeg")" Width="125" Height="152"></MudImage>
+									</MudTooltip>
+								</div>
+							</MudCardContent>
+						</MudCard>
+					</MudItem>
+					<MudItem xs="12" sm="8">
+						<MudCard>
+							<MudCardHeader>
+								<CardHeaderContent>
+									<MudStack Row="true">
+										<MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
+										<MudText Typo="Typo.subtitle2">Conteo de Inventario</MudText>
+									</MudStack>
+
+								</CardHeaderContent>
+								<CardHeaderActions>
+
+								</CardHeaderActions>
+							</MudCardHeader>
+							<MudCardContent Style="padding-top: 0px;">
+								<MudHidden @bind-value="_model.Id" />
+								<MudHidden @bind-value="_model.SupplierId" />
+
+								<MudTextField Typo="Typo.caption" @bind-Value="_model.Description"
+											  Label="Descripci&oacute;n"
+											  MaxLength="100"
+											  Variant="Variant.Text"
+											  Margin="Margin.Dense" 											
+											  For="@(() => _model.Description)"
+											  Immediate="true" />
+
+                                
+								<MudStack Row="true">
+									<MudSelect @bind-Value="_model.TypeId"
+											   Typo="Typo.caption"
+											   Label="Tipo de Conteo"
+											   AdornmentColor="Color.Default"
+											   Margin="Margin.None"
+											   For="@(() => _model.TypeId)"
+											   Immediate="true">
+										@foreach (var item in _InventoryCountType)
+										{
+											<MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
+										}
+									</MudSelect>
+
+									
+
+
+
+								</MudStack>
+
+
+
+							</MudCardContent>
+
+						</MudCard>
+					</MudItem>
+
+				</MudGrid>
+			</MudContainer>
+
+			<MudDialog @bind-Visible="_nestedModalVisible">
+				<TitleContent>
+					<MudStack Row="true">
+						<MudIcon Icon="@Icons.Material.Filled.CarRental" Color="@(_successModal ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
+						<MudText Typo="Typo.h6">Licencia</MudText>
+					</MudStack>
+				</TitleContent>
+				<DialogContent>
+					<MudStack Row="true">
+						<MudText Class="nested"><p>@_errorModalMessage!</p> </MudText>
+					</MudStack>
+				</DialogContent>
+				@* --- BOTONES DE ACCIÓN DE DIÁLOGO --- *@
+				<DialogActions>
+					<MudButton Color="Color.Info" OnClick="CloseNestedModal" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
+				</DialogActions>
+			</MudDialog>
+
+		</DialogContent>
+
+	</MudDialog>
 </MudForm>
 
 <style>
@@ -153,6 +183,9 @@
     }
 </style>
 
+
+
+
 @code { 
 	[Inject] private UserSession Session { get; set; } = null!;
 	[CascadingParameter]
@@ -161,10 +194,12 @@
 	[Parameter]
 	public int InventoryCountId { get; set; }
 	[Parameter]
+	public int SupplierId { get; set; }
+	[Parameter]
 	public ActionsEnum ActionsModal { get; set; }
 
 	private MudForm? form;
-	private InventoryCount _model { get; set; } = new InventoryCount();
+	private GetInventoryCount _model { get; set; } = new GetInventoryCount();
 
 	private string _errorModalMessage = string.Empty;
 	private string _errorSearchContact = string.Empty;
@@ -196,16 +231,17 @@
 
 		if (ActionsModal == ActionsEnum.Create)
 		{
-			_model = new InventoryCount();
+			_model = new GetInventoryCount();
+			_model.SupplierId = SupplierId;
 			_isReadOnly = false;
 
-			_InventoryCountType = await InventoryCountService.GetInventoryCountTypeOption(Session.UserId);
+			_InventoryCountType = await ModuleActionsService.GetInventoryCountTypeOption(Session.UserId);
 
 			await Task.Delay(100);
 		}
 		else
 		{
-			await GetPolicy();
+			await GetInventoryCount();
 
 		}
 
@@ -215,14 +251,14 @@
 	}
 
 
-	private async Task GetPolicy()
+	private async Task GetInventoryCount()
 	{
 		var serviceResponse = await InventoryCountService.GetOneInventoryCount(Session.SupplierId, Session.UserId, InventoryCountId);
 		if (serviceResponse.Processed)
 		{
-			_model = serviceResponse.Data.FirstOrDefault() ?? new InventoryCount();
+			_model = serviceResponse.Data.FirstOrDefault() ?? new GetInventoryCount();
 			_isReadOnly = _model.StatusName.ToUpper() == "BORRADOR" || _model.StatusName.Trim() == string.Empty ? false : true;
-			_InventoryCountType = await InventoryCountService.GetInventoryCountTypeOption(Session.UserId);
+			_InventoryCountType = await ModuleActionsService.GetInventoryCountTypeOption(Session.UserId);
 
 			StateHasChanged();
 			await Task.Delay(50);
@@ -230,7 +266,7 @@
 		}
 		else
 		{
-			_model = new Policy();
+			_model = new GetInventoryCount();
 			_errorModalMessage = MessageEnum.GetError.GetStringValue();
 			// Console.WriteLine(serviceResponse.Message);
 			OpenNested();
@@ -241,54 +277,6 @@
 	}
 
 
-
-	private async Task HandleKeyDownSearchContact(KeyboardEventArgs e)
-	{
-		if (e.Key == "Enter")
-		{
-			if (_model.Vat.Length >= 5)
-			{
-				Console.WriteLine($"Buscando VAT: {_model.Vat}");
-
-				await GetContact();
-
-				StateHasChanged();
-				await Task.CompletedTask;
-				return;
-
-			}
-
-		}
-	}
-
-	
-
-	
-
-
-	private async Task ClickAddContact()
-	{
-
-
-		form!.ResetValidation();
-		DialogOptions options = new() { MaxWidth = MaxWidth.Large, BackdropClick = false, NoHeader = true };
-		var parameters = new DialogParameters<ContactForm> { { x => x.Value, 0 } };
-
-		var dialog = await DialogService.ShowAsync<ContactForm>("Cliente", parameters, options);
-		var result = await dialog.Result;
-
-		if (!result!.Canceled && result.Data != null)
-		{
-			var _selectedContact = result.Data as int?;
-
-			_model.CustomerId = _selectedContact;
-			_errorSearchContact = string.Empty;
-
-			await GetContactById();
-
-			await Task.CompletedTask;
-		}
-	}
 
 
 	private async Task OnValidSubmit()
@@ -310,8 +298,8 @@
 					var _result = serviceResponse.Data ?? new ActionResult();
 					if (_result is not null)
 					{
-						IdPolicy = _result.LastId;
-						await GetPolicy();
+						InventoryCountId = _result.LastId;
+						await GetInventoryCount();
 					}
 				}
 				_errorModalMessage = MessageEnum.SaveOK.GetStringValue();
@@ -322,7 +310,7 @@
 			{
 				// Console.WriteLine(serviceResponse.Message);
 				_successModal = false;
-				_errorModalMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue();
+				_errorModalMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue(); ;
 
 			}
 			OpenNested();
@@ -367,7 +355,7 @@
 	/// Validacion del formulario
 	/// </summary>
 	/// <typeparam name="InventoryCount"></typeparam>
-	public class InventoryCountValidator : AbstractValidator<InventoryCount>
+	public class InventoryCountValidator : AbstractValidator<GetInventoryCount>
 	{
 		public InventoryCountValidator()
 		{
@@ -387,7 +375,7 @@
 
         public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
         {
-            var result = await ValidateAsync(ValidationContext<InventoryCount>.CreateWithOptions((InventoryCount)model, x => x.IncludeProperties(propertyName)));
+            var result = await ValidateAsync(ValidationContext<GetInventoryCount>.CreateWithOptions((GetInventoryCount)model, x => x.IncludeProperties(propertyName)));
             if (result.IsValid)
                 return Array.Empty<string>();
             return result.Errors.Select(e => e.ErrorMessage);

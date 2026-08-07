@@ -2,7 +2,8 @@
 @page "/inventoryCounDetail/{inventoryCountId:int}"
 
 @inject UtilModuleActions ModuleActionsService
-@inject IInventoryCountService InventoryService // Ajusta según el nombre real de tu servicio
+@inject IInventoryCountService InventoryService 
+@inject NavigationManager NavigationManager
 
 <PageTitle>Detalle de Conteo</PageTitle>
 <CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
@@ -56,29 +57,42 @@ else if (_inventoryHeader != null)
             </MudPaper>
         </MudItem>
 
-        @* Tarjeta 3: Fechas Clave *@
+        @* Tarjeta 3: Fechas Clave + Botón Volver Integrado *@
         <MudItem xs="12" md="5">
             <MudPaper Elevation="2" Class="pa-3" Style="height: 100%;">
-                <MudGrid Spacing="1" AlignItems="AlignItems.Center">
-                    <MudItem xs="6">
-                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                            <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Color="Color.Info" Size="Size.Small" />
-                            <div>
-                                <MudText Typo="Typo.caption" Class="mud-text-secondary">APERTURA (A)</MudText>
-                                <MudText Typo="Typo.body2"><b>@(_inventoryHeader.PreInventoryDate?.ToString("dd/MM/yyyy") ?? "-")</b></MudText>
-                            </div>
-                        </MudStack>
-                    </MudItem>
-                    <MudItem xs="6">
-                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                            <MudIcon Icon="@Icons.Material.Filled.EventAvailable" Color="Color.Success" Size="Size.Small" />
-                            <div>
-                                <MudText Typo="Typo.caption" Class="mud-text-secondary">CREACIÓN (C)</MudText>
-                                <MudText Typo="Typo.body2"><b>@(_inventoryHeader.Created.ToString("dd/MM/yyyy"))</b></MudText>
-                            </div>
-                        </MudStack>
-                    </MudItem>
-                </MudGrid>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <MudGrid Spacing="1" AlignItems="AlignItems.Center" Style="flex-grow: 1;">
+                        <MudItem xs="6">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Color="Color.Info" Size="Size.Small" />
+                                <div>
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">APERTURA (A)</MudText>
+                                    <MudText Typo="Typo.body2"><b>@(_inventoryHeader.PreInventoryDate?.ToString("dd/MM/yyyy") ?? "-")</b></MudText>
+                                </div>
+                            </MudStack>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                <MudIcon Icon="@Icons.Material.Filled.EventAvailable" Color="Color.Success" Size="Size.Small" />
+                                <div>
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">CREACIÓN (C)</MudText>
+                                    <MudText Typo="Typo.body2"><b>@(_inventoryHeader.Created.ToString("dd/MM/yyyy"))</b></MudText>
+                                </div>
+                            </MudStack>
+                        </MudItem>
+                    </MudGrid>
+
+                    <MudDivider Vertical="true" FlexItem="true" Class="mx-3" />
+
+                    @* Botón para regresar a /count *@
+                    <MudTooltip Text="Volver a Conteo de Inventario">
+                        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                                       Color="Color.Primary"
+                                       Variant="Variant.Filled"
+                                       Size="Size.Medium"
+                                       OnClick="GoToInventoryList" />
+                    </MudTooltip>
+                </MudStack>
             </MudPaper>
         </MudItem>
     </MudGrid>
@@ -103,13 +117,13 @@ else if (_inventoryHeader != null)
 
     private string _moduleName = "INVENTARIO-CONTEO";
     private List<ModuleAction> _itemsModules = new();
-    private InventoryCount? _inventoryHeader;
+    private GetInventoryCount? _inventoryHeader;
     private bool _loadingHeader = true;
 
     private List<BreadcrumbItem> _itemsNavigate = [
         new("Home", href: "", icon: Icons.Material.Filled.Home),
-        new("Inventario", href: "", icon: Icons.Material.Filled.Speed),
-        new("Conteo de Inventario", href: "", icon: Icons.Material.Filled.Speed),
+        new("Inventario", href: "count", icon: Icons.Material.Filled.Speed),
+        new("Conteo de Inventario", href: "count", icon: Icons.Material.Filled.Speed),
         new("Detalle de Conteo", href: "inventoryCounDetail", disabled: false, icon: Icons.Material.Filled.FormatListNumbered),
     ];
 
@@ -143,5 +157,10 @@ else if (_inventoryHeader != null)
     private async Task GetModuleActions()
     {
         _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
+    }
+
+    private void GoToInventoryList()
+    {
+        NavigationManager.NavigateTo("count");
     }
 }

@@ -1,21 +1,97 @@
 ﻿@page "/"
 @page "/home"
 
-
 @using Sipcon.WebApp.Client.Repository.Auth
 @inject IJSRuntime JS
 @implements IDisposable
+
+<PageTitle>Inicio - SIPCON APB</PageTitle>
+
 <style>
-   
-    .home-background {
-        min-height: 100vh;
-        background: url('images/apb_sipcom_1.jpg');
-        background-size: cover;
-       /*  opacity: 0.4; */
+    .home-container {
+        position: relative;
+        min-height: calc(100vh - 64px);
+        background: url('images/apb_sipcom_1.jpg') center center / cover no-repeat;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+    }
+
+    /* Fondo tenue para mantener nítida la imagen */
+    .home-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.18);
+    }
+
+    /* Estilo del Banner Ejecutivo Flotante */
+    .sipcon-home-card {
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.92) 0%, rgba(30, 41, 59, 0.88) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
     }
 </style>
 
-<div class="home-background"> </div>
+<div class="home-container pa-2 pa-md-3">
+    <div class="home-overlay"></div>
+
+    <MudContainer MaxWidth="MaxWidth.Large" Style="position: relative; z-index: 1;">
+        <MudGrid Justify="Justify.Center">
+            
+            <MudItem xs="12" sm="11" md="9" lg="7">
+                <MudPaper Class="sipcon-home-card px-4 py-2 rounded-xl mt-1">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="w-100 flex-wrap">
+                        
+                        @* Título e Indicador *@
+                        <div class="d-flex align-center gap-3 my-1">
+                            <div class="d-flex flex-column">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                    <MudText Typo="Typo.subtitle2" Class="fw-bold leading-none" Style="color: #F8FAFC; letter-spacing: 0.3px;">
+                                        Bienvenido a SIPCON
+                                    </MudText>
+                                    <span class="rounded-circle ms-1" style="width: 6px; height: 6px; background-color: #38BDF8; display: inline-block;"></span>
+                                </MudStack>
+                                <MudText Typo="Typo.caption" Style="color: #94A3B8; font-size: 0.68rem;" Class="mt-1">
+                                    Plataforma de Control Operativo
+                                </MudText>
+                            </div>
+                        </div>
+
+                        <MudDivider Vertical="true" FlexItem="true" Class="d-none d-sm-block my-1 opacity-20" Style="border-color: #64748B;" />
+
+                        @* Accesos a Contexto Integrados *@
+                        <MudStack Row="true" Spacing="3" AlignItems="AlignItems.Center" Class="my-1">
+                            
+                            <div class="d-flex align-center gap-2 px-2 py-1 rounded-lg" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.05);">
+                                <MudAvatar Size="Size.Small" Style="background-color: rgba(56, 189, 248, 0.1); color: #38BDF8; width: 28px; height: 28px;">
+                                    <MudIcon Icon="@Icons.Material.Outlined.Domain" Style="font-size: 1rem;" />
+                                </MudAvatar>
+                                <div class="d-flex flex-column">
+                                    <MudText Typo="Typo.caption" Class="fw-semibold leading-none" Style="color: #F8FAFC; font-size: 0.7rem;">Planta</MudText>
+                                    <MudText Typo="Typo.overline" Style="color: #94A3B8; font-size: 0.6rem; line-height: 1;">Operación</MudText>
+                                </div>
+                            </div>
+
+                            <div class="d-flex align-center gap-2 px-2 py-1 rounded-lg" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.05);">
+                                <MudAvatar Size="Size.Small" Style="background-color: rgba(56, 189, 248, 0.1); color: #38BDF8; width: 28px; height: 28px;">
+                                    <MudIcon Icon="@Icons.Material.Outlined.Storefront" Style="font-size: 1rem;" />
+                                </MudAvatar>
+                                <div class="d-flex flex-column">
+                                    <MudText Typo="Typo.caption" Class="fw-semibold leading-none" Style="color: #F8FAFC; font-size: 0.7rem;">Concesionarios</MudText>
+                                    <MudText Typo="Typo.overline" Style="color: #94A3B8; font-size: 0.6rem; line-height: 1;">Red</MudText>
+                                </div>
+                            </div>
+
+                        </MudStack>
+
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+        </MudGrid>
+    </MudContainer>
+</div>
 
 @code { [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;

@@ -14,9 +14,9 @@
         private readonly HttpClient _http = http;
 
         
-        public async Task<ApiResponse<List<InventoryCount>>> GetInventoryCount(int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "",  string DateFrom = "", string DateTo = "", int? EstatusId = null)
+        public async Task<ApiResponse<List<GetInventoryCount>>> GetInventoryCount(int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "",  string DateFrom = "", string DateTo = "", int? EstatusId = null)
         {
-            ApiResponse<List<InventoryCount>>? result;
+            ApiResponse<List<GetInventoryCount>>? result;
 
             try
             {
@@ -27,10 +27,10 @@
                 url = (EstatusId.HasValue) ? $"{url}&estatusId={EstatusId}" : url; 
 
 
-                result = await _http.GetFromJsonAsync<ApiResponse<List<InventoryCount>>>(url);
+                result = await _http.GetFromJsonAsync<ApiResponse<List<GetInventoryCount>>>(url);
                 
 
-                result = (result is null) ? new ApiResponse<List<InventoryCount>>()
+                result = (result is null) ? new ApiResponse<List<GetInventoryCount>>()
                 {
                     Processed = false,
                     Message = "La respuesta del servidor no contiene datos."
@@ -39,7 +39,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<List<InventoryCount>>()
+                result = new ApiResponse<List<GetInventoryCount>>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
@@ -50,17 +50,17 @@
 
         }
 
-        public async Task<ApiResponse<List<InventoryCount>>> GetOneInventoryCount(int IdSupplier, int IdUser, int InventoryCountId)
+        public async Task<ApiResponse<List<GetInventoryCount>>> GetOneInventoryCount(int IdSupplier, int IdUser, int InventoryCountId)
         {
-            ApiResponse<List<InventoryCount>>? result;
+            ApiResponse<List<GetInventoryCount>>? result;
 
             try
             {
                 var url = $"api/InventoryCount/GetOneInventoryCount?supplierId={IdSupplier}&userId={IdUser}&inventoryCountId={InventoryCountId}";
-                result = await _http.GetFromJsonAsync<ApiResponse<List<InventoryCount>>>(url);
+                result = await _http.GetFromJsonAsync<ApiResponse<List<GetInventoryCount>>>(url);
 
 
-                result = (result is null) ? new ApiResponse<List<InventoryCount>>()
+                result = (result is null) ? new ApiResponse<List<GetInventoryCount>>()
                 {
                     Processed = false,
                     Message = "La respuesta del servidor no contiene datos."
@@ -69,7 +69,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<List<InventoryCount>>()
+                result = new ApiResponse<List<GetInventoryCount>>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
@@ -124,9 +124,9 @@
 
 
 
-        public async Task<ApiResponse<List<GetInventoryCountDetail>>> GetInventoryCountDetails(int IdSupplier, int IdUser, int inventoryCountId, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "", int? EstatusId = null)
+        public async Task<ApiResponse<List<GetCountFull>>> GetInventoryCountDetails(int IdSupplier, int IdUser, int inventoryCountId, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "", int? EstatusId = null)
         {
-            ApiResponse<List<GetInventoryCountDetail>>? result;
+            ApiResponse<List<GetCountFull>>? result;
 
             try
             {
@@ -136,11 +136,10 @@
                 url = string.IsNullOrEmpty(DateTo) ? url : $"{url}&upToDate={DateTo}";
                 url = (EstatusId.HasValue) ? $"{url}&estatusId={EstatusId}" : url;
 
+                // Se cambia GetInventoryCountDetail por GetCountFull para que coincida con el JSON anidado
+                result = await _http.GetFromJsonAsync<ApiResponse<List<GetCountFull>>>(url);
 
-                result = await _http.GetFromJsonAsync<ApiResponse<List<GetInventoryCountDetail>>>(url);
-
-
-                result = (result is null) ? new ApiResponse<List<GetInventoryCountDetail>>()
+                result = (result is null) ? new ApiResponse<List<GetCountFull>>()
                 {
                     Processed = false,
                     Message = "La respuesta del servidor no contiene datos."
@@ -149,7 +148,7 @@
             }
             catch (Exception ex)
             {
-                result = new ApiResponse<List<GetInventoryCountDetail>>()
+                result = new ApiResponse<List<GetCountFull>>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
@@ -157,9 +156,7 @@
             }
 
             return result;
-
         }
-
 
         public async Task<ApiResponse<List<InventoryCountType>>> GetInventoryCountTypes(int IdUser)
         {
@@ -167,7 +164,7 @@
 
             try
             {
-                var url = $"api/InventoryCount/GetInventoryCountTypes?userId={IdUser}";
+                var url = $"api/InventoryCount/GetCountType?userId={IdUser}";
                 result = await _http.GetFromJsonAsync<ApiResponse<List<InventoryCountType>>>(url);
 
 
@@ -192,7 +189,72 @@
         }
 
 
+        public async Task<ApiResponse<ActionResult>> UpdateInventoryCount(GetInventoryCount InventoryCount, int IdUser)
+        {
+            ApiResponse<ActionResult>? result;
+
+            try
+            {
+                var _inventoryCount = new InventoryCount()
+                {
+                    Id = InventoryCount.Id,
+                    Description = InventoryCount.Description,
+                    TypeId = InventoryCount.TypeId,
+                    SupplierId = InventoryCount.SupplierId
+                };
+
+                var response = await _http.PostAsJsonAsync($"api/InventoryCount/PostInventoryCount?userId={IdUser}", _inventoryCount);
+
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = "El servidor devolvió una respuesta vacía."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+            return result;
+        }
+
+
+        public async Task<ApiResponse<ActionResult>> ActionsInventoryCount(List<PostAction> PostActions, int IdUser)
+        {
+            ApiResponse<ActionResult>? result;
+
+            try
+            {
+                var response = await _http.PostAsJsonAsync($"api/InventoryCount/PostInventoryCountActions?userId={IdUser}", PostActions);
+
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = "El servidor devolvió una respuesta vacía."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+            return result;
+
+        }
+
 
     }
-
 }
+
+                
