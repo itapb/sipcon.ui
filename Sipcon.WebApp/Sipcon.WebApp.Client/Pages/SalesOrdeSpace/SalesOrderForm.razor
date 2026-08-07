@@ -9,6 +9,9 @@
                         <MudFab StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" Size="Size.Small" Label="Guardar" OnClick="SaveClick" Disabled="@(!IsCreatedSalesOrder)"></MudFab>
                         <MudButton OnClick="CloseClick">Cerrar</MudButton>
                     </MudStack>
+                     <MudStack>
+                            <MudFab StartIcon="@Icons.Material.Filled.AttachFile" Color="Color.Info" Size="Size.Small" Label="Archivos" OnClick="AttachmentsClick"></MudFab>
+                     </MudStack>
                     <MudStack>
                           @if (MasterSalesOrder is not null) { <MudSwitch @bind-Value="MasterSalesOrder.Paralyzed" ReadOnly="true" Color="Color.Primary" Label="Paralizado" Disabled="@(!IsCreatedSalesOrder)"/>}
                     </MudStack>
@@ -71,7 +74,18 @@
                                     </MudSelect>
                                 </MudItem>
                                 <MudItem xs="12">
-                                    <MudTextField ReadOnly="true" @bind-Value="MasterSalesOrder.VehicleVin" Label="@("Vehiculo" + (!String.IsNullOrEmpty(MasterSalesOrder.VehicleCustomer) ? $" ({MasterSalesOrder.VehicleCustomer})" : ""))" Adornment="Adornment.Start" AdornmentIcon="@(IsCreatedSalesOrder ? Icons.Material.Filled.Search : "")" Variant="Variant.Text" OnAdornmentClick="VehicleInvoicesClick" RequiredError="Campo requerido" Required="@((MasterSalesOrder!.TypeId == 1 || MasterSalesOrder!.TypeId == 2|| MasterSalesOrder!.TypeId == 7))" Disabled="@(MasterSalesOrder!.TypeId == 3)" @ref="VehicleVinRef"></MudTextField>
+                                  <MudTextField ReadOnly="true" 
+                                                  @bind-Value="MasterSalesOrder.VehicleVin" 
+                                                  Label="@("Vehiculo" + (!String.IsNullOrEmpty(MasterSalesOrder.VehicleCustomer) ? $" ({MasterSalesOrder.VehicleCustomer})" : ""))" 
+                                                  Adornment="Adornment.Start" 
+                                                  AdornmentIcon="@(IsCreatedSalesOrder ? Icons.Material.Filled.Search : "")" 
+                                                  Variant="Variant.Text" 
+                                                  OnAdornmentClick="@(MasterSalesOrder?.TypeId == 9 ? VehicleInvoicesClick : VehicleReportClick)" 
+                                                  RequiredError="Campo requerido"  
+                                                  Required="@(MasterSalesOrder!.TypeId == 1 || MasterSalesOrder!.TypeId == 2 || MasterSalesOrder!.TypeId == 7)" 
+                                                  Disabled="@(MasterSalesOrder!.TypeId == 3)" 
+                                                  @ref="VehicleVinRef">
+                                    </MudTextField>
                                 </MudItem>
                                 @if (MasterSalesOrder.GroupId == 3)
                                 {
@@ -165,6 +179,12 @@
         SalesOrderDetailsMudDataGrid?.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
         await Task.CompletedTask;
     }
+
+    private async Task AttachmentsClick(MouseEventArgs args)
+    {
+        await DialogService.ShowAsync(typeof(SaleOrderAttachments), "", new DialogParameters { ["IdRecord"] = SalesOrderId }, options);      
+    }
+
     private async Task ClickEditSalesOrderDetail(SaleOrderDetails item)
     {
         var tempSaleOrderTypeSelected = SaleOrderTypeSelected;
@@ -473,7 +493,7 @@
             
         await Task.CompletedTask;
     }
-    private async Task VehicleInvoicesClick(MouseEventArgs args)
+    private async Task VehicleReportClick(MouseEventArgs args)
     {
         if (IsCreatedSalesOrder)
         {
@@ -491,6 +511,23 @@
                 MasterSalesOrder.VehicleVin = ServiceFailSelected.Vin;
                 MasterSalesOrder.VehicleCustomer = ServiceFailSelected.Customer;
                 MasterSalesOrder.Paralyzed = ServiceFailSelected.Paralyzed;
+            }
+        }       
+    }
+
+    private async Task VehicleInvoicesClick(MouseEventArgs args)
+    {
+        if (IsCreatedSalesOrder)
+        {
+          
+            DialogOptions options2 = new DialogOptions { MaxWidth = MaxWidth.Medium, BackdropClick = false, NoHeader = true };
+            var dialogReference = await DialogService.ShowAsync<VehicleInvoiceCatalog>("", new DialogParameters { }, options2);
+            if ((await dialogReference.Result) is DialogResult dialogResult && !dialogResult.Canceled && dialogResult.Data is VehicleInvoiceList VehicleInvoiceSelected)
+            {
+                MasterSalesOrder!.VehicleId = VehicleInvoiceSelected.VehicleId;
+                MasterSalesOrder.VehicleVin = VehicleInvoiceSelected.Vin;
+                MasterSalesOrder.VehicleCustomer = VehicleInvoiceSelected.Customer;
+                MasterSalesOrder.Comment = VehicleInvoiceSelected.Model + " " + VehicleInvoiceSelected.Year;
             }
         }       
     }

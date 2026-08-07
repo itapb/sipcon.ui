@@ -1,0 +1,269 @@
+﻿@using System.Globalization
+
+<MudGrid Spacing="0">
+    <MudItem xs="12">
+        <MudPaper Elevation="2" Class="jpv1-dialog-background-title pa-3" Square="true">
+            <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                    <MudStack>
+                        <MudText Typo="Typo.h6" Color="Color.Info">Pedido @IdRecord - Adjuntos</MudText>
+                    </MudStack>
+                    <MudStack Row="true" Spacing="2">
+                        <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Upload" Size="Size.Small" OnClick="ClickUploadFiles" />
+                        <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Small" OnClick="ClickRefreshAttachments" />
+                        <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="CloseClick" />
+                    </MudStack>
+                </MudStack>
+            </MudPaper>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12">
+        <MudDataGrid @ref="AttachmentsMudDataGrid" T="Attachment" ServerData="ServerReload" Striped="true" Hover="true" Filterable="false" FixedHeader Height="calc(100vh - 280px)" @bind-CurrentPage="ContactCurrentPage">
+            <Columns>
+                <TemplateColumn Title="ARCHIVO">
+                    <CellTemplate>
+                        <MudLink OnClick="() => ClickPreviewImage(context.Item.Id, context.Item.FileName)" Color="Color.Info">
+                            <MudText Typo="Typo.caption">
+                                <MudIcon Icon="@Icons.Custom.FileFormats.FileDocument" Color="Color.Inherit" Class="mr-2" />@context.Item.FileName
+                            </MudText>
+                        </MudLink>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="FECHA">
+                    <CellTemplate>
+                        <MudText Typo="Typo.caption">@context.Item.DateCreate!.Value.ToString("F", CultureInfo.GetCultureInfo("es-VE"))</MudText>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn>
+                    <CellTemplate>
+                        <MudStack Row="true">
+                            <MudTooltip Text="descargar">
+                                <MudIconButton Icon="@Icons.Material.Outlined.FileDownload" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickExportAttachment(context.Item.Id, context.Item.FileName)" />
+                            </MudTooltip>
+                            <MudTooltip Text="eliminar">
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickDeleteAttachment(context.Item.Id)" />
+                            </MudTooltip>
+                            <MudTooltip Text="vista previa">
+                                <MudIconButton Icon="@Icons.Material.Filled.Preview" Class="mr-2" Color="Color.Info" Size="Size.Small" OnClick="() => ClickPreviewImage(context.Item.Id, context.Item.FileName)" />
+                            </MudTooltip>
+                        </MudStack>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <PagerContent>
+                <MudDataGridPager T="Attachment" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
+            </PagerContent>
+        </MudDataGrid>
+    </MudItem>
+</MudGrid>
+@code { [Inject] private UserSession Session { get; set; } = null!;
+    [Inject] private IAttachmentService AttachmentService { get; set; } = default!;
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public int? IdRecord { get; set; }
+    string ModuleName = "PEDIDOS-PEDIDOS";
+
+    private MudDataGrid<Attachment>? AttachmentsMudDataGrid;
+
+
+    bool _loading = true;
+    string searchString = "";
+    private int ContactCurrentPage = 0;
+
+    private async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            _loading = true;
+            searchString = text;
+            await AttachmentsMudDataGrid!.ReloadServerData();
+        }
+    }
+    Func<Attachment, object> GetSortKeySelector(string sortByPropertyName) => sortByPropertyName switch
+    {
+        nameof(Attachment.FileName) => o => o.FileName ?? "",
+        nameof(Attachment.DateCreate) => o => o.DateCreate ?? DateTime.UtcNow,
+
+        _ => null! //o => o.Id ?? 0 // Criterio de ordenación por defecto
+    };
+    private async Task<GridData<Attachment>> ServerReload(GridState<Attachment> state)
+    {
+        _loading = true;
+        var totalItems = 0;
+        var mOffset = state.Page * state.PageSize;
+        IEnumerable<Attachment> data = new List<Attachment>(); // Initialize to avoid CS0165
+        HttpResponseMessage response = await Http.GetAsync($"api/Attachment/GetAll?moduleName={ModuleName}&recordId={IdRecord}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content2 = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Attachment>>>();
+            totalItems = content2!.total ?? 0;
+            data = content2!.data ?? new List<Attachment>();
+
+            if (state.SortDefinitions.FirstOrDefault() is SortDefinition<Attachment> sortDefinition)
+            {
+                data = data.OrderByDirection(sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending, GetSortKeySelector(sortDefinition.SortBy));
+            }
+        }
+        else
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();          
+            await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+
+        _loading = false;
+        return new GridData<Attachment> { TotalItems = totalItems, Items = data };
+    }
+
+
+    private void CloseClick(MouseEventArgs args) => MudDialog?.Close(DialogResult.Ok(true));
+    private async Task ClickRefreshAttachments(MouseEventArgs ev) => await AttachmentsMudDataGrid!.ReloadServerData();
+    
+    private async Task ClickDeleteAttachment(int IdAttachment)
+    {
+        var option = new DialogOptions
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            BackdropClick = false
+        };
+        bool? result = await DialogService.ShowMessageBox(
+            "Archivos Adjuntos",
+            $"Seguro de Eliminar Archivo? ",
+            yesText: "Si", noText: "No", "", option);
+
+        if (result == true)
+        {
+            var serviceResponse = await AttachmentService.DeleteAttachment(IdAttachment, Session.UserId);
+            if (serviceResponse.Processed)
+            {
+                await AttachmentsMudDataGrid!.ReloadServerData();
+            }
+            else
+            {              
+                var ErrorMessage = serviceResponse.Message ?? MessageEnum.GenerateNotOK.GetStringValue();
+                await DialogService.ShowDialog(ErrorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+
+        }
+    }
+
+    private async Task ClickPreviewImage(int IdAttachment, string FileName)
+    {
+           
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true, NoHeader = false };
+        var parameters = new DialogParameters<PreviewImageDialog> { { x => x.Title, "Vista Previa." }, { x => x.IdAttachment, IdAttachment.ToString() }, { x => x.NameAttachment, FileName } };
+        var dialog = await DialogService.ShowAsync<PreviewImageDialog>("Vista Previa.", parameters, options);
+
+        StateHasChanged();
+
+        await Task.CompletedTask;
+    }
+
+    private async Task ClickExportAttachment(int IdAttachment, string FileName)
+    {
+        var serviceResponse = await AttachmentService.GetAttachment(IdAttachment, Session.UserId);
+        if (serviceResponse.Processed)
+        {
+            var applicationName = string.Empty;
+            var fileExtension = Path.GetExtension(FileName).ToLowerInvariant();
+            switch (fileExtension)
+            {
+                case ".jpg":
+                case ".jpeg":
+                    applicationName = "image/jpeg";
+                    break;
+                case ".png":
+                case ".pneg":
+                    applicationName = "image/png";
+                    break;
+                case ".mp4":
+                    applicationName = "video/mp4";
+                    break;
+                case ".pdf":
+                    applicationName = "application/pdf";
+                    break;
+                default:
+                    applicationName = "application/pdf";
+                    break;
+            }
+
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+            var fileUrl = $"data:{applicationName};base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, FileName);
+
+        }
+        else
+        {   
+            var ErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
+            await DialogService.ShowDialog(ErrorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+
+        }
+    }
+    private async Task ClickUploadFiles(MouseEventArgs args)
+    {
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+        var parameters = new DialogParameters<ImporFilesDialog> { { x => x.Title, "Adjuntar Archivos..." } };
+        var dialog = await DialogService.ShowAsync<ImporFilesDialog>("Adjuntar", parameters, options);
+
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {            
+            var Messages = new System.Text.StringBuilder();
+            _loading = true;           
+
+            IReadOnlyList<IBrowserFile> files = (IReadOnlyList<IBrowserFile>)(result.Data ?? new List<IBrowserFile>());
+            const long maxAllowedSize = 6 * 1024 * 1024; // 6MB          
+            bool hasError;
+            using (MultipartFormDataContent formData = new MultipartFormDataContent())
+            {
+                hasError = false;
+                foreach (var file in files)
+                {
+
+                    if (file.Size == 0)
+                    {
+                        Messages.AppendLine($"{file.Name} esta vacio.");
+                        hasError = true;
+                    }
+                    else if (file.Size > maxAllowedSize)
+                    {
+                        Messages.AppendLine($"{file.Name} excede el tamaño máximo permitido de 6MB.");
+                        hasError = true;
+                    }
+                    else
+                    {
+                        var content = new StreamContent(file.OpenReadStream(maxAllowedSize: maxAllowedSize));
+                        content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+                        formData.Add(content, "files", file.Name);                      
+                    }
+                }
+
+                if (formData.Count() > 0)
+                {
+                    var serviceResponse = await AttachmentService.CreateAttachment(IdRecord ?? 0, ModuleName, Session.UserId, formData);
+                    if (serviceResponse.Processed)
+                    {
+                        Messages.AppendLine(MessageEnum.ImportOK.GetStringValue());
+                    }
+                    else
+                    {
+                        Messages.AppendLine(serviceResponse.Message ?? MessageEnum.ImportNotOK.GetStringValue());
+                        hasError = true;
+                    }                    
+                }               
+            }
+        
+            if (Messages.Length > 0)
+                 await DialogService.ShowDialog(Messages.ToString(), "Adjuntos", "OK", (hasError ? Color.Error : Color.Info), (hasError ? Icons.Material.Filled.Error : Icons.Material.Filled.Commit));
+
+            await AttachmentsMudDataGrid!.ReloadServerData();
+       
+        }
+
+    }
+  
+}
