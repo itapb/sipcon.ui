@@ -86,6 +86,9 @@ namespace Sipcon.WebApp.Client.Models
 
         public string? CustomerInvoice { get; set; }
         public string? CustomerVat { get; set; }
+        //Tipo A-B  
+
+        public string? Type { get; set; }
 
 
     }

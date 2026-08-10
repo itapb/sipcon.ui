@@ -31,44 +31,59 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <PropertyColumn Property="x => x.ControlId" Title="NRO TXT" Groupable="@(_ControlIdGrouping)"
-                        @bind-Grouping="_ControlIdGrouping" GroupBy="_groupBy1"
-                        @bind-GroupByOrder="_ControlIdOrder"
-                        @bind-GroupExpanded="_ControlIdExpanded">
-            <GroupTemplate>
-                @if (_customizeGroupTemplate)
-                {
-                    var color = context.Grouping.Key?.ToString() switch
-                    {
-                        "Healthcare" => Color.Primary,
-                        "Tech" => Color.Secondary,
-                        "Tourism" => Color.Info,
-                        _ => Color.Dark
-                    };
-                    <div class="d-flex align-center">
-                        <MudIcon Icon="@Icons.Material.Filled.TextSnippet" Color="@color" Size="Size.Small" Class="mr-2" />
-                        <span style="font-weight:bold">@context.Grouping.Key</span>
-                        <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
-                            @context.Grouping.Count() TXT
-                        </MudChip>
-                        <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
-                            @context.Grouping.Min(x => x.CustomerInvoice) 
-                        </MudChip>
+       
+<PropertyColumn Property="x => x.ControlId" Title="NRO TXT" Groupable="@(_ControlIdGrouping)"
+                @bind-Grouping="_ControlIdGrouping" GroupBy="_groupBy1"
+                @bind-GroupByOrder="_ControlIdOrder"
+                @bind-GroupExpanded="_ControlIdExpanded">
+    <CellTemplate>
+        @($"{context.Item.ControlId} - {context.Item.Type}")
+    </CellTemplate>
 
-                        <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
-                            @context.Grouping.Min(x => x.StatusName)
-                        </MudChip>
-                        <MudIconButton Icon="@Icons.Material.Filled.Download" OnClick="@(() => ClickTxtExport(Convert.ToInt32(@context.Grouping.Key)))"></MudIconButton>
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(() => ClickTxtRemove(Convert.ToInt32(@context.Grouping.Key)))" 
-                        Disabled ="@(!context.Grouping.All(x => string.Equals(x.StatusName, "BORRADOR", StringComparison.OrdinalIgnoreCase)))" ></MudIconButton>
-                    </div>
-                }
-                else
-                {
-                    <span style="font-weight:bold">@(context.Grouping.Key)</span>
-                }
-            </GroupTemplate>
-        </PropertyColumn>
+    <GroupTemplate>
+        @{
+            var firstItem = context.Grouping.FirstOrDefault();
+            var itemType = firstItem?.Type;
+            var displayText = !string.IsNullOrEmpty(itemType) 
+                ? $"{context.Grouping.Key} - {itemType}" 
+                : context.Grouping.Key?.ToString();
+        }
+
+        @if (_customizeGroupTemplate)
+        {
+            var color = context.Grouping.Key?.ToString() switch
+            {
+                "Healthcare" => Color.Primary,
+                "Tech" => Color.Secondary,
+                "Tourism" => Color.Info,
+                _ => Color.Dark
+            };
+            <div class="d-flex align-center">
+                <MudIcon Icon="@Icons.Material.Filled.TextSnippet" Color="@color" Size="Size.Small" Class="mr-2" />
+                
+                <span style="font-weight:bold">@displayText</span>
+
+                <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
+                    @context.Grouping.Count() TXT
+                </MudChip>
+                <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
+                    @context.Grouping.Min(x => x.CustomerInvoice) 
+                </MudChip>
+                <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
+                    @context.Grouping.Min(x => x.StatusName)
+                </MudChip>
+
+                <MudIconButton Icon="@Icons.Material.Filled.Download" OnClick="@(() => ClickTxtExport(Convert.ToInt32(context.Grouping.Key)))" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(() => ClickTxtRemove(Convert.ToInt32(context.Grouping.Key)))" 
+                               Disabled="@(!context.Grouping.All(x => string.Equals(x.StatusName, "BORRADOR", StringComparison.OrdinalIgnoreCase)))" />
+            </div>
+        }
+        else
+        {
+            <span style="font-weight:bold">@displayText</span>
+        }
+    </GroupTemplate>
+</PropertyColumn>
 
        
         <PropertyColumn Property="x => x.SaleOrderNumber" Title="NRO PEDIDO" Groupable="false" />
