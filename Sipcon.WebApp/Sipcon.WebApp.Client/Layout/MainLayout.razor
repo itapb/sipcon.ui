@@ -5,116 +5,157 @@
 @using Sipcon.WebApp.Client.Enum
 @inject ILogger<MainLayout> Logger
 @inject HubEventsService hubEventsService
-<MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
+<MudThemeProvider />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
+
 <MudLayout>
-  
-       
     <AuthorizeView>
         <Authorized>
-            <MudAppBar Elevation="1">
-                    <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
-                    @* <MudText Typo="Typo.h5" Class="ml-3">Sipcon</MudText> *@
-                    <MudImage ObjectFit="ObjectFit.Cover"
-                              ObjectPosition="ObjectPosition.Center"
-                              Height="35" Width="135" Src="@($"images/sipcon_logo.png")" 
-                              Alt="logo apb"/>
+            @* App Bar Principal *@
+            <MudAppBar Elevation="1" Style="background-color: #0F172A; color: #FFFFFF;" Dense="false">
+                <MudIconButton Icon="@Icons.Material.Outlined.Menu" 
+                               Color="Color.Inherit" 
+                               Edge="Edge.Start" 
+                               OnClick="@((e) => DrawerToggle())" 
+                               Class="me-2" />
+                
+                <MudImage ObjectFit="ObjectFit.Contain"
+                          Height="44"
+                          Src="images/sipcon_logo.png" 
+                          Alt="SIPCON APB" 
+                          Class="my-auto me-4" />
 
-                    <MudSpacer />
-                    <MudSpacer />
-                    <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center">
-                       
-                        <MudChip T="string" Icon="@Icons.Material.Filled.DomainAdd" Label="true" 
-                                    Color="Color.Primary" 
-                                    OnClick="OpenDrawer"
-                                    OnClose="OpenDrawer" 
-                                    CloseIcon="@Icons.Material.Filled.Edit">
-                                    @(SelectedSupplierText ?? "Planta?")
-                        </MudChip>
-                        <MudChip T="string" Icon="@Icons.Material.Filled.EmojiTransportation" Label="true" 
-                                    Color="Color.Info"
-                                    OnClick="OpenDrawer"
-                                    OnClose="OpenDrawer"
-                                    CloseIcon="@Icons.Material.Filled.Edit">
-                            @(SelectedDealerText ?? "Concesionario?")
-                        </MudChip>
+                <MudSpacer />
+
+                @* Contexto Activo (Planta y Concesionario Refinados) *@
+                <MudHidden Breakpoint="Breakpoint.Xs">
+                    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="me-3">
+                        
+                        <MudButton Variant="Variant.Filled"
+                                   StartIcon="@Icons.Material.Outlined.Domain"
+                                   EndIcon="@Icons.Material.Outlined.ExpandMore"
+                                   Color="Color.Dark"
+                                   OnClick="OpenDrawer"
+                                   Size="Size.Small"
+                                   Class="text-capitalize px-3 py-1 border border-solid mud-border-lines-default rounded-lg"
+                                   Style="background-color: rgba(255, 255, 255, 0.05); color: #E2E8F0;">
+                            <MudText Typo="Typo.caption" Class="fw-semibold">
+                                @(SelectedSupplierText ?? "Seleccionar Planta")
+                            </MudText>
+                        </MudButton>
+
+                        <MudButton Variant="Variant.Filled"
+                                   StartIcon="@Icons.Material.Outlined.Storefront"
+                                   EndIcon="@Icons.Material.Outlined.ExpandMore"
+                                   Color="Color.Dark"
+                                   OnClick="OpenDrawer"
+                                   Size="Size.Small"
+                                   Class="text-capitalize px-3 py-1 border border-solid mud-border-lines-default rounded-lg"
+                                   Style="background-color: rgba(255, 255, 255, 0.05); color: #E2E8F0;">
+                            <MudText Typo="Typo.caption" Class="fw-semibold">
+                                @(SelectedDealerText ?? "Seleccionar Concesionario")
+                            </MudText>
+                        </MudButton>
+
                     </MudStack>
-                <MudButton OnClick="@OpenDrawer">
-                    <MudChat ChatPosition="ChatBubblePosition.End" Style="max-width: 250px;">
-                        <MudAvatar Color="Color.Dark"> @(string.IsNullOrEmpty(_userActive.Login) ? "U" : _userActive.Login.ToUpper().Substring(0, 1))</MudAvatar>
-                        @* <MudChatHeader Name="@(context.Item.Login.ToUpper())" Time="" /> *@
-                        <MudChatBubble Style="font-size: 10px;">@("Bienvenido, " + _userActive.Name + " " + _userActive.LastName)</MudChatBubble>
-                        <MudChatFooter Style="font-size: 8px;font-style:italic" Text="@(_userActive.Login.ToUpper())" />
-                    </MudChat>
-                 </MudButton>
-                @* <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End"  /> *@
+                </MudHidden>
 
+                @* Botón Perfil del Usuario *@
+                <MudButton OnClick="@OpenDrawer" Variant="Variant.Text" Color="Color.Inherit" Class="px-2 py-1 rounded-lg hover-bg-light">
+                    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                        <MudAvatar Style="background-color: #1E293B; color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.3);" Size="Size.Medium">
+                            @(string.IsNullOrEmpty(_userActive.Login) ? "U" : _userActive.Login.ToUpper().Substring(0, 1))
+                        </MudAvatar>
+                        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+                            <div class="d-flex flex-column text-start">
+                                <MudText Typo="Typo.body2" Class="fw-bold leading-none" Style="color: #F8FAFC;">
+                                    @(_userActive.Name + " " + _userActive.LastName)
+                                </MudText>
+                                <MudText Typo="Typo.caption" Class="leading-none mt-1 opacity-75" Style="color: #94A3B8; font-size: 0.7rem;">
+                                    @(_userActive.Login.ToUpper())
+                                </MudText>
+                            </div>
+                        </MudHidden>
+                    </MudStack>
+                </MudButton>
             </MudAppBar>
 
-            <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Variant="DrawerVariant.Mini">
+            @* Drawer de Navegación Izquierdo *@
+            <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="1" Variant="DrawerVariant.Mini">
                 <NavMenu Modules="@_UserModules" />
             </MudDrawer>
         </Authorized>
     </AuthorizeView>
-       
-  
-  
-    @* //Drawer Right *@
-    <MudDrawer @bind-Open="@_open" Anchor="Anchor.End" Elevation="1" Variant="@DrawerVariant.Temporary" OverlayAutoClose="true">
+
+    @* Drawer Derecho (Panel Lateral de Selección) *@
+    <MudDrawer @bind-Open="@_open" Anchor="Anchor.End" Elevation="3" Variant="@DrawerVariant.Temporary" OverlayAutoClose="true" Width="320px">
         <AuthorizeView>
             <Authorized>
-                <MudPaper Class="pa-2">
-                    <MudStack Row="true">
-                        <MudAvatar Size="Size.Large" Color="Color.Dark">
-                            @(string.IsNullOrEmpty(_userActive.Login) ? "U" : _userActive.Login.ToUpper().Substring(0, 1))
-                        </MudAvatar>
-                        <MudStack Justify="Justify.Center" Spacing="0">
-                            <MudText Typo="Typo.body1">@(_userActive.Name + " " + _userActive.LastName)</MudText>
-                            <MudText Typo="Typo.caption" Inline="true" Style="font-size: 12px;font-style:italic;font-weight:bold;">@(string.IsNullOrEmpty(_userActive.Vat) ? "" : "Vat: " + _userActive.Vat.ToUpper())</MudText>
+                <div class="pa-4 d-flex flex-column h-100">
+                    
+                    @* Encabezado de Usuario Mejorado *@
+                    <MudPaper Class="pa-4 mb-4 rounded-xl" Elevation="0" Style="background-color: #0F172A; border: 1px solid rgba(255, 255, 255, 0.08);">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                            <MudAvatar Size="Size.Large" Style="background-color: #1E293B; color: #38BDF8;" Elevation="0">
+                                @(string.IsNullOrEmpty(_userActive.Login) ? "U" : _userActive.Login.ToUpper().Substring(0, 1))
+                            </MudAvatar>
+                            <MudStack Justify="Justify.Center" Spacing="0">
+                                <MudText Typo="Typo.subtitle2" Class="fw-bold" Style="color: #F8FAFC;">
+                                    @(_userActive.Name + " " + _userActive.LastName)
+                                </MudText>
+                                <MudText Typo="Typo.caption" Style="color: #94A3B8;">
+                                    @(string.IsNullOrEmpty(_userActive.Vat) ? _userActive.Login.ToUpper() : "RIF: " + _userActive.Vat.ToUpper())
+                                </MudText>
+                            </MudStack>
                         </MudStack>
-                    </MudStack>
-                </MudPaper>
+                    </MudPaper>
 
-                <MudPaper Class="pa-2">
-                    <MudStack Spacing="2">
-                        @* <MudChip T="string" Icon="@Icons.Material.Filled.DomainAdd" Label="true" Color="Color.Primary">@(SelectedSupplierText ?? "Planta?")</MudChip>
-                        <MudChip T="string" Icon="@Icons.Material.Filled.EmojiTransportation" Label="true" Color="Color.Info">@(SelectedDealerText ?? "Concesionario?")</MudChip>
-                       *@
-                        <MudList T="int" @bind-SelectedValue="@SelectedSupplierValue"
+                    @* Secciones de Selección Internas *@
+                    <div class="flex-grow-1 overflow-y-auto pe-1">
+                        <MudText Typo="Typo.overline" Class="px-1 fw-bold mud-text-secondary" Style="letter-spacing: 0.5px;">
+                            Contexto Operativo
+                        </MudText>
+
+                        @* Selector de Plantas *@
+                        <MudList T="int" 
+                                 @bind-SelectedValue="@SelectedSupplierValue"
                                  @bind-SelectedValue:after="() => AfterSupplierValueChange()"
                                  SelectionMode="SelectionMode.SingleSelection"
-                                 ReadOnly="false" Color="Color.Info">
+                                 Color="Color.Info"
+                                 Dense="true"
+                                 Class="mt-1">
+                            <MudListItem Text="Plantas / Proveedores" Icon="@Icons.Material.Outlined.Domain" IconColor="Color.Info" @bind-Expanded="_expandedSupplier">
+                                <NestedList>
+                                    @foreach (var item in _UserSuppliers)
+                                    {
+                                        <MudListItem Value="@item.Id" Class="ps-6 rounded-md">
+                                            <MudText Typo="Typo.body2" Class="fw-medium">@item.Name</MudText>
+                                        </MudListItem>
+                                    }
+                                </NestedList>
+                            </MudListItem>
+                        </MudList>
 
-                                <MudListItem Text="Plantas" Icon="@Icons.Material.Filled.DomainAdd"
-                                         @bind-Expanded="_expandedSupplier">
+                        <MudDivider Class="my-3 opacity-40" />
+
+                        @* Selector de Concesionarios *@
+                        <div id="unique_id_scroll_section" style="max-height: 260px; overflow-y: auto;">
+                            <MudList T="int" 
+                                     @bind-SelectedValue="@SelectedDealerValue"
+                                     @bind-SelectedValue:after="() => AfterDealerValueChange()"
+                                     SelectionMode="SelectionMode.SingleSelection"
+                                     Color="Color.Info"
+                                     Dense="true">
+                                <MudListItem Text="Concesionarios" Icon="@Icons.Material.Outlined.Storefront" IconColor="Color.Info" @bind-Expanded="_expandedDealer">
                                     <NestedList>
-                                        @foreach (var item in _UserSuppliers)
+                                        @foreach (var item in _UserDealers)
                                         {
-                                            <MudListItem Style="font-size: 10px;font-style:italic;" Value="@item.Id">@item.Name</MudListItem>
+                                            <MudListItem Text="@item.Name" Value="@item.Id" Class="ps-6 rounded-md" />
                                         }
                                     </NestedList>
                                 </MudListItem>
-                           
-                        </MudList>
-                        <div id="unique_id_scroll_section" class="ma-0" style="max-height:300px;overflow: auto;">
-                            <MudList T="int" @bind-SelectedValue="@SelectedDealerValue"
-                                     @bind-SelectedValue:after="() => AfterDealerValueChange()"
-                                     SelectionMode="SelectionMode.SingleSelection"
-                                     ReadOnly="false" Color="Color.Info">
-                                
-                                    <MudListItem Text="Concesionario"
-                                                 Icon="@Icons.Material.Filled.EmojiTransportation"
-                                                 @bind-Expanded="_expandedDealer">
-                                        <NestedList>
-                                            @foreach (var item in _UserDealers)
-                                            {
-                                                <MudListItem Style="font-size: 10px;font-style:italic;" Text="@item.Name" Value="@item.Id" />
-                                            }
-                                        </NestedList>
-                                    </MudListItem>
-                                  
                             </MudList>
 
                             <MudScrollToTop TopOffset="100"
@@ -122,55 +163,60 @@
                                             VisibleCssClass="visible absolute"
                                             HiddenCssClass="invisible" />
                         </div>
-                        <MudDivider />
-                        <MudButton Variant="Variant.Filled" Color="Color.Secondary"
+                    </div>
+
+                    @* Botón de Logout *@
+                    <div class="mt-auto pt-3 border-t border-solid mud-border-lines-default">
+                        <MudButton Variant="Variant.Outlined" 
+                                   Color="Color.Error" 
+                                   FullWidth="true"
                                    OnClick="Logout"
-                                   Style="@( _isDarkMode ? "background-color: rgba(255,255,255,0.2); color:white;" : "")">
-                            <MudIcon Icon="@Icons.Material.Filled.Logout" />Cerrar Sesión
+                                   StartIcon="@Icons.Material.Outlined.Logout"
+                                   Size="Size.Medium"
+                                   Class="py-2 rounded-lg">
+                            Cerrar Sesión
                         </MudButton>
-                    </MudStack>
-                </MudPaper>
+                    </div>
+
+                </div>
             </Authorized>
+
             <NotAuthorized>
-                <MudPaper Class="pa-2">
-                    <MudStack Row="true">
-                        <MudAvatar Size="Size.Large" Color="Color.Dark">
-                            <MudIcon Icon="@Icons.Material.Filled.Login" />
-                        </MudAvatar>
-                        <MudStack Justify="Justify.Center" Spacing="0">
-                            <MudText Typo="Typo.body1">Iniciar Sesión</MudText>
-                        </MudStack>
-                    </MudStack>
-                </MudPaper>
-                <MudPaper Class="pa-4">
-                    <MudStack Spacing="4">
-                        <MudDivider />
-
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                                   OnClick="Login"
-                                   Style="@(_isDarkMode ? "background-color: rgba(255,255,255,0.2); color:white;" : "")">
-                            <MudIcon Icon="@Icons.Material.Filled.Login" />Iniciar Sesión
-                        </MudButton>
-                    </MudStack>
-                </MudPaper>
-
+                <div class="pa-6 d-flex flex-column align-center justify-center h-100 text-center">
+                    <MudAvatar Size="Size.Large" Style="background-color: #0F172A; color: #38BDF8;" Class="mb-3">
+                        <MudIcon Icon="@Icons.Material.Outlined.Lock" />
+                    </MudAvatar>
+                    <MudText Typo="Typo.subtitle1" Class="fw-bold mb-1">Acceso Requerido</MudText>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary mb-4">Inicie sesión para acceder a las opciones de su cuenta.</MudText>
+                    <MudButton Variant="Variant.Filled" 
+                               Color="Color.Primary" 
+                               FullWidth="true"
+                               OnClick="Login"
+                               StartIcon="@Icons.Material.Outlined.Login"
+                               Class="py-2 rounded-lg">
+                        Iniciar Sesión
+                    </MudButton>
+                </div>
             </NotAuthorized>
         </AuthorizeView>
     </MudDrawer>
-   <MudMainContent Class="pt-16 pa-4">
+
+    @* Área de Contenido Principal *@
+    <MudMainContent Class="pt-16 pa-6">
         <ErrorBoundary @ref="errorBoundary">
-            <ChildContent>@Body</ChildContent>
+            <ChildContent>
+                @Body
+            </ChildContent>
             <ErrorContent Context="ex">
-                <MudAlert Severity="Severity.Error" Dense="true" Class="my-2">Se ha producido un error. Inténtelo de nuevo más tarde.</MudAlert>
-                @{
-                    OnError(@ex);
-                }                
-                <p>@ex.Message</p>
+                <MudAlert Severity="Severity.Error" Dense="true" Variant="Variant.Outlined" Class="my-2">
+                    Se ha producido un error inesperado.
+                </MudAlert>
+                @{ OnError(@ex); }
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">@ex.Message</MudText>
             </ErrorContent>
         </ErrorBoundary>
-   </MudMainContent>
+    </MudMainContent>
 </MudLayout>
-
 
 @* <div id="blazor-error-ui" data-nosnippet>
    An unhandled error has occurred.
