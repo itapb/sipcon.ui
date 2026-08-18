@@ -1,0 +1,99 @@
+﻿@page "/inttplanta"
+@inject HubEventsService hubEventsService
+@inject ILogger<InttPlantaList> Logger
+@using Microsoft.Extensions.Logging
+@using System.Collections.Generic
+@using MudBlazor.Utilities
+@using Sipcon.WebApp.Client.Models
+@inject HttpClient Http
+
+<CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
+
+<MudTabs Elevation="2" Rounded="true" Centered="true"
+         ApplyEffectsToContainer="true" PanelClass="pa-2"
+         Color="Color.Info"
+         @bind-ActivePanelIndex="_activeTabIndex"
+         @bind-ActivePanelIndex:after="OnTabChanged">
+
+    <MudTabPanel Icon="@Icons.Material.Filled.PendingActions" Text="PENDIENTES">
+        @if (_tabsLoaded[0])
+        {
+            <PendingInttPlanta @ref="_pendingGrid" />
+        }
+    </MudTabPanel>
+
+    <MudTabPanel Icon="@Icons.Material.Filled.GeneratingTokens" Text="GENERADOS">
+        @if (_tabsLoaded[1])
+        {
+            <GeneratedInttPlanta @ref="_generatedGrid" />
+        }
+    </MudTabPanel>
+</MudTabs>
+
+@code {
+    [Inject] private UtilModuleActions ModuleActionsService { get; set; } = default!;
+    [Inject] private UserSession Session { get; set; } = null!;
+    private List<ModuleAction> _moduleActions = new();
+    private List<Module>? Modules { get; set; }
+    private List<SelectOption>? AllStatuses { get; set; }
+    List<BreadcrumbItem> ItemsNavigate = new();
+    private int _activeTabIndex = 0;
+    private bool[] _tabsLoaded = [true, false];
+
+    // Referencias a los componentes hijos para poder recargarlos
+    private PendingInttPlanta _pendingGrid = default!;
+    private GeneratedInttPlanta _generatedGrid = default!;
+
+    private async void OnTabChanged()
+    {
+        if (_activeTabIndex >= 0 && _activeTabIndex < _tabsLoaded.Length)
+            _tabsLoaded[_activeTabIndex] = true;
+
+        // Cuando se cambia a la pestaña GENERADOS, recargar el grid
+        if (_activeTabIndex == 1 && _generatedGrid != null)
+        {
+            await _generatedGrid.ReloadGrid();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        string hrefMovement = "inttplanta";
+        "Home,PLANTA".Split(',').ToList().ForEach(s =>
+            ItemsNavigate.Add(new BreadcrumbItem(s,
+                href: s == "Home" ? "" : hrefMovement,
+                icon: s.ToActionIcon())));
+        await LoadCommonData();
+
+        if (_activeTabIndex >= 0 && _activeTabIndex < _tabsLoaded.Length)
+            _tabsLoaded[_activeTabIndex] = true;
+
+        await Task.CompletedTask;
+    }
+
+    private async Task LoadCommonData()
+    {
+        try
+        {
+            string moduleName = "REPORTES-INTT-PLANTA";
+
+            var modulesTask = Http.GetFromJsonAsync<List<Module>>(
+                $"api/Module/GetAll?moduleName={moduleName}&userId={Session.UserId}");
+            var statusesTask = ModuleActionsService.GetStatusByModule(
+                Session.UserId, moduleName);
+            var actionsTask = ModuleActionsService.GetModuleActions(Session.UserId, moduleName);
+
+            await Task.WhenAll(modulesTask, statusesTask, actionsTask);
+
+            _moduleActions = actionsTask.Result ?? new();
+            Modules = modulesTask.Result;
+            AllStatuses = statusesTask.Result ?? new();
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error cargando datos comunes en Planta");
+        }
+    }
+}
