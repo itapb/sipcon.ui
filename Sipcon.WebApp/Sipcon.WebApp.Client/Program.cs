@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
 using Sipcon.WebApp.Client.Helper;
+using Sipcon.WebApp.Client.Models;
 using Sipcon.WebApp.Client.Repository;
 using Sipcon.WebApp.Client.Repository.Auth;
 using Sipcon.WebApp.Client.Services;
@@ -94,6 +95,7 @@ builder.Services.AddScoped<IPaymentService, PaymentsRepository>();
 builder.Services.AddScoped<IPowerBIService, PowerBIRepository>();
 builder.Services.AddScoped<IInventoryCountService, InventoryCountRepository>();
 
+builder.Services.AddScoped<InttPlanta>();
 builder.Services.AddScoped<IFeatureOptionService, FeatureOptionRepository>();
 builder.Services.AddScoped<IFeatureValueTypeService, FeatureValueTypeRepository>();
 

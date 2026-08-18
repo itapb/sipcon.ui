@@ -1,0 +1,348 @@
+﻿@inject HubEventsService hubEventsService
+@implements IDisposable
+@inject ILogger<PendingInttPlanta> Logger
+@using Microsoft.Extensions.Logging
+@using System.Collections.Generic
+@using MudBlazor.Utilities
+@using Sipcon.WebApp.Client.Models
+
+<MudDataGrid @ref="DataGrid" T="InttPlanta"
+             ServerData="@ServerReload"
+             Hover FixedHeader
+             Height="calc(100vh - 310px)">
+    <ToolBarContent>
+        <MudTextField T="string"
+                      Value="searchString"
+                      ValueChanged="@(s => OnSearch(s))"
+                      Placeholder="buscar"
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      IconSize="Size.Medium"
+                      Class="mt-0"
+                      Style="font-size: 14px; line-height: 0.8rem;"
+                      Typo="Typo.caption" />
+        <MudSpacer />
+
+        <div id="scroll_section" class="mx-auto" style="max-width: 650px">
+            <MudExpansionPanels Outlined="false" Elevation="0">
+                <MudExpansionPanel @ref="_filtersPanel"
+                                   @bind-Expanded="@_openFilters"
+                                   HideIcon="true" ShowExpandIcon="false">
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+        </div>
+
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                       Color="Color.Info"
+                       OnClick="ClickRefresh" />
+
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+            @foreach (var strmodulo in Modules!)
+            {
+                @if (strmodulo.ActionName == "GENERATE")
+                {
+                    <MudMenuItem Label="@strmodulo.ActionDisplay"
+                                 Icon="@(strmodulo.ActionDisplay.ToActionIcon())"
+                                 IconColor="@Color.Info"
+                                 OnClick="@(() => ClickMenu(strmodulo.ActionName))" />
+                }
+            }
+        </MudMenu>
+    </ToolBarContent>
+
+    <Columns>
+        <TemplateColumn>
+            <HeaderTemplate>
+                <MudCheckBox @bind-Value="IsAllCheckBoxSelected"
+                             @bind-Value:after="AfterAsyncAllCheck" />
+            </HeaderTemplate>
+            <CellTemplate>
+                <MudCheckBox @bind-Value="@context.Item.IsSelected" />
+            </CellTemplate>
+        </TemplateColumn>
+
+        <PropertyColumn Property="x => x.VCERTIFICATENUMBER" Title="NRO CERTIFICADO" Groupable="false" />
+        <PropertyColumn Property="x => x.VRIF" Title="RIF CLIENTE" Groupable="false" />
+        <PropertyColumn Property="x => x.VMODEL" Title="MODELO" Groupable="false" />
+        <PropertyColumn Property="x => x.VPLATE" Title="PLACA" Groupable="false" />
+        <PropertyColumn Property="x => x.VVIN" Title="VIN" Groupable="false" />
+        <PropertyColumn Property="x => x.VCOLOR1" Title="COLOR" Groupable="false" />
+        <TemplateColumn Title="FECHA FACTURA">
+            <CellTemplate>
+                @{
+                    var displayDate = context.Item.DINVOICEDATE;
+                    if (!string.IsNullOrEmpty(context.Item.DINVOICEDATE) &&
+                           context.Item.DINVOICEDATE.Length == 8 &&
+                           DateTime.TryParseExact(context.Item.DINVOICEDATE, "yyyyMMdd",
+                               System.Globalization.CultureInfo.InvariantCulture,
+                               System.Globalization.DateTimeStyles.None,
+                               out DateTime parsedDate))
+                    {
+                        displayDate = parsedDate.ToString("yyyy-MM-dd");
+                    }
+                }
+                <MudText Style="white-space: nowrap; min-width: 110px;">@displayDate</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.VINVOICENUMBER" Title="NRO FACTURA" Groupable="false" />
+    </Columns>
+
+    <PagerContent>
+        <MudDataGridPager T="InttPlanta"
+                          PageSizeOptions="new int[] { 100 }"
+                          InfoFormat="{first_item}-{last_item} de {all_items}"
+                          RowsPerPageString="Registros por Pagina" />
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+    private MudDataGrid<InttPlanta> DataGrid = null!;
+    private string? searchString = string.Empty;
+    private MudExpansionPanel _filtersPanel = new();
+    private bool _openFilters = false;
+    private DateTime? _dateFrom;
+    private DateTime? _dateTo;
+    private MudDatePicker _pickerFrom = new();
+    private MudDatePicker _pickerTo = new();
+    private CancellationTokenSource? _cts;
+
+    private List<Module>? Modules;
+
+    bool IsAllCheckBoxSelected = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=REPORTES-INTT-PLANTA&userId={Session.UserId}");
+        hubEventsService.OnSupplierChanged += ReloadGrid;
+    }
+
+    private async Task<GridData<InttPlanta>> ServerReload(GridState<InttPlanta> state)
+    {
+        _cts?.Cancel();
+        _cts = new CancellationTokenSource();
+        var token = _cts.Token;
+
+        // Resetear selección al recargar
+        IsAllCheckBoxSelected = false;
+
+        var offset = state.Page * state.PageSize;
+        string url = $"api/InttPlanta/GetPendientes?userId={Session.UserId}&supplierId={Session.SupplierId}&rowFrom={offset}&filter={searchString}";
+
+        try
+        {
+            var response = await Http.GetAsync(url, token);
+
+            if (token.IsCancellationRequested)
+                return new GridData<InttPlanta> { TotalItems = 0, Items = [] };
+
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadFromJsonAsync<WebApiResponse<List<InttPlanta>>>(cancellationToken: token);
+
+                var items = content?.data ?? new List<InttPlanta>();
+                foreach (var item in items)
+                {
+                    item.IsSelected = false;
+                }
+
+                return new GridData<InttPlanta>
+                {
+                    TotalItems = content!.total ?? 0,
+                    Items = items
+                };
+            }
+
+            var errorMessage = await response.Content.ReadAsStringAsync(token);
+            throw new Exception(errorMessage);
+        }
+        catch (OperationCanceledException)
+        {
+            return new GridData<InttPlanta> { TotalItems = 0, Items = [] };
+        }
+    }
+
+    private async Task ClickRefresh()
+    {
+        IsAllCheckBoxSelected = false;
+        if (DataGrid?.FilteredItems != null)
+        {
+            foreach (var item in DataGrid.FilteredItems)
+            {
+                item.IsSelected = false;
+            }
+        }
+
+        await DataGrid!.ReloadServerData();
+        if (_openFilters)
+            await _filtersPanel.CollapseAsync();
+    }
+
+    private async Task OnSearch(string text)
+    {
+        if (text.Length == 0 || text.Length >= 3)
+        {
+            IsAllCheckBoxSelected = false;
+            if (DataGrid?.FilteredItems != null)
+            {
+                foreach (var item in DataGrid.FilteredItems)
+                {
+                    item.IsSelected = false;
+                }
+            }
+
+            searchString = text;
+            _cts?.Cancel();
+            _cts = new CancellationTokenSource();
+            await DataGrid!.ReloadServerData();
+        }
+    }
+
+    private async Task AfterAsyncAllCheck()
+    {
+        if (DataGrid?.FilteredItems != null)
+        {
+            var currentItems = DataGrid.FilteredItems.ToList();
+            foreach (var item in currentItems)
+            {
+                item.IsSelected = IsAllCheckBoxSelected;
+            }
+            StateHasChanged();
+        }
+        await Task.CompletedTask;
+    }
+
+    private async Task CloseFilterPanel()
+    {
+        if (_openFilters)
+            await _filtersPanel.CollapseAsync();
+    }
+
+    private async Task ClickMenu(string? actionName)
+    {
+        if (actionName == "GENERATE")
+        {
+            // Verificar que DataGrid y FilteredItems no sean null
+            if (DataGrid?.FilteredItems == null)
+            {
+                await DialogService.ShowDialog(
+                    "El grid no ha cargado datos aún",
+                    "Error",
+                    "OK",
+                    Color.Error,
+                    Icons.Material.Filled.Error);
+                return;
+            }
+
+            var selectedItems = DataGrid.FilteredItems
+                .Where(item => item.IsSelected)
+                .ToList();
+
+            if (selectedItems == null || !selectedItems.Any())
+            {
+                await DialogService.ShowDialog(
+                    "Debe seleccionar al menos un registro para generar",
+                    "Error",
+                    "OK",
+                    Color.Error,
+                    Icons.Material.Filled.Error);
+                return;
+            }
+
+            var actions = selectedItems.Select(item => new Models.Action
+            {
+                UserId = Session.UserId,
+                RecordId = item.Id,
+                ModuleId = Modules?.FirstOrDefault(m => m.ActionName == "GENERATE")?.Id,
+                ActionName = "GENERATE",
+                ActionComment = "",
+                RelatedId = 0
+            }).ToList();
+
+            try
+            {
+                var response = await Http.PostAsync(
+                    $"api/InttPlanta/PostActions?userId={Session.UserId}&supplierId={Session.SupplierId}",
+                    new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json"));
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<WebApiResponse<object>>();
+
+                    if (result != null && result.status == 200)
+                    {
+                        await DialogService.ShowDialog(
+                            $"{selectedItems.Count} registros generados exitosamente",
+                            "Éxito",
+                            "OK",
+                            Color.Success,
+                            Icons.Material.Filled.CheckCircle);
+                    }
+                    else
+                    {
+                        await DialogService.ShowDialog(
+                            result?.message ?? "Error al generar registros",
+                            "Error",
+                            "OK",
+                            Color.Error,
+                            Icons.Material.Filled.Error);
+                    }
+
+                    // Limpiar selección
+                    IsAllCheckBoxSelected = false;
+                    foreach (var item in selectedItems)
+                    {
+                        item.IsSelected = false;
+                    }
+
+                    // Recargar el grid
+                    await DataGrid!.ReloadServerData();
+                }
+                else
+                {
+                    var err = await response.Content.ReadAsStringAsync();
+                    await DialogService.ShowDialog(err, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                await DialogService.ShowDialog(
+                    $"Error al procesar la solicitud: {ex.Message}",
+                    "Error",
+                    "OK",
+                    Color.Error,
+                    Icons.Material.Filled.Error);
+            }
+        }
+    }
+
+    private async Task ReloadGrid()
+    {
+        await InvokeAsync(async () =>
+        {
+            if (DataGrid != null)
+            {
+                IsAllCheckBoxSelected = false;
+                if (DataGrid.FilteredItems != null)
+                {
+                    foreach (var item in DataGrid.FilteredItems)
+                    {
+                        item.IsSelected = false;
+                    }
+                }
+                await DataGrid.ReloadServerData();
+            }
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+        hubEventsService.OnSupplierChanged -= ReloadGrid;
+    }
+}
