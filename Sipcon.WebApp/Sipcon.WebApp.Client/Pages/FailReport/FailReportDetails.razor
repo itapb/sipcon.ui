@@ -183,13 +183,22 @@
 
                             </MudStack>
                             <MudDivider />
-                            <MudStack Row="true">
-                                <MudSwitch @bind-Value="_model.Paralyzed" LabelPlacement="Placement.End" Color="Color.Success" ReadOnly="true">
-                                    <MudText Typo="Typo.caption">Vehiculo Paralizado</MudText>
-                                </MudSwitch>
-                                <MudSpacer />
-                                <MudSpacer />
-                            </MudStack>
+                         <MudStack Row="true" AlignItems="AlignItems.Center">
+                            <MudText Typo="Typo.caption" Class="mr-2">Unidad Paralizada:</MudText>
+
+                            <MudRadioGroup T="bool?" 
+                                           Value="_model.Paralyzed" 
+                                           ValueChanged="@((bool? val) => OnParalyzedChanged(val))"
+                                           Disabled="IsSwitchDisabled"
+                                           Required="true"
+                                           RequiredError="Debe seleccionar si la unidad está paralizada o no">
+                                <MudRadio T="bool?" Value="@((bool?)true)" Color="Color.Success">Sí</MudRadio>
+                                <MudRadio T="bool?" Value="@((bool?)false)" Color="Color.Error">No</MudRadio>
+                            </MudRadioGroup>
+
+                            <MudSpacer />
+                            <MudSpacer />
+                        </MudStack>
 
                             <MudStack Row="true">
                                 
@@ -839,6 +848,13 @@
         new("Reporte Falla",  href: "FailReportdetail", disabled: false, icon: Icons.Material.Filled.CarCrash),
     ];
 
+        private bool IsSwitchDisabled => _model.EstatusName switch
+    {
+        "BORRADOR" => false,
+        "PARA VALIDAR" => false,
+        "VALIDADO" => false,
+        _ => true
+    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -1687,6 +1703,36 @@
         }
         
     }
+
+    private async Task OnParalyzedChanged(bool? value)
+        {
+            // Actualizamos el modelo local
+            _model.Paralyzed = value;
+
+            var itemAction = new PostAction
+            {
+                RecordId = _model.Id,
+                ActionName = "EDIT", // Nombre de la acción según tu backend
+                RelatedId = value.Value ? 1 : 0
+            };
+
+            var serviceResponse = await FailReportService.PostCheckParalyzed(new List<PostAction> { itemAction }, Session.UserId);
+
+            if (serviceResponse.Processed)
+            {
+                _success = true;
+                _nestedErrorMessage = "Estado actualizado correctamente.";
+            }
+            else
+            {
+                // Si falla, revertimos el estado local
+                _model.Paralyzed = !value;
+                _success = false;
+                _nestedErrorMessage = serviceResponse.Message ?? "Error al actualizar el estado.";
+            }
+    
+            OpenNested();
+        }
 
     private async Task ProcessItemsAsync(int moduleId, string moduleActionName)
     {

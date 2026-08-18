@@ -25,7 +25,7 @@ namespace Sipcon.WebApp.Client.Models
         public int? SupplierId { get; set; } = null;
         public int? BrandId { get; set; } = null;
         public string SrgNumber { get; set; } = string.Empty;
-        public bool Paralyzed { get; set; } = false;
+        public bool? Paralyzed { get; set; } = null;
         public bool IsActive { get; set; } = true;
         public DateTime? ServiceDate
         {
