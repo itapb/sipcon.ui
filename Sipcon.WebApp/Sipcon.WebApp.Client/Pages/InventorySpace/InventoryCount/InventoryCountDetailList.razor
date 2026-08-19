@@ -1,0 +1,1156 @@
+﻿
+@using System.Text.Json
+@using Sipcon.WebApp.Client.Repository.Auth
+
+
+@inject IInventoryCountService InventoryCountService
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager UriHelper
+@inject HubEventsService hubEventsService
+@implements IDisposable
+
+
+
+<MudDataGrid @ref="_mudDataGrid"
+             T="GetCountFull"
+             SortMode="SortMode.Multiple"
+             Filterable="true"
+             FixedHeader Height="calc(92vh - 235px)"
+             Hideable="true"
+             Loading="_loading"
+             Bordered="false"
+             Dense="true"
+             ServerData="LoadGridData">
+
+    <ToolBarContent>
+        <MudIconButton Icon="@Icons.Material.Filled.AddCard" Color="Color.Info" OnClick="ClickAddFailReport" />
+        <MudTextField @bind-Value="_searchString"
+                      Style="font-size: 14px;line-height: 0.8rem;"
+                      Placeholder="Buscar..."
+                      Adornment="Adornment.Start"
+                      Immediate="true"
+                      Typo="Typo.caption"
+                      IconSize="Size.Medium" Class="mt-0"
+                      OnKeyUp="HandleKeyDownSearch" />
+        <MudSpacer />
+
+        <!-- Botón de Filtros con Popover Flotante -->
+        <MudMenu Icon="@(_hasActiveFilters ? Icons.Material.Filled.FilterAlt : Icons.Material.Filled.FilterAltOff)"
+                 Color="@(_hasActiveFilters ? Color.Warning : Color.Info)"
+                 AriaLabel="Filtros avanzados"
+                 AnchorOrigin="Origin.BottomRight"
+                 TransformOrigin="Origin.TopRight"
+                 PopoverClass="pa-4 rounded-lg mud-elevation-4"
+                 Dense="true">
+
+            <MudText Typo="Typo.subtitle2" Class="mb-3 text-secondary"><b>FILTRAR BÚSQUEDA</b></MudText>
+
+            <MudStack Spacing="3" Style="width: 280px;">
+                <MudDatePicker @ref="_picker"
+                               @bind-Date="_dateFrom"
+                               Label="Fecha Desde"
+                               Adornment="Adornment.Start"
+                               AdornmentColor="Color.Info"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               DateFormat="dd/MM/yyyy"
+                               AutoClose="true"
+                               Clearable="true" />
+
+                <MudDatePicker @ref="_pickerTo"
+                               @bind-Date="_dateTo"
+                               Label="Fecha Hasta"
+                               Adornment="Adornment.Start"
+                               AdornmentColor="Color.Info"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               DateFormat="dd/MM/yyyy"
+                               AutoClose="true"
+                               Clearable="true" />
+
+                <MudSelect T="SelectOption"
+                           @bind-Value="_selectedAction"
+                           ToStringFunc="@(e => e?.Text)"
+                           Label="Estatus"
+                           AdornmentIcon="@Icons.Material.Filled.FilterList"
+                           AdornmentColor="Color.Info"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Clearable="true"
+                           Dense="true">
+                    @if (_actions != null)
+                    {
+                        @foreach (var action in _actions)
+                        {
+                            <MudSelectItem T="SelectOption" Value="@action">@action.Text</MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+
+                <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-2">
+                    <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" OnClick="ClearFilters">
+                        Limpiar
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Info" Size="Size.Small" OnClick="ClickSearch">
+                        Aplicar
+                    </MudButton>
+                </MudStack>
+            </MudStack>
+        </MudMenu>
+
+        <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Info" OnClick="() => ClickSearch()" />
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
+
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+            @foreach (var module in _itemsModules)
+            {
+                <MudMenuItem Icon="@(module.Icon ?? "")"
+                             IconColor="@module.Color"
+                             Label="@module.Text"
+                             OnClick="() => HandleMenuClick(module)" />
+            }
+        </MudMenu>
+    </ToolBarContent>
+
+    <Columns>
+        <!-- Columna de Selección Padre Manual (Header Seleccionar Todo) -->
+        <TemplateColumn Style="width: 50px;" HeaderClass="dt-center" CellClass="dt-center">
+            <HeaderTemplate>
+                <MudCheckBox T="bool"
+                             Value="_isAllParentsSelected"
+                             ValueChanged="ToggleAllParents"
+                             Dense="true"
+                             Color="Color.Primary" />
+            </HeaderTemplate>
+            <CellTemplate>
+                <MudCheckBox @bind-Value="context.Item.IsSelected"
+                             @bind-Value:after="() => OnParentCheckChanged(context.Item)"
+                             Dense="true"
+                             Color="Color.Primary" />
+            </CellTemplate>
+        </TemplateColumn>
+
+        <!-- Columna para expandir/colapsar -->
+        <HierarchyColumn T="GetCountFull" />
+
+        <TemplateColumn Title="ZONA" Sortable="true" >
+            <CellTemplate>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Place" Color="Color.Primary" Size="Size.Small" />
+                    <MudText Typo="Typo.body2" Class="fw-bold text-primary">
+                        @(context.Item.Zone?.ToUpper())
+                    </MudText>
+                </MudStack>
+            </CellTemplate>
+        </TemplateColumn>
+
+        <!-- TOTAL UBICACIONES: Badge Neutral -->
+        <TemplateColumn Title="TOTAL UBICACIONES" Sortable="true" HeaderClass="dt-center" CellClass="dt-center">
+            <CellTemplate>
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Default">
+                    <b>@context.Item.LocationTotal</b>
+                </MudChip>
+            </CellTemplate>
+        </TemplateColumn>
+
+        <!-- UBICACIONES CONTADAS: Badge Info -->
+        <TemplateColumn Title="CONTADAS" Sortable="true" HeaderClass="dt-center" CellClass="dt-center">
+            <CellTemplate>
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="Color.Info" Style="font-weight: 600;">
+                    @context.Item.LocationCounted
+                </MudChip>
+            </CellTemplate>
+        </TemplateColumn>
+
+        <!-- PORCENTAJE AVANCE: Con indicador de color y progreso -->
+        <TemplateColumn Title="AVANCE" Sortable="true" HeaderClass="dt-center" CellClass="dt-center">
+            <CellTemplate>
+                @{
+                    var percentage = context.Item.Porcentage;
+                    var color = percentage >= 100 ? Color.Success : (percentage > 50 ? Color.Info : Color.Warning);
+                }
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
+                    <MudProgressCircular Color="@color" Value="@((int)percentage)" Size="Size.Small" Style="width: 22px; height: 22px;" />
+                    <MudText Typo="Typo.caption" Color="@color" Class="fw-bold ml-1">
+                        @percentage.ToString("N2") %
+                    </MudText>
+                </MudStack>
+            </CellTemplate>
+        </TemplateColumn>
+
+        <!-- USUARIOS ASIGNADOS: Chip de usuario o Guion -->
+        <TemplateColumn Title="USUARIOS ASIGNADOS">
+            <CellTemplate>
+                @if (!string.IsNullOrWhiteSpace(context.Item.UsersAssigned))
+                {
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                        <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Small" Color="Color.Secondary" />
+                        <MudText Typo="Typo.caption" Class="text-secondary">
+                            @context.Item.UsersAssigned
+                        </MudText>
+                    </MudStack>
+                }
+                else
+                {
+                    <MudText Typo="Typo.caption" Class="text-muted" Align="Align.Center">-</MudText>
+                }
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+
+    <ChildRowContent Context="parentContext">
+        <MudTd colspan="7" Class="pa-2 bg-grey-lighten-4">
+       
+            @if (parentContext.Item.InventoryCountDetail != null && parentContext.Item.InventoryCountDetail.Any())
+            {
+                <MudTable Items="@parentContext.Item.InventoryCountDetail"
+                          T="GetInventoryCountDetail"
+                          Dense="true"
+                          Hover="true"
+                          Bordered="true"
+                          Elevation="0"
+                          Class="mb-2">
+                    <HeaderContent>
+                        <!-- Checkbox Select All para los Hijos -->
+                        <MudTh Style="width: 40px;" Class="dt-center">
+                            <MudCheckBox T="bool"
+                                         Value="@IsAllChildrenSelected(parentContext.Item)"
+                                         ValueChanged="@(val => ToggleAllChildren(parentContext.Item, val))"
+                                         Dense="true"
+                                         Color="Color.Primary" />
+                        </MudTh>
+                        <MudTh><MudText Typo="Typo.caption"><b>UBICACIÓN</b></MudText></MudTh>
+                        <MudTh><MudText Typo="Typo.caption"><b>CÓDIGO PARTE</b></MudText></MudTh>
+                        <MudTh><MudText Typo="Typo.caption"><b>PARTE</b></MudText></MudTh>
+                        <MudTh><MudText Typo="Typo.caption"><b>NUM CONTEO</b></MudText></MudTh>
+                        <MudTh><MudText Typo="Typo.caption"><b>CANT. TEORICA</b></MudText></MudTh>
+                        <MudTh><MudText Typo="Typo.caption"><b>CANT. CONTADA</b></MudText></MudTh>
+                        <MudTh><MudText Typo="Typo.caption"><b>DIFERENCIA</b></MudText></MudTh>
+                        <MudTh><MudText Typo="Typo.caption"><b>F. REGISTRO</b></MudText></MudTh>
+                        <MudTh><MudText Typo="Typo.caption"><b>F. CONTEO</b></MudText></MudTh>
+                        <MudTh><MudText Typo="Typo.caption"><b>CONTADO POR</b></MudText></MudTh>
+                        <MudTh><MudText Typo="Typo.caption"><b>ESTATUS</b></MudText></MudTh>
+                    </HeaderContent>
+                    <RowTemplate Context="detail">
+                        <!-- Checkbox Fila Hija -->
+                        <MudTd Style="width: 40px;" Class="dt-center">
+                            <MudCheckBox @bind-Value="detail.IsSelected"
+                                         Dense="true"
+                                         Color="Color.Primary" />
+                        </MudTd>
+                        <MudTd><MudText Typo="Typo.caption" Color="Color.Primary" Style="font-weight:bold;">@detail.Location?.ToUpper()</MudText></MudTd>
+                        <MudTd><MudText Typo="Typo.caption">@detail.InnerCode?.ToUpper()</MudText></MudTd>
+                        <MudTd><MudText Typo="Typo.caption">@detail.PartName?.ToUpper()</MudText></MudTd>
+                        <MudTd><MudText Typo="Typo.caption">@detail.CountId</MudText></MudTd>
+                        <MudTd><MudText Typo="Typo.caption">@detail.QuantityOld</MudText></MudTd>
+                        <MudTd><MudText Typo="Typo.caption">@detail.QuantityNew</MudText></MudTd>
+                        <MudTd><MudText Typo="Typo.caption">@detail.Diference</MudText></MudTd>
+                        <MudTd><MudText Typo="Typo.caption">@detail.Created?.ToString("dd MMM yyyy")</MudText></MudTd>
+                        <MudTd><MudText Typo="Typo.caption">@detail.CountDate?.ToString("dd MMM yyyy")</MudText></MudTd>
+                        <MudTd><MudText Typo="Typo.caption">@detail.UserName</MudText></MudTd>
+                        <MudTd>
+                            @if (!string.IsNullOrEmpty(detail.StatusName))
+                            {
+                                <MudChip T="string"
+                                         Color="@GetStatusColor(detail.StatusName)"
+                                         Variant="Variant.Filled"
+                                         Size="Size.Small"
+                                         Style="font-size: 10px; font-style: italic;">
+                                    @(detail.StatusName.ToUpper())
+                                </MudChip>
+                            }
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+            else
+            {
+                <MudText Typo="Typo.caption" Class="ml-4 mb-2 text-italic" Color="Color.Default">
+                    No hay detalles registrados para esta zona.
+                </MudText>
+            }
+        </MudTd>
+    </ChildRowContent>
+
+    <PagerContent>
+        <MudDataGridPager PageSizeOptions="new int[] { 500 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por página" />
+    </PagerContent>
+</MudDataGrid>
+
+<NestedDialogCustom IsVisible="_nestedVisible"
+                    Success="_success"
+                    onCloseNested="() => _nestedVisible = false"
+                    ErrorMessage="_nestedErrorMessage"
+                    Title="Detalle Conteo" />
+
+@code { 
+    [Parameter] public int InventoryCountId { get; set; }
+    [Inject] private UserSession Session { get; set; } = null!;
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
+    private IEnumerable<GetCountFull> _GetInventoryCountDetails = new List<GetCountFull>();
+    private string _nestedErrorMessage = string.Empty;
+    private bool _nestedVisible;
+    bool _success = false;
+
+    private HashSet<GetCountFull> selectedGetCountFullList = new();
+
+    // Guardamos ÚNICAMENTE los IDs numéricos para evitar congelamientos de UI
+    private HashSet<int?> selectedDetailIds = new();
+    private HashSet<int> selectedZoneIds = new();
+
+    private int _rowCount = 0;
+    private int _rowsTotal = 0; 
+
+    private string _searchString = string.Empty;
+    private bool _loading = true;
+    private string _moduleName = "INVENTARIO-DETALLES-CONTEO";
+    //Fechas y filtrados po estatus 
+    bool _open;
+    IMask maskDate = new DateMask("dd/MM/yyyy");
+    private DateTime? _dateFrom { get; set; } = null;
+    private DateTime? _dateTo { get; set; } = null;
+    private MudDatePicker _picker = new MudDatePicker();
+    private MudDatePicker _pickerTo = new MudDatePicker();
+    private List<SelectOption> _actions = new List<SelectOption>();
+    private SelectOption? _selectedAction;
+
+    private bool _isAllParentsSelected = false;
+    private MudDataGrid<GetCountFull>? _mudDataGrid;
+    private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
+    private bool _hasActiveFilters => _dateFrom.HasValue || _dateTo.HasValue || _selectedAction != null;
+
+    private List<BreadcrumbItem> _itemsNavigate =
+                [
+        new("Home", href: "", icon: Icons.Material.Filled.Home),
+        new("Inventario",href: "", icon: Icons.Material.Filled.Inventory),
+        new("Conteo de Inventario",  href: "inventorycount", disabled: false, icon: Icons.Material.Filled.Assessment),
+    ];
+
+
+    private void ClearFilters()
+    {
+        _dateFrom = null;
+        _dateTo = null;
+        _selectedAction = null;
+        ClickSearch(); // O recargar el grid
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+
+        hubEventsService.OnSupplierChanged += ReloadServerData;
+        hubEventsService.OnDealerChanged += ReloadServerData;
+        await Task.CompletedTask;
+    }
+
+    private async Task ReloadServerData()
+    {
+        if (_mudDataGrid != null)
+        {
+            await _mudDataGrid!.ReloadServerData();
+        }
+    }
+
+    public void Dispose()
+    {
+        hubEventsService.OnDealerChanged -= ReloadServerData;
+        hubEventsService.OnSupplierChanged -= ReloadServerData;
+    }
+
+
+    private async Task<GridData<GetCountFull>> LoadGridData(GridState<GetCountFull> state)
+    {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+        _rowCount = state.Page * state.PageSize;
+
+        await GetInventoryCountDetails();
+
+        return new GridData<GetCountFull> { TotalItems = _rowsTotal, Items = _GetInventoryCountDetails };
+    }
+
+    private Color GetStatusColor(string statusName)
+    {
+        return statusName?.ToUpper() switch
+        {
+            "POR ASIGNAR" => Color.Info,
+            "ASIGNADO" => Color.Info,
+            "CONTADO" => Color.Dark,
+            "POR CONTAR" => Color.Default,
+            _ => Color.Warning // Para cualquier otro estatus
+        };
+    }
+
+    private void ToggleAllParents(bool value)
+    {
+        _isAllParentsSelected = value;
+        if (_mudDataGrid?.Items == null) return;
+
+        foreach (var parent in _mudDataGrid.Items)
+        {
+            parent.IsSelected = value;
+            if (parent.InventoryCountDetail != null)
+            {
+                foreach (var child in parent.InventoryCountDetail)
+                {
+                    child.IsSelected = value;
+                }
+            }
+        }
+    }
+
+    // 2. Al cambiar el Checkbox de un Padre individual
+    private void OnParentCheckChanged(GetCountFull parent)
+    {
+        // Sincroniza automáticamente a los hijos con el nuevo valor del padre
+        if (parent.InventoryCountDetail != null)
+        {
+            foreach (var child in parent.InventoryCountDetail)
+            {
+                child.IsSelected = parent.IsSelected;
+            }
+        }
+    }
+
+    // 3. Evalúa si todos los Hijos de una Zona están marcados
+    private bool IsAllChildrenSelected(GetCountFull parent)
+    {
+        if (parent.InventoryCountDetail == null || !parent.InventoryCountDetail.Any())
+            return false;
+
+        return parent.InventoryCountDetail.All(c => c.IsSelected);
+    }
+
+    // 4. Marcar / Desmarcar todos los Hijos de un Padre específico
+    private void ToggleAllChildren(GetCountFull parent, bool value)
+    {
+        if (parent.InventoryCountDetail == null) return;
+
+        foreach (var child in parent.InventoryCountDetail)
+        {
+            child.IsSelected = value;
+        }
+    }
+
+    // 5. MÉTODOS OBTENEDORES DE SELECCIONADOS (Para cuando envíes datos al Server o Botones de Acción)
+    private List<GetCountFull> GetSelectedParents()
+    {
+        return _mudDataGrid?.Items?.Where(x => x.IsSelected).ToList() ?? new List<GetCountFull>();
+    }
+
+    private List<GetInventoryCountDetail> GetSelectedChildren()
+    {
+        return _mudDataGrid?.Items?
+            .Where(x => x.InventoryCountDetail != null)
+            .SelectMany(x => x.InventoryCountDetail)
+            .Where(c => c.IsSelected)
+            .ToList() ?? new List<GetInventoryCountDetail>();
+    }
+
+    private async Task GetInventoryCountDetails()
+    {
+        _loading = true;
+        _GetInventoryCountDetails = new List<GetCountFull>();
+        _rowsTotal = 0;
+
+        _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
+
+        //fechas y filtros
+        _actions = await ModuleActionsService.GetStatusByModule(Session.UserId, _moduleName);  
+        int? idRespaldado = _selectedAction?.Value;
+         if (idRespaldado.HasValue && _actions != null)   {  _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
+         int? _estatusid = _selectedAction?.Value;
+         string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
+        string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
+
+        var serviceResponse = await InventoryCountService.GetInventoryCountDetails(Session.SupplierId, Session.UserId,InventoryCountId, _rowCount, _searchString,_dateFromStr,_dateToStr,_estatusid);
+        if (serviceResponse.Processed)
+        {
+            _GetInventoryCountDetails = serviceResponse.Data;
+            _rowsTotal = serviceResponse.Total;
+        }
+        else
+        {
+            // Console.WriteLine($"Error: {serviceResponse.Message}");
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
+
+            OpenNested();
+
+        }
+       
+        _loading = false;
+        StateHasChanged();
+    }
+
+
+    private async Task HandleKeyDownSearch(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+           // if (_searchString.Length >= 3 || _searchString == string.Empty)
+           // {
+                Console.WriteLine($"Buscando: {_searchString}");
+                await _mudDataGrid!.ReloadServerData();
+           // }
+
+        }
+    }
+
+    private async Task ClickSearch()
+    {
+
+        //if (_searchString.Length >= 3 )
+        //{
+            Console.WriteLine($"Buscando: {_searchString}");
+            await _mudDataGrid!.ReloadServerData();
+        //}
+
+    }
+
+
+    private async Task HandleOnClickRefresh()
+    {
+       _searchString = string.Empty; // Limpia el MudTextField
+        _selectedAction = null;       // Limpia el MudSelect
+        _dateFrom = null;             // Limpia el primer MudDatePicker
+        _dateTo = null;
+        await _mudDataGrid!.ReloadServerData();
+    }
+
+
+    private async Task ClickEditFailReport(FailReport item)
+    {
+        UriHelper.NavigateTo("FailReportdetail/" + item.Id);
+        await Task.CompletedTask;
+    }
+
+
+    private async Task ClickAddFailReport()
+    {
+
+        // DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = false, NoHeader = true };
+
+        // var parameters = new DialogParameters<FailReportDialog> { { x => x.IdFailReport, 0 }, { x => x.ActionsModal, ActionsEnum.Create } };
+        // var dialog = await DialogService.ShowAsync<FailReportDialog>("Reporte Falla", parameters, options);
+        // var result = await dialog.Result;
+        // if (!result!.Canceled)
+        // {
+        //     await _mudDataGrid!.ReloadServerData();
+        //     StateHasChanged();
+        // }
+
+        await Task.CompletedTask;
+    }
+
+
+   
+
+
+    private void OpenNested()
+    {
+        _nestedVisible = true;
+        StateHasChanged();
+    }
+
+
+    private async Task HandleMenuClick(ModuleAction module)
+    {
+        switch (module.ActionName)
+        {
+            case "EXPORT":
+                await ExportItemsAsync();
+                break;
+            // case "GENERATE":
+            //     await GenerateItemsAsync(module.IdAction, module.ActionName);
+            //     break;
+            // case "TOVALIDATE":
+            //     await ToValidateItemsAsync(module.IdAction, module.ActionName);
+            //     break;
+            // case "VALIDATE":
+            //     await ValidateItemsAsync(module.IdAction, module.ActionName);
+            //     break;
+            // case "NOTVALIDATE":
+            //     await NotValidateItemsAsync(module.IdAction, module.ActionName);
+            //     break;
+            // case "TOAPPROVE":
+            //     await ToApproveItemsAsync(module.IdAction, module.ActionName);
+            //     break;
+            // case "APPROVE":
+            //     await ApproveItemsAsync(module.IdAction, module.ActionName);
+            //     break;
+            // case "DECLINE":
+            //     await DeclineItemsAsync(module.IdAction, module.ActionName);
+            //     break;
+            // case "PROCESS":
+            //     await ProcessItemsAsync(module.IdAction, module.ActionName);
+            //     break;
+                
+            default:
+                Console.WriteLine($"{MessageEnum.ActionsError.GetStringValue()}: {module.ActionName}");
+                break;
+        }
+    }
+
+
+    private async Task ExportItemsAsync()
+    {
+        //    int? idRespaldado = _selectedAction?.Value;
+        //  if (idRespaldado.HasValue && _actions != null)   {  _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado); }
+        //  int? _estatusid = _selectedAction?.Value;
+        //  string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
+        // string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
+
+        // var serviceResponse = await FailReportService.ExportFailReports(Session.SupplierId, Session.UserId, _searchString, Session.DealerId,_dateFromStr,_dateToStr,_estatusid);
+        // if (serviceResponse.Processed)
+        // {
+        //     _success = true;
+        //     _nestedErrorMessage = "";
+
+        //     var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+        //     var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+        //     await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "Reporte de Falla.xlsx");
+
+        // }
+        // else
+        // {
+        //     // Console.WriteLine(serviceResponse.Message);
+        //     _success = false;
+        //     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
+            
+        //     OpenNested();
+
+        // }
+    }
+
+    // private async Task GenerateItemsAsync(int moduleId, string moduleActionName)
+    // {
+    //     Console.WriteLine("Generar Reporte de Falla...");
+    //     if (selectedFailReport.Any())
+    //     {
+    //         var option = new DialogOptions
+    //             {
+    //                 CloseButton = false,
+    //                 MaxWidth = MaxWidth.Small,
+    //                 FullWidth = true,
+    //                 BackdropClick = false
+    //             };
+    //         bool? result = await DialogService.ShowMessageBox(
+    //             "Generar Reporte de Falla",
+    //             $"Seguro de Generar Reporte de Falla? ",
+    //             yesText: "Si", noText: "No", "", option);
+
+    //         if (result == true)
+    //         {
+    //             List<PostAction> ActionList = ([]);
+
+    //             foreach (var Item in selectedFailReport)
+    //             {
+    //                 var ItemAction = new PostAction
+    //                     {
+    //                         RecordId = Item.Id,
+    //                         ModuleId = moduleId,
+    //                         ActionName = moduleActionName
+    //                     };
+    //                 ActionList.Add(ItemAction);
+    //             }
+
+    //             var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Session.UserId);
+    //             if (serviceResponse.Processed)
+    //             {
+
+    //                 _success = true;
+    //                 _nestedErrorMessage = MessageEnum.GenerateOK.GetStringValue();
+
+    //                 await _mudDataGrid!.ReloadServerData();
+    //             }
+    //             else
+    //             {
+    //                 // Console.WriteLine(serviceResponse.Message);
+    //                 _success = false;
+    //                 _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GenerateNotOK.GetStringValue();
+    //             }
+    //             OpenNested();
+    //         }
+
+    //     }
+
+    //     selectedFailReport = new([]);
+    //     await Task.CompletedTask;
+    // }
+
+    // private async Task ToValidateItemsAsync(int moduleId, string moduleActionName)
+    // {
+    //     Console.WriteLine("Pre Validar Reporte de Falla...");
+    //     if (selectedFailReport.Any())
+    //     {
+    //         var option = new DialogOptions
+    //         {
+    //             CloseButton = false,
+    //             MaxWidth = MaxWidth.Small,
+    //             FullWidth = true,
+    //             BackdropClick = false
+    //         };
+    //         bool? result = await DialogService.ShowMessageBox(
+    //             "Pre Validar Reporte de Falla ",
+    //             $"Seguro de pre-validar? ",
+    //             yesText: "Si", noText: "No", "", option);
+
+    //         if (result == true)
+    //         {
+    //             List<PostAction> ActionList = ([]);
+
+    //             foreach (var Item in selectedFailReport)
+    //             {
+    //                 var ItemAction = new PostAction
+    //                 {
+    //                     RecordId = Item.Id,
+    //                     ModuleId = moduleId,
+    //                     ActionName = moduleActionName
+    //                 };
+    //                 ActionList.Add(ItemAction);
+    //             }
+
+    //             var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Session.UserId);
+    //             if (serviceResponse.Processed)
+    //             {
+
+    //                 _success = true;
+    //                 _nestedErrorMessage = MessageEnum.ToApproveOK.GetStringValue();
+                    
+    //                 await _mudDataGrid!.ReloadServerData();
+    //             }
+    //             else
+    //             {
+    //                 // Console.WriteLine(serviceResponse.Message);
+    //                 _success = false;
+    //                 _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ToApproveNotOK.GetStringValue();
+                    
+    //             }
+    //             OpenNested();
+    //         }
+
+    //     }
+
+    //     selectedFailReport = new([]);
+    //     await Task.CompletedTask;
+    // }
+
+    // private async Task ValidateItemsAsync(int moduleId, string moduleActionName)
+    // {
+    //     Console.WriteLine("Validar Reporte de Falla...");
+    //     if (selectedFailReport.Any())
+    //     {
+    //         var option = new DialogOptions
+    //         {
+    //             CloseButton = false,
+    //             MaxWidth = MaxWidth.Small,
+    //             FullWidth = true,
+    //             BackdropClick = false
+    //         };
+    //         bool? confir = await DialogService.ShowMessageBox(
+    //             "Validar Reporte de Falla ",
+    //             $"Seguro de Validar? ",
+    //             yesText: "Si", noText: "No", "", option);
+
+    //         if (confir == true)
+    //         {
+
+    //             DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+    //             var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Validar Reporte de Falla ..." } };
+    //             var dialog = await DialogService.ShowAsync<TextItemDialog>("Reporte de Falla ", parameters, options);
+
+    //             StateHasChanged();
+
+    //             var result = await dialog.Result;
+    //             if (!result!.Canceled)
+    //             {
+    //                 var _Observacion = (string)(result.Data ?? string.Empty);
+    //                 List<PostAction> ActionList = ([]);
+
+    //                 foreach (var Item in selectedFailReport)
+    //                 {
+    //                     var ItemAction = new PostAction
+    //                     {
+    //                         RecordId = Item.Id,
+    //                         ModuleId = moduleId,
+    //                         ActionName = moduleActionName,
+    //                         ActionComment = _Observacion
+    //                     };
+    //                     ActionList.Add(ItemAction);
+    //                 }
+
+    //                 var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Session.UserId);
+    //                 if (serviceResponse.Processed)
+    //                 {
+
+    //                     _success = true;
+    //                     _nestedErrorMessage = MessageEnum.ApproveOK.GetStringValue();
+                        
+    //                     await _mudDataGrid!.ReloadServerData();
+    //                 }
+    //                 else
+    //                 {
+    //                     // Console.WriteLine(serviceResponse.Message);
+    //                     _success = false;
+    //                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ApproveNotOK.GetStringValue();
+                        
+    //                 }
+    //                 OpenNested();
+    //             }
+
+    //         }
+
+    //     }
+
+    //     selectedFailReport = new([]);
+    //     await Task.CompletedTask;
+    // }
+
+    // private async Task NotValidateItemsAsync(int moduleId, string moduleActionName)
+    // {
+    //     Console.WriteLine("Invalidar Reporte Falla...");
+    //     if (selectedFailReport.Any())
+    //     {
+    //         var option = new DialogOptions
+    //         {
+    //             CloseButton = false,
+    //             MaxWidth = MaxWidth.Small,
+    //             FullWidth = true,
+    //             BackdropClick = false
+    //         };
+    //         bool? confirm = await DialogService.ShowMessageBox(
+    //             "Invalidar Reporte Falla ",
+    //             $"Seguro de Invalidar? ",
+    //             yesText: "Si", noText: "No", "", option);
+
+    //         if (confirm == true)
+    //         {
+    //             DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+    //             var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Invalidar Reporte Falla ..." } };
+    //             var dialog = await DialogService.ShowAsync<TextItemDialog>("Reporte Falla ", parameters, options);
+
+    //             StateHasChanged();
+
+    //             var result = await dialog.Result;
+    //             if (!result!.Canceled)
+    //             {
+    //                 var _Observacion = (string)(result.Data ?? string.Empty);
+    //                 List<PostAction> ActionList = ([]);
+
+    //                 foreach (var Item in selectedFailReport)
+    //                 {
+    //                     var ItemAction = new PostAction
+    //                     {
+    //                         RecordId = Item.Id,
+    //                         ModuleId = moduleId,
+    //                         ActionName = moduleActionName,
+    //                         ActionComment = _Observacion
+    //                     };
+    //                     ActionList.Add(ItemAction);
+    //                 }
+
+    //                 var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Session.UserId);
+    //                 if (serviceResponse.Processed)
+    //                 {
+
+    //                     _success = true;
+    //                     _nestedErrorMessage = MessageEnum.DeclineOK.GetStringValue();
+                        
+    //                     await _mudDataGrid!.ReloadServerData();
+    //                 }
+    //                 else
+    //                 {
+    //                     // Console.WriteLine(serviceResponse.Message);
+    //                     _success = false;
+    //                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.DeclineNotOK.GetStringValue();
+                        
+    //                 }
+    //                  OpenNested();
+    //             }
+
+    //         }
+
+    //     }
+
+    //     selectedFailReport = new([]);
+    //     await Task.CompletedTask;
+    // }
+
+    // private async Task ToApproveItemsAsync(int moduleId, string moduleActionName)
+    // {
+    //     Console.WriteLine("Por Aprobar Reporte de Falla...");
+    //     if (selectedFailReport.Any())
+    //     {
+    //         var option = new DialogOptions
+    //         {
+    //             CloseButton = false,
+    //             MaxWidth = MaxWidth.Small,
+    //             FullWidth = true,
+    //             BackdropClick = false
+    //         };
+    //         bool? result = await DialogService.ShowMessageBox(
+    //             "Pre Aprobar Reporte de Falla ",
+    //             $"Seguro de pre-aprobar? ",
+    //             yesText: "Si", noText: "No", "", option);
+
+    //         if (result == true)
+    //         {
+    //             List<PostAction> ActionList = ([]);
+
+    //             foreach (var Item in selectedFailReport)
+    //             {
+    //                 var ItemAction = new PostAction
+    //                 {
+    //                     RecordId = Item.Id,
+    //                     ModuleId = moduleId,
+    //                     ActionName = moduleActionName
+    //                 };
+    //                 ActionList.Add(ItemAction);
+    //             }
+
+    //             var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Session.UserId);
+    //             if (serviceResponse.Processed)
+    //             {
+
+    //                 _success = true;
+    //                 _nestedErrorMessage = MessageEnum.ToApproveOK.GetStringValue();
+
+    //                 await _mudDataGrid!.ReloadServerData();
+    //             }
+    //             else
+    //             {
+    //                 // Console.WriteLine(serviceResponse.Message);
+    //                 _success = false;
+    //                 _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ToApproveNotOK.GetStringValue();
+
+    //             }
+    //             OpenNested();
+    //         }
+
+    //     }
+
+    //     selectedFailReport = new([]);
+    //     await Task.CompletedTask;
+    // }
+
+    // private async Task ApproveItemsAsync(int moduleId, string moduleActionName)
+    // {
+    //     Console.WriteLine("Aprobar Reporte de Falla...");
+    //     if (selectedFailReport.Any())
+    //     {
+    //         var option = new DialogOptions
+    //         {
+    //             CloseButton = false,
+    //             MaxWidth = MaxWidth.Small,
+    //             FullWidth = true,
+    //             BackdropClick = false
+    //         };
+    //         bool? confir = await DialogService.ShowMessageBox(
+    //             "Aprobar Reporte de Falla ",
+    //             $"Seguro de Aprobar? ",
+    //             yesText: "Si", noText: "No", "", option);
+
+    //         if (confir == true)
+    //         {
+
+    //             DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+    //             var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Aprobar Reporte de Falla ..." } };
+    //             var dialog = await DialogService.ShowAsync<TextItemDialog>("Reporte de Falla ", parameters, options);
+
+    //             StateHasChanged();
+
+    //             var result = await dialog.Result;
+    //             if (!result!.Canceled)
+    //             {
+    //                 var _Observacion = (string)(result.Data ?? string.Empty);
+    //                 List<PostAction> ActionList = ([]);
+
+    //                 foreach (var Item in selectedFailReport)
+    //                 {
+    //                     var ItemAction = new PostAction
+    //                     {
+    //                         RecordId = Item.Id,
+    //                         ModuleId = moduleId,
+    //                         ActionName = moduleActionName,
+    //                         ActionComment = _Observacion
+    //                     };
+    //                     ActionList.Add(ItemAction);
+    //                 }
+
+    //                 var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Session.UserId);
+    //                 if (serviceResponse.Processed)
+    //                 {
+
+    //                     _success = true;
+    //                     _nestedErrorMessage = MessageEnum.ApproveOK.GetStringValue();
+
+    //                     await _mudDataGrid!.ReloadServerData();
+
+    //                 }
+    //                 else
+    //                 {
+    //                     // Console.WriteLine(serviceResponse.Message);
+    //                     _success = false;
+    //                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ApproveNotOK.GetStringValue();
+
+    //                 }
+    //                 OpenNested();
+    //             }
+                
+    //         }
+
+    //     }
+
+    //     selectedFailReport = new([]);
+    //     await Task.CompletedTask;
+    // }
+
+    // private async Task DeclineItemsAsync(int moduleId, string moduleActionName)
+    // {
+    //     Console.WriteLine("Rechazar Reporte Falla...");
+    //     if (selectedFailReport.Any())
+    //     {
+    //         var option = new DialogOptions
+    //         {
+    //             CloseButton = false,
+    //             MaxWidth = MaxWidth.Small,
+    //             FullWidth = true,
+    //             BackdropClick = false
+    //         };
+    //         bool? confirm = await DialogService.ShowMessageBox(
+    //             "Rechazar Reporte Falla ",
+    //             $"Seguro de Rechazar? ",
+    //             yesText: "Si", noText: "No", "", option);
+
+    //         if (confirm == true)
+    //         {
+    //             DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+    //             var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Rechazar Reporte Falla ..." } };
+    //             var dialog = await DialogService.ShowAsync<TextItemDialog>("Reporte Falla ", parameters, options);
+
+    //             StateHasChanged();
+
+    //             var result = await dialog.Result;
+    //             if (!result!.Canceled)
+    //             {
+    //                 var _Observacion = (string)(result.Data ?? string.Empty);
+    //                 List<PostAction> ActionList = ([]);
+
+    //                 foreach (var Item in selectedFailReport)
+    //                 {
+    //                     var ItemAction = new PostAction
+    //                     {
+    //                         RecordId = Item.Id,
+    //                         ModuleId = moduleId,
+    //                         ActionName = moduleActionName,
+    //                         ActionComment = _Observacion
+    //                     };
+    //                     ActionList.Add(ItemAction);
+    //                 }
+
+    //                 var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Session.UserId);
+    //                 if (serviceResponse.Processed)
+    //                 {
+
+    //                     _success = true;
+    //                     _nestedErrorMessage = MessageEnum.DeclineOK.GetStringValue();
+
+    //                     await _mudDataGrid!.ReloadServerData();
+
+    //                 }
+    //                 else
+    //                 {
+    //                     // Console.WriteLine(serviceResponse.Message);
+    //                     _success = false;
+    //                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.DeclineNotOK.GetStringValue();
+
+    //                 }
+    //                 OpenNested();
+    //             }
+
+    //         }
+
+    //     }
+
+    //     selectedFailReport = new([]);
+    //     await Task.CompletedTask;
+    // }
+
+    // private async Task ProcessItemsAsync(int moduleId, string moduleActionName)
+    // {
+    //     Console.WriteLine("Procesar Reporte de Falla...");
+    //     if (selectedFailReport.Any())
+    //     {
+    //         var option = new DialogOptions
+    //         {
+    //             CloseButton = false,
+    //             MaxWidth = MaxWidth.Small,
+    //             FullWidth = true,
+    //             BackdropClick = false
+    //         };
+    //         bool? confir = await DialogService.ShowMessageBox(
+    //             "Procesar Reporte de Falla ",
+    //             $"Seguro de Procesar? ",
+    //             yesText: "Si", noText: "No", "", option);
+
+    //         if (confir == true)
+    //         {
+
+    //             DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+    //             var parameters = new DialogParameters<InvoiceDialog> { { x => x.Title, "Procesar Reporte de Falla ..." } };
+    //             var dialog = await DialogService.ShowAsync<InvoiceDialog>("Reporte de Falla ", parameters, options);
+
+    //             StateHasChanged();
+
+    //             var result = await dialog.Result;
+    //             if (!result!.Canceled)
+    //             {
+    //                 FailReportInvoice _Observacion = (FailReportInvoice)(result.Data ?? new FailReportInvoice());
+    //                 List<PostActionProcess> ActionList = ([]);
+
+    //                 foreach (var Item in selectedFailReport)
+    //                 {
+    //                     var ItemAction = new PostActionProcess
+    //                     {
+    //                         RecordId = Item.Id,
+    //                         ModuleId = moduleId,
+    //                         ActionName = moduleActionName,
+    //                         ActionComment = "",
+    //                         InvoiceNumber = _Observacion.InvoiceNumber,
+    //                         InvoiceDate = _Observacion.InvoiceDate,
+    //                     };
+    //                     ActionList.Add(ItemAction);
+    //                 }
+
+    //                 var serviceResponse = await FailReportService.ActionsFailReportProcess(ActionList, Session.UserId);
+    //                 if (serviceResponse.Processed)
+    //                 {
+
+    //                     _success = true;
+    //                     _nestedErrorMessage = MessageEnum.ApproveOK.GetStringValue();
+
+    //                     await _mudDataGrid!.ReloadServerData();
+    //                 }
+    //                 else
+    //                 {
+    //                     // Console.WriteLine(serviceResponse.Message);
+    //                     _success = false;
+    //                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ApproveNotOK.GetStringValue();
+                        
+    //                 }
+    //                 OpenNested();
+    //             }
+
+    //         }
+
+    //     }
+
+    //     selectedFailReport = new([]);
+    //     await Task.CompletedTask;
+    // }
+
+
+}

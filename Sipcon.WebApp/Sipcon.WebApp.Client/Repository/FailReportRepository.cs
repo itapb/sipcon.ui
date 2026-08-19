@@ -200,7 +200,7 @@
                     CustomerReport = FailReport.CustomerReport,
                     DealerReport = FailReport.DealerReport,
                     TechnicalSolution = FailReport.TechnicalSolution,
-                    Paralyzed = FailReport.Paralyzed,
+                    Paralyzed = FailReport.Paralyzed ?? false,
                     LicenseId = FailReport.LicenseId ?? 0,
                     DealerId = FailReport.DealerId ?? 0,
                     VehicleId = FailReport.VehicleId ?? 0,
@@ -246,7 +246,7 @@
                     CustomerReport = FailReport.CustomerReport,
                     DealerReport = FailReport.DealerReport,
                     TechnicalSolution = FailReport.TechnicalSolution,
-                    Paralyzed = FailReport.Paralyzed,
+                    Paralyzed = FailReport.Paralyzed ?? false,
                     LicenseId = FailReport.LicenseId ?? 0,
                     DealerId = FailReport.DealerId ?? 0,
                     VehicleId = FailReport.VehicleId ?? 0,
@@ -282,6 +282,34 @@
             try
             {
                 var response = await _http.PostAsJsonAsync($"api/Service/PostActions?userId={IdUser}&serviceTypeId={(int)ServiceTypeEnum.FailReport}", PostActions);
+
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = "El servidor devolvió una respuesta vacía."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+            return result;
+
+        }
+
+        public async Task<ApiResponse<ActionResult>> PostCheckParalyzed(List<PostAction> PostActions, int IdUser)
+        {
+            ApiResponse<ActionResult>? result;
+
+            try
+            {
+                var response = await _http.PostAsJsonAsync($"api/Service/PostCheckParalyzed?userId={IdUser}", PostActions);
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()

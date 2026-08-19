@@ -149,17 +149,21 @@
                                 </MudCardHeader>
                                 
                                 <MudCardContent Style="padding-top: 0px;" Class="mt-2">
-                                    <MudStack Row="true">
+                                 <MudStack Row="true" AlignItems="AlignItems.Center">
+                                    <MudText Typo="Typo.caption" Class="mr-2">Vehículo paralizado:</MudText>
 
-                                        <MudSwitch @bind-Value="_model.Paralyzed"
-                                                   LabelPlacement="Placement.Start"
-                                                   Color="Color.Success"
-                                                   ReadOnly="@(!_model.IsActive || _isReadOnly || _model.ReportTypeId == 7)">
-                                            <MudText Typo="Typo.caption">Vehículo paralizado</MudText>
-                                        </MudSwitch>
-                                        <MudSpacer />
-                                        <MudSpacer />
-                                    </MudStack>
+                                    <MudRadioGroup T="bool?" 
+                                                   @bind-Value="_model.Paralyzed" 
+                                                   Disabled="@(!_model.IsActive || _isReadOnly)"
+                                                   Required="true"
+                                                   RequiredError="Debe seleccionar si el vehículo está paralizado o no">
+                                        <MudRadio T="bool?" Value="@((bool?)true)" Color="Color.Success">Sí</MudRadio>
+                                        <MudRadio T="bool?" Value="@((bool?)false)" Color="Color.Error">No</MudRadio>
+                                    </MudRadioGroup>
+
+                                    <MudSpacer />
+                                    <MudSpacer />
+                                </MudStack>
 
                                     <MudStack Row="true">
                                          

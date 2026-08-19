@@ -26,7 +26,8 @@ namespace Sipcon.WebApp.Client.Utils
         IFeatureTypeService FeatureTypeService ,  
         IPaymentService PaymentService,  
         IFeatureOptionService FeatureOptionService,
-        IFeatureValueTypeService FeatureValueTypeService
+        IFeatureValueTypeService FeatureValueTypeService,
+        IInventoryCountService InventoryCountService
         )
     {
 
@@ -465,6 +466,29 @@ namespace Sipcon.WebApp.Client.Utils
             return _itemsSelect;
 
         }
+
+
+        public async Task<List<SelectOption>> GetInventoryCountTypeOption(int IdUser)
+        {
+            List<SelectOption> _itemsSelect = new([]);
+
+
+            var moduleResponse = await InventoryCountService.GetInventoryCountTypes(IdUser);
+            if (moduleResponse.Processed)
+            {
+                List<InventoryCountType> _List = moduleResponse.Data ?? new List<InventoryCountType>();
+
+
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Id, item.Name));
+                }
+            }
+            return _itemsSelect;
+
+        }
+
+
 
         public async Task<List<SelectOption>> GetPossibleFaultOption(int IdUser)
         {

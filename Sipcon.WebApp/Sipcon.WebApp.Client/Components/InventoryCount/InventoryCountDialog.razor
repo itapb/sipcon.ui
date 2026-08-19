@@ -1,0 +1,387 @@
+@using Sipcon.WebApp.Client.Pages
+@using Sipcon.WebApp.Client.Components.Vehicle
+@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+@using FluentValidation
+@using System.Globalization
+
+@inject IInventoryCountService InventoryCountService
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+@inject IJSRuntime JSRuntime
+
+
+<MudForm Model="@_model" @ref="@form" Validation="@(_modelValidator.ValidateValue)" ValidationDelay="0">
+	<MudDialog Class="blur dialog-background" ActionsClass="dialog-background-surface">
+
+		<DialogContent>
+
+			<MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
+
+				<MudCard>
+
+					<MudCardHeader>
+						<CardHeaderContent>
+							<MudGrid Spacing="0" Justify="Justify.Center">
+								<MudItem xs="12" sm="4">
+										<MudHidden @bind-value="InventoryCountId" />
+
+								
+								</MudItem>
+
+								<MudItem xs="12" sm="2">
+
+								</MudItem>
+								<MudItem xs="12" sm="6">
+									<div class="d-flex justify-right" style="justify-content: end;">
+
+										<MudButton OnClick="Cancel">Cancelar</MudButton>
+										<MudFab StartIcon="@Icons.Material.Filled.Save" Label="Aceptar" OnClick="@(async () => await OnValidSubmit())" Color="Color.Info" Size="Size.Small" />
+
+
+									</div>
+								</MudItem>
+							</MudGrid>
+
+
+						</CardHeaderContent>
+
+					</MudCardHeader>
+
+				</MudCard>
+
+			</MudContainer>
+
+			<MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
+				<MudGrid Spacing="1" Justify="Justify.Center">
+
+					<MudItem xs="12" sm="4">
+						<MudCard>
+
+							<MudCardContent Style="padding-top: 0px;">
+								<div class="d-flex justify-center">
+
+									<MudTooltip Text="Imagen Conteo de Inventario">
+										<MudImage Src="@(_model.SupplierId == 4069 ? "Images/changan_marca.jpeg" : "Images/foton_marca.jpeg")" ObjectFit="ObjectFit.ScaleDown" Class="rounded-lg "
+												  FallbackSrc="@(_model.SupplierId == 4069 ? "Images/changan_emblema.png": "Images/foton_emblema.jpeg")" Width="125" Height="152"></MudImage>
+									</MudTooltip>
+								</div>
+							</MudCardContent>
+						</MudCard>
+					</MudItem>
+					<MudItem xs="12" sm="8">
+						<MudCard>
+							<MudCardHeader>
+								<CardHeaderContent>
+									<MudStack Row="true">
+										<MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
+										<MudText Typo="Typo.subtitle2">Conteo de Inventario</MudText>
+									</MudStack>
+
+								</CardHeaderContent>
+								<CardHeaderActions>
+
+								</CardHeaderActions>
+							</MudCardHeader>
+							<MudCardContent Style="padding-top: 0px;">
+								<MudHidden @bind-value="_model.Id" />
+								<MudHidden @bind-value="_model.SupplierId" />
+
+								<MudTextField Typo="Typo.caption" @bind-Value="_model.Description"
+											  Label="Descripci&oacute;n"
+											  MaxLength="100"
+											  Variant="Variant.Text"
+											  Margin="Margin.Dense" 											
+											  For="@(() => _model.Description)"
+											  Immediate="true" />
+
+                                
+								<MudStack Row="true">
+									<MudSelect @bind-Value="_model.TypeId"
+											   Typo="Typo.caption"
+											   Label="Tipo de Conteo"
+											   AdornmentColor="Color.Default"
+											   Margin="Margin.None"
+											   For="@(() => _model.TypeId)"
+											   Immediate="true">
+										@foreach (var item in _InventoryCountType)
+										{
+											<MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
+										}
+									</MudSelect>
+
+									
+
+
+
+								</MudStack>
+
+
+
+							</MudCardContent>
+
+						</MudCard>
+					</MudItem>
+
+				</MudGrid>
+			</MudContainer>
+
+			<MudDialog @bind-Visible="_nestedModalVisible">
+				<TitleContent>
+					<MudStack Row="true">
+						<MudIcon Icon="@Icons.Material.Filled.CarRental" Color="@(_successModal ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
+						<MudText Typo="Typo.h6">Licencia</MudText>
+					</MudStack>
+				</TitleContent>
+				<DialogContent>
+					<MudStack Row="true">
+						<MudText Class="nested"><p>@_errorModalMessage!</p> </MudText>
+					</MudStack>
+				</DialogContent>
+				@* --- BOTONES DE ACCIÓN DE DIÁLOGO --- *@
+				<DialogActions>
+					<MudButton Color="Color.Info" OnClick="CloseNestedModal" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
+				</DialogActions>
+			</MudDialog>
+
+		</DialogContent>
+
+	</MudDialog>
+</MudForm>
+
+<style>
+	.blur {
+		backdrop-filter: blur(10px);
+	}
+
+	.dialog-background {
+		background-color: transparent;
+	}
+
+	.dialog-background-title {
+		background: rgb(from var(--mud-palette-info-lighten) r g b / 50%);
+		color: var(--mud-palette-white);
+	}
+
+	.dialog-background-surface {
+		background: rgb(from var(--mud-palette-surface) r g b / 75%);
+	}
+
+	.align-right input {
+		text-align: right;
+	}
+
+    /* Unificar altura de todos los campos */
+	  .mud-input-control {
+        height: 57px !important;
+        margin-bottom: 7px !important
+    }
+
+	/* Ajustar espaciado entre campos */
+    .mud-card-content > :not(:last-child) {
+        margin-bottom: 5px;
+    }
+</style>
+
+
+
+
+@code { 
+	[Inject] private UserSession Session { get; set; } = null!;
+	[CascadingParameter]
+	private IMudDialogInstance MudDialog { get; set; } = default!;
+
+	[Parameter]
+	public int InventoryCountId { get; set; }
+	[Parameter]
+	public int SupplierId { get; set; }
+	[Parameter]
+	public ActionsEnum ActionsModal { get; set; }
+
+	private MudForm? form;
+	private GetInventoryCount _model { get; set; } = new GetInventoryCount();
+
+	private string _errorModalMessage = string.Empty;
+	private string _errorSearchContact = string.Empty;
+	private string _errorSearchVehicle = string.Empty;
+	private bool _nestedModalVisible = false;
+	private bool _successModal = false;
+
+	bool _isReadOnly = false;
+
+	private IEnumerable<SelectOption> _InventoryCountType { get; set; } = new List<SelectOption>();
+
+
+	InventoryCountValidator _modelValidator = new InventoryCountValidator();
+
+	IMask maskDate = new DateMask("dd/MM/yyyy");
+	IMask maskInt = new DateMask(@"\d");
+
+	private Color GetStatusColor(string status) => status?.ToUpper() switch
+    {
+        "BORRADOR" => Color.Default,
+        "ACTIVADO" or "APROBADO" or "VALIDADO" => Color.Info,
+        "PROCESADO" => Color.Dark,
+        "CERRADO" or "FINALIZADO" => Color.Success,
+        _ => Color.Warning
+    };
+
+	protected override async Task OnInitializedAsync()
+	{
+
+		if (ActionsModal == ActionsEnum.Create)
+		{
+			_model = new GetInventoryCount();
+			_model.SupplierId = SupplierId;
+			_isReadOnly = false;
+
+			_InventoryCountType = await ModuleActionsService.GetInventoryCountTypeOption(Session.UserId);
+
+			await Task.Delay(100);
+		}
+		else
+		{
+			await GetInventoryCount();
+
+		}
+
+		StateHasChanged();
+		await Task.CompletedTask;
+
+	}
+
+
+	private async Task GetInventoryCount()
+	{
+		var serviceResponse = await InventoryCountService.GetOneInventoryCount(Session.SupplierId, Session.UserId, InventoryCountId);
+		if (serviceResponse.Processed)
+		{
+			_model = serviceResponse.Data.FirstOrDefault() ?? new GetInventoryCount();
+			_isReadOnly = _model.StatusName.ToUpper() == "BORRADOR" || _model.StatusName.Trim() == string.Empty ? false : true;
+			_InventoryCountType = await ModuleActionsService.GetInventoryCountTypeOption(Session.UserId);
+
+			StateHasChanged();
+			await Task.Delay(50);
+			
+		}
+		else
+		{
+			_model = new GetInventoryCount();
+			_errorModalMessage = MessageEnum.GetError.GetStringValue();
+			// Console.WriteLine(serviceResponse.Message);
+			OpenNested();
+		}
+
+		await Task.CompletedTask;
+
+	}
+
+
+
+
+	private async Task OnValidSubmit()
+	{
+		await form!.Validate();
+
+		if (form.IsValid)
+		{
+			_errorModalMessage = "";
+
+			var serviceResponse = await InventoryCountService.UpdateInventoryCount(_model, Session.UserId);
+			if (serviceResponse.Processed)
+			{
+				if (ActionsModal == ActionsEnum.Create)
+				{
+					ActionsModal = ActionsEnum.Edit;
+					// var _results = serviceResponse.Data ?? new List<ActionResult>();
+					// var _result = _results.FirstOrDefault();
+					var _result = serviceResponse.Data ?? new ActionResult();
+					if (_result is not null)
+					{
+						InventoryCountId = _result.LastId;
+						await GetInventoryCount();
+					}
+				}
+				_errorModalMessage = MessageEnum.SaveOK.GetStringValue();
+				_successModal = true;
+
+			}
+			else
+			{
+				// Console.WriteLine(serviceResponse.Message);
+				_successModal = false;
+				_errorModalMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue(); ;
+
+			}
+			OpenNested();
+		}
+
+		StateHasChanged();
+		await Task.CompletedTask;
+
+	}
+
+
+	private void Cancel()
+	{
+		if (_successModal)
+			MudDialog.Close(DialogResult.Ok(true));
+		else
+		{
+			MudDialog!.Cancel();
+		}
+	}
+
+	private void OpenNested() 
+	{
+		_nestedModalVisible = true;
+        StateHasChanged();
+	}
+	
+
+	private async Task CloseNestedModal()
+	{
+		_nestedModalVisible = false;
+		StateHasChanged();
+		await Task.Delay(50);
+		if (_successModal)
+			MudDialog.Close(DialogResult.Ok(true));
+		await Task.CompletedTask;
+
+	}
+
+
+	/// <summary>
+	/// Validacion del formulario
+	/// </summary>
+	/// <typeparam name="InventoryCount"></typeparam>
+	public class InventoryCountValidator : AbstractValidator<GetInventoryCount>
+	{
+		public InventoryCountValidator()
+		{
+
+			RuleFor(x => x.Description)
+				.Custom((value, context) =>
+				{
+					if (string.IsNullOrWhiteSpace(value))
+					{
+						context.AddFailure("Descripción no puede estar vacío");
+						return;
+					}
+				});
+
+        }
+		
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<GetInventoryCount>.CreateWithOptions((GetInventoryCount)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+
+    }
+
+}
+      

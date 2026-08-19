@@ -110,6 +110,8 @@ builder.Services.AddScoped<IFeatureTypeService, FeatureTypeRepository>();
 builder.Services.AddScoped<IFeatureService, FeatureRepository>();
 builder.Services.AddScoped<IFeatureOptionService, FeatureOptionRepository>();
 builder.Services.AddScoped<IFeatureValueTypeService, FeatureValueTypeRepository>();
+builder.Services.AddScoped<IInventoryCountService, InventoryCountRepository>();
+
 builder.Services.AddScoped<IPowerBIService, PowerBIRepository>();
 builder.Services.AddScoped<IRateService, RateRepository>();
 
