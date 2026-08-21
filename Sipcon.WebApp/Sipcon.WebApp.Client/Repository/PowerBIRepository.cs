@@ -2,8 +2,10 @@ namespace Sipcon.WebApp.Client.Repository
 {
     using Sipcon.WebApp.Client.Models;
     using Sipcon.WebApp.Client.Services;
+    using System.Net;
     using System.Net.Http.Headers;
     using System.Net.Http.Json;
+    using System.Text.Json;
 
     public class PowerBIRepository(HttpClient http) : IPowerBIService
     {
@@ -94,6 +96,66 @@ namespace Sipcon.WebApp.Client.Repository
                 };
             }
             return result;
+        }
+
+        public async Task<ApiResponse<bool>> ReloadReport(string datasetId, string token)
+        {
+            try
+            {
+                var url = $"https://api.powerbi.com/v1.0/myorg/datasets/{datasetId}/refreshes";
+                using var request = new HttpRequestMessage(HttpMethod.Post, url);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+                var response = await _http.SendAsync(request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return new ApiResponse<bool>
+                    {
+                        Processed = true,
+                        Data = true,
+                        Message = "La actualización del conjunto de datos se inició exitosamente."
+                    };
+                }
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                if (response.StatusCode == HttpStatusCode.BadRequest && !string.IsNullOrEmpty(responseContent))
+                {
+                    using var doc = JsonDocument.Parse(responseContent);
+                    if (doc.RootElement.TryGetProperty("error", out var errorElement) &&
+                        errorElement.TryGetProperty("code", out var codeElement))
+                    {
+                        var errorCode = codeElement.GetString();
+
+                        if (errorCode == "RefreshInProgressException")
+                        {
+                            return new ApiResponse<bool>
+                            {
+                                Processed = true, 
+                                Data = false,    
+                                Message = "El conjunto de datos ya se encuentra en proceso de actualización."
+                            };
+                        }
+                    }
+                }
+
+                return new ApiResponse<bool>
+                {
+                    Processed = false,
+                    Data = false,
+                    Message = $"Error en la solicitud de Power BI ({response.StatusCode}): {responseContent}"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<bool>
+                {
+                    Processed = false,
+                    Data = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
         }
     }
 }

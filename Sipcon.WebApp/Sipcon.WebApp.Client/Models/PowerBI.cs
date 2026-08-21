@@ -18,6 +18,7 @@ namespace Sipcon.WebApp.Client.Models
         [JsonPropertyName("id")]
         public string? ReportId { get; set; }
         public string? embedUrl { get; set; }
+        public string? datasetId { get; set; }
     }
 
     public class PowerBI_Token

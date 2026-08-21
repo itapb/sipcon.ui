@@ -10,5 +10,6 @@ namespace Sipcon.WebApp.Client.Services
 
         Task<ApiResponse<PowerBI_Token>> GetTokenPowerBI();
 
+        Task<ApiResponse<bool>> ReloadReport(string datasetId, string token);
     }
 }
