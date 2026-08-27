@@ -18,14 +18,14 @@
     <MudTabPanel Icon="@Icons.Material.Filled.PendingActions" Text="PENDIENTES">
         @if (_tabsLoaded[0])
         {
-            <PendingInttPlanta @ref="_pendingGrid" />
+            <PendingInttPlanta />
         }
     </MudTabPanel>
 
     <MudTabPanel Icon="@Icons.Material.Filled.GeneratingTokens" Text="GENERADOS">
         @if (_tabsLoaded[1])
         {
-            <GeneratedInttPlanta @ref="_generatedGrid" />
+            <GeneratedInttPlanta />
         }
     </MudTabPanel>
 </MudTabs>
@@ -40,20 +40,12 @@
     private int _activeTabIndex = 0;
     private bool[] _tabsLoaded = [true, false];
 
-    // Referencias a los componentes hijos para poder recargarlos
-    private PendingInttPlanta _pendingGrid = default!;
-    private GeneratedInttPlanta _generatedGrid = default!;
-
-    private async void OnTabChanged()
+    private void OnTabChanged()
     {
         if (_activeTabIndex >= 0 && _activeTabIndex < _tabsLoaded.Length)
             _tabsLoaded[_activeTabIndex] = true;
 
-        // Cuando se cambia a la pestaña GENERADOS, recargar el grid
-        if (_activeTabIndex == 1 && _generatedGrid != null)
-        {
-            await _generatedGrid.ReloadGrid();
-        }
+
     }
 
     protected override async Task OnInitializedAsync()
