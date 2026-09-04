@@ -46,6 +46,15 @@
                                  IconColor="@Color.Info"
                                  OnClick="@(() => ClickMenu(strmodulo.ActionName))" />
                 }
+
+                @if (strmodulo.ActionName == "EXPORT")
+                {
+                    <MudMenuItem Label="@strmodulo.ActionDisplay"
+                                 Icon="@(strmodulo.ActionDisplay.ToActionIcon())"
+                                 IconColor="@Color.Info"
+                                 OnClick="@(() => ClickMenu(strmodulo.ActionName))" />
+                }
+
             }
         </MudMenu>
     </ToolBarContent>
@@ -57,7 +66,8 @@
                              @bind-Value:after="AfterAsyncAllCheck" />
             </HeaderTemplate>
             <CellTemplate>
-                <MudCheckBox @bind-Value="@context.Item.IsSelected" />
+                <MudCheckBox @bind-Value="@context.Item.IsSelected"
+                             @bind-Value:after="() => ToggleSelection(context.Item)" />
             </CellTemplate>
         </TemplateColumn>
 
@@ -70,10 +80,10 @@
         <TemplateColumn Title="FECHA FACTURA">
             <CellTemplate>
                 @{
-                    var displayDate = context.Item.DINVOICEDATE;
-                    if (!string.IsNullOrEmpty(context.Item.DINVOICEDATE) &&
-                           context.Item.DINVOICEDATE.Length == 8 &&
-                           DateTime.TryParseExact(context.Item.DINVOICEDATE, "yyyyMMdd",
+                    var displayDate = context.Item.VSELLINVOICEDATE;
+                    if (!string.IsNullOrEmpty(context.Item.VSELLINVOICEDATE) &&
+                           context.Item.VSELLINVOICEDATE.Length == 8 &&
+                           DateTime.TryParseExact(context.Item.VSELLINVOICEDATE, "yyyyMMdd",
                                System.Globalization.CultureInfo.InvariantCulture,
                                System.Globalization.DateTimeStyles.None,
                                out DateTime parsedDate))
@@ -84,7 +94,7 @@
                 <MudText Style="white-space: nowrap; min-width: 110px;">@displayDate</MudText>
             </CellTemplate>
         </TemplateColumn>
-        <PropertyColumn Property="x => x.VINVOICENUMBER" Title="NRO FACTURA" Groupable="false" />
+        <PropertyColumn Property="x => x.VSELLINVOICENUMBER" Title="NRO FACTURA" Groupable="false" />
     </Columns>
 
     <PagerContent>
@@ -113,6 +123,7 @@
     private List<Module>? Modules;
 
     bool IsAllCheckBoxSelected = false;
+    private HashSet<int> _selectedIds = new HashSet<int>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -125,9 +136,6 @@
         _cts?.Cancel();
         _cts = new CancellationTokenSource();
         var token = _cts.Token;
-
-        // Resetear selección al recargar
-        IsAllCheckBoxSelected = false;
 
         var offset = state.Page * state.PageSize;
         string url = $"api/InttPlanta/GetPendientes?userId={Session.UserId}&supplierId={Session.SupplierId}&rowFrom={offset}&filter={searchString}";
@@ -146,7 +154,7 @@
                 var items = content?.data ?? new List<InttPlanta>();
                 foreach (var item in items)
                 {
-                    item.IsSelected = false;
+                    item.IsSelected = _selectedIds.Contains(item.Id);
                 }
 
                 return new GridData<InttPlanta>
@@ -165,9 +173,18 @@
         }
     }
 
+    private void ToggleSelection(InttPlanta item)
+    {
+        if (item.IsSelected)
+            _selectedIds.Add(item.Id);
+        else
+            _selectedIds.Remove(item.Id);
+    }
+
     private async Task ClickRefresh()
     {
         IsAllCheckBoxSelected = false;
+        _selectedIds.Clear();
         if (DataGrid?.FilteredItems != null)
         {
             foreach (var item in DataGrid.FilteredItems)
@@ -185,15 +202,6 @@
     {
         if (text.Length == 0 || text.Length >= 3)
         {
-            IsAllCheckBoxSelected = false;
-            if (DataGrid?.FilteredItems != null)
-            {
-                foreach (var item in DataGrid.FilteredItems)
-                {
-                    item.IsSelected = false;
-                }
-            }
-
             searchString = text;
             _cts?.Cancel();
             _cts = new CancellationTokenSource();
@@ -209,6 +217,10 @@
             foreach (var item in currentItems)
             {
                 item.IsSelected = IsAllCheckBoxSelected;
+                if (item.IsSelected)
+                    _selectedIds.Add(item.Id);
+                else
+                    _selectedIds.Remove(item.Id);
             }
             StateHasChanged();
         }
@@ -225,7 +237,7 @@
     {
         if (actionName == "GENERATE")
         {
-            // Verificar que DataGrid y FilteredItems no sean null
+
             if (DataGrid?.FilteredItems == null)
             {
                 await DialogService.ShowDialog(
@@ -238,7 +250,7 @@
             }
 
             var selectedItems = DataGrid.FilteredItems
-                .Where(item => item.IsSelected)
+                .Where(item => _selectedIds.Contains(item.Id))
                 .ToList();
 
             if (selectedItems == null || !selectedItems.Any())
@@ -291,14 +303,14 @@
                             Icons.Material.Filled.Error);
                     }
 
-                    // Limpiar selección
+                    _selectedIds.Clear();
                     IsAllCheckBoxSelected = false;
                     foreach (var item in selectedItems)
                     {
                         item.IsSelected = false;
                     }
 
-                    // Recargar el grid
+
                     await DataGrid!.ReloadServerData();
                 }
                 else
@@ -317,6 +329,10 @@
                     Icons.Material.Filled.Error);
             }
         }
+        else if (actionName == "EXPORT")
+        {
+            await ExportToExcel();
+        }
     }
 
     private async Task ReloadGrid()
@@ -325,18 +341,42 @@
         {
             if (DataGrid != null)
             {
-                IsAllCheckBoxSelected = false;
-                if (DataGrid.FilteredItems != null)
-                {
-                    foreach (var item in DataGrid.FilteredItems)
-                    {
-                        item.IsSelected = false;
-                    }
-                }
                 await DataGrid.ReloadServerData();
             }
             StateHasChanged();
         });
+    }
+
+    private async Task ExportToExcel()
+    {
+        try
+        {
+            var url = $"api/InttPlanta/ExportPendientesExcel?userId={Session.UserId}&supplierId={Session.SupplierId}&rowFrom=-1&filter={searchString ?? string.Empty}";
+
+            var response = await Http.GetAsync(url);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var fileBytes = await response.Content.ReadAsByteArrayAsync();
+                var base64 = Convert.ToBase64String(fileBytes);
+                var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64}";
+                await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "PENDIENTES_PLANTA.xlsx");
+            }
+            else
+            {
+                var err = await response.Content.ReadAsStringAsync();
+                await DialogService.ShowDialog(err, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowDialog(
+                $"Error al exportar: {ex.Message}",
+                "Error",
+                "OK",
+                Color.Error,
+                Icons.Material.Filled.Error);
+        }
     }
 
     public void Dispose()
