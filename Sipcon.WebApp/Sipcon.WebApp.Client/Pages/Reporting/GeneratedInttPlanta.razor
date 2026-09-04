@@ -22,9 +22,32 @@
         <MudIconButton Icon="@Icons.Material.Filled.Refresh"
                        Color="Color.Info"
                        OnClick="ClickRefresh" />
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+            @foreach (var strmodulo in Modules!)
+            {
+                @if (strmodulo.ActionName == "UNASSIGN")
+                {
+                    <MudMenuItem Label="@strmodulo.ActionDisplay"
+                                 Icon="@(strmodulo.ActionDisplay.ToActionIcon())"
+                                 IconColor="@Color.Info"
+                                 OnClick="@(() => ClickMenu(strmodulo.ActionName))" />
+                }
+            }
+        </MudMenu>
     </ToolBarContent>
 
     <Columns>
+        <TemplateColumn>
+            <HeaderTemplate>
+                <MudCheckBox @bind-Value="IsAllCheckBoxSelected"
+                             @bind-Value:after="AfterAsyncAllCheck" />
+            </HeaderTemplate>
+            <CellTemplate>
+                <MudCheckBox @bind-Value="@context.Item.IsSelected"
+                             @bind-Value:after="() => ToggleSelection(context.Item)" />
+            </CellTemplate>
+        </TemplateColumn>
+
         <PropertyColumn Property="x => x.VNUMBERPLANTATXT"
                         Title="NRO CONTROL PLANTA"
                         Groupable="@(_numberTxtGrouping)"
@@ -47,7 +70,11 @@
                     </MudChip>
                     <MudIconButton Icon="@Icons.Material.Filled.Download"
                                    OnClick="@(() => ClickExportTxt(Convert.ToString(@context.Grouping.Key)))"
-                                   Title="Descargar TXT" />
+                                   Title="Descargar TXT" />\
+                    <MudIconButton Icon="@Icons.Material.Filled.SimCardDownload"
+                                   Color="Color.Success"
+                                   OnClick="@(() => ClickExportExcel(Convert.ToString(@context.Grouping.Key)))"
+                                   Title="Descargar Excel" />
                 </div>
             </GroupTemplate>
         </PropertyColumn>
@@ -84,10 +111,10 @@
         <TemplateColumn Title="FECHA FACTURA">
             <CellTemplate>
                 @{
-                    var displayDate = context.Item.DINVOICEDATE;
-                    if (!string.IsNullOrEmpty(context.Item.DINVOICEDATE) &&
-                           context.Item.DINVOICEDATE.Length == 8 &&
-                           DateTime.TryParseExact(context.Item.DINVOICEDATE, "yyyyMMdd",
+                    var displayDate = context.Item.VSELLINVOICEDATE;
+                    if (!string.IsNullOrEmpty(context.Item.VSELLINVOICEDATE) &&
+                           context.Item.VSELLINVOICEDATE.Length == 8 &&
+                           DateTime.TryParseExact(context.Item.VSELLINVOICEDATE, "yyyyMMdd",
                                System.Globalization.CultureInfo.InvariantCulture,
                                System.Globalization.DateTimeStyles.None,
                                out DateTime parsedDate))
@@ -98,7 +125,7 @@
                 <MudText Style="white-space: nowrap; min-width: 110px;">@displayDate</MudText>
             </CellTemplate>
         </TemplateColumn>
-        <PropertyColumn Property="x => x.VINVOICENUMBER" Title="NRO FACTURA" Groupable="false" />
+        <PropertyColumn Property="x => x.VSELLINVOICENUMBER" Title="NRO FACTURA" Groupable="false" />
     </Columns>
 
     <PagerContent>
@@ -129,6 +156,9 @@
     private int _certificateOrder;
     private bool _certificateExpanded = false;
 
+    private bool IsAllCheckBoxSelected = false;
+    private HashSet<int> _selectedIds = new HashSet<int>();
+
     protected override async Task OnInitializedAsync()
     {
         Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=REPORTES-INTT-PLANTA&userId={Session.UserId}");
@@ -155,10 +185,16 @@
             {
                 var content = await response.Content.ReadFromJsonAsync<WebApiResponse<List<InttPlanta>>>(cancellationToken: token);
 
+                var items = content?.data ?? new List<InttPlanta>();
+                foreach (var item in items)
+                {
+                    item.IsSelected = _selectedIds.Contains(item.Id);
+                }
+
                 return new GridData<InttPlanta>
                 {
                     TotalItems = content!.total ?? 0,
-                    Items = content.data ?? []
+                    Items = items
                 };
             }
 
@@ -171,8 +207,43 @@
         }
     }
 
+    private void ToggleSelection(InttPlanta item)
+    {
+        if (item.IsSelected)
+            _selectedIds.Add(item.Id);
+        else
+            _selectedIds.Remove(item.Id);
+    }
+
+    private async Task AfterAsyncAllCheck()
+    {
+        if (DataGrid?.FilteredItems != null)
+        {
+            var currentItems = DataGrid.FilteredItems.ToList();
+            foreach (var item in currentItems)
+            {
+                item.IsSelected = IsAllCheckBoxSelected;
+                if (item.IsSelected)
+                    _selectedIds.Add(item.Id);
+                else
+                    _selectedIds.Remove(item.Id);
+            }
+            StateHasChanged();
+        }
+        await Task.CompletedTask;
+    }
+
     private async Task ClickRefresh()
     {
+        IsAllCheckBoxSelected = false;
+        _selectedIds.Clear();
+        if (DataGrid?.FilteredItems != null)
+        {
+            foreach (var item in DataGrid.FilteredItems)
+            {
+                item.IsSelected = false;
+            }
+        }
         await DataGrid!.ReloadServerData();
     }
 
@@ -218,5 +289,133 @@
         _cts?.Cancel();
         _cts?.Dispose();
         hubEventsService.OnSupplierChanged -= ReloadGrid;
+    }
+
+    private async Task ClickMenu(string? actionName)
+    {
+        if (actionName == "UNASSIGN")
+        {
+            if (DataGrid?.FilteredItems == null)
+            {
+                await DialogService.ShowDialog(
+                    "El grid no ha cargado datos aún",
+                    "Error",
+                    "OK",
+                    Color.Error,
+                    Icons.Material.Filled.Error);
+                return;
+            }
+
+            var selectedItems = DataGrid.FilteredItems
+                .Where(item => _selectedIds.Contains(item.Id))
+                .ToList();
+
+            if (selectedItems == null || !selectedItems.Any())
+            {
+                await DialogService.ShowDialog(
+                    "Debe seleccionar al menos un registro para desasignar",
+                    "Error",
+                    "OK",
+                    Color.Error,
+                    Icons.Material.Filled.Error);
+                return;
+            }
+
+            var actions = selectedItems.Select(item => new Models.Action
+            {
+                UserId = Session.UserId,
+                RecordId = item.Id,
+                ModuleId = Modules?.FirstOrDefault(m => m.ActionName == "UNASSIGN")?.Id,
+                ActionName = "UNASSIGN",
+                ActionComment = "",
+                RelatedId = 0
+            }).ToList();
+
+            try
+            {
+                var response = await Http.PostAsync(
+                    $"api/InttPlanta/PostActions?userId={Session.UserId}&supplierId={Session.SupplierId}",
+                    new StringContent(System.Text.Json.JsonSerializer.Serialize(actions), null, "application/json"));
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<WebApiResponse<object>>();
+
+                    if (result != null && result.status == 200)
+                    {
+                        await DialogService.ShowDialog(
+                            $"{selectedItems.Count} registros desasignados exitosamente",
+                            "Éxito",
+                            "OK",
+                            Color.Success,
+                            Icons.Material.Filled.CheckCircle);
+                    }
+                    else
+                    {
+                        await DialogService.ShowDialog(
+                            result?.message ?? "Error al desasignar registros",
+                            "Error",
+                            "OK",
+                            Color.Error,
+                            Icons.Material.Filled.Error);
+                    }
+
+                    _selectedIds.Clear();
+                    IsAllCheckBoxSelected = false;
+                    foreach (var item in selectedItems)
+                    {
+                        item.IsSelected = false;
+                    }
+
+                    await DataGrid!.ReloadServerData();
+                }
+                else
+                {
+                    var err = await response.Content.ReadAsStringAsync();
+                    await DialogService.ShowDialog(err, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                await DialogService.ShowDialog(
+                    $"Error al procesar la solicitud: {ex.Message}",
+                    "Error",
+                    "OK",
+                    Color.Error,
+                    Icons.Material.Filled.Error);
+            }
+        }
+    }
+
+    private async Task ClickExportExcel(string numeroTxt)
+    {
+        try
+        {
+            var url = $"api/InttPlanta/ExportGeneradosExcel?userId={Session.UserId}&supplierId={Session.SupplierId}&controlId={numeroTxt}";
+
+            var response = await Http.GetAsync(url);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var fileBytes = await response.Content.ReadAsByteArrayAsync();
+                var base64 = Convert.ToBase64String(fileBytes);
+                var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64}";
+                await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, $"CONTROL_{numeroTxt.PadLeft(10, '0')}.xlsx");
+            }
+            else
+            {
+                var err = await response.Content.ReadAsStringAsync();
+                await DialogService.ShowDialog(err, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowDialog(
+                $"Error al exportar Excel: {ex.Message}",
+                "Error",
+                "OK",
+                Color.Error,
+                Icons.Material.Filled.Error);
+        }
     }
 }
