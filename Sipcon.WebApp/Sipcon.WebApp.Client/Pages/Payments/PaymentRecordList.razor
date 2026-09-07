@@ -1,6 +1,4 @@
-﻿@page "/paymentreport"
-
-@using System.Globalization
+﻿@using System.Globalization
 @using System.Text.Json
 @using Sipcon.WebApp.Client.Components.Payments
 @using Sipcon.WebApp.Client.Repository.Auth
@@ -14,8 +12,6 @@
 @implements IDisposable
 
 <PageTitle>Aseguramiento de Ingreso</PageTitle>
-
-<CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
 
 <MudContainer MaxWidth="MaxWidth.False" Gutters="false" Class="mt-2">
     
@@ -146,91 +142,6 @@
 
         </MudCardContent>
     </MudCard>
-
-    <MudContainer MaxWidth="MaxWidth.False" Gutters="false" Class="mt-2">
-        @* //Resumen *@
-        <MudStack Row="true" Justify="Justify.Center" AlignItems="AlignItems.Center" Class="mud-width-full mud-height-full">
-            <MudPaper Class="mud-height-full mud-width-full" Style="cursor: pointer;width: 25%;background-color: #f9fafb;" @onclick="() => ClickRefreshPaymentResument(null)">
-          
-                <MudStack Style="height: 100%; min-height: 60px;" AlignItems="AlignItems.Center" Justify="Justify.Center">
-                
-                    <MudText Typo="Typo.h5" Color="Color.Dark" Style="font-weight:bold;">
-                        @PaymentResumenList.Sum(x => x.Count).ToString()
-                        <MudText Typo="Typo.subtitle2" Color="Color.Dark">Total</MudText>
-                    </MudText>
-                
-                </MudStack>
-          
-            </MudPaper>
-
-            @if (PaymentResumenList.Count() > 0)
-            {
-                foreach (var Item in PaymentResumenList)
-                {
-                    Color color = Color.Default;
-                    string backgroundColor = "cursor: pointer;";
-                    string style = "";
-                    string txt = "";
-                    int total = PaymentResumenList.Sum(x => x.Count);
-                    string porcentajeStr = "";
-
-                    if (total != 0)
-                    {
-                        porcentajeStr = ((Item.Count / (double)total) * 100).ToString("N2");
-                    }
-
-                    switch (Item.Name.ToUpper())
-                    {
-                        case "BORRADOR":
-                            color = Color.Warning;
-                            txt = "Borrador";
-                            backgroundColor += "width: 25%;background-color: #fff9f0;";
-                            break;
-                        case "APROBADO":
-                            color = Color.Primary;
-                            txt = "Aprobado";
-                            backgroundColor += "width: 25%;background-color: #f5f4fd;";
-                            break;
-                        case "PARA APROBAR": 
-                            color = Color.Info;
-                            txt = "Para Aprobar";
-                            backgroundColor += "width: 25%;background-color: #eff6ff;";
-                            break;
-                        default:
-                            color = Color.Error;
-                            backgroundColor += "width: 25%;background-color: #f9fafb;";
-                            break;
-                    };
-                    
-                    style += "font-size: 14px";
-                    style += ";font-style:italic";
-
-                
-                    <MudPaper Class="mud-height-full mud-width-full" Style="@backgroundColor" @onclick="() => ClickRefreshPaymentResument(Item.Id)">
-          
-                        <MudStack Row="true"  Style="height: 100%; min-height: 60px;" AlignItems="AlignItems.Center" Justify="Justify.Center">
-                            <MudText Typo="Typo.h5" Color="@color" Style="font-weight:bold;" Class="mr-4">
-                                @Item.Count.ToString()
-                            </MudText>
-                            <MudStack Row="false" Justify="Justify.FlexEnd" Spacing="0">
-                                <MudText Typo="Typo.subtitle2" Color="@color" Style="@style">@(txt)</MudText>
-                                @if (!string.IsNullOrEmpty(porcentajeStr))
-                                {
-                                    <MudText Typo="Typo.subtitle1" Color="@color" Inline="true" Style="font-size: 12px">@(" " + porcentajeStr + "%")</MudText>
-                                }
-                                
-                            </MudStack>
-                            
-                        </MudStack>
-          
-                    </MudPaper>
-
-                }
-           
-            }
-
-        </MudStack>
-    </MudContainer>
 
     <MudCard Class="mt-4 pa-0">
         <MudDataGrid @ref="PaymentsDataGrid"
@@ -434,15 +345,9 @@
                 <TemplateColumn StickyRight="true" HeaderClass="dt-center" CellClass="dt-center">
                     <CellTemplate>
                         <MudButtonGroup Size="@Size.Small" Variant="Variant.Text" Color="Color.Dark">
-                            @if (context.Item.StatusName != null &&
-                                                        (context.Item.StatusName.ToUpper() == "BORRADOR" ||
-                                                        (context.Item.StatusName.ToUpper() == "PARA APROBAR" && ItemsModules.Any(x => x.Text.ToUpper() == "APROBAR"))))
-                            {
-                                <MudIconButton Size="@Size.Small"
-                                               Icon="@Icons.Material.Outlined.Edit"
-                                               OnClick="() => ClickEditPayment(context.Item)" />
-                            }
+                            
                             <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.AttachFile" OnClick="() => OnClickAttachamentButton(context.Item)" />
+                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Comment" OnClick="() => OnClickAttachamentButton(context.Item)" />
                         </MudButtonGroup>
                     </CellTemplate>
                 </TemplateColumn>

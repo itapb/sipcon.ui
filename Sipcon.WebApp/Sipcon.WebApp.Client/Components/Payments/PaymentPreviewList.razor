@@ -1,24 +1,25 @@
 ﻿@inject IDialogService DialogService
 
 <MudDataGrid @ref="PaymentPreviewDataGrid"
-        T="Payment"
-        ServerData="LoadGridData"
-        Hover="false"
-        Dense="true"
-        Bordered="false"
-        Filterable="false"
-        Striped="false" 
-        FixedHeader Height="calc(68vh - 40px)"
->
+             T="Payment"
+             ServerData="LoadGridData"
+             Hover="false"
+             Dense="true"
+             Bordered="false"
+             Filterable="false"
+             Striped="false"
+             FixedHeader
+             Height="260px"
+             Style="width: 100%;">
     <Columns>
-        
-        <TemplateColumn Title="Tipo">
+
+        <TemplateColumn Title="Tipo" HeaderStyle="width: 25%;">
             <CellTemplate>
                 <div class="d-flex justify-start">
                     @if (context.Item.TypeName != null)
                     {
                         Color color = Color.Default;
-                        string style = "";
+                        string style = "font-size: 11px; font-style: italic; margin: 0;";
                         string txt = "";
 
                         var pair = context.Item.TypeName.ToUpper() switch
@@ -31,28 +32,29 @@
                         txt = pair.txt;
                         color = pair.color;
 
-                        style += ";font-size: 12px;font-style:italic";
-
-                        <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
+                        <MudChip T="string" Variant="Variant.Text" Color="@color" Size="Size.Small" Style="@style">
                             @(txt)
                         </MudChip>
                     }
-                   
                 </div>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn Title="Referencia">
+
+        <TemplateColumn Title="Referencia" HeaderStyle="width: 25%;">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Reference</MudText>
+                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold; word-break: break-all;">
+                    @context.Item.Reference
+                </MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn Title="Moneda">
+
+        <TemplateColumn Title="Moneda" HeaderStyle="width: 25%;">
             <CellTemplate>
                 <div class="d-flex justify-start">
                     @if (context.Item.CurrencyName != null)
                     {
                         Color color = Color.Default;
-                        string style = "";
+                        string style = "font-size: 10px; font-style: italic; margin: 0;";
                         string txt = "";
 
                         var pair = context.Item.CurrencyName.ToUpper() switch
@@ -64,37 +66,35 @@
                         txt = pair.txt;
                         color = pair.color;
 
-                        style += ";font-size: 11px;font-style:italic";
-
-                        <MudChip T="string" Variant="Variant.Text" Color="@color" Style="@style">
+                        <MudChip T="string" Variant="Variant.Text" Color="@color" Size="Size.Small" Style="@style">
                             @(txt)
                         </MudChip>
                     }
-                   
                 </div>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn Title="Fecha">
+
+        <TemplateColumn Title="Fecha" HeaderStyle="width: 15%;">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Left">@(context.Item.Date.ToString("dd/MM/yyyy"))</MudText>
+                <MudText Typo="Typo.caption" Align="Align.Left" Style="font-size: 11px;">
+                    @(context.Item.Date.ToString("dd/MM/yyyy"))
+                </MudText>
             </CellTemplate>
         </TemplateColumn>
-        
-        <TemplateColumn StickyRight="true">
+
+        <TemplateColumn StickyRight="true" HeaderStyle="width: 10%; min-width: 90px;">
             <CellTemplate>
-                
-                    <MudButtonGroup Size="@Size.Small" Variant="Variant.Text" Color="Color.Dark">
+                <MudButtonGroup Size="@Size.Small" Variant="Variant.Text" Color="Color.Dark">
                     @if (context.Item.StatusName != null && (context.Item.StatusName.ToUpper() == "BORRADOR" || context.Item.StatusName.ToUpper() == "PARA APROBAR"))
                     {
-                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => OnClickEditButton(context.Item)" />
+                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => OnClickEditButton(context.Item)" Class="pa-1" />
                     }
-                      @if (context.Item.StatusName != null && context.Item.StatusName.ToUpper() == "BORRADOR")
+                    @if (context.Item.StatusName != null && context.Item.StatusName.ToUpper() == "BORRADOR")
                     {
-                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="() => OnClickDeleteButton(context.Item)" />
+                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="() => OnClickDeleteButton(context.Item)" Class="pa-1" />
                     }
-                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.AttachFile" OnClick="() => OnClickAttachamentButton(context.Item)" />
-                    </MudButtonGroup>
-                
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.AttachFile" OnClick="() => OnClickAttachamentButton(context.Item)" Class="pa-1" />
+                </MudButtonGroup>
             </CellTemplate>
         </TemplateColumn>
 

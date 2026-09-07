@@ -1,0 +1,42 @@
+﻿@page "/documentreport"
+
+<CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
+
+<MudTabs Elevation="0"
+         Rounded="false"
+         Centered="false"
+         PanelClass="pa-2 bg-white overflow-visible"
+         Style="background-color: #ffffff; border-bottom: 1px solid #e0e0e0; overflow: visible;">
+    <MudTabPanel>
+        <TabContent>
+            <MudText Typo="Typo.body1" Style="color: #000000; text-transform: none; font-weight: 500;">
+                Documentos por Pagar
+            </MudText>
+        </TabContent>
+        <ChildContent>
+            <DocumentReportList />
+        </ChildContent>
+    </MudTabPanel>
+
+    <MudTabPanel>
+        <TabContent>
+            <MudText Typo="Typo.body1" Style="color: #000000; text-transform: none; font-weight: 500;">
+                Pagos Realizados
+            </MudText>
+        </TabContent>
+        <ChildContent>
+            <PaymentRecordList />
+        </ChildContent>
+    </MudTabPanel>
+</MudTabs>
+
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
+    List<BreadcrumbItem> ItemsNavigate = new();
+
+    protected override void OnInitialized()
+    {
+        string hrefMovement = "documentreport";
+        $"Home,Portal de Pagos,Documentos Por Pagar".Split(',').ToList().ForEach(s => ItemsNavigate.Add(new BreadcrumbItem(s, href: (s == "Home" ? "" : hrefMovement), icon: s.ToActionIcon())));
+    }
+}

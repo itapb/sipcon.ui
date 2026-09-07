@@ -116,19 +116,21 @@ namespace Sipcon.WebApp.Client.Models
         [DisplayFormat(DataFormatString = "{0:d}")]
         public DateTime? Date { get; set; } = null;
         public double? Amount { get; set; } = null;
-       
-
-        public List<DocumentUpdate> Settlements { get; set; } = new List<DocumentUpdate>();
 
     }
 
     public class DocumentUpdate
     {
-        public int DocumentId { get; set; } = 0;
-        public double Rate { get; set; }
-        
+        public int? PaymentId { get; set; }
+        public int? DocumentId { get; set; }
+        public int? CurrencyId { get; set; }
+        public double? Rate { get; set; }
+
         [DisplayFormat(DataFormatString = "{0:d}")]
-        public DateTime DateRate { get; set; }
+        public DateTime? DateRate { get; set; }
+        public decimal? Amount { get; set; }
+        public int? SupplierId { get; set; }
+        public int? DealerId { get; set; }
 
     }
 
@@ -158,8 +160,33 @@ namespace Sipcon.WebApp.Client.Models
         public int PaymentId { get; set; } = 0;
         public double? PaidAmount { get; set; } = null;
       
+    }
+
+    public class PendingCart
+    {
+        public int? PaymentId { get; set; }
+        public DateTime? DateRate { get; set; }
+        public decimal? Amount { get; set; }
+        public int? Count { get; set; }
+        public int? CurrencyId { get; set; }
 
     }
+
+    public class BankStatement
+    {
+        public String? BankAccount { get; set; }
+        public String? BankCode { get; set; }
+        public DateTime TransactionDate { get; set; }
+        public String? Reference { get; set; }
+        public decimal Amount { get; set; }
+        public int? PaymentDetailId { get; set; }
+        public int Id { get; set; } 
+        public String? Estatus { get; set; }
+        public DateTime? Created { get; set; }
+        public int CurrencyId { get; set; }
+
+    }
+
 
 
 

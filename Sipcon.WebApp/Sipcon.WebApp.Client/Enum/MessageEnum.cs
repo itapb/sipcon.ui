@@ -157,6 +157,11 @@
         ProcessOK,
         [StringValue("Problemas al Procesar registro!...")]
         ProcessNotOK,
+        // Process
+        [StringValue("Registro Sincronizado Satisfactoriamente...")]
+        SyncOK,
+        [StringValue("Problemas al Sincronizar registro!...")]
+        SyncNotOK,
     }
 
 }

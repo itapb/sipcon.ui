@@ -465,7 +465,7 @@
          string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
         string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
 
-        var serviceResponse = await InventoryCountService.GetInventoryCountDetails(Session.SupplierId, Session.UserId,InventoryCountId, _rowCount, _searchString,_dateFromStr,_dateToStr,_estatusid);
+        var serviceResponse = await InventoryCountService.GetInventoryCountDetailByZone(Session.SupplierId, Session.UserId, InventoryCountId, _rowCount, _searchString, _dateFromStr, _dateToStr, _estatusid);
         if (serviceResponse.Processed)
         {
             _GetInventoryCountDetails = serviceResponse.Data;
@@ -563,9 +563,9 @@
             case "EXPORT":
                 await ExportItemsAsync();
                 break;
-            // case "GENERATE":
-            //     await GenerateItemsAsync(module.IdAction, module.ActionName);
-            //     break;
+             // case "ASSIGN":
+             //    await AssignItemsAsync(module.IdAction, module.ActionName);
+             //    break;
             // case "TOVALIDATE":
             //     await ToValidateItemsAsync(module.IdAction, module.ActionName);
             //     break;
@@ -625,532 +625,48 @@
         // }
     }
 
-    // private async Task GenerateItemsAsync(int moduleId, string moduleActionName)
+    // private async Task AssignItemsAsync(int idAction, string actionName)
     // {
-    //     Console.WriteLine("Generar Reporte de Falla...");
-    //     if (selectedFailReport.Any())
+    //     // Validar que exista al menos una acción o ítem seleccionado
+    //     if (_selectedAction == null)
     //     {
-    //         var option = new DialogOptions
-    //             {
-    //                 CloseButton = false,
-    //                 MaxWidth = MaxWidth.Small,
-    //                 FullWidth = true,
-    //                 BackdropClick = false
-    //             };
-    //         bool? result = await DialogService.ShowMessageBox(
-    //             "Generar Reporte de Falla",
-    //             $"Seguro de Generar Reporte de Falla? ",
-    //             yesText: "Si", noText: "No", "", option);
-
-    //         if (result == true)
-    //         {
-    //             List<PostAction> ActionList = ([]);
-
-    //             foreach (var Item in selectedFailReport)
-    //             {
-    //                 var ItemAction = new PostAction
-    //                     {
-    //                         RecordId = Item.Id,
-    //                         ModuleId = moduleId,
-    //                         ActionName = moduleActionName
-    //                     };
-    //                 ActionList.Add(ItemAction);
-    //             }
-
-    //             var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Session.UserId);
-    //             if (serviceResponse.Processed)
-    //             {
-
-    //                 _success = true;
-    //                 _nestedErrorMessage = MessageEnum.GenerateOK.GetStringValue();
-
-    //                 await _mudDataGrid!.ReloadServerData();
-    //             }
-    //             else
-    //             {
-    //                 // Console.WriteLine(serviceResponse.Message);
-    //                 _success = false;
-    //                 _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GenerateNotOK.GetStringValue();
-    //             }
-    //             OpenNested();
-    //         }
-
+    //         await DialogService.ShowDialog("Debe seleccionar al menos un registro.", "Advertencia", "OK", Color.Warning, Icons.Material.Filled.Warning);
+    //         return;
     //     }
 
-    //     selectedFailReport = new([]);
-    //     await Task.CompletedTask;
-    // }
+    //     // Obtener el CountInventoryId del ítem seleccionado (ajusta la propiedad según tu modelo)
+    //     int countInventoryId = selectedDetailIds.First().CountInventoryId;
 
-    // private async Task ToValidateItemsAsync(int moduleId, string moduleActionName)
-    // {
-    //     Console.WriteLine("Pre Validar Reporte de Falla...");
-    //     if (selectedFailReport.Any())
+    //     // Configuración de los parámetros que se pasarán al Dialog Component
+    //         var parameters = new DialogParameters<AssignUserToInventoryCount>
     //     {
-    //         var option = new DialogOptions
-    //         {
-    //             CloseButton = false,
-    //             MaxWidth = MaxWidth.Small,
-    //             FullWidth = true,
-    //             BackdropClick = false
-    //         };
-    //         bool? result = await DialogService.ShowMessageBox(
-    //             "Pre Validar Reporte de Falla ",
-    //             $"Seguro de pre-validar? ",
-    //             yesText: "Si", noText: "No", "", option);
+    //         { x => x.SelectedActions, SelectedActions },
+    //         { x => x.moduleName, moduleName },
+    //         { x => x.CountInventoryId, countInventoryId },
+    //         { x => x.AssignType, "Z" } // 'Z' para Zona
+    //     };
 
-    //         if (result == true)
-    //         {
-    //             List<PostAction> ActionList = ([]);
-
-    //             foreach (var Item in selectedFailReport)
-    //             {
-    //                 var ItemAction = new PostAction
-    //                 {
-    //                     RecordId = Item.Id,
-    //                     ModuleId = moduleId,
-    //                     ActionName = moduleActionName
-    //                 };
-    //                 ActionList.Add(ItemAction);
-    //             }
-
-    //             var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Session.UserId);
-    //             if (serviceResponse.Processed)
-    //             {
-
-    //                 _success = true;
-    //                 _nestedErrorMessage = MessageEnum.ToApproveOK.GetStringValue();
-                    
-    //                 await _mudDataGrid!.ReloadServerData();
-    //             }
-    //             else
-    //             {
-    //                 // Console.WriteLine(serviceResponse.Message);
-    //                 _success = false;
-    //                 _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ToApproveNotOK.GetStringValue();
-                    
-    //             }
-    //             OpenNested();
-    //         }
-
-    //     }
-
-    //     selectedFailReport = new([]);
-    //     await Task.CompletedTask;
-    // }
-
-    // private async Task ValidateItemsAsync(int moduleId, string moduleActionName)
-    // {
-    //     Console.WriteLine("Validar Reporte de Falla...");
-    //     if (selectedFailReport.Any())
+    //     var options = new DialogOptions
     //     {
-    //         var option = new DialogOptions
-    //         {
-    //             CloseButton = false,
-    //             MaxWidth = MaxWidth.Small,
-    //             FullWidth = true,
-    //             BackdropClick = false
-    //         };
-    //         bool? confir = await DialogService.ShowMessageBox(
-    //             "Validar Reporte de Falla ",
-    //             $"Seguro de Validar? ",
-    //             yesText: "Si", noText: "No", "", option);
+    //         CloseButton = true,
+    //         MaxWidth = MaxWidth.Medium,
+    //         FullWidth = true,
+    //         DisableBackdropClick = true
+    //     };
 
-    //         if (confir == true)
-    //         {
+    //     var dialog = await DialogService.ShowAsync<AssignUserToInventoryCount>("Asignar Usuarios por Zona", parameters, options);
+    //     var result = await dialog.Result;
 
-    //             DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
-    //             var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Validar Reporte de Falla ..." } };
-    //             var dialog = await DialogService.ShowAsync<TextItemDialog>("Reporte de Falla ", parameters, options);
-
-    //             StateHasChanged();
-
-    //             var result = await dialog.Result;
-    //             if (!result!.Canceled)
-    //             {
-    //                 var _Observacion = (string)(result.Data ?? string.Empty);
-    //                 List<PostAction> ActionList = ([]);
-
-    //                 foreach (var Item in selectedFailReport)
-    //                 {
-    //                     var ItemAction = new PostAction
-    //                     {
-    //                         RecordId = Item.Id,
-    //                         ModuleId = moduleId,
-    //                         ActionName = moduleActionName,
-    //                         ActionComment = _Observacion
-    //                     };
-    //                     ActionList.Add(ItemAction);
-    //                 }
-
-    //                 var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Session.UserId);
-    //                 if (serviceResponse.Processed)
-    //                 {
-
-    //                     _success = true;
-    //                     _nestedErrorMessage = MessageEnum.ApproveOK.GetStringValue();
-                        
-    //                     await _mudDataGrid!.ReloadServerData();
-    //                 }
-    //                 else
-    //                 {
-    //                     // Console.WriteLine(serviceResponse.Message);
-    //                     _success = false;
-    //                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ApproveNotOK.GetStringValue();
-                        
-    //                 }
-    //                 OpenNested();
-    //             }
-
-    //         }
-
-    //     }
-
-    //     selectedFailReport = new([]);
-    //     await Task.CompletedTask;
-    // }
-
-    // private async Task NotValidateItemsAsync(int moduleId, string moduleActionName)
-    // {
-    //     Console.WriteLine("Invalidar Reporte Falla...");
-    //     if (selectedFailReport.Any())
+    //     // Si el diálogo finalizó correctamente, recargamos la grilla/vista
+    //     if (!result.Canceled && result.Data is bool isOk && isOk)
     //     {
-    //         var option = new DialogOptions
-    //         {
-    //             CloseButton = false,
-    //             MaxWidth = MaxWidth.Small,
-    //             FullWidth = true,
-    //             BackdropClick = false
-    //         };
-    //         bool? confirm = await DialogService.ShowMessageBox(
-    //             "Invalidar Reporte Falla ",
-    //             $"Seguro de Invalidar? ",
-    //             yesText: "Si", noText: "No", "", option);
-
-    //         if (confirm == true)
-    //         {
-    //             DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
-    //             var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Invalidar Reporte Falla ..." } };
-    //             var dialog = await DialogService.ShowAsync<TextItemDialog>("Reporte Falla ", parameters, options);
-
-    //             StateHasChanged();
-
-    //             var result = await dialog.Result;
-    //             if (!result!.Canceled)
-    //             {
-    //                 var _Observacion = (string)(result.Data ?? string.Empty);
-    //                 List<PostAction> ActionList = ([]);
-
-    //                 foreach (var Item in selectedFailReport)
-    //                 {
-    //                     var ItemAction = new PostAction
-    //                     {
-    //                         RecordId = Item.Id,
-    //                         ModuleId = moduleId,
-    //                         ActionName = moduleActionName,
-    //                         ActionComment = _Observacion
-    //                     };
-    //                     ActionList.Add(ItemAction);
-    //                 }
-
-    //                 var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Session.UserId);
-    //                 if (serviceResponse.Processed)
-    //                 {
-
-    //                     _success = true;
-    //                     _nestedErrorMessage = MessageEnum.DeclineOK.GetStringValue();
-                        
-    //                     await _mudDataGrid!.ReloadServerData();
-    //                 }
-    //                 else
-    //                 {
-    //                     // Console.WriteLine(serviceResponse.Message);
-    //                     _success = false;
-    //                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.DeclineNotOK.GetStringValue();
-                        
-    //                 }
-    //                  OpenNested();
-    //             }
-
-    //         }
-
+    //         await ReloadGridAsync(); // Cambia este método por tu función de refrescar la grilla
     //     }
-
-    //     selectedFailReport = new([]);
-    //     await Task.CompletedTask;
     // }
 
-    // private async Task ToApproveItemsAsync(int moduleId, string moduleActionName)
-    // {
-    //     Console.WriteLine("Por Aprobar Reporte de Falla...");
-    //     if (selectedFailReport.Any())
-    //     {
-    //         var option = new DialogOptions
-    //         {
-    //             CloseButton = false,
-    //             MaxWidth = MaxWidth.Small,
-    //             FullWidth = true,
-    //             BackdropClick = false
-    //         };
-    //         bool? result = await DialogService.ShowMessageBox(
-    //             "Pre Aprobar Reporte de Falla ",
-    //             $"Seguro de pre-aprobar? ",
-    //             yesText: "Si", noText: "No", "", option);
+    
 
-    //         if (result == true)
-    //         {
-    //             List<PostAction> ActionList = ([]);
-
-    //             foreach (var Item in selectedFailReport)
-    //             {
-    //                 var ItemAction = new PostAction
-    //                 {
-    //                     RecordId = Item.Id,
-    //                     ModuleId = moduleId,
-    //                     ActionName = moduleActionName
-    //                 };
-    //                 ActionList.Add(ItemAction);
-    //             }
-
-    //             var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Session.UserId);
-    //             if (serviceResponse.Processed)
-    //             {
-
-    //                 _success = true;
-    //                 _nestedErrorMessage = MessageEnum.ToApproveOK.GetStringValue();
-
-    //                 await _mudDataGrid!.ReloadServerData();
-    //             }
-    //             else
-    //             {
-    //                 // Console.WriteLine(serviceResponse.Message);
-    //                 _success = false;
-    //                 _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ToApproveNotOK.GetStringValue();
-
-    //             }
-    //             OpenNested();
-    //         }
-
-    //     }
-
-    //     selectedFailReport = new([]);
-    //     await Task.CompletedTask;
-    // }
-
-    // private async Task ApproveItemsAsync(int moduleId, string moduleActionName)
-    // {
-    //     Console.WriteLine("Aprobar Reporte de Falla...");
-    //     if (selectedFailReport.Any())
-    //     {
-    //         var option = new DialogOptions
-    //         {
-    //             CloseButton = false,
-    //             MaxWidth = MaxWidth.Small,
-    //             FullWidth = true,
-    //             BackdropClick = false
-    //         };
-    //         bool? confir = await DialogService.ShowMessageBox(
-    //             "Aprobar Reporte de Falla ",
-    //             $"Seguro de Aprobar? ",
-    //             yesText: "Si", noText: "No", "", option);
-
-    //         if (confir == true)
-    //         {
-
-    //             DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
-    //             var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Aprobar Reporte de Falla ..." } };
-    //             var dialog = await DialogService.ShowAsync<TextItemDialog>("Reporte de Falla ", parameters, options);
-
-    //             StateHasChanged();
-
-    //             var result = await dialog.Result;
-    //             if (!result!.Canceled)
-    //             {
-    //                 var _Observacion = (string)(result.Data ?? string.Empty);
-    //                 List<PostAction> ActionList = ([]);
-
-    //                 foreach (var Item in selectedFailReport)
-    //                 {
-    //                     var ItemAction = new PostAction
-    //                     {
-    //                         RecordId = Item.Id,
-    //                         ModuleId = moduleId,
-    //                         ActionName = moduleActionName,
-    //                         ActionComment = _Observacion
-    //                     };
-    //                     ActionList.Add(ItemAction);
-    //                 }
-
-    //                 var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Session.UserId);
-    //                 if (serviceResponse.Processed)
-    //                 {
-
-    //                     _success = true;
-    //                     _nestedErrorMessage = MessageEnum.ApproveOK.GetStringValue();
-
-    //                     await _mudDataGrid!.ReloadServerData();
-
-    //                 }
-    //                 else
-    //                 {
-    //                     // Console.WriteLine(serviceResponse.Message);
-    //                     _success = false;
-    //                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ApproveNotOK.GetStringValue();
-
-    //                 }
-    //                 OpenNested();
-    //             }
-                
-    //         }
-
-    //     }
-
-    //     selectedFailReport = new([]);
-    //     await Task.CompletedTask;
-    // }
-
-    // private async Task DeclineItemsAsync(int moduleId, string moduleActionName)
-    // {
-    //     Console.WriteLine("Rechazar Reporte Falla...");
-    //     if (selectedFailReport.Any())
-    //     {
-    //         var option = new DialogOptions
-    //         {
-    //             CloseButton = false,
-    //             MaxWidth = MaxWidth.Small,
-    //             FullWidth = true,
-    //             BackdropClick = false
-    //         };
-    //         bool? confirm = await DialogService.ShowMessageBox(
-    //             "Rechazar Reporte Falla ",
-    //             $"Seguro de Rechazar? ",
-    //             yesText: "Si", noText: "No", "", option);
-
-    //         if (confirm == true)
-    //         {
-    //             DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
-    //             var parameters = new DialogParameters<TextItemDialog> { { x => x.Title, "Rechazar Reporte Falla ..." } };
-    //             var dialog = await DialogService.ShowAsync<TextItemDialog>("Reporte Falla ", parameters, options);
-
-    //             StateHasChanged();
-
-    //             var result = await dialog.Result;
-    //             if (!result!.Canceled)
-    //             {
-    //                 var _Observacion = (string)(result.Data ?? string.Empty);
-    //                 List<PostAction> ActionList = ([]);
-
-    //                 foreach (var Item in selectedFailReport)
-    //                 {
-    //                     var ItemAction = new PostAction
-    //                     {
-    //                         RecordId = Item.Id,
-    //                         ModuleId = moduleId,
-    //                         ActionName = moduleActionName,
-    //                         ActionComment = _Observacion
-    //                     };
-    //                     ActionList.Add(ItemAction);
-    //                 }
-
-    //                 var serviceResponse = await FailReportService.ActionsFailReport(ActionList, Session.UserId);
-    //                 if (serviceResponse.Processed)
-    //                 {
-
-    //                     _success = true;
-    //                     _nestedErrorMessage = MessageEnum.DeclineOK.GetStringValue();
-
-    //                     await _mudDataGrid!.ReloadServerData();
-
-    //                 }
-    //                 else
-    //                 {
-    //                     // Console.WriteLine(serviceResponse.Message);
-    //                     _success = false;
-    //                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.DeclineNotOK.GetStringValue();
-
-    //                 }
-    //                 OpenNested();
-    //             }
-
-    //         }
-
-    //     }
-
-    //     selectedFailReport = new([]);
-    //     await Task.CompletedTask;
-    // }
-
-    // private async Task ProcessItemsAsync(int moduleId, string moduleActionName)
-    // {
-    //     Console.WriteLine("Procesar Reporte de Falla...");
-    //     if (selectedFailReport.Any())
-    //     {
-    //         var option = new DialogOptions
-    //         {
-    //             CloseButton = false,
-    //             MaxWidth = MaxWidth.Small,
-    //             FullWidth = true,
-    //             BackdropClick = false
-    //         };
-    //         bool? confir = await DialogService.ShowMessageBox(
-    //             "Procesar Reporte de Falla ",
-    //             $"Seguro de Procesar? ",
-    //             yesText: "Si", noText: "No", "", option);
-
-    //         if (confir == true)
-    //         {
-
-    //             DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
-    //             var parameters = new DialogParameters<InvoiceDialog> { { x => x.Title, "Procesar Reporte de Falla ..." } };
-    //             var dialog = await DialogService.ShowAsync<InvoiceDialog>("Reporte de Falla ", parameters, options);
-
-    //             StateHasChanged();
-
-    //             var result = await dialog.Result;
-    //             if (!result!.Canceled)
-    //             {
-    //                 FailReportInvoice _Observacion = (FailReportInvoice)(result.Data ?? new FailReportInvoice());
-    //                 List<PostActionProcess> ActionList = ([]);
-
-    //                 foreach (var Item in selectedFailReport)
-    //                 {
-    //                     var ItemAction = new PostActionProcess
-    //                     {
-    //                         RecordId = Item.Id,
-    //                         ModuleId = moduleId,
-    //                         ActionName = moduleActionName,
-    //                         ActionComment = "",
-    //                         InvoiceNumber = _Observacion.InvoiceNumber,
-    //                         InvoiceDate = _Observacion.InvoiceDate,
-    //                     };
-    //                     ActionList.Add(ItemAction);
-    //                 }
-
-    //                 var serviceResponse = await FailReportService.ActionsFailReportProcess(ActionList, Session.UserId);
-    //                 if (serviceResponse.Processed)
-    //                 {
-
-    //                     _success = true;
-    //                     _nestedErrorMessage = MessageEnum.ApproveOK.GetStringValue();
-
-    //                     await _mudDataGrid!.ReloadServerData();
-    //                 }
-    //                 else
-    //                 {
-    //                     // Console.WriteLine(serviceResponse.Message);
-    //                     _success = false;
-    //                     _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.ApproveNotOK.GetStringValue();
-                        
-    //                 }
-    //                 OpenNested();
-    //             }
-
-    //         }
-
-    //     }
-
-    //     selectedFailReport = new([]);
-    //     await Task.CompletedTask;
-    // }
+    
 
 
 }

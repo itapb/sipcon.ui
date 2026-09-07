@@ -1,0 +1,553 @@
+﻿@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+@using System.Globalization
+
+@inject IPaymentService PaymentService
+@inject UtilModuleActions ModuleActionsService
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+
+<MudDialog Style="border-radius: 12px; max-width: 900px; width: 100%; overflow: hidden;">
+    <TitleContent>
+        <div class="d-flex justify-space-between align-center px-2 pt-2">
+            <div>
+                <MudText Typo="Typo.caption" Style="text-transform: uppercase; letter-spacing: 1px; color: #666; font-weight: 600;">
+                    MATCHEO BANCARIO
+                </MudText>
+                <MudText Typo="Typo.h5" Style="font-weight: 700; color: #1e1e1e;">
+                    Sincronizar pago #@PaymentId
+                </MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                    Selecciona un extracto y ajusta las facturas asociadas.
+                </MudText>
+            </div>
+        </div>
+    </TitleContent>
+
+    <DialogContent>
+        <div class="d-flex flex-column gap-4 py-2">
+
+            @* ================= BLOQUE SUPERIOR: PAGO SELECCIONADO & EXTRACTOS ================= *@
+            <MudGrid Spacing="3">
+                @* --- TARJETA DE PAGO SELECCIONADO --- *@
+                <MudItem xs="12" md="5">
+                    <MudPaper Elevation="0" Class="pa-4 h-100 d-flex flex-column justify-space-between"
+                              Style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+                        @if (_paymentDetail != null)
+                        {
+                            bool isBs = _paymentDetail.CurrencyId == 1;
+                            string currencySymbol = isBs ? "Bs." : "$";
+                            string cultureCode = isBs ? "es-VE" : "en-US";
+                            var cultureInfo = CultureInfo.GetCultureInfo(cultureCode);
+
+                            double paymentAmount = isBs
+                                            ? (_paymentDetail.AmountBs ?? 0)
+                                            : (_paymentDetail.Amount ?? 0);
+
+                            <div>
+                                <div class="d-flex justify-space-between align-center mb-3">
+                                    <MudText Typo="Typo.caption" Style="font-weight: 700; letter-spacing: 0.5px; color: #475569;">
+                                        PAGO SELECCIONADO
+                                    </MudText>
+                                    <MudText Typo="Typo.caption" Style="font-weight: 600; color: #64748b;">
+                                        @(_paymentDetail.Date.ToString("dd/MM/yyyy"))
+                                    </MudText>
+                                </div>
+
+                                <div class="mb-2">
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Dealer</MudText>
+                                    <MudText Typo="Typo.body2" Style="font-weight: 700; color: #0f172a;">
+                                        @(_paymentDetail.DealerName ?? _paymentDetail.DealerName ?? "N/A")
+                                    </MudText>
+                                </div>
+
+                                <div class="mb-2">
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Referencia</MudText>
+                                    <MudText Typo="Typo.body1" Style="font-weight: 700; color: #0f172a;">
+                                        @(_paymentDetail.Reference ?? _paymentDetail.Reference ?? "N/A")
+                                    </MudText>
+                                </div>
+
+                                <div class="mb-2">
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Banco Emisión</MudText>
+                                    <MudText Typo="Typo.body2" Style="font-weight: 600; color: #334155;">
+                                        @(_paymentDetail.BankOriginName ?? _paymentDetail.BankOriginName ?? "N/A")
+                                    </MudText>
+                                </div>
+
+                                <div class="mb-3">
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Cuenta Destino</MudText>
+                                    <MudText Typo="Typo.body2" Style="font-weight: 600; color: #334155;">
+                                        @(_paymentDetail.AccountNumber ?? _paymentDetail.AccountNumber ?? "N/A")
+                                    </MudText>
+                                </div>
+                            </div>
+
+                            <div class="pt-3 border-top d-flex justify-space-between align-center">
+                                <MudText Typo="Typo.body2" Class="mud-text-secondary">Monto del pago</MudText>
+                                <MudText Typo="Typo.subtitle1" Style="font-weight: 800; color: #059669;">
+                                    @currencySymbol @paymentAmount.ToString("N2", cultureInfo)
+                                </MudText>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="d-flex justify-center align-center h-100 pa-4">
+                                <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Small" />
+                            </div>
+                        }
+                    </MudPaper>
+                </MudItem>
+
+                @* --- LISTA DE EXTRACTOS DISPONIBLES --- *@
+                <MudItem xs="12" md="7">
+                    <div class="d-flex flex-column h-100">
+                        <MudText Typo="Typo.caption" Class="mb-2" Style="font-weight: 700; letter-spacing: 0.5px; color: #475569;">
+                            EXTRACTOS DISPONIBLES
+                        </MudText>
+
+                        @* Buscador de extractos *@
+                        <MudTextField @bind-Value="_searchStatement"
+                                      Placeholder="Buscar referencia, banco o monto"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Adornment="Adornment.Start"
+                                      AdornmentIcon="@Icons.Material.Outlined.Search"
+                                      Class="mb-2"
+                                      Style="background-color: #fff;" />
+
+                        @* Selector de Extracto (Bank Statements) *@
+                        <div class="d-flex flex-column gap-2 overflow-y-auto" style="max-height: 150px;">
+                            @if (FilteredStatements != null && FilteredStatements.Any())
+                            {
+                                @foreach (var item in FilteredStatements)
+                                {
+                                    var isSelected = SelectedStatementId == item.Id;
+                                    <div class="pa-3 d-flex align-center justify-space-between cursor-pointer"
+                                         style="@(isSelected ? "background-color: #f1f5f9; border: 1.5px solid #0f172a;" : "background-color: #fff; border: 1px solid #e2e8f0;") border-radius: 8px; transition: all 0.2s;"
+                                         @onclick="() => SelectStatement(item)">
+                                        <div class="d-flex align-center gap-2">
+                                            <MudText Typo="Typo.body2" Style="font-weight: 700; color: #0f172a;">@item.Reference</MudText>
+                                            <MudText Typo="Typo.caption" Class="mud-text-secondary">@item.BankAccount</MudText>
+                                        </div>
+                                        <MudText Typo="Typo.body2" Style="font-weight: 700; color: #059669;">
+                                            @FormatAmount(item.Amount, item.CurrencyId)
+                                        </MudText>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.caption" Align="Align.Center" Class="py-4 mud-text-secondary">
+                                    No se encontraron extractos disponibles
+                                </MudText>
+                            }
+                        </div>
+                    </div>
+                </MudItem>
+            </MudGrid>
+
+            @* ================= BLOQUE INFERIOR: FACTURAS ASOCIADAS ================= *@
+            <div class="mt-2 d-flex flex-column h-100 w-100 flex-grow-1">
+                <div class="d-flex justify-space-between align-center mb-2 w-100">
+                    <div>
+                        <MudText Typo="Typo.subtitle2" Style="font-weight: 700; color: #0f172a;">
+                            FACTURAS ASOCIADAS
+                        </MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                            Selecciona una factura para aplicar la diferencia.
+                        </MudText>
+                    </div>
+
+                    @* Badge / Alerta de Diferencia *@
+                    @if (CalculatedDifference != 0)
+                    {
+                        <MudPaper Elevation="0" Class="px-3 py-1.5 d-flex align-center gap-1.5" Style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 6px;">
+                            <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Small" Style="color: #dc2626;" />
+                            <MudText Typo="Typo.caption" Style="color: #991b1b; font-weight: 700;">
+                                Diferencia: @FormatAmount(CalculatedDifference, SelectCurrencyId)
+                            </MudText>
+                        </MudPaper>
+                    }
+                </div>
+
+                @* Listado de Facturas Editables *@
+                <MudRadioGroup T="int" Value="SelectedInvoiceId" ValueChanged="SelectInvoice" Class="w-100 flex-grow-1" Style="width: 100%;">
+                    <div class="d-flex flex-column gap-2 w-100 overflow-y-auto" style="max-height: 280px;">
+                        @if (_invoiceList != null && _invoiceList.Any())
+                        {
+                            bool isBs = _paymentDetail?.CurrencyId == 1;
+                            string currencySymbol = isBs ? "Bs." : "$";
+                            string cultureCode = isBs ? "es-VE" : "en-US";
+                            var cultureInfo = CultureInfo.GetCultureInfo(cultureCode);
+
+                            @foreach (var invoice in _invoiceList)
+                            {
+                                var isSelected = SelectedInvoiceId == invoice.Id;
+
+                                // Determinar monto original según la moneda
+                                double originalAmount = isBs ? (invoice.AmountBs ?? 0) : (invoice.Amount ?? 0);
+
+                                // Determinar monto pagado/abonado según la moneda
+                                double currentPaidAmount = isBs ? (invoice.PaidAmountBs ?? 0) : (invoice.PaidAmount ?? 0);
+
+                                <div class="pa-3 d-flex align-center justify-space-between cursor-pointer w-100"
+                                     style="@(isSelected ? "background-color: #f8fafc; border: 1.5px solid #0f172a;" : "background-color: #fff; border: 1px solid #e2e8f0;") border-radius: 8px; transition: all 0.2s;"
+                                     @onclick="() => SelectInvoice(invoice.Id)">
+
+                                    <div class="d-flex align-center gap-3">
+                                        <MudRadio T="int" Value="@invoice.Id" Color="Color.Primary" Dense="true" />
+                                        <div>
+                                            <MudText Typo="Typo.body2" Style="font-weight: 700; color: #0f172a;">@invoice.Number</MudText>
+                                            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                                @invoice.Number · Saldo @currencySymbol @originalAmount.ToString("N2", cultureInfo)
+                                            </MudText>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex align-center gap-3" @onclick:stopPropagation="true">
+                                        <div style="width: 130px;">
+                                            <MudNumericField T="double?"
+                                                             Value="@(isBs ? invoice.PaidAmountBs : invoice.PaidAmount)"
+                                                             ValueChanged="@(val => UpdateInvoicePaidAmount(invoice, val, isBs))"
+                                                             Label="Abono"
+                                                             Variant="Variant.Outlined"
+                                                             Margin="Margin.Dense"
+                                                             HideSpinButtons="true"
+                                                             Format="N2"
+                                                             Culture="@cultureInfo"
+                                                             Style="background-color: #fff;" />
+                                        </div>
+                                        <MudText Typo="Typo.body2" Style="font-weight: 700; color: #059669; min-width: 90px;" Align="Align.End">
+                                            @currencySymbol @currentPaidAmount.ToString("N2", cultureInfo)
+                                        </MudText>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.caption" Align="Align.Center" Class="py-4 mud-text-secondary">
+                                No hay facturas asociadas disponibles
+                            </MudText>
+                        }
+                    </div>
+                </MudRadioGroup>
+
+                @* Botón para aplicar diferencia *@
+                <div class="mt-3 pt-2 w-100">
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Dark"
+                               Size="Size.Small"
+                               FullWidth="true"
+                               OnClick="ApplyDifferenceToSelectedInvoice"
+                               Disabled="@(SelectedInvoiceId == 0 || SelectedStatementId == 0 || CalculatedDifference == 0)"
+                               Style="text-transform: none; font-weight: 600; border-radius: 6px;">
+                        Aplicar diferencia a la factura seleccionada
+                    </MudButton>
+                </div>
+            </div>
+
+        </div>
+    </DialogContent>
+
+    <DialogActions>
+        <div class="d-flex justify-space-between align-center w-100 px-3 pb-2 pt-1 border-top">
+            <div></div> @* Espaciador opcional *@
+            <div class="d-flex gap-2">
+                <MudButton OnClick="Cancel" Variant="Variant.Outlined" Color="Color.Default" Style="border-radius: 6px; text-transform: none;">
+                    Cancelar
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.Outlined.Sync"
+                           OnClick="SubmitSynchronization"
+                           Variant="Variant.Filled"
+                           Color="Color.Dark"
+                           Disabled="@_isProcessing"
+                           Style="border-radius: 6px; text-transform: none; font-weight: 600;">
+                    Confirmar sincronización
+                </MudButton>
+            </div>
+        </div>
+    </DialogActions>
+</MudDialog>
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    // === PARÁMETROS DE ENTRADA ===
+    [Parameter] public int PaymentDetailId { get; set; }
+    [Parameter] public int PaymentId { get; set; }
+    [Parameter] public int ModuleId { get; set; }
+
+    // === ESTADOS Y LISTAS ===
+    private bool _isLoading = true;
+    private bool _isProcessing = false;
+    private string _searchStatement = string.Empty;
+
+    private Payment? _paymentDetail;
+    private List<BankStatement> _bankStatements = new();
+    private List<AccountPreview> _invoiceList = new();
+
+
+    private int SelectedStatementId;
+    private int SelectedInvoiceId;
+    private int SelectAcountId;
+    private int SelectCurrencyId;
+    // Propiedad filtrada para el buscador de extractos
+    private IEnumerable<BankStatement> FilteredStatements =>
+        string.IsNullOrWhiteSpace(_searchStatement)
+            ? _bankStatements
+            : _bankStatements.Where(s =>
+                (s.Reference != null && s.Reference.Contains(_searchStatement, StringComparison.OrdinalIgnoreCase)) ||
+                (s.BankAccount != null && s.BankAccount.Contains(_searchStatement, StringComparison.OrdinalIgnoreCase)) ||
+                s.Amount.ToString().Contains(_searchStatement));
+
+    private decimal CalculatedDifference
+    {
+        get
+        {
+            var selectedStatement = FilteredStatements?.FirstOrDefault(s => s.Id == SelectedStatementId);
+            if (selectedStatement == null) return 0;
+
+            decimal statementAmount = (decimal)selectedStatement.Amount;
+            decimal paymentAmount = (decimal)(_paymentDetail?.Amount ?? 0);
+
+            // Retorna la diferencia absoluta entre el pago reportado y el extracto
+            return Math.Abs(paymentAmount - statementAmount);
+        }
+    }
+
+    private void UpdateInvoicePaidAmount(AccountPreview invoice, double? value, bool isBs)
+    {
+        if (isBs)
+        {
+            invoice.PaidAmountBs = value;
+        }
+        else
+        {
+            invoice.PaidAmount = value;
+        }
+
+        StateHasChanged();
+    }
+
+    private void SelectInvoice(int invoiceId)
+    {
+        SelectedInvoiceId = invoiceId;
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+
+        try
+        {
+            // 1. Ejecutar en paralelo la consulta del detalle del pago y la lista de facturas
+            var paymentTask = PaymentService.GetOnePaymentDetail(Session.UserId, PaymentDetailId);
+            var accountsTask = PaymentService.GetAccountByPayment(Session.UserId, PaymentId);
+
+            await Task.WhenAll(paymentTask, accountsTask);
+
+            // 2. Procesar el detalle del pago y capturar el AccountId
+            var paymentResp = await paymentTask;
+            if (paymentResp.Processed && paymentResp.Data != null)
+            {
+                _paymentDetail = paymentResp.Data.FirstOrDefault();
+
+                if (_paymentDetail != null)
+                {
+                    // Capturar el ID de la cuenta bancaria del pago
+                    SelectAcountId = _paymentDetail.AccountId ?? _paymentDetail.AccountId ?? 0;
+                    SelectCurrencyId = _paymentDetail.CurrencyId ;
+
+                }
+            }
+
+            // 3. Procesar la lista de facturas/cuentas del pago
+            var accountsResp = await accountsTask;
+            if (accountsResp.Processed && accountsResp.Data != null)
+            {
+                _invoiceList = accountsResp.Data;
+
+                var firstInvoice = _invoiceList.FirstOrDefault();
+                if (firstInvoice != null)
+                {
+                    SelectedInvoiceId = firstInvoice.Id;
+                }
+            }
+
+            // 4. Consultar los extractos bancarios usando el SelectAcountId capturado
+            if (SelectAcountId > 0)
+            {
+                var statementsResp = await PaymentService.GetBankStatements(Session.UserId,Session.SupplierId,Pending: true,AccountId: SelectAcountId );
+
+                if (statementsResp.Processed && statementsResp.Data != null)
+                {
+                    _bankStatements = statementsResp.Data;
+                }
+            }
+            else
+            {
+                // Opcional: Cargar sin filtro de cuenta si SelectAcountId es 0/nulo
+                var statementsResp = await PaymentService.GetBankStatements(Session.UserId, Session.SupplierId, Pending: true);
+                if (statementsResp.Processed && statementsResp.Data != null)
+                {
+                    _bankStatements = statementsResp.Data;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar datos del matcheo bancario: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void SelectStatement(BankStatement statement)
+    {
+        SelectedStatementId = statement.Id;
+    }
+    private void ApplyDifferenceToSelectedInvoice()
+    {
+        var selectedStatement = FilteredStatements?.FirstOrDefault(s => s.Id == SelectedStatementId);
+        if (selectedStatement == null || SelectedInvoiceId == 0) return;
+
+        bool isBs = _paymentDetail?.CurrencyId == 1;
+        decimal statementAmount = (decimal)selectedStatement.Amount;
+        decimal paymentAmount = (decimal)(_paymentDetail?.Amount ?? 0);
+
+        // Si el pago reportado es mayor que el extracto, debemos REDUCIR el abono de la factura
+        decimal differenceToApply = paymentAmount - statementAmount;
+
+        if (differenceToApply == 0) return;
+
+        var targetInvoice = _invoiceList.FirstOrDefault(i => i.Id == SelectedInvoiceId);
+        if (targetInvoice != null)
+        {
+            if (isBs)
+            {
+                // Ajustamos el abono para reflejar la realidad del banco (343.280,18 - 43.280,18 = 300.000,00)
+                targetInvoice.PaidAmountBs = (targetInvoice.PaidAmountBs ?? 0) - (double)differenceToApply;
+            }
+            else
+            {
+                targetInvoice.PaidAmount = (targetInvoice.PaidAmount ?? 0) - (double)differenceToApply;
+            }
+
+            StateHasChanged();
+        }
+    }
+
+
+    private string FormatAmount(decimal amount, int currencyId)
+    {
+        // Ajusta la condición con tus IDs de moneda reales
+        bool isUSD = currencyId == 2;
+
+        var culture = isUSD
+            ? CultureInfo.GetCultureInfo("en-US")
+            : CultureInfo.GetCultureInfo("es-VE");
+
+        var symbol = isUSD ? "$" : "Bs.";
+
+        return $"{symbol} {amount.ToString("N2", culture)}";
+    }
+
+    private async Task SubmitSynchronization()
+    {
+        _isProcessing = true;
+
+        try
+        {
+            // 1. Enviar las actualizaciones de montos (PaidAmount) al backend
+            foreach (var invoice in _invoiceList)
+            {
+                // Determinar cuál es el abono según la moneda configurada
+                bool isBs = _paymentDetail?.CurrencyId == 1;
+                double? amountToSend = isBs ? invoice.PaidAmountBs : invoice.PaidAmount;
+
+                var updateDto = new PostPaidAmount
+                {
+                    Id = invoice.Id,               // ID de la factura / detalle
+                    PaymentId = PaymentId,         // ID del pago global
+                    PaidAmount = amountToSend
+                };
+
+                var updateResult = await PaymentService.UpdatePaidAmount(updateDto, Session.UserId);
+
+                // Validar si el backend devolvió un estado 409 (Conflict) o si la respuesta no fue exitosa
+                if (updateResult == null || updateResult.Status == 409 )
+                {
+                    string errorMsg = updateResult?.Status == 409
+                        ? $"Conflicto al actualizar el monto de la factura #{invoice.Number} (409 Conflict)."
+                        : $"Error al actualizar el monto de la factura #{invoice.Number}: {updateResult?.Message}";
+
+                    Snackbar.Add(errorMsg, MudBlazor.Severity.Error);
+
+                    // ABORTAR: No se envía la acción de sincronización ni se cierra el diálogo
+                    return;
+                }
+            }
+
+            // 2. Construir la lista de acciones post-sincronización (Solo si los PaidAmount fueron exitosos)
+            var postActions = new List<PostAction>
+        {
+            new PostAction
+            {
+                RecordId = SelectedStatementId,
+                RelatedId = PaymentDetailId,
+                ModuleId = ModuleId,
+                ActionName = "SINC",
+                ActionComment = "Sincronización de extracto bancario con detalle de pago"
+            }
+        };
+
+            // 3. Ejecutar la sincronización de extracto bancario
+            var syncResult = await PaymentService.PostBankStatementActions(postActions, Session.UserId);
+
+            if (syncResult == null || syncResult.Status==409)
+            {
+                Snackbar.Add($"Error en la sincronización: {syncResult?.Message}", MudBlazor.Severity.Error);
+                return;
+            }
+
+            // 4. Notificar éxito y cerrar el diálogo
+            Snackbar.Add("Sincronización realizada exitosamente.", MudBlazor.Severity.Success);
+
+            var result = new SynchronizationResult
+            {
+                PaymentId = PaymentId,
+                PaymentDetailId = PaymentDetailId,
+                SelectedBankStatementId = SelectedStatementId,
+                Invoices = _invoiceList
+            };
+
+            MudDialog.Close(DialogResult.Ok(result));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error crítico: {ex.Message}", MudBlazor.Severity.Error);
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    // === ESTRUCTURA DE RETORNO ===
+    public class SynchronizationResult
+    {
+        public int PaymentId { get; set; }
+        public int PaymentDetailId { get; set; }
+        public int SelectedBankStatementId { get; set; }
+        public List<AccountPreview> Invoices { get; set; } = new();
+    }
+}
