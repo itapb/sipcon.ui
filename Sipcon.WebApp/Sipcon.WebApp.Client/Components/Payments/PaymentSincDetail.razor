@@ -313,8 +313,8 @@
             decimal statementAmount = (decimal)selectedStatement.Amount;
             decimal paymentAmount = (decimal)(_paymentDetail?.Amount ?? 0);
 
-            // Extracto - Pago
-            return statementAmount - paymentAmount;
+            // Retorna la diferencia absoluta entre el pago reportado y el extracto
+            return Math.Abs(paymentAmount - statementAmount);
         }
     }
 
@@ -413,29 +413,34 @@
     {
         SelectedStatementId = statement.Id;
     }
-
     private void ApplyDifferenceToSelectedInvoice()
     {
-        // 1. Obtenemos el extracto bancario seleccionado
         var selectedStatement = FilteredStatements?.FirstOrDefault(s => s.Id == SelectedStatementId);
+        if (selectedStatement == null || SelectedInvoiceId == 0) return;
 
-        if (selectedStatement == null || SelectedInvoiceId == 0)
-            return;
-
-        // 2. La realidad es el extracto bancario (Ej: 530 - 500 = +30)
+        bool isBs = _paymentDetail?.CurrencyId == 1;
         decimal statementAmount = (decimal)selectedStatement.Amount;
         decimal paymentAmount = (decimal)(_paymentDetail?.Amount ?? 0);
 
-        decimal differenceToApply = statementAmount - paymentAmount;
+        // Si el pago reportado es mayor que el extracto, debemos REDUCIR el abono de la factura
+        decimal differenceToApply = paymentAmount - statementAmount;
 
-        if (differenceToApply == 0)
-            return;
+        if (differenceToApply == 0) return;
 
-        // 3. Le sumamos la diferencia al abono de la factura seleccionada
         var targetInvoice = _invoiceList.FirstOrDefault(i => i.Id == SelectedInvoiceId);
         if (targetInvoice != null)
         {
-            targetInvoice.PaidAmount = (targetInvoice.PaidAmount ?? 0) + (double)differenceToApply;
+            if (isBs)
+            {
+                // Ajustamos el abono para reflejar la realidad del banco (343.280,18 - 43.280,18 = 300.000,00)
+                targetInvoice.PaidAmountBs = (targetInvoice.PaidAmountBs ?? 0) - (double)differenceToApply;
+            }
+            else
+            {
+                targetInvoice.PaidAmount = (targetInvoice.PaidAmount ?? 0) - (double)differenceToApply;
+            }
+
+            StateHasChanged();
         }
     }
 

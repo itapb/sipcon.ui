@@ -437,6 +437,7 @@
                                                OnClick="() => ClickEditPayment(context.Item)" />
                             }
                             <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.AttachFile" OnClick="() => OnClickAttachamentButton(context.Item)" />
+                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Comment" OnClick="() => OnClickAttachamentButton(context.Item)" />
                         </MudButtonGroup>
                     </CellTemplate>
                 </TemplateColumn>
@@ -644,37 +645,41 @@
     }
 
     private async Task ClickEditPayment(Payment args)
+{
+    IdPaymentPreviewSelected = args.Id;
+
+    // Parámetros estrictamente necesarios para el modal
+    var parameters = new DialogParameters<PaymentSincDetail>
     {
-        IdPaymentPreviewSelected = args.Id;
+        { x => x.PaymentDetailId, args.Id },
+        { x => x.PaymentId, args.PaymentId },
+        { x => x.ModuleId, moduleId }
+    };
 
-        // Parámetros estrictamente necesarios para el modal
-        var parameters = new DialogParameters<PaymentSincDetail>
-            {
-                { x => x.PaymentDetailId, args.Id },
-                { x => x.PaymentId, args.PaymentId },
-                { x => x.ModuleId, moduleId }
-            };
+    // Opciones de configuración del diálogo
+    var options = new DialogOptions
+    {
+        CloseButton = true,
+        MaxWidth = MaxWidth.Large,
+        FullWidth = true,
+        BackdropClick = false,
+        CloseOnEscapeKey = true
+    };
 
-        // Opciones de configuración del diálogo
-        var options = new DialogOptions
+    // Abrir el modal de Matcheo Bancario
+    var dialog = await DialogService.ShowAsync<PaymentSincDetail>("Matcheo Bancario", parameters, options);
+    var result = await dialog.Result;
+
+    // Procesar respuesta tras cerrar el modal
+    if (!result.Canceled && result.Data != null)
+    {
+        // En lugar de llamar OnInitializedAsync(), forzamos la recarga de los datos del MudDataGrid
+        if (PaymentsDataGrid != null)
         {
-            CloseButton = true,
-            MaxWidth = MaxWidth.Large,
-            FullWidth = true,
-            BackdropClick = false,
-            CloseOnEscapeKey = true
-        };
-
-        // Abrir el modal de Matcheo Bancario
-        var dialog = await DialogService.ShowAsync<PaymentSincDetail>("Matcheo Bancario", parameters, options);
-        var result = await dialog.Result;
-
-        // Procesar respuesta tras cerrar el modal
-        if (!result.Canceled && result.Data != null)
-        {
-            await OnInitializedAsync();
+            await PaymentsDataGrid.ReloadServerData();
         }
     }
+}
 
     private async Task OnClickAttachamentButton(Payment args)
     {
