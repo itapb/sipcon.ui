@@ -10,13 +10,15 @@
 
         public Task<ApiResponse<List<GetInventoryCount>>> GetOneInventoryCount(int IdSupplier, int IdUser, int InventoryCountId);
 
-        public Task<ApiResponse<List<GetCountFull>>> GetInventoryCountDetails(int IdSupplier, int IdUser,int inventoryCountId , int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "",int? EstatusId = null);
+        public Task<ApiResponse<List<GetCountFull>>> GetInventoryCountDetailByZone(int IdSupplier, int IdUser,int inventoryCountId , int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "",int? EstatusId = null);
 
         public Task<ApiResponse<List<InventoryCountType>>> GetInventoryCountTypes(int IdUser);
 
         public Task<ApiResponse<ActionResult>> UpdateInventoryCount(GetInventoryCount InventoryCount, int IdUser);
 
         public Task<ApiResponse<ActionResult>> ActionsInventoryCount(List<PostAction> PostActions, int IdUser);
+        public Task<ApiResponse<List<GetInventoryCountDetail>>> GetInventoryCountDetail(int IdSupplier, int IdUser, int inventoryCountId, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "", int? EstatusId = null);
+
 
     }
 }

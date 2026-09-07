@@ -8,142 +8,104 @@
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
 
-<MudCard Class="ma-3" Style="background-color: #eff6ff80;">
-    <MudCardContent Style="padding-top: 0px;">
-        @* //Documents Selecteds *@
-        <MudPaper Class="ma-2" Style="background-color: #f9fafb; border-radius:10px;">
-            <MudExpansionPanels Style="background-color: #f9fafb;">
-                <MudExpansionPanel HideIcon="true" MaxHeight="1000" ExpandedChanged="OnExpandedChanged">
-                    <TitleContent>
-                        <div class="d-flex">
-                            <MudIcon Icon="@Icons.Material.Filled.FileOpen" Style="color: #8b4c25;font-size: 1.5rem;"></MudIcon>
-                            <MudText Style="color: #8b4c25;font-weight:bold;"> Facturas de Vehículos agregadas</MudText>
-                            <div class="d-flex ml-auto">
-                                <MudBadge Content="SelectedDocuments.Count()" Color="Color.Primary" Overlap="true"
-                                          OnClick="() => OnExpandedChanged(!_isExpanded)"
-                                          Class="mr-6 mt-2">
-                                    <MudIcon Icon="@Icons.Material.Filled.AddShoppingCart" Color="Color.Default" />
-                                </MudBadge>
-                                <MudButton StartIcon="@Icons.Material.Filled.KeyboardReturn" Variant="Variant.Text"
-                                           Color="Color.Dark" IconColor="Color.Secondary" IconSize="Size.Small" Size="Size.Small"
-                                           OnClick="() => OnClickCloseButton()">
-                                    Cerrar
-                                </MudButton>
-                            </div>
-                            
-                        </div>
-                    </TitleContent>
-                    <ChildContent>
-                        
-                        @if (_panelContent.Count > 0)
-                        {
-                            <DocumentPreviewList DocumentDetails="_panelContent" IsVisibleToolBar="false" OnAmountUpdated="RefreshTotals" />
-                        }
-                        
-                        
-                    </ChildContent>
-                    
-                </MudExpansionPanel>
-            </MudExpansionPanels>
+<MudDialog Position="DialogPosition.Custom" Style="margin-right: 0; margin-left: auto; height: 100vh; max-height: 100vh; border-radius: 0; width: 900px; max-width: 100vw; overflow: hidden;">
+    <DialogContent >
 
-                    
+
+        @* ================= LEYENDA INFORMATIVA DE EDICIÓN ================= *@
+        <div class="d-flex align-center gap-1 mb-2 flex-shrink-0" style="color: #b76e00;">
+            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" />
+            <MudText Typo="Typo.caption" Style="font-weight: 500; line-height: 1.2;">
+                Nota: Puede editar el monto a abonar en la tabla si el tipo de factura lo permite.
+            </MudText>
+        </div>
+
+        @* ================= FACTURAS AGREGADAS (EXPANDIDO DINÁMICO) ================= *@
+        <MudPaper Class="pa-3 d-flex flex-column" Style="background-color: #f9fafb; border-radius: 8px; flex: 1 1 35%; min-height: 220px; overflow: hidden;">
+            <div class="d-flex align-center mb-2 flex-shrink-0">
+                <MudText Style="color: #8b4c25; font-weight: bold;" Typo="Typo.subtitle1">Facturas agregadas</MudText>
+                <MudBadge Content="@(_panelContent?.Count ?? 0)" Color="Color.Primary" Overlap="true" Class="ml-auto">
+                    <MudIcon Icon="@Icons.Material.Filled.AddShoppingCart" Color="Color.Default" Size="Size.Medium" />
+                </MudBadge>
+            </div>
+
+            @if (_panelContent != null && _panelContent.Count > 0)
+            {
+                <div class="flex-grow-1 overflow-hidden">
+                    <DocumentPreviewList OnClickSettlementDelete="(arg) => OnDeleteDocument(arg)"
+                                         DocumentDetails="_panelContent"
+                                         selectCurrencyId="SelectedCurrencyId"
+                                         IsVisibleToolBar="false"
+                                         OnAmountUpdated="RefreshTotals" />
+                </div>
+            }
         </MudPaper>
 
-       
-        <MudPaper Class="ma-2" Style="background: transparent;" Elevation="0">
-            <MudStack Row="true" Justify="Justify.Center" AlignItems="AlignItems.Center">
+        @* ================= COLUMNAS CENTRALES (AMPLIADO Y MEJOR PADDING) ================= *@
+        <MudGrid Class="ma-0 pa-0 flex-grow-1 overflow-hidden" Spacing="2" Style="flex: 2 1 60%; min-height: 380px;">
 
-                @* //Form Payment *@
-                <MudCard Style="width: 50%;border-radius:10px; min-height: 499px;">
-                    <MudCardHeader>
+            @* --- COLUMNA IZQUIERDA: FORMULARIO DE CAPTURA --- *@
+            <MudItem xs="12" md="6" Class="d-flex flex-column h-100 overflow-hidden pa-1">
+                <MudCard Class="h-100 d-flex flex-column overflow-hidden" Style="border-radius:8px;" Elevation="1">
+                    <MudCardHeader Class="py-3 px-4 border-bottom flex-shrink-0 d-flex align-center">
                         <CardHeaderContent>
-                            <MudStack Row="true">
-                                <MudIcon Icon="@Icons.Material.Filled.CreditCard" Style="color: #8b4c25;font-size: 1.5rem;"></MudIcon>
-                                <MudText Typo="Typo.subtitle1" Style="color: #8b4c25;">@(_disabledSelect ? "Agregar Retención" : "Agregar Método de Pago")</MudText>
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                <MudIcon Icon="@Icons.Material.Filled.CreditCard" Style="color: #8b4c25; font-size: 1.2rem;" />
+                                <MudText Typo="Typo.subtitle1" Style="color: #8b4c25; font-weight: bold; line-height: 1.2;">
+                                    @(_disabledSelect ? "Agregar Retención" : "Agregar Método de Pago")
+                                </MudText>
                             </MudStack>
                         </CardHeaderContent>
                         <CardHeaderActions>
                             @if (_model.Id != 0)
-                            { 
+                            {
                                 <MudButton StartIcon="@Icons.Material.Filled.Close" Variant="Variant.Text"
                                            Color="Color.Dark" IconColor="Color.Secondary" IconSize="Size.Small" Size="Size.Small"
                                            OnClick="() => OnClickCancelButton()">
                                     Limpiar
                                 </MudButton>
                             }
-                            
                         </CardHeaderActions>
                     </MudCardHeader>
 
-                    <MudCardContent Style="padding-top: 0px;">
-
-                        @* //Form datos payment *@
-                        <MudForm Model="@_model" @ref="@form" Validation="@(_modelValidator.ValidateValue)" ValidationDelay="0">
-
-                            <div class="mud-width-full mt-2">
-                                @* <MudText Typo="Typo.caption" Style="color: #8b4c25">
-                                        <span>Tipo de Moneda</span>
-                                    </MudText> *@
-                                <MudSelect T="int?"
-                                           Label="Moneda"
-                                           Disabled="_isCurrencyLocked"
-                                           Value="_model.CurrencyId"
-                                           ValueChanged="OnCurrencyTypeChanged">
-                                    @foreach (var currency in CurrencyList)
-                                    {
-                                        <MudSelectItem Value="@((int?)currency.Value)">@currency.Text</MudSelectItem>
-                                    }
-                                </MudSelect>
-
-                            </div>
-
-                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                                <div class="mud-width-full">
-                                    <MudText Typo="Typo.caption" Style="color: #8b4c25">
-                                        <span>Tipo de Pago</span>
-                                    </MudText>
-                                    <MudSelect T="int?"
-                                               Value="_model.TypeId"
-                                               ValueChanged="OnPayTypeChanged"
-                                               Placeholder="Todos los Tipos"
-                                               Style="color: #8b4c25;font-size: 12px;line-height: 12px;min-width: 120px;"
-                                               Class="mt-0"
-                                               Clearable="true"
-                                               Dense="true"
-                                               Typo="Typo.caption"
-                                               AdornmentColor="Color.Default"
-                                               Variant="Variant.Outlined"
-                                               Margin="Margin.Dense"
-                                               For="@(() => _model.TypeId)"
-                                               Immediate="false"
-                                               ReadOnly="@(!_model.IsActive || _isReadOnlyAmount)"
-                                               Disabled="@_disabledSelect">
-                                        @if (PaymentTypeList != null)
+                    <MudCardContent Class="py-3 px-4 flex-grow-1 d-flex flex-column justify-space-between overflow-y-auto">
+                        <MudForm Model="@_model" @ref="@form" Validation="@(_modelValidator.ValidateValue)" ValidationDelay="0" Class="flex-grow-1">
+                            <MudGrid Spacing="2">
+                                <MudItem xs="6">
+                                    <MudText Typo="Typo.caption" Style="color: #8b4c25; font-weight: 600;">Moneda</MudText>
+                                    <MudSelect T="int?" Disabled="true" Value="_model.CurrencyId" ValueChanged="OnCurrencyTypeChanged"
+                                               Margin="Margin.Dense" Dense="true" Variant="Variant.Outlined" Style="color: #8b4c25; font-size: 13px;">
+                                        @if (CurrencyList != null)
                                         {
-                                            var style = "color: #8b4c25;font-size: 12px;line-height: 12px;";
-                                            @foreach (var action in PaymentTypeList)
+                                            @foreach (var currency in CurrencyList)
                                             {
-                                                if (action.Text.ToUpper() == "RETENCION")
-                                                {
-                                                    <MudSelectItem T="int?" Value="@action.Value" Style="@style" Disabled="_disabledRetencion">@action.Text</MudSelectItem>    
-                                                }else
-                                                {
-                                                    <MudSelectItem T="int?" Value="@action.Value" Style="@style">@action.Text</MudSelectItem>
-                                                }
-                                                
-                                                
+                                                <MudSelectItem T="int?" Value="@((int?)currency.Value)">@currency.Text</MudSelectItem>
                                             }
                                         }
                                     </MudSelect>
-                                </div>
-        
-                                <div class="mud-width-full">
-                                    <MudText Typo="Typo.caption" Style="color: #8b4c25">
-                                        <span>Fecha</span>
-                                    </MudText>
+                                </MudItem>
+
+                                <MudItem xs="6">
+                                    <MudText Typo="Typo.caption" Style="color: #8b4c25; font-weight: 600;">Tipo de Pago</MudText>
+                                    <MudSelect T="int?" Value="_model.TypeId" ValueChanged="OnPayTypeChanged" Placeholder="Todos los Tipos"
+                                               Style="color: #8b4c25; font-size: 13px;" Clearable="true" Dense="true" Margin="Margin.Dense"
+                                               Variant="Variant.Outlined" For="@(() => _model.TypeId)" ReadOnly="@(!_model.IsActive || _isReadOnlyAmount)" Disabled="@_disabledSelect">
+                                        @if (PaymentTypeList != null)
+                                        {
+                                            var style = "color: #8b4c25; font-size: 13px;";
+                                            @foreach (var action in PaymentTypeList)
+                                            {
+                                                <MudSelectItem T="int?" Value="@action.Value" Style="@style" Disabled="@(action.Text?.ToUpper() == "RETENCION" && _disabledRetencion)">@action.Text</MudSelectItem>
+                                            }
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+
+                                <MudItem xs="6">
+                                    <MudText Typo="Typo.caption" Style="color: #8b4c25; font-weight: 600;">Fecha</MudText>
                                     <MudDatePicker @ref="_pickerDatePayment"
                                                    @bind-Date="_model.Date"
-                                                   Style="color: #8b4c25;font-size: 12px;line-height: 14px;min-width: 120px;margin-top: -4px;"
+                                                   Style="color: #8b4c25; font-size: 13px; min-width: 100px;"
                                                    Class="align-end"
                                                    Placeholder="dd/MM/yyyy"
                                                    DateFormat="dd/MM/yyyy"
@@ -161,295 +123,193 @@
                                             <MudButton OnClick="@(() => _pickerDatePayment.CloseAsync(false))">Cancelar</MudButton>
                                         </PickerActions>
                                     </MudDatePicker>
-                                </div>
+                                </MudItem>
 
-                            </MudStack>
-          
-                            <MudStack Row="true">
-
-                                @if (selectedPaymentType != null && selectedPaymentType.Text.ToUpper() != "EFECTIVO")
+                                @if (selectedPaymentType != null && selectedPaymentType.Text?.ToUpper() != "EFECTIVO")
                                 {
-                                    <div class="mud-width-full">
-                                        <MudText Typo="Typo.caption" Style="color: #8b4c25">
-                                            <span>@(_disabledSelect ? "Nro. Retención" : "Nro. Referencia")</span>
-                                        </MudText>
-                                        <MudTextField @bind-Value="_model.Reference"
-                                        Typo="Typo.caption"
-                                        Variant="Variant.Outlined"
-                                        Placeholder=@(_disabledSelect ? "Número de retención" : "Número de referencia")
-                                        Style="color: #8b4c25;font-size: 12px; line-height: 0px;min-width: 120px;background-color:#e8e8e8;"
-                                        Class="mt-0"
-                                        MaxLength="40"
-                                        For="@(() => _model.Reference)"
-                                        Immediate="false"
-                                        ReadOnly="@(!_model.IsActive || _isReadOnly)"
-                                        Disabled="@(!_model.IsActive || _isReadOnly)">
-                                        </MudTextField>
-                                    </div>
-                                 }
-                                <div class="mud-width-full">
-                                    <MudText Typo="Typo.caption" Style="color: #8b4c25">
-                                        <span>@(selectedCurrency != null && selectedCurrency.Text.ToUpper() == "$ - DOLAR" ? "Monto en Dólares (USD)" : "Monto en Bs")</span>
+                                    <MudItem xs="6">
+                                        <MudText Typo="Typo.caption" Style="color: #8b4c25; font-weight: 600;">@(_disabledSelect ? "Nro. Retención" : "Nro. Referencia")</MudText>
+                                        <MudTextField @bind-Value="_model.Reference" Typo="Typo.caption" Variant="Variant.Outlined"
+                                                      Placeholder="@(_disabledSelect ? "Número de retención" : "Número de referencia")"
+                                                      Style="color: #8b4c25; font-size: 13px; background-color:#f8fafc;"
+                                                      MaxLength="40" Margin="Margin.Dense" For="@(() => _model.Reference)" ReadOnly="@(!_model.IsActive || _isReadOnly)" Disabled="@(!_model.IsActive || _isReadOnly)" />
+                                    </MudItem>
+                                }
+
+                                <MudItem xs="@(selectedPaymentType != null && selectedPaymentType.Text?.ToUpper() != "EFECTIVO" ? 12 : 6)">
+                                    <MudText Typo="Typo.caption" Style="color: #8b4c25; font-weight: 600;">
+                                        @(selectedCurrency != null && selectedCurrency.Text?.ToUpper() == "$ - DOLAR" ? "Monto (USD)" : "Monto (Bs)")
                                     </MudText>
-                                    <MudNumericField @bind-Value="_model.Amount"
-                                                     @bind-Value:after="AfterValueChangeAmount"
-                                                     Typo="Typo.caption"
-                                                     Variant="Variant.Outlined"
-                                                     Margin="Margin.Dense"
-                                                     Culture="@CultureInfo.GetCultureInfo("en-US")"
-                                                     T="double?"
-                                                     Placeholder=@(selectedCurrency != null && selectedCurrency.Text.ToUpper() == "$ - DOLAR" ? "Monto (USD)" : "Monto (Bs)")
-                                                     Style="color: #8b4c25;font-size: 12px;line-height: 16px;min-width: 120px;background-color:#e8e8e8;"
-                                                     Class="align-right mt-0"
-                                                     HideSpinButtons="true"
-                                                     Pattern="^[0-9.]*$"
-                                                     Min="0.00"
-                                                     MaxLength="18"
-                                                     For="@(() => _model.Amount)"
-                                                     Immediate="false"
-                                                     ReadOnly="@(!_model.IsActive || _isReadOnlyAmount )"                               />
+                                    <MudNumericField @bind-Value="_model.Amount" @bind-Value:after="AfterValueChangeAmount" Typo="Typo.caption" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                                     Culture="@CultureInfo.GetCultureInfo("en-US")" T="double?" Style="color: #8b4c25; font-size: 13px; background-color:#f8fafc;"
+                                                     Class="align-right" HideSpinButtons="true" Pattern="^[0-9.]*$" Min="0.00" MaxLength="18" For="@(() => _model.Amount)" ReadOnly="@(!_model.IsActive || _isReadOnlyAmount)" />
+                                </MudItem>
 
-                                </div>
-       
-                            </MudStack>
-
-  
-                            @if (selectedPaymentType != null && selectedPaymentType.Text.ToUpper() == "TRANSFERENCIA")
-                            {
-                                <MudDivider Class="mt-1" />
-       
-                                <MudStack Row="false" Class="mt-2">
-                                   
-                                    <div class="mud-width-full">
-                                        <MudText Typo="Typo.caption" Style="color: #8b4c25">
-                                            <span>Banco Origen</span>
-                                        </MudText>
-                                        <MudSelect T="int?"
-                                                   Value="_model.BankOriginId"
-                                                   ValueChanged="OnBankOriginChanged"
-                                                   Placeholder="Banco Origen Fondos"
-                                                   Style="color: #8b4c25;font-size: 12px;line-height: 12px;min-width: 120px;"
-                                                   Class="mt-0"
-                                                   Clearable="true"
-                                                   Dense="true"
-                                                   Typo="Typo.caption"
-                                                   AdornmentColor="Color.Default"
-                                                   Variant="Variant.Outlined"
-                                                   Margin="Margin.Dense"
-                                                   For="@(() => _model.BankOriginId)"
-                                                   Immediate="false"
-                                                   ReadOnly="@(!_model.IsActive || _isReadOnly)">
+                                @if (selectedPaymentType != null && selectedPaymentType.Text?.ToUpper() == "TRANSFERENCIA")
+                                {
+                                    <MudItem xs="6">
+                                        <MudText Typo="Typo.caption" Style="color: #8b4c25; font-weight: 600;">Banco Origen</MudText>
+                                        <MudSelect T="int?" Value="_model.BankOriginId" ValueChanged="OnBankOriginChanged" Placeholder="Banco Origen"
+                                                   Style="color: #8b4c25; font-size: 13px;" Clearable="true" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined"
+                                                   For="@(() => _model.BankOriginId)" ReadOnly="@(!_model.IsActive || _isReadOnly)">
                                             @if (BankOriginList != null)
                                             {
                                                 @foreach (var action in BankOriginList)
                                                 {
-                                                    <MudSelectItem T="int?" Value="@action.Value" Style="color: #8b4c25;font-size: 12px;line-height: 12px;">@action.Text</MudSelectItem>
+                                                    <MudSelectItem T="int?" Value="@action.Value" Style="color: #8b4c25; font-size: 13px;">@action.Text</MudSelectItem>
                                                 }
                                             }
                                         </MudSelect>
-                                    </div>
-
-                                    <div class="mud-width-full">
-                                        <MudText Typo="Typo.caption" Style="color: #8b4c25">
-                                            <span>Cuenta Banco Destino</span>
-                                        </MudText>
-                                        <MudSelect T="int?"
-                                                   Value="_model.AccountId"
-                                                   ValueChanged="OnAccountBankChanged"
-                                                   Placeholder="Cuenta Destino"
-                                                   Style="color: #8b4c25;font-size: 12px;line-height: 12px;min-width: 120px;"
-                                                   Class="mt-0"
-                                                   Clearable="true"
-                                                   Dense="true"
-                                                   Typo="Typo.caption"
-                                                   AdornmentColor="Color.Default"
-                                                   Variant="Variant.Outlined"
-                                                   Margin="Margin.Dense"
-                                                   For="@(() => _model.AccountId)"
-                                                   Immediate="false"
-                                                   ReadOnly="@(!_model.IsActive || _isReadOnly)">
+                                    </MudItem>
+                                    <MudItem xs="6">
+                                        <MudText Typo="Typo.caption" Style="color: #8b4c25; font-weight: 600;">Cuenta Destino</MudText>
+                                        <MudSelect T="int?" Value="_model.AccountId" ValueChanged="OnAccountBankChanged" Placeholder="Cuenta Destino"
+                                                   Style="color: #8b4c25; font-size: 13px;" Clearable="true" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined"
+                                                   For="@(() => _model.AccountId)" ReadOnly="@(!_model.IsActive || _isReadOnly)">
                                             @if (AccountList != null)
                                             {
                                                 @foreach (var action in AccountList)
                                                 {
-                                                    <MudSelectItem T="int?" Value="@action.Value" Style="color: #8b4c25;font-size: 12px;line-height: 12px;">@action.Text</MudSelectItem>
+                                                    <MudSelectItem T="int?" Value="@action.Value" Style="color: #8b4c25; font-size: 13px;">@action.Text</MudSelectItem>
                                                 }
                                             }
                                         </MudSelect>
-                                    </div>
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        </MudForm>
 
-        
-
-           
-                                </MudStack>
-                            }
-                            <MudText Typo="Typo.caption" Class="mt-2" Style="color: #8b4c25">
-                                <span>Adjuntar Comprobante</span>
-                            </MudText>
-                            <MudButton StartIcon="@Icons.Material.Filled.FileUpload" Variant="Variant.Outlined"
-                                       Color="Color.Default" Size="Size.Small" IconColor="Color.Default"
-                                       FullWidth="true" OnClick="() => OnClickAttachamentButton()"
-                                       Disabled="@(!_model.IsActive || _isReadOnly|| _model.Id == 0)" Class="mt-0">
-                                Seleccionar Archivo
+                        <MudStack Row="true" Spacing="2" Class="mt-3 pt-3 border-top flex-shrink-0">
+                            <MudButton StartIcon="@Icons.Material.Filled.FileUpload" Variant="Variant.Outlined" Color="Color.Default" Size="Size.Small"
+                                       FullWidth="true" OnClick="() => OnClickAttachamentButton()" Disabled="@(!_model.IsActive || _isReadOnly || _model.Id == 0)">
+                                Comprobante
                             </MudButton>
 
-
-                            <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled"
-                                       Color="Color.Dark" Size="Size.Small" IconColor="Color.Secondary"
-                                       FullWidth="true" OnClick="OnValidSubmit"
-                                       Disabled="false"
-                                       Class="mt-4">
+                            <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Dark" Size="Size.Small" IconColor="Color.Secondary"
+                                       FullWidth="true" OnClick="OnValidSubmit">
                                 @(_model.Id != 0 ? "Guardar" : _disabledSelect ? "Agregar Retención" : "Agregar Pago")
                             </MudButton>
-
-   
-
-                        </MudForm>
-                           
-                        
-           
+                        </MudStack>
                     </MudCardContent>
-
                 </MudCard>
+            </MudItem>
 
-                @* //Payment Details *@
-                <MudCard Style="width: 50%;border-radius:10px; min-height: 300px;">
-                    <MudCardHeader Style="padding: 6px;padding-top: 10px;">
+            @* --- COLUMNA DERECHA: LISTA --- *@
+            <MudItem xs="12" md="6" Class="d-flex flex-column h-100 overflow-hidden pa-1">
+                <MudCard Class="h-100 d-flex flex-column overflow-hidden" Style="border-radius:8px;" Elevation="1">
+                    <MudCardHeader Class="py-3 px-4 border-bottom flex-shrink-0 d-flex align-center">
                         <CardHeaderContent>
-                            <MudStack Row="true">
-                                <MudBadge Content="PaymentList.Count()" Color="Color.Primary" Overlap="true"
-                                          Class="mr-6 mt-2">
-                                    <MudText Typo="Typo.subtitle1" Style="color: #8b4c25;">@(_disabledSelect ? "Retenciones Agregadas..." : "Métodos Agregados...")</MudText>
-                                </MudBadge>
-                                
-                            </MudStack>
+                            <MudBadge Content="@(PaymentList?.Count() ?? 0)" Color="Color.Primary" Overlap="true">
+                                <MudText Typo="Typo.subtitle1" Style="color: #8b4c25; font-weight: bold; line-height: 1.2;">
+                                    @(_disabledSelect ? "Retenciones Agregadas" : "Métodos Agregados")
+                                </MudText>
+                            </MudBadge>
                         </CardHeaderContent>
                     </MudCardHeader>
-                    <MudCardContent Style="padding: 6px;padding-top: 0px;" Class="">
-                                
-                        @if (PaymentList.Count > 0)
+
+                    <MudCardContent Class="py-3 px-4 flex-grow-1 overflow-y-auto">
+                        @if (PaymentList != null && PaymentList.Count > 0)
                         {
-                            <PaymentPreviewList PaymentDetails="@PaymentList" 
+                            <PaymentPreviewList PaymentDetails="@PaymentList"
                                                 OnClickPaymentEdit="(arg) => OnPaymentEdit(arg)"
                                                 OnClickPaymentDelete="(arg) => OnPaymentDelete(arg)">
                             </PaymentPreviewList>
                         }
-
+                        else
+                        {
+                            <div class="d-flex flex-column align-center justify-center h-100 py-4" style="opacity: 0.5;">
+                                <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" Style="font-size: 2.5rem; color: #8b4c25;" />
+                                <MudText Typo="Typo.body2" Style="color: #8b4c25;" Class="mt-2">No hay ítems agregados aún</MudText>
+                            </div>
+                        }
                     </MudCardContent>
                 </MudCard>
-            </MudStack>
-            
-                    
-        </MudPaper>
+            </MudItem>
 
-        <MudDivider Class="mt-2" />
+        </MudGrid>
+        @if (!_isLoading && PaymentList != null)
+        {
+            bool isBs = SelectedCurrencyId == 1;
+            string currencySymbol = isBs ? "Bs." : "$";
 
-        @* //Total Footer *@
-
-        @if (!_isLoading && !PaymentList.Any(x => x.StatusName != null && x.StatusName.ToUpper() == "PARA APROBAR"))
-            {
-        <MudPaper Class="ma-2 mt-6" Style="background: transparent;" Elevation="0">
-            <MudContainer Style="padding: 6px;">
-                <div class="d-flex">
-                    <MudStack Row="false" AlignItems="AlignItems.Start" Spacing="0">
-                        <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="0">
-                            <MudIcon Icon="@Icons.Material.Filled.Info" Style="color: #8b4c25;font-size: 1.5rem;"></MudIcon>
-                            <MudText Typo="Typo.subtitle2" Style="color: #8b4c25;">@(_disabledSelect ? "Resumen" : "Resumen de Pago")</MudText>
-                        </MudStack>
+            <MudPaper Class="pa-3 mt-auto pt-3 flex-shrink-0" Style="background: #ffffff; border-radius: 8px; border-top: 1px solid #e0e0e0; position: sticky; bottom: 0; z-index: 2;" Elevation="3">
+                <div class="d-flex flex-column gap-2">
+                    <div class="d-flex align-center justify-space-between">
                         <MudStack Row="false" AlignItems="AlignItems.Start" Spacing="0">
-                            <MudText Typo="Typo.caption">@(string.Concat("Documentos seleccionados: ", SelectedDocuments.Count()))</MudText>
-                            <MudText Typo="Typo.caption" Class="mt-0">@(string.Concat(_disabledSelect ? "Retenciones: " : "Métodos de pago: ", PaymentList.Count()))</MudText>
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                <MudIcon Icon="@Icons.Material.Filled.Info" Style="color: #8b4c25; font-size: 1.2rem;" />
+                                <MudText Typo="Typo.subtitle2" Style="color: #8b4c25; font-weight: bold;">
+                                    @(_disabledSelect ? "Resumen" : "Resumen de Pago")
+                                </MudText>
+                            </MudStack>
+                            <MudText Typo="Typo.caption" Style="font-size: 11px;">
+                                Documentos: @(_panelContent?.Count ?? 0) | @(_disabledSelect ? "Retenciones: " : "Métodos: ") @(PaymentList.Count)
+                            </MudText>
                         </MudStack>
-                    </MudStack>
 
-                    <div class="d-flex ml-auto">
                         <MudStack Row="false" AlignItems="AlignItems.End" Spacing="0">
-                            <MudText Typo="Typo.caption" Align="Align.End">
-                                <span>Total a Pagar:</span>
-                                    <MudText Typo="Typo.subtitle1" Style="font-weight:bold;" Inline="true">
-                                        @if (SelectedDocuments.Any(x => _ConceptNameList.Contains(x.ConceptName)))
-                                        {
-                                            @(string.Concat("Bs. ", SelectedDocuments
-                                                .Sum(x => (x.PaidAmountBs ?? 0) > 0 ? x.PaidAmountBs.Value : x.AmountBs ?? 0)
-                                                .ToString("N2")))
-                                        }
-                                        else
-                                        {
-                                            @(string.Concat("$ ", SelectedDocuments
-                                                .Sum(x => (x.PaidAmount ?? 0) > 0 ? x.PaidAmount.Value : x.Amount ?? 0)
-                                                .ToString("N2")))
-                                        }
-                                    </MudText>
-                            </MudText>
-                            
-                            <MudText Typo="Typo.caption" Align="Align.End" Class="mt-0">
-                                <span>@(_disabledSelect ? "Total Retenciones Agregadas:" : "Total Métodos Agregados:")</span>
-                                <MudText Typo="Typo.subtitle1" Style="font-weight:bold;" Inline="true">
-                                    @if (SelectedDocuments.Any(x => _ConceptNameList.Contains(x.ConceptName)))
+                            @* --- TOTAL --- *@
+                            <MudText Typo="Typo.caption" Align="Align.End" Style="font-size: 12px;">
+                                <span>Total: </span>
+                                <MudText Typo="Typo.caption" Style="font-weight: bold; font-size: 12px;" Inline="true">
+                                    @if (_panelContent != null)
                                     {
-                                        @(string.Concat("Bs. ", PaymentList.ToList().Sum(x => x.AmountBs ?? 0).ToString("N2")))
-                                    }
-                                    else
-                                    {
-                                        @(string.Concat("$ ", PaymentList.ToList().Sum(x => x.Amount ?? 0).ToString("N2")))
-                                    }
+                                        var totalSum = isBs
+                                            ? _panelContent.Sum(x => (x.PaidAmountBs ?? 0) > 0 ? x.PaidAmountBs.Value : (x.AmountBs ?? 0))
+                                            : _panelContent.Sum(x => (x.PaidAmount ?? 0) > 0 ? x.PaidAmount.Value : (x.Amount ?? 0));
 
+                                        @($"{currencySymbol} {totalSum:N2}")
+                                    }
                                 </MudText>
                             </MudText>
-                            
-                            <MudText Typo="Typo.caption" Style="color: #a1231b" Align="Align.End" Class="mt-0">
-                                <span>Por Pagar:</span>
-                                <MudText Typo="Typo.h6" Style="color: #a1231b;font-weight:bold;" Inline="true">
-                                    @if (SelectedDocuments.Any(x => _ConceptNameList.Contains(x.ConceptName)))
-                                    {
-                                            @(string.Concat("Bs. ", (SelectedDocuments.ToList().Sum(x => (x.PaidAmountBs ?? 0) > 0 ? x.PaidAmountBs.Value : x.AmountBs ?? 0) -
-                                                                PaymentList.ToList().Sum(x => x.AmountBs ?? 0)).ToString("N2")))
+
+                            @* --- AGREGADO --- *@
+                            <MudText Typo="Typo.caption" Align="Align.End" Style="font-size: 12px;">
+                                <span>Agregado: </span>
+                                <MudText Typo="Typo.caption" Style="font-weight: bold; font-size: 12px;" Inline="true">
+                                    @{
+                                        var addedSum = isBs
+                                            ? PaymentList.Sum(x => x.AmountBs ?? 0)
+                                            : PaymentList.Sum(x => x.Amount ?? 0);
                                     }
-                                    else
-                                    {
-                                            @(string.Concat("$ ", (SelectedDocuments.ToList().Sum(x => (x.PaidAmount ?? 0) > 0 ? x.PaidAmount.Value : x.Amount ?? 0) -
-                                                                PaymentList.ToList().Sum(x => x.Amount ?? 0)).ToString("N2")))
-                                    }
-                                    
+                                    @($"{currencySymbol} {addedSum:N2}")
+                                </MudText>
+                            </MudText>
+
+                            @* --- POR PAGAR --- *@
+                            <MudText Typo="Typo.caption" Style="color: #a1231b; font-size: 12px;" Align="Align.End">
+                                <span>Por Pagar: </span>
+                                <MudText Typo="Typo.subtitle2" Style="color: #a1231b; font-weight: bold;" Inline="true">
+                                    @($"{currencySymbol} {CalculateOutstandingBalance():N2}")
                                 </MudText>
                             </MudText>
                         </MudStack>
-                            
                     </div>
 
+                    <MudButton StartIcon="@Icons.Material.Filled.Payments"
+                               Variant="Variant.Filled"
+                               Color="Color.Dark"
+                               Size="Size.Medium"
+                               FullWidth="true"
+                               IconColor="Color.Secondary"
+                               OnClick="OnClickProcessButton"
+                               Disabled="@(CalculateOutstandingBalance() != 0)">
+                        @(_disabledSelect ? "Reportar Retención" : "Reportar Pago")
+                    </MudButton>
                 </div>
-            </MudContainer>
-            <MudContainer Style="padding: 6px; padding-top: 0px;">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-0">
-                        <MudButton StartIcon="@Icons.Material.Filled.Payments"
-                                   Variant="Variant.Filled"
-                                   Color="Color.Dark"
-                                   Size="Size.Small"
-                                   IconColor="Color.Secondary"
-                                   FullWidth="true"
-                                   OnClick="OnClickProcessButton"
-                                   Disabled="@(CalculateOutstandingBalance() != 0)"
-                                   Class="mt-4">
-                            @(_disabledSelect ? "Reportar Retención" : "Reportar Pago")
-                        </MudButton>
-                </MudStack>
-            </MudContainer>
-
-        </MudPaper>
+            </MudPaper>
         }
-    </MudCardContent>
 
-    <NestedDialogCustom IsVisible="@_nestedVisible" 
-        Icon="@Icons.Material.Filled.Payments"
-        Success="@_successNested"
-                        onCloseNested="() => ClosedNested()"
-                        ErrorMessage="@_errorMessageNested"
-                        Title="@(_disabledSelect ? "Reportar Retención" : "Reportar Pago")" />
-</MudCard>
-
+        <NestedDialogCustom IsVisible="@_nestedVisible"
+                            Icon="@Icons.Material.Filled.Payments"
+                            Success="@_successNested"
+                            onCloseNested="() => ClosedNested()"
+                            ErrorMessage="@_errorMessageNested"
+                            Title="@(_disabledSelect ? "Reportar Retención" : "Reportar Pago")" />
+    </DialogContent>
+</MudDialog>
 @code {
     [Inject] private UserSession Session { get; set; } = null!;
-    [Parameter] public IEnumerable<AccountPreview> SelectedDocuments { get; set; } = new List<AccountPreview>();
     [Parameter] public int SelectedPaymentId { get; set; } = 0;
     [Parameter] public EventCallback OnClickCloseDetail { get; set; }
 
@@ -457,7 +317,7 @@
 
     private PaymentUpdate _model { get; set; } = new PaymentUpdate();
     private List<AccountPreview> _panelContent = new List<AccountPreview>();
-    private List<Payment> PaymentList  = new List<Payment>();
+    private List<Payment> PaymentList = new List<Payment>();
     private MudDatePicker _pickerDatePayment = new MudDatePicker();
     private List<SelectOption> PaymentTypeList = new List<SelectOption>();
     private List<SelectOption> CurrencyList = new List<SelectOption>();
@@ -469,9 +329,11 @@
     private SelectOption? selectedAccount = null;
     private double? _calculatedAmount = 0;
     private bool _isCurrencyLocked = false;
-    // private bool _isChanged = true;
     private bool _isLoading = true;
-    bool _hasRetention => SelectedDocuments.Any(x => x.ConceptName == "RETENCION IVA (75%)");
+    bool _hasRetention => _panelContent.Any(x => x.ConceptName == "RETENCION IVA (75%)");
+    private int SelectedCurrencyId { get; set; } = 0;
+    private DateTime SelectDateRate { get; set; } = DateTime.Now;
+
 
     private string _errorMessageNested = string.Empty;
     private bool _nestedVisible = false;
@@ -504,131 +366,123 @@
        .NotEmpty().WithMessage("Campo requerido")
        .Length(1, 20).WithMessage("Campo requerido entre 1-20 carácteres"));
 
-
     protected override async Task OnInitializedAsync()
     {
         _isLoading = true;
 
-        if (SelectedDocuments.Count() > 0)
-        {
-            _panelContent = SelectedDocuments.ToList();
-        }
-
+        // 1. Cargar las listas maestras de selección
         PaymentTypeList = await ModuleActionsService.GetPaymentSelectOption();
         CurrencyList = await ModuleActionsService.GetCurrencySelectOption();
         BankOriginList = await ModuleActionsService.GetBankOriginSelectOption();
         AccountList = await ModuleActionsService.GetBankAccountSelectOption(Session.SupplierId, selectedCurrency?.Value);
 
-        if (SelectedPaymentId != 0)
-        {
-            await GetDocuments();
-            await GetPayments();
-
-            // Buscamos el objeto exacto por ID en la lista cargada
-            var paymentArg = PaymentList.FirstOrDefault(x => x.Id == SelectedPaymentId);
-
-            if (paymentArg != null)
-            {
-                await OnPaymentEdit(paymentArg);
-            }
-        }
-        else
-        {
-            await CleanModel();
-        }
+        // 2. Consultar si existe un carrito pendiente para obtener el PaymentId dinámicamente
+        await FetchPendingCartAndLoadDetailsAsync();
 
         _isLoading = false;
         StateHasChanged();
     }
 
-    private async Task GetDocuments()
+    /// <summary>
+    /// Consulta el carrito pendiente del usuario, obtiene el PaymentId activo y carga sus documentos y pagos asociados.
+    /// </summary>
+    private async Task FetchPendingCartAndLoadDetailsAsync()
     {
-        SelectedDocuments = new List<AccountPreview>();
-        _panelContent = new List<AccountPreview>();
-
-        var serviceResponse = await PaymentService.GetAccountByPayment(Session.UserId, SelectedPaymentId);
-        if (serviceResponse.Processed)
+        try
         {
-            SelectedDocuments = serviceResponse.Data;
-            if (SelectedDocuments.Count() > 0)
+            var cartResponse = await PaymentService.GetPendingCart(Session.UserId, Session.DealerId);
+
+            if (cartResponse != null && cartResponse.Processed && cartResponse.Data != null && cartResponse.Data.Any())
             {
-                _panelContent = SelectedDocuments.ToList();
-                _IsAmountBS = SelectedDocuments.Any(x => _ConceptNameList.Contains(x.ConceptName)) ? true : false;
+                var pendingCart = cartResponse.Data.FirstOrDefault();
 
-                // 2. Evaluamos el bloqueo con la nueva variable
-                _isCurrencyLocked = SelectedDocuments.Any(x => _ConceptNameList.Contains(x.ConceptName));
-
-                if (_isCurrencyLocked)
+                if (pendingCart != null && pendingCart.PaymentId.HasValue && pendingCart.PaymentId.Value > 0)
                 {
-                    // Forzamos la selección visual a Bolívares
-                    selectedCurrency = CurrencyList.FirstOrDefault(p => p.Text.ToUpper() == "BS - BOLIVAR");
-                    if (selectedCurrency != null)
-                    {
-                        _model.CurrencyId = selectedCurrency.Value;
-                    }
-                }
+                    SelectedPaymentId = pendingCart.PaymentId.Value;
+                    SelectedCurrencyId = pendingCart.CurrencyId.Value;
+                    SelectDateRate = pendingCart.DateRate ?? DateTime.Now;
 
-                await Task.Delay(20);
+                }
+            }
+
+            // 3. Si se obtuvo un PaymentId válido del carrito pendiente (o se pasó por parámetro)
+            if (SelectedPaymentId > 0)
+            {
+                await GetDocuments(SelectedPaymentId);
+                await GetPayments(SelectedPaymentId);
+
+                var paymentArg = PaymentList.FirstOrDefault(x => x.Id == SelectedPaymentId || x.PaymentId == SelectedPaymentId);
+                if (paymentArg != null)
+                {
+                    await OnPaymentEdit(paymentArg);
+                }
+                else
+                {
+                    await CleanModel();
+                }
             }
             else
             {
-                _isCurrencyLocked = false;
+                await CleanModel();
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessageNested = $"Error consultando carrito pendiente: {ex.Message}";
+            _successNested = false;
+            OpenNested();
+        }
+    }
+
+    private async Task GetDocuments(int paymentId)
+    {
+        var serviceResponse = await PaymentService.GetAccountByPayment(Session.UserId, paymentId);
+
+        // Mantenemos la referencia de la lista local limpiando y agregando directamente desde la BD
+        _panelContent.Clear();
+
+        if (serviceResponse.Processed && serviceResponse.Data != null)
+        {
+            _panelContent.AddRange(serviceResponse.Data);
+
+            if (_panelContent.Any())
+            {
+                await Task.Delay(20);
             }
         }
 
         StateHasChanged();
     }
 
-    private async Task GetPayments()
+    private async Task GetPayments(int paymentId)
     {
+        var serviceResponse = await PaymentService.GetPaymentDetails(Session.UserId, paymentId);
 
-        PaymentList = new List<Payment>();
+        // Mantenemos la misma referencia de lista limpiando y agregando
+        PaymentList.Clear();
 
-        var serviceResponse = await PaymentService.GetPaymentDetails(Session.UserId, SelectedPaymentId);
-        if (serviceResponse.Processed)
+        if (serviceResponse.Processed && serviceResponse.Data != null)
         {
-
-            PaymentList = serviceResponse.Data.ToList();
+            PaymentList.AddRange(serviceResponse.Data);
             await Task.Delay(20);
+        }
 
-        }
-        if (PaymentList.Count <= 0)
+        if (!PaymentList.Any())
         {
-            await OnClickCloseButton();
-            return;
+            await CleanModel();
         }
-        CleanModel().Wait(20);
 
         StateHasChanged();
-        Task.CompletedTask.Wait();
     }
 
-    private async Task OnExpandedChanged(bool expanded)
-    {
-        _isExpanded = expanded;
-        if (_isExpanded)
-        {
-            await Task.Delay(150);
-            _panelContent = SelectedDocuments.ToList();
-        }
-        else
-        {
-            Task.Delay(150).ContinueWith(t => _panelContent = new List<AccountPreview>()).CatchAndLog();
-        }
-        StateHasChanged();
-    }
+   
 
     private async Task OnClickCloseButton()
     {
-        CleanModel().Wait(20);
+        await CleanModel();
 
-        if (SelectedDocuments.Count() > 0)
-        {
-            SelectedDocuments = new List<AccountPreview>();
-            _panelContent = new List<AccountPreview>();
-        }
-
-
+        // Limpiamos la lista local del panel sin reasignar la instancia
+        _panelContent.Clear();
 
         await OnClickCloseDetail.InvokeAsync();
         StateHasChanged();
@@ -636,17 +490,13 @@
 
     private async Task OnClickCancelButton()
     {
-
         await CleanModel();
-
         _isReadOnly = false;
-
         StateHasChanged();
     }
 
     private async Task OnClickProcessButton()
     {
-
         var option = new DialogOptions
         {
             CloseButton = false,
@@ -654,24 +504,26 @@
             FullWidth = true,
             BackdropClick = false
         };
+
         bool? confir = await DialogService.ShowMessageBox(
             "Procesar Pago",
-            $"Seguro de Procesar? ",
+            "¿Seguro de Procesar?",
             yesText: "Si", noText: "No", "", option);
 
         if (confir == true)
         {
             Payment arg = PaymentList.FirstOrDefault() ?? new Payment();
-            List<PostAction> ActionList = new List<PostAction>();
-            var _Action = new PostAction
+            List<PostAction> ActionList = new List<PostAction>
             {
-                RecordId = arg.PaymentId,
-                ModuleId = 0,
-                ActionName = "PROCESS",
-                ActionComment = "Procesar Pago",
-                RelatedId = 0
+                new PostAction
+                {
+                    RecordId = arg.PaymentId > 0 ? arg.PaymentId : SelectedPaymentId,
+                    ModuleId = 0,
+                    ActionName = "PROCESS",
+                    ActionComment = "Procesar Pago",
+                    RelatedId = 0
+                }
             };
-            ActionList.Add(_Action);
 
             var serviceResponse = await PaymentService.PaymentsActions(ActionList, Session.UserId);
             if (serviceResponse.Processed)
@@ -679,7 +531,7 @@
                 PaymentList = new List<Payment>();
                 _successNested = true;
                 _errorMessageNested = serviceResponse.Message ?? MessageEnum.ProcessNotOK.GetStringValue();
-                OnClickCloseButton();
+                await OnClickCloseButton();
             }
             else
             {
@@ -687,16 +539,13 @@
                 _errorMessageNested = serviceResponse.Message ?? MessageEnum.ProcessNotOK.GetStringValue();
             }
             OpenNested();
-            
         }
 
         StateHasChanged();
-        await Task.CompletedTask;
     }
 
     private async Task OnClickAttachamentButton()
     {
-
         if (_model.Id == 0)
         {
             _errorMessageNested = "Debe guardar el método de pago antes de agregar un comprobante.";
@@ -707,8 +556,7 @@
 
         DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = false, NoHeader = true };
         var parameters = new DialogParameters<PaymentFilesDialog> { { x => x.Title, "Agregar Comprobantes" }, { x => x.IdPayment, _model.Id.ToString() } };
-        var dialog = await DialogService.ShowAsync<PaymentFilesDialog>("Agregar Comprobantes", parameters, options);
-
+        await DialogService.ShowAsync<PaymentFilesDialog>("Agregar Comprobantes", parameters, options);
 
         StateHasChanged();
     }
@@ -721,52 +569,34 @@
         {
             _errorMessageNested = "";
 
-            if (_model.Id == 0 && SelectedPaymentId == 0)
-            {
-                _model.Settlements = SelectedDocuments.Select(d => new DocumentUpdate()
-                {
-                    DocumentId = d.Id,
-                    DateRate = d.DateRate ?? DateTime.Now,
-                    Rate = d.Rate ?? 0,
-
-                }).ToList();
-
-            }
-            else
-            {
-                _model.Settlements = new List<DocumentUpdate>();
-            }
-
             var serviceResponse = await PaymentService.CreatePayment(_model, Session.UserId);
             if (serviceResponse.Processed)
             {
                 if (serviceResponse.Data != null)
                 {
-                    if (SelectedPaymentId == 0)
-                    {
-                        SelectedPaymentId = serviceResponse.Data.LastId;
-                    }
+                  
 
-                    GetPayments().Wait(20);
-                    GetDocuments().Wait(20);
+                    // 1. Refrescar la lista de pagos actualizados desde el backend
+                    await GetPayments(SelectedPaymentId);
 
-                    // CleanModel().Wait(20);
+                    // 2. Refrescar los documentos asociados (por si cambiaron montos pendientes)
+                    await GetDocuments(SelectedPaymentId);
+
+                    // 3. Limpiar el formulario para permitir ingresar un nuevo pago si se requiere
+                    await CleanModel();
+
                     StateHasChanged();
-                    await Task.CompletedTask;
                 }
             }
             else
             {
                 _successNested = false;
                 _errorMessageNested = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue();
-
                 OpenNested();
             }
         }
 
         StateHasChanged();
-        await Task.CompletedTask;
-
     }
 
     private async Task OnPaymentEdit(Payment arg)
@@ -779,22 +609,17 @@
         _disabledRetencion = true;
         _disabledSelect = false;
 
-        // 4. Aseguramos el estado de bloqueo al editar el registro
-        _isCurrencyLocked = SelectedDocuments.Count(x => _ConceptNameList.Contains(x.ConceptName)) > 0;
+        // Se removió el bloqueo condicional de moneda (_isCurrencyLocked).
+        // Ahora la moneda se carga directamente de forma informativa según el registro/PendingCart.
 
-        if (_isCurrencyLocked)
-        {
-            selectedCurrency = CurrencyList.FirstOrDefault(p => p.Text.ToUpper() == "BS - BOLIVAR");
-        }
-
-        if (SelectedDocuments.Where(x => x.ConceptName.Trim() == "RETENCION IVA (75%)").Count() > 0)
+        if (_panelContent.Any(x => x.ConceptName.Trim() == "RETENCION IVA (75%)"))
         {
             selectedPaymentType = PaymentTypeList.FirstOrDefault(p => p.Text.ToUpper() == "RETENCION");
             _disabledRetencion = false;
             _disabledSelect = true;
         }
 
-        await OnCurrencyTypeChanged(selectedCurrency?.Value);
+        await OnCurrencyTypeChanged();
 
         if (arg.TypeName.ToUpper() == "TRANSFERENCIA")
         {
@@ -809,14 +634,14 @@
 
         _model = new PaymentUpdate()
         {
-            TypeId = selectedPaymentType != null ? selectedPaymentType.Value : null,
-            CurrencyId = selectedCurrency != null ? selectedCurrency.Value : null,
-            BankOriginId = selectedBankOrigin != null ? selectedBankOrigin.Value : null,
-            AccountId = selectedAccount != null ? selectedAccount.Value : null,
+            TypeId = selectedPaymentType?.Value,
+            CurrencyId = SelectedCurrencyId,
+            BankOriginId = selectedBankOrigin?.Value,
+            AccountId = selectedAccount?.Value,
             Date = arg.Date,
             Reference = string.IsNullOrWhiteSpace(arg.Reference) ? null : arg.Reference,
             Amount = selectedCurrency != null && selectedCurrency.Text.ToUpper() == "BS - BOLIVAR" ? arg.AmountBs : arg.Amount,
-            PaymentId = arg.PaymentId,
+            PaymentId = SelectedPaymentId,
             Id = arg.Id,
             SupplierId = arg.SupplierId,
             DealerId = arg.DealerId,
@@ -838,38 +663,38 @@
             FullWidth = true,
             BackdropClick = false
         };
+
         bool? confir = await DialogService.ShowMessageBox(
             "Eliminar Pago",
-            $"Seguro de Eliminar? ",
+            "¿Seguro de Eliminar?",
             yesText: "Si", noText: "No", "", option);
 
         if (confir == true)
         {
-
-            List<PostAction> ActionList = new List<PostAction>();
-            var _Action = new PostAction
+            List<PostAction> ActionList = new List<PostAction>
+        {
+            new PostAction
             {
                 RecordId = arg.Id,
                 ModuleId = 0,
                 ActionName = "DEACTIVATE",
                 ActionComment = "Eliminar Detalle Pago",
                 RelatedId = arg.PaymentId
-            };
-            ActionList.Add(_Action);
+            }
+        };
 
             var serviceResponse = await PaymentService.DeletePaymentDetails(ActionList, Session.UserId);
             if (serviceResponse.Processed)
             {
-                
+               
+                // Refrescar pagos y documentos
+                await GetPayments(SelectedPaymentId);
+                await GetDocuments(SelectedPaymentId);
 
-                if (SelectedPaymentId == arg.Id)
-                {
-                    SelectedPaymentId = PaymentList.Where(x => x.Id != arg.Id).FirstOrDefault()?.Id ?? 0;
-                }
+                // Limpiar el formulario de edición
+                await CleanModel();
 
-                GetPayments().Wait(20);
                 StateHasChanged();
-                await Task.CompletedTask;
             }
             else
             {
@@ -878,7 +703,64 @@
                 OpenNested();
             }
         }
+    }
 
+    private async Task OnDeleteDocument(AccountPreview doc)
+    {
+        var option = new DialogOptions
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            BackdropClick = false
+        };
+
+        bool? confir = await DialogService.ShowMessageBox(
+            "Eliminar Documento",
+            "¿Desea remover este documento del pago?",
+            yesText: "Si", noText: "No", "", option);
+
+        if (confir == true)
+        {
+            List<PostAction> actionList = new List<PostAction>
+        {
+            new PostAction
+            {
+                RecordId = doc.Id,
+                ModuleId = 0,
+                ActionName = "DEACTIVATE",
+                ActionComment = "Eliminar Documento/Settlement del Pago",
+                RelatedId = SelectedPaymentId
+            }
+        };
+
+            var serviceResponse = await PaymentService.DeleteSettlements(actionList, Session.UserId);
+            if (serviceResponse.Processed)
+            {
+                // 1. Refrescar los documentos desde la BD directamente a _panelContent
+                await GetDocuments(SelectedPaymentId);
+
+                // 2. Refrescar la lista de pagos en caso de reajustes en los saldos
+                await GetPayments(SelectedPaymentId);
+
+                // 3. Evaluar la cantidad restante sobre _panelContent
+                if (!_panelContent.Any())
+                {
+                    await OnClickCloseButton();
+                }
+                else
+                {
+                    await CleanModel();
+                    StateHasChanged();
+                }
+            }
+            else
+            {
+                _successNested = false;
+                _errorMessageNested = serviceResponse.Message ?? MessageEnum.DeleteNotOK.GetStringValue();
+                OpenNested();
+            }
+        }
     }
 
     private async Task CleanModel()
@@ -891,52 +773,42 @@
         _disabledRetencion = true;
         _disabledSelect = false;
 
-        // 3. Evaluamos si el limpiar modelo debe mantener la moneda bloqueada en BS
-        _isCurrencyLocked = SelectedDocuments.Count(x => _ConceptNameList.Contains(x.ConceptName)) > 0;
+       
+        selectedAccount = null;
+        selectedBankOrigin = null;
 
-        if (_isCurrencyLocked)
-        {
-            selectedCurrency = CurrencyList.FirstOrDefault(p => p.Text.ToUpper() == "BS - BOLIVAR");
-        }
-
-        if (SelectedDocuments.Where(x => x.ConceptName.Trim() == "RETENCION IVA (75%)").Count() > 0)
+         if (_panelContent.Any(x => x.ConceptName.Trim() == "RETENCION IVA (75%)"))
         {
             selectedPaymentType = PaymentTypeList.FirstOrDefault(p => p.Text.ToUpper() == "RETENCION");
             _disabledRetencion = false;
             _disabledSelect = true;
         }
 
-        if (SelectedDocuments.Where(x => x.TypeName.Trim() == "PROFORMA").Count() > 0)
-        {
-            selectedCurrency = CurrencyList.FirstOrDefault(p => p.Text.ToUpper() == "$ - DOLAR");
-            _isCurrencyLocked=true;
-        }
-
-        selectedAccount = null;
-        selectedBankOrigin = null;
         _model = new PaymentUpdate()
         {
-            TypeId = selectedPaymentType != null ? selectedPaymentType.Value : null,
-            CurrencyId = selectedCurrency != null ? selectedCurrency.Value : null,
+            TypeId = selectedPaymentType?.Value,
+            CurrencyId = SelectedCurrencyId,
             AccountId = null,
             BankOriginId = null,
             SupplierId = Session.SupplierId,
             DealerId = Session.DealerId,
         };
 
-        await OnCurrencyTypeChanged(selectedCurrency?.Value);
+       
+
+        await OnCurrencyTypeChanged();
 
         if (SelectedPaymentId != 0)
         {
-            _model.Date = PaymentList.FirstOrDefault()?.DateRate ?? DateTime.Now;
-            _model.PaymentId = PaymentList.FirstOrDefault()?.PaymentId ?? 0;
+            _model.Date = SelectDateRate;
+            _model.PaymentId = PaymentList.FirstOrDefault()?.PaymentId ?? SelectedPaymentId;
         }
         else
         {
-            _model.Date = DateTime.Now;
+            _model.Date = SelectDateRate;
             _model.PaymentId = 0;
 
-            if (_panelContent.Count() > 0)
+            if (_panelContent.Any())
             {
                 _model.Date = _panelContent.Where(x => x.DateRate != null).FirstOrDefault()?.DateRate ?? DateTime.Now;
             }
@@ -946,38 +818,39 @@
         StateHasChanged();
     }
 
-
     private double CalculateOutstandingBalance()
     {
+        if (_panelContent == null || !_panelContent.Any())
+            return 0;
+
         double balance = 0;
-    
-        if (SelectedDocuments.Any(x => _ConceptNameList.Contains(x.ConceptName)))
+
+        // SelectedCurrencyId == 1 -> Bolívares (Bs)
+        if (SelectedCurrencyId == 1)
         {
-            balance = SelectedDocuments.Sum(x => (x.PaidAmountBs ?? 0) > 0 ? x.PaidAmountBs.Value : x.AmountBs ?? 0) - PaymentList.Sum(x => x.AmountBs ?? 0);
+            double totalBs = _panelContent.Sum(x => (x.PaidAmountBs ?? 0) > 0 ? x.PaidAmountBs.Value : (x.AmountBs ?? 0));
+            double addedBs = PaymentList?.Sum(x => x.AmountBs ?? 0) ?? 0;
+
+            balance = totalBs - addedBs;
         }
+        // Cualquier otra moneda (SelectedCurrencyId == 2 o distinto de 1) -> Dólares ($)
         else
         {
-            balance = SelectedDocuments.Sum(x => (x.PaidAmount ?? 0) > 0 ? x.PaidAmount.Value : x.Amount ?? 0) - PaymentList.Sum(x => x.Amount ?? 0);
+            double totalUsd = _panelContent.Sum(x => (x.PaidAmount ?? 0) > 0 ? x.PaidAmount.Value : (x.Amount ?? 0));
+            double addedUsd = PaymentList?.Sum(x => x.Amount ?? 0) ?? 0;
+
+            balance = totalUsd - addedUsd;
         }
-    
+
         return Math.Round(balance, 2);
     }
 
-    private async Task OnCurrencyTypeChanged(int? newValue)
+    private async Task OnCurrencyTypeChanged()
     {
-        _model.CurrencyId = newValue;
+        _model.CurrencyId = SelectedCurrencyId;
+        selectedCurrency = CurrencyList.FirstOrDefault(item => item.Value == SelectedCurrencyId);
 
-        selectedCurrency = null;
-        foreach (var item in CurrencyList)
-        {
-            if (item.Value == newValue)
-            {
-                selectedCurrency = item;
-                break;
-            }
-        }
-
-        if(selectedCurrency != null)
+        if (selectedCurrency != null)
         {
             AccountList = await ModuleActionsService.GetBankAccountSelectOption(Session.SupplierId, selectedCurrency.Value);
             selectedAccount = null;
@@ -987,70 +860,36 @@
         {
             AccountList = new List<SelectOption>();
         }
-        
-        StateHasChanged();
 
+        StateHasChanged();
     }
 
     private async Task OnPayTypeChanged(int? newValue)
     {
-
         _model.TypeId = newValue;
-
-        selectedPaymentType = null;
-        foreach (var item in PaymentTypeList)
-        {
-            if (item.Value == newValue)
-            {
-                selectedPaymentType = item;
-                break;
-            }
-        }
+        selectedPaymentType = PaymentTypeList.FirstOrDefault(item => item.Value == newValue);
         StateHasChanged();
-
     }
 
     private async Task OnBankOriginChanged(int? newValue)
     {
         _model.BankOriginId = newValue;
-
-        selectedBankOrigin = null;
-        foreach (var item in BankOriginList)
-        {
-            if (item.Value == newValue)
-            {
-                selectedBankOrigin = item;
-                break;
-            }
-        }
+        selectedBankOrigin = BankOriginList.FirstOrDefault(item => item.Value == newValue);
         StateHasChanged();
-
     }
 
     private async Task OnAccountBankChanged(int? newValue)
     {
         _model.AccountId = newValue;
-
-        selectedAccount = null;
-        foreach (var item in AccountList)
-        {
-            if (item.Value == newValue)
-            {
-                selectedAccount = item;
-                break;
-            }
-        }
+        selectedAccount = AccountList.FirstOrDefault(item => item.Value == newValue);
         StateHasChanged();
     }
 
     private void AfterValueChangeAmount()
     {
-        _calculatedAmount = (SelectedDocuments.ToList().Sum(x => x.Amount ?? 0)) - (_model.Amount ?? 0);
-        
-        // _isChanged = false;
+        _calculatedAmount = (_panelContent.Sum(x => x.Amount ?? 0)) - (_model.Amount ?? 0);
         StateHasChanged();
     }
-
 
     private void OpenNested()
     {
@@ -1062,12 +901,11 @@
     {
         _nestedVisible = false;
         StateHasChanged();
-        
-        if (PaymentList.Count < 0)
+
+        if (PaymentList.Count == 0)
         {
             await OnClickCloseButton();
         }
-        
     }
 
     private void RefreshTotals()
@@ -1077,49 +915,40 @@
 
     public class SelectValidator<T> : AbstractValidator<T>
     {
-
         public SelectValidator(Action<IRuleBuilderInitial<T, T>> rule)
         {
             rule(RuleFor(x => x));
         }
 
-
         private IEnumerable<string> ValidateValue(T arg)
         {
             var result = Validate(arg);
             if (result.IsValid)
-                return new string[0];
+                return Enumerable.Empty<string>();
             return result.Errors.Select(e => e.ErrorMessage);
         }
 
         public Func<T, IEnumerable<string>> Validation => ValidateValue;
-
     }
 
-    /// <summary>
-    /// Validacion del formulario
-    /// </summary>
-    /// <typeparam name="PaymentUpdate"></typeparam>
     public class PaymentValidator : AbstractValidator<PaymentUpdate>
     {
         public PaymentValidator()
         {
-
             RuleFor(x => x.Amount)
              .NotNull().WithMessage("Campo requerido.")
              .Custom((value, context) =>
              {
                  double number;
-                 if (!double.TryParse(value.ToString(), out number))
+                 if (!double.TryParse(value?.ToString(), out number))
                  {
-                     context.AddFailure($"Campo requerido solo digitos [0-9]");
+                     context.AddFailure("Campo requerido solo digitos [0-9]");
                  }
              });
 
-
             RuleFor(x => x.Reference)
              .NotEmpty().WithMessage("Campo requerido.")
-              .Length(4, 16).WithMessage("El campo debe tener entre 4 y 40 caracteres.");
+             .Length(4, 16).WithMessage("El campo debe tener entre 4 y 40 caracteres.");
 
             RuleFor(x => x.Date)
                 .NotEmpty().WithMessage("Campo requerido")
@@ -1130,7 +959,6 @@
                         context.AddFailure($"Campo requerido menor a la fecha actual {(DateTime.Now.ToString("dd-MMM-yyyy"))}");
                     }
                 });
-
 
             RuleFor(x => x.TypeId)
               .NotNull().WithMessage("Campo requerido.")
@@ -1151,8 +979,6 @@
                .NotNull().WithMessage("Campo requerido.")
                .NotEmpty().WithMessage("Campo requerido")
                .GreaterThan(0).WithMessage("Campo requerido.");
-
-         
         }
 
         public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
@@ -1162,7 +988,5 @@
                 return Array.Empty<string>();
             return result.Errors.Select(e => e.ErrorMessage);
         };
-
     }
-
 }

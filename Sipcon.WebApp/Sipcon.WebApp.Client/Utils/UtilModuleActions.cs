@@ -564,12 +564,12 @@ namespace Sipcon.WebApp.Client.Utils
             return _itemsSelect;
         }
 
-        public async Task<List<SelectOption>> GetDocumentTypeSelectOption()
+        public async Task<List<SelectOption>> GetDocumentTypeSelectOption(int selectcurrency)
         {
             List<SelectOption> _itemsSelect = new([]);
 
 
-            var moduleResponse = await PaymentService.GetDocumentType();
+            var moduleResponse = await PaymentService.GetDocumentType(selectcurrency);
             if (moduleResponse.Processed)
             {
                 List<DocumentType> _List = moduleResponse.Data ?? new List<DocumentType>();
@@ -600,12 +600,12 @@ namespace Sipcon.WebApp.Client.Utils
             return _itemsSelect;
         }
 
-        public async Task<List<SelectOption>> GetDocumentConceptSelectOption()
+        public async Task<List<SelectOption>> GetDocumentConceptSelectOption(int selectCurrency)
         {
             List<SelectOption> _itemsSelect = new([]);
 
 
-            var moduleResponse = await PaymentService.GetDocumentConceptsType();
+            var moduleResponse = await PaymentService.GetDocumentConceptsType(selectCurrency);
             if (moduleResponse.Processed)
             {
                 List<ConceptsType> _List = moduleResponse.Data ?? new List<ConceptsType>();

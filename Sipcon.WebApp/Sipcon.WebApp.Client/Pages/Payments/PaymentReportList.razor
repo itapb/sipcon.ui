@@ -1,6 +1,4 @@
-﻿@page "/paymentreport"
-
-@using System.Globalization
+﻿@using System.Globalization
 @using System.Text.Json
 @using Sipcon.WebApp.Client.Components.Payments
 @using Sipcon.WebApp.Client.Repository.Auth
@@ -14,8 +12,6 @@
 @implements IDisposable
 
 <PageTitle>Aseguramiento de Ingreso</PageTitle>
-
-<CustomBreadcrumbs mItems="ItemsNavigate"></CustomBreadcrumbs>
 
 <MudContainer MaxWidth="MaxWidth.False" Gutters="false" Class="mt-2">
     
@@ -434,12 +430,10 @@
                 <TemplateColumn StickyRight="true" HeaderClass="dt-center" CellClass="dt-center">
                     <CellTemplate>
                         <MudButtonGroup Size="@Size.Small" Variant="Variant.Text" Color="Color.Dark">
-                            @if (context.Item.StatusName != null &&
-                                                        (context.Item.StatusName.ToUpper() == "BORRADOR" ||
-                                                        (context.Item.StatusName.ToUpper() == "PARA APROBAR" && ItemsModules.Any(x => x.Text.ToUpper() == "APROBAR"))))
+                            @if (context.Item.StatusName != null && (context.Item.StatusName.ToUpper() == "PARA APROBAR" ))
                             {
                                 <MudIconButton Size="@Size.Small"
-                                               Icon="@Icons.Material.Outlined.Edit"
+                                               Icon="@Icons.Material.Outlined.Sync"
                                                OnClick="() => ClickEditPayment(context.Item)" />
                             }
                             <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.AttachFile" OnClick="() => OnClickAttachamentButton(context.Item)" />
@@ -482,20 +476,6 @@
     </MudCard>
 
 </MudContainer>
-
-@if (IdPaymentPreviewSelected > 0)
-{
-    @* **//Reportar Pago *@
-    <MudDrawerContainer Class="mud-height-full">
-        <MudDrawer @bind-Open="@_openDrawer" Width="950px" Anchor="Anchor.End" Elevation="1" Variant="@DrawerVariant.Temporary" OverlayAutoClose="false">
-    
-            <PaymentAccountDetail SelectedDocuments="@DocumentSelecteds" 
-                SelectedPaymentId="@IdPaymentPreviewSelected" 
-                OnClickCloseDetail="() => ClickClosedDrawer()">
-            </PaymentAccountDetail>
-    
-        </MudDrawer>
-    </MudDrawerContainer>
 }
 
 <NestedDialogCustom IsVisible="@NestedVisible"
@@ -552,7 +532,7 @@
     private SelectOption? SelectedStatus;
     private SelectOption? SelectedCurrency;
     private SelectOption? SelectedPayment;
-
+    private int moduleId;
 
     private Color GetTimelineColor(string status)
     {
@@ -578,6 +558,7 @@
     private async Task LoadDataAsync()  
     {
         ItemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, ModuleName);
+        moduleId = ItemsModules.FirstOrDefault()?.IdAction?? 0;
         StatusList = await ModuleActionsService.GetStatusByModule(Session.UserId, ModuleName);
         PaymentList = await ModuleActionsService.GetPaymentSelectOption();
         CurrencyList = await ModuleActionsService.GetCurrencySelectOption();
@@ -664,14 +645,35 @@
 
     private async Task ClickEditPayment(Payment args)
     {
-       
-            DocumentSelecteds = new List<AccountPreview>();
-            // IdPaymentPreviewSelected = args.PaymentId;
-            IdPaymentPreviewSelected = args.Id;
+        IdPaymentPreviewSelected = args.Id;
 
-            _openDrawer = !_openDrawer;
-        
-             StateHasChanged();
+        // Parámetros estrictamente necesarios para el modal
+        var parameters = new DialogParameters<PaymentSincDetail>
+            {
+                { x => x.PaymentDetailId, args.Id },
+                { x => x.PaymentId, args.PaymentId },
+                { x => x.ModuleId, moduleId }
+            };
+
+        // Opciones de configuración del diálogo
+        var options = new DialogOptions
+        {
+            CloseButton = true,
+            MaxWidth = MaxWidth.Large,
+            FullWidth = true,
+            BackdropClick = false,
+            CloseOnEscapeKey = true
+        };
+
+        // Abrir el modal de Matcheo Bancario
+        var dialog = await DialogService.ShowAsync<PaymentSincDetail>("Matcheo Bancario", parameters, options);
+        var result = await dialog.Result;
+
+        // Procesar respuesta tras cerrar el modal
+        if (!result.Canceled && result.Data != null)
+        {
+            await OnInitializedAsync();
+        }
     }
 
     private async Task OnClickAttachamentButton(Payment args)

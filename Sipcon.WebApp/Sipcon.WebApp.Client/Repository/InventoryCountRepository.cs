@@ -124,13 +124,13 @@
 
 
 
-        public async Task<ApiResponse<List<GetCountFull>>> GetInventoryCountDetails(int IdSupplier, int IdUser, int inventoryCountId, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "", int? EstatusId = null)
+        public async Task<ApiResponse<List<GetCountFull>>> GetInventoryCountDetailByZone(int IdSupplier, int IdUser, int inventoryCountId, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "", int? EstatusId = null)
         {
             ApiResponse<List<GetCountFull>>? result;
 
             try
             {
-                var url = $"api/InventoryCount/GetInventoryCountDetail?supplierId={IdSupplier}&userId={IdUser}&inventoryId={inventoryCountId}&rowFrom={RowFrom}";
+                var url = $"api/InventoryCount/GetInventoryCountDetailByZone?supplierId={IdSupplier}&userId={IdUser}&inventoryId={inventoryCountId}&rowFrom={RowFrom}";
                 url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
                 url = string.IsNullOrEmpty(DateFrom) ? url : $"{url}&fromDate={DateFrom}";
                 url = string.IsNullOrEmpty(DateTo) ? url : $"{url}&upToDate={DateTo}";
@@ -155,8 +155,45 @@
                 };
             }
 
+
             return result;
         }
+
+        public async Task<ApiResponse<List<GetInventoryCountDetail>>> GetInventoryCountDetail(int IdSupplier, int IdUser, int inventoryCountId, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "", int? EstatusId = null)
+        {
+            ApiResponse<List<GetInventoryCountDetail>>? result;
+
+            try
+            {
+                var url = $"api/InventoryCount/GetInventoryCountDetail?supplierId={IdSupplier}&userId={IdUser}&inventoryId={inventoryCountId}&rowFrom={RowFrom}";
+                url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
+                url = string.IsNullOrEmpty(DateFrom) ? url : $"{url}&fromDate={DateFrom}";
+                url = string.IsNullOrEmpty(DateTo) ? url : $"{url}&upToDate={DateTo}";
+                url = (EstatusId.HasValue) ? $"{url}&estatusId={EstatusId}" : url;
+
+                // Se cambia GetInventoryCountDetail por GetCountFull para que coincida con el JSON anidado
+                result = await _http.GetFromJsonAsync<ApiResponse<List<GetInventoryCountDetail>>>(url);
+
+                result = (result is null) ? new ApiResponse<List<GetInventoryCountDetail>>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<GetInventoryCountDetail>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+
+            return result;
+        }
+
 
         public async Task<ApiResponse<List<InventoryCountType>>> GetInventoryCountTypes(int IdUser)
         {

@@ -1,0 +1,365 @@
+﻿@using System.Text.Json
+@using Sipcon.WebApp.Client.Components.PaymentPortal
+@using Sipcon.WebApp.Client.Repository.Auth
+@using MudBlazor
+
+@inject IPaymentService PaymentService
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+@inject IJSRuntime JSRuntime
+@inject HubEventsService hubEventsService
+@implements IDisposable
+
+<PageTitle>Extracto Bancario</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.False" Gutters="false" Class="mt-2">
+
+    @* // Filtros *@
+    <MudCard Class="mt-4 pa-0">
+        <MudCardContent Style="padding-top: 0px;">
+
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mt-2">
+
+                @* 1. Solo Pendientes *@
+                <MudCheckBox T="bool"
+                             Value="IsOnlyPending"
+                             ValueChanged="@(async (value) => { IsOnlyPending = value; await ClickRefreshBankStatements(null!); })"
+                             Label="Solo Pendientes"
+                             Color="Color.Warning"
+                             Dense="true"
+                             Class="mr-2" />
+
+                @* 2. Fecha Desde *@
+                <MudDatePicker @ref="_picker"
+                               Date="_dateFrom"
+                               DateChanged="@(async (date) => { _dateFrom = date; await ClickRefreshBankStatements(null!); })"
+                               Style="font-size: 12px; line-height: 15px; min-width: 110px;"
+                               Adornment="Adornment.End"
+                               AdornmentColor="Color.Default"
+                               Class="align-right"
+                               Label="Desde"
+                               Placeholder="dd/MM/yyyy"
+                               Variant="Variant.Outlined"
+                               PickerVariant="PickerVariant.Inline"
+                               Margin="Margin.Dense"
+                               DateFormat="dd/MM/yyyy"
+                               AutoClose="true">
+                    <PickerActions>
+                        <MudButton Class="mr-auto align-self-start" OnClick="@(async () => { await _picker.ClearAsync(); _dateFrom = null; await ClickRefreshBankStatements(null!); })">Borrar</MudButton>
+                        <MudButton OnClick="@(() => _picker.CloseAsync(false))">Cancelar</MudButton>
+                    </PickerActions>
+                </MudDatePicker>
+
+                @* 3. Fecha Hasta *@
+                <MudDatePicker @ref="_pickerTo"
+                               Date="_dateTo"
+                               DateChanged="@(async (date) => { _dateTo = date; await ClickRefreshBankStatements(null!); })"
+                               Style="font-size: 12px; line-height: 15px; min-width: 110px;"
+                               Adornment="Adornment.End"
+                               AdornmentColor="Color.Default"
+                               Class="align-right"
+                               Label="Hasta"
+                               Placeholder="dd/MM/yyyy"
+                               Variant="Variant.Outlined"
+                               PickerVariant="PickerVariant.Inline"
+                               Margin="Margin.Dense"
+                               DateFormat="dd/MM/yyyy"
+                               AutoClose="true">
+                    <PickerActions>
+                        <MudButton Class="mr-auto align-self-start" OnClick="@(async () => { await _pickerTo.ClearAsync(); _dateTo = null; await ClickRefreshBankStatements(null!); })">Borrar</MudButton>
+                        <MudButton OnClick="@(() => _pickerTo.CloseAsync(false))">Cancelar</MudButton>
+                    </PickerActions>
+                </MudDatePicker>
+
+                @* Botón Buscar *@
+                <div class="d-flex justify-end">
+                    <MudButton StartIcon="@Icons.Material.Filled.Search"
+                               Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Style="margin: 11px;"
+                               Size="Size.Small"
+                               OnClick="ClickRefreshBankStatements">Buscar</MudButton>
+                </div>
+
+            </MudStack>
+
+        </MudCardContent>
+    </MudCard>
+
+    @* // Tabla de Extractos *@
+    <MudCard Class="mt-4 pa-0">
+        <MudDataGrid @ref="BankStatementsDataGrid"
+                     T="BankStatement"
+                     ServerData="LoadGridData"
+                     MultiSelection="false"
+                     SortMode="SortMode.Multiple"
+                     Filterable="true"
+                     FixedHeader Height="calc(92vh - 350px)"
+                     Hideable="true"
+                     Bordered="false"
+                     Dense="true"
+                     Loading="Loading"
+                     @bind-CurrentPage="BankStatementCurrentPage">
+
+            <ToolBarContent>
+                <MudTextField @bind-Value="SearchString"
+                              OnKeyUp="HandleKeyDownSearch"
+                              Variant="Variant.Filled"
+                              Placeholder="Buscar por referencia, descripción o monto..."
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Small"
+                              Style="font-size: 12px; line-height: 1px; max-width: 840px"
+                              Immediate="true"
+                              Typo="Typo.caption">
+                </MudTextField>
+                <MudSpacer />
+
+                <MudButton StartIcon="@Icons.Material.Filled.Download"
+                           Variant="Variant.Outlined"
+                           Size="Size.Small"
+                           OnClick="ExportItemsAsync"
+                           Class="mr-2">Exportar</MudButton>
+            </ToolBarContent>
+
+            <Columns>
+                @* 1. Fecha de Transacción *@
+                <TemplateColumn Title="Fecha" HeaderClass="dt-left no-wrap" CellClass="dt-center" CellStyle="white-space: nowrap; min-width: 120px;">
+                    <CellTemplate>
+                        <MudText Typo="Typo.caption">@(context.Item.TransactionDate.ToString("dd/MM/yyyy"))</MudText>
+                    </CellTemplate>
+                </TemplateColumn>
+
+                @* 2. Referencia *@
+                <TemplateColumn Title="Referencia" HeaderClass="dt-center" CellClass="dt-center">
+                    <CellTemplate>
+                        <MudText Typo="Typo.caption" Color="Color.Primary" Style="font-weight:bold;">@context.Item.Reference</MudText>
+                    </CellTemplate>
+                </TemplateColumn>
+
+
+                @* 4. Número de Cuenta *@
+                <PropertyColumn Title="Nro. Cuenta" Sortable="false" ShowFilterIcon="false" Property="x => x.BankAccount"
+                                HeaderClass="dt-left" CellClass="dt-left" CellStyle="white-space: nowrap; min-width: 180px;" />
+
+                @* 5. Monto *@
+                <TemplateColumn Title="Monto" HeaderClass="dt-right" CellClass="dt-right">
+                    <CellTemplate>
+                        <MudText Typo="Typo.caption" Style="font-weight:bold;">
+                            @context.Item.Amount.ToString("N2")
+                        </MudText>
+                    </CellTemplate>
+                </TemplateColumn>
+
+                <TemplateColumn Title="Estado" HeaderClass="dt-center" CellClass="dt-center" CellStyle="white-space: nowrap; width: 140px;">
+                    <CellTemplate>
+                        @{
+                            var estatusUpper = context.Item.Estatus?.ToUpper() ?? "";
+                            var chipColor = estatusUpper switch
+                            {
+                                "SINCRONIZADO" or "APROBADO" or "PROCESADO" => Color.Success,
+                                "PENDIENTE" or "EN REVISIÓN" => Color.Warning,
+                                "RECHAZADO" or "ERROR" or "CANCELADO" => Color.Error,
+                                _ => Color.Default
+                            };
+                        }
+                        <MudChip T="string"
+                                 Size="Size.Small"
+                                 Variant="Variant.Filled"
+                                 Color="@chipColor"
+                                 Class="ma-0"
+                                 Style="font-weight: 600; font-size: 11px;">
+                            @context.Item.Estatus
+                        </MudChip>
+                    </CellTemplate>
+                </TemplateColumn>
+
+               
+            </Columns>
+
+            <PagerContent>
+                <MudDataGridPager T="BankStatement" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Página" />
+            </PagerContent>
+        </MudDataGrid>
+    </MudCard>
+
+</MudContainer>
+
+<NestedDialogCustom IsVisible="@_nestedVisible"
+                    Icon="@Icons.Material.Filled.AccountBalance"
+                    Success="@_success"
+                    onCloseNested="() => _nestedVisible = false"
+                    ErrorMessage="@_nestedErrorMessage"
+                    Title="@("Extracto Bancario")" />
+
+
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
+
+    private MudDataGrid<BankStatement>? BankStatementsDataGrid;
+    private IEnumerable<BankStatement> _bankStatements = new List<BankStatement>();
+    private string _nestedErrorMessage = string.Empty;
+    private bool _nestedVisible;
+    private bool _success = false;
+    private int _rowsTotal = 0;
+    private int _rowCount = 0;
+    private string SearchString = string.Empty;
+    private bool Loading = true;
+    private int BankStatementCurrentPage = 0;
+    private string _moduleName = "PAGOS-ASEGURAMIENTO";
+
+    // Filtros de UI
+    private bool IsOnlyPending = false;
+    private DateTime? _dateFrom;
+    private DateTime? _dateTo;
+    private MudDatePicker _picker = null!;
+    private MudDatePicker _pickerTo = null!;
+
+    private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
+
+    private List<BreadcrumbItem> _itemsNavigate =
+    [
+        new("Home", href: "", icon: Icons.Material.Filled.Home),
+        new("Aseguramiento de Ingreso", href: "", icon: Icons.Material.Filled.Payments),
+        new("Extracto Bancario", href: "bank-statements", disabled: false, icon: Icons.Material.Filled.AccountBalance)
+    ];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+        hubEventsService.OnSupplierChanged += ReloadServerData;
+        _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
+    }
+
+    private async Task ReloadServerData()
+    {
+        if (BankStatementsDataGrid != null)
+            await BankStatementsDataGrid.ReloadServerData();
+    }
+
+    public void Dispose()
+    {
+        hubEventsService.OnSupplierChanged -= ReloadServerData;
+    }
+
+    private async Task<GridData<BankStatement>> LoadGridData(GridState<BankStatement> state)
+    {
+        Loading = true;
+        StateHasChanged();
+
+        _rowCount = state.Page * state.PageSize;
+
+        // Formateo de fechas para pasar como String (dd/MM/yyyy o yyyy-MM-dd según requerimiento API)
+        string strDateFrom = _dateFrom.HasValue ? _dateFrom.Value.ToString("yyyy-MM-dd") : string.Empty;
+        string strDateTo = _dateTo.HasValue ? _dateTo.Value.ToString("yyyy-MM-dd") : string.Empty;
+
+        // Consumo del método ajustado a la firma del backend
+        var serviceResponse = await PaymentService.GetBankStatements(
+            IdUser: Session.UserId,
+            Idsupplier: Session.SupplierId,
+            RowFrom: _rowCount,
+            Filter: SearchString,
+            DateFrom: strDateFrom,
+            DateTo: strDateTo,
+            Pending: IsOnlyPending
+        );
+
+        if (serviceResponse.Processed && serviceResponse.Data != null)
+        {
+            _bankStatements = serviceResponse.Data;
+            _rowsTotal = serviceResponse.Total;
+        }
+        else
+        {
+            _bankStatements = new List<BankStatement>();
+            _rowsTotal = 0;
+        }
+
+        Loading = false;
+        StateHasChanged();
+
+        return new GridData<BankStatement>
+        {
+            Items = _bankStatements,
+            TotalItems = _rowsTotal
+        };
+    }
+
+    private async Task ClickRefreshBankStatements(MouseEventArgs? args)
+    {
+        if (BankStatementsDataGrid != null)
+        {
+            await BankStatementsDataGrid.ReloadServerData();
+        }
+    }
+
+    private async Task HandleKeyDownSearch(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            if (SearchString.Length >= 3 || string.IsNullOrEmpty(SearchString))
+            {
+                await ClickRefreshBankStatements(null);
+            }
+        }
+    }
+
+    private async Task HandleOnClickRefresh()
+    {
+        SearchString = string.Empty;
+        _dateFrom = null;
+        _dateTo = null;
+        IsOnlyPending = false;
+        await ClickRefreshBankStatements(null);
+    }
+
+    private void OpenNested()
+    {
+        _nestedVisible = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleMenuClick(ModuleAction module)
+    {
+        switch (module.ActionName)
+        {
+            case "EXPORT":
+                await ExportItemsAsync();
+                break;
+            default:
+                Console.WriteLine($"{MessageEnum.ActionsError.GetStringValue()}: {module.ActionName}");
+                break;
+        }
+    }
+
+    private async Task ExportItemsAsync()
+    {
+        // string strDateFrom = _dateFrom.HasValue ? _dateFrom.Value.ToString("yyyy-MM-dd") : string.Empty;
+        // string strDateTo = _dateTo.HasValue ? _dateTo.Value.ToString("yyyy-MM-dd") : string.Empty;
+
+        // var serviceResponse = await PaymentService.ExportBankStatements(
+        //     Session.UserId,
+        //     Session.SupplierId,
+        //     SearchString,
+        //     strDateFrom,
+        //     strDateTo,
+        //     IsOnlyPending
+        // );
+
+        // if (serviceResponse.Processed)
+        // {
+        //     _success = true;
+        //     _nestedErrorMessage = "";
+        //     var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+        //     var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+        //     await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "ExtractoBancario.xlsx");
+        // }
+        // else
+        // {
+        //     _success = false;
+        //     _nestedErrorMessage = serviceResponse.Message ?? "Error al exportar los datos";
+        //     OpenNested();
+        // }
+    }
+}

@@ -72,12 +72,12 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<DocumentType>>> GetDocumentType()
+        public async Task<ApiResponse<List<DocumentType>>> GetDocumentType(int selectCurrency)
         {
             ApiResponse<List<DocumentType>>? result;
             try
             {
-                var resultlist = await _http.GetFromJsonAsync<ApiResponse<List<DocumentType>>>($"api/Payment/GetDocumentTypes");
+                var resultlist = await _http.GetFromJsonAsync<ApiResponse<List<DocumentType>>>($"api/Payment/GetDocumentTypes?currencyId={selectCurrency}");
 
                 result = (resultlist is null) ? new ApiResponse<List<DocumentType>>()
                 {
@@ -134,12 +134,12 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<ConceptsType>>> GetDocumentConceptsType()
+        public async Task<ApiResponse<List<ConceptsType>>> GetDocumentConceptsType(int selectCurrency)
         {
             ApiResponse<List<ConceptsType>>? result;
             try
             {
-                var resultlist = await _http.GetFromJsonAsync<ApiResponse<List<ConceptsType>>>($"api/Payment/GetDocumentConcepts");
+                var resultlist = await _http.GetFromJsonAsync<ApiResponse<List<ConceptsType>>>($"api/Payment/GetDocumentConcepts?currencyId={selectCurrency}");
 
                 result = (resultlist is null) ? new ApiResponse<List<ConceptsType>>()
                 {
@@ -308,6 +308,43 @@
 
         }
 
+
+        public async Task<ApiResponse<List<BankStatement>>> GetBankStatements(int IdUser, int Idsupplier, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "",Boolean? Pending=false, int? AccountId = 0)
+        {
+            ApiResponse<List<BankStatement>>? result;
+
+            try
+            {
+                var url = $"api/Payment/GetBankStatement?userId={IdUser}&supplierId={Idsupplier}&rowfrom={RowFrom}";
+                url = string.IsNullOrEmpty(Filter) ? url : $"{url}&filter={Filter}";
+                url = string.IsNullOrEmpty(DateFrom) ? url : $"{url}&fromDate={DateFrom}";
+                url = string.IsNullOrEmpty(DateTo) ? url : $"{url}&upToDate={DateTo}";
+                url = (Pending.HasValue) ? $"{url}&pending={Pending}" : url;
+                url = (AccountId.HasValue) ? $"{url}&accountId={AccountId}" : url;
+
+
+                result = await _http.GetFromJsonAsync<ApiResponse<List<BankStatement>>>(url);
+
+                result = (result is null) ? new ApiResponse<List<BankStatement>>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<BankStatement>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+
+        }
+
         public async Task<ApiResponse<List<PaymentResumen>>> GetPaymentsStatusResumen(int IdUser, int Idsupplier, int? IdDealer, string Filter = ""
                     , string DateFrom = "", string DateTo = "", int? EstatusId = null, int? CurrencyId = null
                     , int? PaymentId = null)
@@ -336,6 +373,36 @@
             catch (Exception ex)
             {
                 result = new ApiResponse<List<PaymentResumen>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+
+        }
+
+        public async Task<ApiResponse<List<PendingCart>>> GetPendingCart(int IdUser, int? IdDealer)
+        {
+            ApiResponse<List<PendingCart>>? result;
+            try
+            {
+                var url = $"api/Payment/GetPendingCart?userId={IdUser}&DealerId={IdDealer}";
+             
+
+                result = await _http.GetFromJsonAsync<ApiResponse<List<PendingCart>>>(url);
+
+                result = (result is null) ? new ApiResponse<List<PendingCart>>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<PendingCart>>()
                 {
                     Processed = false,
                     Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
@@ -407,6 +474,37 @@
 
         }
 
+        public async Task<ApiResponse<List<Payment>>> GetOnePaymentDetail(int IdUser, int? IdPaymentDetail, int RowFrom = 0)
+        {
+            ApiResponse<List<Payment>>? result;
+            try
+            {
+                var url = $"api/Payment/GetOnePaymentDetail?userId={IdUser}&rowfrom={RowFrom}";
+                url = (IdPaymentDetail.HasValue) ? $"{url}&paymentDetailId={IdPaymentDetail}" : url;
+
+                result = await _http.GetFromJsonAsync<ApiResponse<List<Payment>>>(url);
+
+                result = (result is null) ? new ApiResponse<List<Payment>>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<Payment>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+
+        }
+
+        
 
         public async Task<ApiResponse<ActionResult>> PaymentsActions(List<PostAction> PostActions, int IdUser)
         {
@@ -415,6 +513,34 @@
             try
             {
                 var response = await _http.PostAsJsonAsync($"api/Payment/PostActions?userId={IdUser}", PostActions);
+
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = "El servidor devolvió una respuesta vacía."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+            return result;
+
+        }
+
+        public async Task<ApiResponse<ActionResult>> PostBankStatementActions(List<PostAction> PostActions, int IdUser)
+        {
+            ApiResponse<ActionResult>? result;
+            List<PostAction> PostActionList = ([]);
+            try
+            {
+                var response = await _http.PostAsJsonAsync($"api/Payment/PostBankStatementActions?userId={IdUser}", PostActions);
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
@@ -560,10 +686,55 @@
         public async Task<ApiResponse<ActionResult>> CreatePayment(PaymentUpdate Payment, int IdUser)
         {
             ApiResponse<ActionResult>? result;
-            
+
             try
             {
-                var response = await _http.PostAsJsonAsync($"api/Payment/PostPayment?userId={IdUser}", Payment);
+                // Conversion manual creando el objeto con la estructura y formato exacto
+                var payload = new
+                {
+                    id = Payment.Id,
+                    paymentId = Payment.PaymentId,
+                    date = Payment.Date?.ToString("yyyy-MM-dd"), // "2026-09-01"
+                    amount = Payment.Amount,
+                    currencyId = Payment.CurrencyId,
+                    typeId = Payment.TypeId,
+                    reference = Payment.Reference,
+                    accountId = Payment.AccountId,
+                    dealerId = Payment.DealerId,
+                    supplierId = Payment.SupplierId,
+                    bankOriginId = Payment.BankOriginId
+                };
+
+                var response = await _http.PostAsJsonAsync($"api/Payment/PostPayment?userId={IdUser}", payload);
+
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = "El servidor devolvió una respuesta vacía."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+        }
+
+
+        public async Task<ApiResponse<ActionResult>> PostAddCart(DocumentUpdate settlements, int IdUser)
+        {
+            ApiResponse<ActionResult>? result;
+
+            try
+            {
+                var response = await _http.PostAsJsonAsync($"api/Payment/PostAddCart?userId={IdUser}", settlements);
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
@@ -615,8 +786,6 @@
 
         }
 
-
-
         public async Task<ApiResponse<ActionResult>> DeletePaymentDetails(List<PostAction> PostActions, int IdUser)
         {
             ApiResponse<ActionResult>? result;
@@ -624,6 +793,35 @@
             try
             {
                 var response = await _http.PostAsJsonAsync($"api/Payment/DeletePaymentDetails?userId={IdUser}", PostActions);
+
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = "El servidor devolvió una respuesta vacía."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+            return result;
+
+        }
+
+
+        public async Task<ApiResponse<ActionResult>> DeleteSettlements(List<PostAction> PostActions, int IdUser)
+        {
+            ApiResponse<ActionResult>? result;
+            List<PostAction> PostActionList = ([]);
+            try
+            {
+                var response = await _http.PostAsJsonAsync($"api/Payment/DeleteSettlements?userId={IdUser}", PostActions);
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()

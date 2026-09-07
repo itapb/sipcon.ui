@@ -6,16 +6,16 @@
     {
         public Task<ApiResponse<List<CurrencyType>>> GetCurrencyType();
         public Task<ApiResponse<List<PaymentType>>> GetPaymentType();
-        public Task<ApiResponse<List<DocumentType>>> GetDocumentType();
-        public Task<ApiResponse<List<ConceptsType>>> GetDocumentConceptsType();
+        public Task<ApiResponse<List<DocumentType>>> GetDocumentType(int selectCurrency);
+        public Task<ApiResponse<List<ConceptsType>>> GetDocumentConceptsType(int selectCurrency);
         public Task<ApiResponse<List<DocumentStatus>>> GetDocumentStatus();
         public Task<ApiResponse<List<Receivable>>> GetAccountReceivables(int IdUser, int Idsupplier, int? IdDealer, string TypeCode, string ConceptCode, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "", int? EstatusId = null, string DatePay = "");
         public Task<ApiResponse<List<BankAccountsType>>> GetBankAccounts(int Idsupplier, int? IdCurrency = null);
         public Task<ApiResponse<List<BankAccountsType>>> GetBankOrigin();
         public Task<ApiResponse<List<Payment>>> GetPayments(int IdUser, int Idsupplier, int? IdDealer, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "", int? EstatusId = null, int? CurrencyId = null, int? PaymentId = null);
-        public Task<ApiResponse<List<PaymentResumen>>> GetPaymentsStatusResumen(int IdUser, int Idsupplier, int? IdDealer, string Filter = ""
-                   , string DateFrom = "", string DateTo = "", int? EstatusId = null, int? CurrencyId = null
-                   , int? PaymentId = null);
+        public Task<ApiResponse<List<PaymentResumen>>> GetPaymentsStatusResumen(int IdUser, int Idsupplier, int? IdDealer, string Filter = "", string DateFrom = "", string DateTo = "", int? EstatusId = null, int? CurrencyId = null , int? PaymentId = null);
+        public Task<ApiResponse<List<PendingCart>>> GetPendingCart(int IdUser, int? IdDealer);
+
         public Task<ApiResponse<List<AccountPreview>>> GetAccountByPayment(int IdUser, int? IdPaymentDetail, int RowFrom = 0);
         public Task<ApiResponse<List<Payment>>> GetPaymentDetails(int IdUser, int? IdPaymentDetail, int RowFrom = 0);
         public Task<ApiResponse<List<byte>>> ExportAccountReceivable(int IdUser, int Idsupplier, int? IdDealer
@@ -27,9 +27,14 @@
         public Task<ApiResponse<ActionResult>> PaymentsActions(List<PostAction> PostActions, int IdUser);
         public Task<ApiResponse<ActionResult>> PaymentDetailsActions(List<PostAction> PostActions, int IdUser);
         public Task<ApiResponse<ActionResult>> CreatePayment(PaymentUpdate Payment, int IdUser);
+        public Task<ApiResponse<ActionResult>> PostAddCart(DocumentUpdate settlements, int IdUser);
         public Task<ApiResponse<ActionResult>> DeletePaymentDetails(List<PostAction> PostActions, int IdUser);
-
+        public Task<ApiResponse<ActionResult>> DeleteSettlements(List<PostAction> PostActions, int IdUser);
         public Task<ApiResponse<ActionResult>> UpdatePaidAmount(PostPaidAmount PaidAmount, int IdUser);
+        public Task<ApiResponse<List<BankStatement>>> GetBankStatements(int IdUser, int Idsupplier, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "",Boolean? Pending=false, int? AccountId = 0);
+        public Task<ApiResponse<List<Payment>>> GetOnePaymentDetail(int IdUser, int? IdPaymentDetail, int RowFrom = 0);
+
+        public Task<ApiResponse<ActionResult>> PostBankStatementActions(List<PostAction> PostActions, int IdUser);
 
 
 

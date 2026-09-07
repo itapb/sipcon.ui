@@ -1,0 +1,187 @@
+﻿@if (Contacts == null)
+{
+    <LoadingForm IsMudDialog="@(MudDialog != null)" />
+}
+else
+{
+    <div>
+        <MudForm @ref="form">
+            <MudGrid Spacing="2">
+                @* Encabezado *@
+                <MudItem xs="12">
+                    <MudPaper Elevation="2" Class="jpv1-dialog-background-title pa-3" Square="true">
+                        <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                            <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                                <MudStack Row="true">
+                                    <MudText Typo="Typo.h6" Color="Color.Info">Asignar Usuarios</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Spacing="2">
+                                    <MudButton OnClick="CancelClick">Cerrar</MudButton>
+                                </MudStack>
+                            </MudStack>
+                        </MudPaper>
+                    </MudPaper>
+                </MudItem>
+
+                @* Desplegable de Usuarios Disponibles *@
+                <MudItem xs="12" md="6">
+                    <MudPaper Elevation="2" Class="pa-3 jpv1-dialog-body-background" Square="true">
+                        <MudPaper Elevation="2" Class="pa-3">
+                            <MudStack Row="false" Spacing="2">
+                                <MudText Typo="Typo.h6">Usuarios Disponibles</MudText>
+                                <MudSelect T="Contact" 
+                                           ToStringFunc="@ConvertContactFunc" 
+                                           Label="Seleccionar usuario"
+                                           ValueChanged="AssignUserAsync" 
+                                           Value="ContactSelected"
+                                           Disabled="_isProcessing">
+                                    @foreach (var contact in AvailableContacts)
+                                    {
+                                        <MudSelectItem Value="contact" />
+                                    }
+                                </MudSelect>
+                            </MudStack>
+                        </MudPaper>
+                    </MudPaper>
+                </MudItem>
+
+                @* Lista de Usuarios Asignados *@
+                <MudItem xs="12" md="6">
+                    <MudPaper Elevation="2" Class="pa-3 jpv1-dialog-body-background" Square="true">
+                        <MudPaper Elevation="2" Class="pa-3">
+                            <MudText Typo="Typo.h6" Class="mb-2">Usuarios Asignados (@AssignedContacts.Count)</MudText>
+                            
+                            @if (!AssignedContacts.Any())
+                            {
+                                <MudText Typo="Typo.body2" Class="mud-text-secondary">No hay usuarios asignados aún.</MudText>
+                            }
+                            else
+                            {
+                                <MudList T="Contact" Dense="true">
+                                    @foreach (var contact in AssignedContacts)
+                                    {
+                                        <MudListItem Text="@ConvertContactFunc(contact)">
+                                            <TrailingActions>
+                                                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                                               Color="Color.Error" 
+                                                               Size="Size.Small" 
+                                                               OnClick="@(() => UnassignUserAsync(contact))" 
+                                                               Disabled="_isProcessing" />
+                                            </TrailingActions>
+                                        </MudListItem>
+                                    }
+                                </MudList>
+                            }
+                        </MudPaper>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </div>
+}
+
+
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private ILogger<AssignUserToInventoryCount> Logger { get; set; } = default!;
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public List<Models.Action>? SelectedActions { get; set; }
+    [Parameter] public string? moduleName { get; set; }
+    [Parameter] public int CountInventoryId { get; set; } // ID del inventario recibido por parámetro
+    [Parameter] public string AssignType { get; set; } = "USER"; // O el tipo de asignación correspondiente
+
+    private MudForm? form;
+    private Contact? ContactSelected;
+    private Func<Contact?, string> ConvertContactFunc = contact => contact != null ? $"{contact.FirstName} {contact.LastName}" : string.Empty;
+
+    private List<Contact>? Contacts = default;
+    private List<Contact> AssignedContacts = new();
+    private bool _isProcessing;
+
+    // Filtra la lista local para no volver a mostrar los usuarios que ya fueron asignados
+    private IEnumerable<Contact> AvailableContacts =>
+        (Contacts ?? new List<Contact>()).Where(c => !AssignedContacts.Any(a => a.Id == c.Id));
+
+    protected override async Task OnInitializedAsync()
+    {
+        // 1. Cargar usuarios del módulo
+        HttpResponseMessage locationResponse = await Http.GetAsync($"api/Contact/GetUsersByModule?moduleName={moduleName}&supplierId={Session.SupplierId}");
+        if (locationResponse.IsSuccessStatusCode)
+        {
+            var content2 = await locationResponse.Content.ReadFromJsonAsync<WebApiResponse<List<Contact>>>();
+            Contacts = content2!.data ?? new List<Contact>();
+        }
+
+        // 2. Cargar la lista inicial de asignados si tu backend expone el endpoint correspondiente
+        HttpResponseMessage assignedResponse = await Http.GetAsync($"api/InventoryCount/GetAssignedUsers?countInventoryId={CountInventoryId}");
+        if (assignedResponse.IsSuccessStatusCode)
+        {
+            var assignedContent = await assignedResponse.Content.ReadFromJsonAsync<WebApiResponse<List<Contact>>>();
+            AssignedContacts = assignedContent?.data ?? new List<Contact>();
+        }
+    }
+
+    private async Task AssignUserAsync(Contact selectedContact)
+    {
+        if (selectedContact == null || _isProcessing) return;
+
+        _isProcessing = true;
+
+        // Construcción de la entidad CountAssign
+        var payload = new CountAssign
+        {
+            UserId = Session.UserId,
+            Assign = selectedContact.Id.ToString(), // o selectedContact.Vlogin según el campo que requiera tu backend
+            CountInventoryId = CountInventoryId,
+            AssignType = AssignType
+        };
+
+        var response = await Http.PostAsJsonAsync("api/InventoryCount/PostCountAssign", payload);
+
+        if (response.IsSuccessStatusCode)
+        {
+            AssignedContacts.Add(selectedContact);
+            ContactSelected = null; // Limpia la selección
+            StateHasChanged();
+        }
+        else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var conflictContent = await response.Content.ReadFromJsonAsync<WebApiResponse<Object?>>();
+            Logger.LogError(Session.TemplateLog("Asignar Usuario a Movimiento", conflictContent?.message!));
+            await DialogService.ShowDialog(conflictContent?.message!, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+        else
+        {
+            await DialogService.ShowDialog("No se pudo asignar el usuario", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+
+        _isProcessing = false;
+    }
+
+    private async Task UnassignUserAsync(Contact contact)
+    {
+        if (_isProcessing) return;
+
+        _isProcessing = true;
+
+        // Opcional: Llamada al backend para remover la asignación
+        var response = await Http.DeleteAsync($"api/InventoryCount/DeleteCountAssign?countInventoryId={CountInventoryId}&assign={contact.Id}");
+
+        if (response.IsSuccessStatusCode)
+        {
+            AssignedContacts.RemoveAll(c => c.Id == contact.Id);
+            StateHasChanged();
+        }
+        else
+        {
+            await DialogService.ShowDialog("No se pudo desasignar el usuario", "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+        }
+
+        _isProcessing = false;
+    }
+
+    private void CancelClick() => MudDialog?.Close(DialogResult.Ok(true));
+}
