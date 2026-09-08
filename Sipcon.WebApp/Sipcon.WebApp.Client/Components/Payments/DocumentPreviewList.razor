@@ -122,23 +122,21 @@
                                                       && isValidType
                                                       && (context.Item.Detail == true || context.Item.Detail == null);
                     }
-
                     @if (canEdit)
                     {
                         var isUsd = selectCurrencyId == 2;
+                        var currentValue = isUsd ? context.Item.PaidAmount : context.Item.PaidAmountBs;
 
                         <MudNumericField T="double?"
-                                         Value="@(isUsd ? context.Item.PaidAmount : context.Item.PaidAmountBs)"
-                                         ValueChanged="@((double? val) => { if (isUsd) context.Item.PaidAmount = val; else context.Item.PaidAmountBs = val; })"
+                                         Value="@(selectCurrencyId == 2 ? context.Item.PaidAmount : context.Item.PaidAmountBs)"
+                                         ValueChanged="@(async (double? val) => await OnPaidAmountInputChanged(context.Item, val, selectCurrencyId == 2))"
                                          Culture="@System.Globalization.CultureInfo.InvariantCulture"
                                          Format="N2"
                                          HideSpinButtons="true"
-                                         OnBlur="@(() => UpdatePaidAmount(context.Item))"
-                                         OnKeyDown="@(async (KeyboardEventArgs args) => { if (args.Key == "Enter") await UpdatePaidAmount(context.Item); })"
                                          Variant="Variant.Outlined"
                                          Margin="Margin.Dense"
                                          Adornment="Adornment.Start"
-                                         AdornmentText="@(isUsd ? "$" : "Bs.")"
+                                         AdornmentText="@(selectCurrencyId == 2 ? "$" : "Bs.")"
                                          ReadOnly="@(context.Item.TransactionStatusName?.ToUpper() == "POR REVISION")"
                                          AdornmentIcon="@(_isSuccess ? Icons.Material.Filled.Check : Icons.Material.Filled.AttachMoney)"
                                          AdornmentColor="@(_isSuccess ? Color.Success : Color.Default)"
@@ -233,6 +231,28 @@
         return new GridData<AccountPreview> { TotalItems = DocumentDetails.Count(), Items = DocumentDetails };
     }
 
+    private async Task OnPaidAmountInputChanged(AccountPreview item, double? newValue, bool isUsd)
+    {
+        if (item == null) return;
+
+        // Redondeo explícito a 2 decimales
+        double? roundedVal = newValue.HasValue
+            ? Math.Round(newValue.Value, 2, MidpointRounding.AwayFromZero)
+            : null;
+
+        // Asignamos directamente la propiedad correspondiente en el objeto
+        if (isUsd)
+        {
+            item.PaidAmount = roundedVal;
+        }
+        else
+        {
+            item.PaidAmountBs = roundedVal;
+        }
+
+        // Ejecutamos el envío al servidor
+        await UpdatePaidAmount(item);
+    }
 
     private async Task OnClickDeleteButton(AccountPreview settlements)
     {
@@ -243,45 +263,56 @@
 
     private async Task UpdatePaidAmount(AccountPreview item)
     {
-        // 1. Evitar ejecuciones simultáneas y evitar re-procesar el mismo registro inmediatamente
-        if (_isSaving || _lastSavedId == item.Id)
-        {
-            // Si el blur ocurre justo después del enter, simplemente ignoramos el blur
-            // reseteamos el lastSavedId para permitir cambios futuros
-            if (_lastSavedId == item.Id) _lastSavedId = -1;
-            return;
-        }
+        if (item == null) return;
+
+        // Evitamos peticiones simultáneas, pero permitimos procesar cambios si el flag de guardado está libre
+        if (_isSaving) return;
 
         _isSaving = true;
-        _lastSavedId = item.Id;
 
         try
         {
+            bool isUsd = selectCurrencyId == 2;
+
+            // 1. Evaluamos la moneda actual para tomar el monto abonado correcto
+            double? rawAmount = isUsd ? item.PaidAmount : item.PaidAmountBs;
+
+            // 2. Redondeamos a 2 decimales
+            double? amountToSend = rawAmount.HasValue
+                ? Math.Round(rawAmount.Value, 2, MidpointRounding.AwayFromZero)
+                : null;
+
             var dto = new PostPaidAmount
             {
                 Id = item.Id,
                 PaymentId = item.PaymentId,
-                PaidAmount = item.PaidAmount
+                PaidAmount = amountToSend
             };
 
             var serviceResponse = await PaymentService.UpdatePaidAmount(dto, Session.UserId);
 
-            if (serviceResponse.Processed)
+            if (serviceResponse != null && serviceResponse.Processed)
             {
                 _isSuccess = true;
                 StateHasChanged();
-                await Task.Delay(1000);
-                _isSuccess = false;
-                StateHasChanged();
-            
-                await DocumentPreviewDataGrid.ReloadServerData();
 
-                await OnAmountUpdated.InvokeAsync();
-                await DocumentPreviewDataGrid.ReloadServerData();
+                await Task.Delay(800);
+                _isSuccess = false;
+
+                // Recargamos la grilla y notificamos al componente padre
+                if (DocumentPreviewDataGrid != null)
+                {
+                    await DocumentPreviewDataGrid.ReloadServerData();
+                }
+
+                if (OnAmountUpdated.HasDelegate)
+                {
+                    await OnAmountUpdated.InvokeAsync();
+                }
             }
             else
             {
-                Snackbar.Add(serviceResponse.Message ?? "Error al actualizar", Severity.Error);
+                Snackbar.Add(serviceResponse?.Message ?? "Error al actualizar el monto", Severity.Error);
             }
         }
         catch (Exception ex)
@@ -291,9 +322,7 @@
         finally
         {
             _isSaving = false;
-            // Limpiamos el ID después de un breve momento para permitir re-edición
-            await Task.Delay(500);
-            _lastSavedId = -1;
+            _lastSavedId = -1; // Reseteamos sin Task.Delay extra
         }
     }
 

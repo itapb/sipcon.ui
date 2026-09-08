@@ -312,6 +312,7 @@
     [Inject] private UserSession Session { get; set; } = null!;
     [Parameter] public int SelectedPaymentId { get; set; } = 0;
     [Parameter] public EventCallback OnClickCloseDetail { get; set; }
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
 
     private MudForm? form;
 
@@ -481,10 +482,21 @@
     {
         await CleanModel();
 
-        // Limpiamos la lista local del panel sin reasignar la instancia
-        _panelContent.Clear();
+        // Limpiamos la lista local del panel
+        _panelContent?.Clear();
 
-        await OnClickCloseDetail.InvokeAsync();
+        // Notificamos al componente padre si existe un callback suscrito
+        if (OnClickCloseDetail.HasDelegate)
+        {
+            await OnClickCloseDetail.InvokeAsync();
+        }
+
+        // CERRAR EL MODAL EXPLÍCITAMENTE
+        if (MudDialog != null)
+        {
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+
         StateHasChanged();
     }
 
@@ -744,7 +756,7 @@
                 await GetPayments(SelectedPaymentId);
 
                 // 3. Evaluar la cantidad restante sobre _panelContent
-                if (!_panelContent.Any())
+                if (_panelContent.Count == 0)
                 {
                     await OnClickCloseButton();
                 }
