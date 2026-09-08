@@ -1,6 +1,7 @@
 ﻿@using System.Globalization
 @using System.Text.Json
 @using Sipcon.WebApp.Client.Components.Payments
+@using Sipcon.WebApp.Client.Components.Comments
 @using Sipcon.WebApp.Client.Repository.Auth
 
 
@@ -437,7 +438,7 @@
                                                OnClick="() => ClickEditPayment(context.Item)" />
                             }
                             <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.AttachFile" OnClick="() => OnClickAttachamentButton(context.Item)" />
-                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Comment" OnClick="() => OnClickAttachamentButton(context.Item)" />
+                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Comment" OnClick="() => OpenCommentsModal(context.Item)" />
                         </MudButtonGroup>
                     </CellTemplate>
                 </TemplateColumn>
@@ -722,6 +723,27 @@
         StateHasChanged();
     }
 
+    private async Task OpenCommentsModal(Payment paymentItem)
+    {
+        if (paymentItem == null) return;
+
+        var parameters = new DialogParameters<CommentsDialog>
+    {
+        { x => x.RecordId, paymentItem.PaymentId },     // Pasa el ID del pago
+        { x => x.ModuleName, ModuleName }      // Nombre del módulo
+    };
+
+        var options = new DialogOptions
+        {
+            CloseButton = true,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            BackdropClick = false,
+            CloseOnEscapeKey = true
+        };
+
+        await DialogService.ShowAsync<CommentsDialog>("Comentarios", parameters, options);
+    }
     private async Task AfterAsyncCheck()
     {
         selectedPaymens = PaymentsDataGrid?.FilteredItems.Where(s => s.IsSelected == true).ToList() ?? new List<Payment>();

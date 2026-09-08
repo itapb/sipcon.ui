@@ -308,12 +308,20 @@
         get
         {
             var selectedStatement = FilteredStatements?.FirstOrDefault(s => s.Id == SelectedStatementId);
-            if (selectedStatement == null) return 0;
+            if (selectedStatement == null || _paymentDetail == null) return 0;
 
+            // 1. Verificamos la moneda del pago (1 = Bolívares)
+            bool isBs = _paymentDetail.CurrencyId == 1;
+
+            // 2. Extraemos el monto del Pago según corresponda
+            decimal paymentAmount = isBs
+                ? (decimal)(_paymentDetail.AmountBs ?? _paymentDetail.Amount ?? 0)
+                : (decimal)(_paymentDetail.Amount ?? 0);
+
+            // 3. El extracto bancario siempre usa 'Amount'
             decimal statementAmount = (decimal)selectedStatement.Amount;
-            decimal paymentAmount = (decimal)(_paymentDetail?.Amount ?? 0);
 
-            // Retorna la diferencia absoluta entre el pago reportado y el extracto
+            // 4. Retorna la diferencia absoluta (Ej: |343.280,18 - 300.000,00| = 43.280,18)
             return Math.Abs(paymentAmount - statementAmount);
         }
     }
@@ -413,31 +421,42 @@
     {
         SelectedStatementId = statement.Id;
     }
+
+
     private void ApplyDifferenceToSelectedInvoice()
     {
         var selectedStatement = FilteredStatements?.FirstOrDefault(s => s.Id == SelectedStatementId);
-        if (selectedStatement == null || SelectedInvoiceId == 0) return;
+        if (selectedStatement == null || SelectedInvoiceId == 0 || _paymentDetail == null)
+            return;
 
-        bool isBs = _paymentDetail?.CurrencyId == 1;
+        bool isBs = _paymentDetail.CurrencyId == 1;
+
+        // Obtención del monto del pago según la moneda
+        decimal paymentAmount = isBs
+            ? (decimal)(_paymentDetail.AmountBs ?? _paymentDetail.Amount ?? 0)
+            : (decimal)(_paymentDetail.Amount ?? 0);
+
+        // El extracto siempre usa 'Amount'
         decimal statementAmount = (decimal)selectedStatement.Amount;
-        decimal paymentAmount = (decimal)(_paymentDetail?.Amount ?? 0);
 
-        // Si el pago reportado es mayor que el extracto, debemos REDUCIR el abono de la factura
-        decimal differenceToApply = paymentAmount - statementAmount;
+        // Diferencia entre lo reportado en la app y lo que entró al banco
+        decimal differenceToAdjust = paymentAmount - statementAmount;
 
-        if (differenceToApply == 0) return;
+        if (differenceToAdjust == 0)
+            return;
 
         var targetInvoice = _invoiceList.FirstOrDefault(i => i.Id == SelectedInvoiceId);
         if (targetInvoice != null)
         {
             if (isBs)
             {
-                // Ajustamos el abono para reflejar la realidad del banco (343.280,18 - 43.280,18 = 300.000,00)
-                targetInvoice.PaidAmountBs = (targetInvoice.PaidAmountBs ?? 0) - (double)differenceToApply;
+                // Resta el excedente reportado del abono en Bolívares
+                targetInvoice.PaidAmountBs = (targetInvoice.PaidAmountBs ?? 0) - (double)differenceToAdjust;
             }
             else
             {
-                targetInvoice.PaidAmount = (targetInvoice.PaidAmount ?? 0) - (double)differenceToApply;
+                // Resta el excedente reportado del abono en Dólares
+                targetInvoice.PaidAmount = (targetInvoice.PaidAmount ?? 0) - (double)differenceToAdjust;
             }
 
             StateHasChanged();
@@ -465,16 +484,18 @@
 
         try
         {
-            // 1. Enviar las actualizaciones de montos (PaidAmount) al backend
-            foreach (var invoice in _invoiceList)
+            // 1. Obtener únicamente la factura seleccionada a través del SelectedInvoiceId global
+            var selectedInvoice = _invoiceList?.FirstOrDefault(x => x.Id == SelectedInvoiceId);
+
+            if (selectedInvoice != null)
             {
                 // Determinar cuál es el abono según la moneda configurada
                 bool isBs = _paymentDetail?.CurrencyId == 1;
-                double? amountToSend = isBs ? invoice.PaidAmountBs : invoice.PaidAmount;
+                double? amountToSend = isBs ? selectedInvoice.PaidAmountBs : selectedInvoice.PaidAmount;
 
                 var updateDto = new PostPaidAmount
                 {
-                    Id = invoice.Id,               // ID de la factura / detalle
+                    Id = selectedInvoice.Id,       // ID de la factura seleccionada
                     PaymentId = PaymentId,         // ID del pago global
                     PaidAmount = amountToSend
                 };
@@ -482,11 +503,11 @@
                 var updateResult = await PaymentService.UpdatePaidAmount(updateDto, Session.UserId);
 
                 // Validar si el backend devolvió un estado 409 (Conflict) o si la respuesta no fue exitosa
-                if (updateResult == null || updateResult.Status == 409 )
+                if (updateResult == null || updateResult.Status == 409)
                 {
                     string errorMsg = updateResult?.Status == 409
-                        ? $"Conflicto al actualizar el monto de la factura #{invoice.Number} (409 Conflict)."
-                        : $"Error al actualizar el monto de la factura #{invoice.Number}: {updateResult?.Message}";
+                        ? $"Conflicto al actualizar el monto de la factura #{selectedInvoice.Number} (409 Conflict)."
+                        : $"Error al actualizar el monto de la factura #{selectedInvoice.Number}: {updateResult?.Message}";
 
                     Snackbar.Add(errorMsg, MudBlazor.Severity.Error);
 
@@ -495,7 +516,7 @@
                 }
             }
 
-            // 2. Construir la lista de acciones post-sincronización (Solo si los PaidAmount fueron exitosos)
+            // 2. Construir la lista de acciones post-sincronización (Solo si la actualización del monto fue exitosa)
             var postActions = new List<PostAction>
         {
             new PostAction
@@ -511,7 +532,7 @@
             // 3. Ejecutar la sincronización de extracto bancario
             var syncResult = await PaymentService.PostBankStatementActions(postActions, Session.UserId);
 
-            if (syncResult == null || syncResult.Status==409)
+            if (syncResult == null || syncResult.Status == 409)
             {
                 Snackbar.Add($"Error en la sincronización: {syncResult?.Message}", MudBlazor.Severity.Error);
                 return;

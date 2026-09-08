@@ -1,0 +1,234 @@
+﻿@using System.Globalization
+
+<MudDialog Class="custom-dialog-comments rounded-lg" Style="max-width: 600px; width: 100%;">
+    <TitleContent>
+        <div class="d-flex align-center justify-space-between pb-2 border-b">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudAvatar Color="Color.Primary" Variant="Variant.Filled" Size="Size.Medium" Class="elevation-1">
+                    <MudIcon Icon="@Icons.Material.Filled.Forum" Size="Size.Small" />
+                </MudAvatar>
+                <div>
+                    <MudText Typo="Typo.h6" Class="fw-bold style-header-title">Comentarios</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Pago #@RecordId</MudText>
+                </div>
+            </MudStack>
+
+        </div>
+    </TitleContent>
+
+    <DialogContent>
+        <div class="pa-2">
+           
+
+            @* Lista de mensajes *@
+            <div id="scroll_section_messages_dialog" style="height: 320px; overflow-y: auto;" class="pr-2 custom-scrollbar">
+                @if (_isLoading)
+                {
+                    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="height: 100%;">
+                        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Medium" />
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">Cargando conversación...</MudText>
+                    </MudStack>
+                }
+                else if (_comment != null && _comment.Any())
+                {
+                    var sortedComments = _comment.OrderByDescending(x => x.DateComment).ToList();
+                    string firstUserInitial = sortedComments.First().UserName?.Substring(0, 1) ?? "";
+
+                    foreach (var item in sortedComments)
+                    {
+                        string initial = !string.IsNullOrEmpty(item.UserName) ? item.UserName.Substring(0, 1).ToUpper() : "?";
+                        var isCurrentUser = firstUserInitial == initial;
+                        var position = isCurrentUser ? ChatBubblePosition.Start : ChatBubblePosition.End;
+
+                        <div class="d-flex align-start my-3">
+                            <MudChat ChatPosition="@position">
+                                <MudChatHeader Name="@($"{item.UserName} {item.UserLastName}".Trim())"
+                                               Time="@item.DateComment.ToString("dd MMM yyyy, hh:mm tt", CultureInfo.GetCultureInfo("es-VE"))" />
+
+                                <MudAvatar Color="@(isCurrentUser ? Color.Primary : Color.Secondary)" Size="Size.Small" Variant="Variant.Filled">
+                                    @initial
+                                </MudAvatar>
+
+                                <MudChatBubble Class="@(isCurrentUser ? "pa-3 rounded-lg bg-primary-light text-dark" : "pa-3 rounded-lg bg-grey-light text-dark")"
+                                               Style="min-width: 280px; max-width: 420px; font-size: 13px; line-height: 1.4;">
+                                    @item.Content
+                                </MudChatBubble>
+                            </MudChat>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Class="py-12">
+                        <MudAvatar Color="Color.Info" Variant="Variant.Outlined" Style="width: 64px; height: 64px;">
+                            <MudIcon Icon="@Icons.Material.Outlined.ChatBubbleOutline" Style="font-size: 2.2rem;" />
+                        </MudAvatar>
+                        <MudText Typo="Typo.subtitle2" Class="fw-bold mt-2">Sin comentarios</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Aún no hay mensajes o notas asociadas a este pago.</MudText>
+                    </MudStack>
+                }
+
+                <MudScrollToTop TopOffset="80"
+                                Selector="#scroll_section_messages_dialog"
+                                VisibleCssClass="visible absolute"
+                                HiddenCssClass="invisible" />
+            </div>
+
+            @* Formulario de envío *@
+            <MudPaper Elevation="0" Class="pa-3 mb-3 border rounded-lg bg-light-surface">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudTextField T="string"
+                                  @bind-Value="_strComment"
+                                  Placeholder="Escribe un comentario o nota..."
+                                  Counter="500"
+                                  MaxLength="500"
+                                  Validation="@(new Func<string, IEnumerable<string>>(MaxCharacters))"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Lines="2"
+                                  Immediate="true"
+                                  Class="bg-white rounded-md" />
+
+                    <MudButton Variant="Variant.Filled"
+                               EndIcon="@Icons.Material.Filled.Send"
+                               Color="Color.Primary"
+                               Size="Size.Medium"
+                               Style="height: 52px; min-width: 100px;"
+                               Disabled="@(_isProcessing || string.IsNullOrWhiteSpace(_strComment) || _strComment.Trim().Length < 15)"
+                               OnClick="ClickAddComment">
+                        Enviar
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+        </div>
+    </DialogContent>
+
+    <DialogActions>
+        <div class="px-3 pb-2 pt-0 w-100 d-flex justify-end">
+            <MudButton Variant="Variant.Outlined" Color="Color.Default" Size="Size.Small" OnClick="CloseDialog" Class="px-4">
+                Cerrar
+            </MudButton>
+        </div>
+    </DialogActions>
+</MudDialog>
+
+<style>
+    .bg-light-surface {
+        background-color: #f8f9fa;
+    }
+
+    .bg-primary-light {
+        background-color: #eef2ff !important;
+        border: 1px solid #e0e7ff;
+    }
+
+    .bg-grey-light {
+        background-color: #f1f5f9 !important;
+        border: 1px solid #e2e8f0;
+    }
+
+    .style-header-title {
+        line-height: 1.2;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+</style>
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public int RecordId { get; set; }            // Recibe directamente PaymentId
+    [Parameter] public string ModuleName { get; set; } = string.Empty;
+
+    [Inject] private ICommentService CommentService { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private UserSession Session { get; set; } = null!;
+
+    private List<Comment> _comment = new();
+    private string _strComment = string.Empty;
+    private bool _isLoading = true;
+    private bool _isProcessing = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetComments();
+    }
+
+    private async Task GetComments()
+    {
+        _isLoading = true;
+        _comment = new List<Comment>();
+
+        var serviceResponse = await CommentService.GetComments(RecordId, ModuleName);
+        if (serviceResponse != null && serviceResponse.Processed)
+        {
+            _comment = serviceResponse.Data ?? new List<Comment>();
+        }
+
+        _isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task ClickAddComment()
+    {
+        if (_strComment.Trim().Length >= 15)
+        {
+            await SendComment();
+        }
+    }
+
+    private async Task SendComment()
+    {
+        _isProcessing = true;
+
+        var _mensaje = new Comment
+        {
+            Id = 0,
+            IsActive = true,
+            Content = _strComment.Trim(),
+            RecordId = RecordId,             // Asigna el id del Pago
+            ModuleName = ModuleName,
+        };
+
+        var serviceResponse = await CommentService.CreateComment(_mensaje, Session.UserId);
+
+        if (serviceResponse != null && serviceResponse.Processed)
+        {
+            Snackbar.Add("Comentario agregado exitosamente.", Severity.Success);
+            _strComment = string.Empty;
+            await GetComments();             // Vuelve a consultar con tu método GetComments()
+        }
+        else
+        {
+            Snackbar.Add(serviceResponse?.Message ?? "Error al guardar el comentario.", Severity.Error);
+        }
+
+        _isProcessing = false;
+        StateHasChanged();
+    }
+
+    private IEnumerable<string> MaxCharacters(string ch)
+    {
+        if (!string.IsNullOrEmpty(ch) && ch.Length < 15)
+            yield return "Mínimo 15 caracteres";
+        if (!string.IsNullOrEmpty(ch) && ch.Length > 500)
+            yield return "Máximo 500 caracteres";
+    }
+
+    private void CloseDialog() => MudDialog.Close(DialogResult.Ok(true));
+}
