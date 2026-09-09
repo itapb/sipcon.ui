@@ -14,164 +14,146 @@
              Class="mt-2"
              FixedHeader
              Height="calc(28vh - 40px)">
-
     <Columns>
-        @* Documento *@
-        <TemplateColumn Title="Documento" HeaderClass="px-1" CellClass="px-1" HeaderStyle="width: 100px; min-width: 90px;">
+        @* 1. Documento (Texto - Alineado a la Izquierda) *@
+        <TemplateColumn Title="Documento" HeaderClass="px-2 text-start" CellClass="px-2 text-start" HeaderStyle="width: 110px;">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">
+                <MudText Typo="Typo.caption" Color="Color.Primary" Class="fw-bold">
                     @context.Item.Number
                 </MudText>
             </CellTemplate>
         </TemplateColumn>
 
-        @* Fecha Tasa *@
-        <TemplateColumn Title="Fecha Tasa" HeaderClass="px-1" CellClass="px-1" HeaderStyle="width: 95px; min-width: 85px;">
+        @* 2. Fecha Tasa (Texto/Fecha - Alineado a la Izquierda) *@
+        <TemplateColumn Title="Fecha Tasa" HeaderClass="px-2 text-start" CellClass="px-2 text-start" HeaderStyle="width: 100px;">
             <CellTemplate>
-                <MudText Typo="Typo.caption" Align="Align.Left">
+                <MudText Typo="Typo.caption">
                     @(context.Item.DateRate?.ToString("dd/MM/yyyy"))
                 </MudText>
             </CellTemplate>
         </TemplateColumn>
 
-        @* Concepto *@
-        <TemplateColumn Title="Concepto" HeaderClass="px-1" CellClass="px-1" HeaderStyle="width: 110px;">
+        @* 3. Concepto (Badges - Alineado a la Izquierda) *@
+        <TemplateColumn Title="Concepto" HeaderClass="px-2 text-start" CellClass="px-2 text-start" HeaderStyle="width: 140px;">
             <CellTemplate>
-                <div class="d-flex justify-start">
-                    @if (context.Item.ConceptName != null)
+                @if (context.Item.ConceptName != null)
+                {
+                    var pair = context.Item.ConceptName.ToUpper() switch
                     {
-                        var pair = context.Item.ConceptName.ToUpper() switch
-                        {
-                            "BASE" => (txt: "Base", color: Color.Dark),
-                            "PLACA" => (txt: "Placa", color: Color.Info),
-                            "IVA (25%)" => (txt: "IVA (25%)", color: Color.Success),
-                            "RETENCION IVA (75%)" => (txt: "Retención IVA (75%)", color: Color.Warning),
-                            _ => (txt: "", color: Color.Error)
-                        };
+                        "BASE" => (txt: "Base", color: Color.Dark),
+                        "PLACA" => (txt: "Placa", color: Color.Info),
+                        "IVA (25%)" => (txt: "IVA (25%)", color: Color.Success),
+                        "RETENCION IVA (75%)" => (txt: "Retención IVA (75%)", color: Color.Warning),
+                        _ => (txt: context.Item.ConceptName, color: Color.Error)
+                    };
 
-                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@pair.color" Class="ma-0 pa-1" Style="font-size: 11px; font-style:italic;">
-                            @pair.txt
-                        </MudChip>
-                    }
-                </div>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@pair.color" Class="ma-0 pa-0">
+                        @pair.txt
+                    </MudChip>
+                }
             </CellTemplate>
         </TemplateColumn>
 
-        @* Tipo *@
-        <TemplateColumn Title="Tipo" HeaderClass="px-1" CellClass="px-1" HeaderStyle="width: 120px;">
+        @* 4. Tipo (Badges - Alineado a la Izquierda) *@
+        <TemplateColumn Title="Tipo" HeaderClass="px-2 text-start" CellClass="px-2 text-start" HeaderStyle="width: 130px;">
             <CellTemplate>
-                <div class="d-flex justify-start">
-                    @if (context.Item.TypeName != null)
+                @if (context.Item.TypeName != null)
+                {
+                    var pair = context.Item.TypeName.ToUpper() switch
                     {
-                        var pair = context.Item.TypeName.ToUpper() switch
-                        {
-                            "UNIDADES" => (txt: "Unidades", color: Color.Dark),
-                            "REPUESTOS" => (txt: "Repuestos", color: Color.Info),
-                            "PROFORMA" => (txt: "Proforma", color: Color.Success),
-                            "OTROS" => (txt: "Otros", color: Color.Primary),
-                            "GASTOS ADMINISTRATIVOS" => (txt: "Gastos Adm.", color: Color.Warning),
-                            _ => (txt: "", color: Color.Error)
-                        };
+                        "UNIDADES" => (txt: "Unidades", color: Color.Dark),
+                        "REPUESTOS" => (txt: "Repuestos", color: Color.Info),
+                        "PROFORMA" => (txt: "Proforma", color: Color.Success),
+                        "OTROS" => (txt: "Otros", color: Color.Primary),
+                        "GASTOS ADMINISTRATIVOS" => (txt: "Gastos Adm.", color: Color.Warning),
+                        _ => (txt: context.Item.TypeName, color: Color.Error)
+                    };
 
-                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@pair.color" Class="ma-0 pa-1" Style="font-size: 11px; font-style:italic;">
-                            @pair.txt
-                        </MudChip>
-                    }
-                </div>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@pair.color" Class="ma-0 pa-0">
+                        @pair.txt
+                    </MudChip>
+                }
             </CellTemplate>
         </TemplateColumn>
 
-        @* Saldo Pendiente *@
-        <TemplateColumn Title="Saldo Pendiente" HeaderClass="px-1 text-center" CellClass="px-1 text-center" HeaderStyle="width: 110px;">
+        @* 5. Saldo Pendiente (Monto - Alineado a la Derecha) *@
+        <TemplateColumn Title="Saldo Pendiente" HeaderClass="px-2 text-end" CellClass="px-2 text-end" HeaderStyle="width: 140px;">
             <CellTemplate>
-                <div class="d-flex justify-center">
-                    @if (context.Item.ConceptName != null)
-                    {
-                        var isUsd = selectCurrencyId == 2; // 2 = Dólares, 1 = Bs
-                        var formattedAmount = isUsd
-                            ? "$ " + context.Item.Amount?.ToString("N2")
-                            : "Bs. " + context.Item.AmountBs?.ToString("N2");
+                @if (context.Item.ConceptName != null)
+                {
+                    var isUsd = selectCurrencyId == 2;
+                    var formattedAmount = isUsd
+                        ? "$ " + context.Item.Amount?.ToString("N2")
+                        : "Bs. " + context.Item.AmountBs?.ToString("N2");
 
-                        var pair = context.Item.ConceptName.ToUpper() switch
-                        {
-                            "BASE" => (txt: formattedAmount, color: Color.Success),
-                            "PLACA" => (txt: formattedAmount, color: Color.Warning),
-                            "IVA (25%)" => (txt: formattedAmount, color: Color.Warning),
-                            "RETENCION IVA (75%)" => (txt: formattedAmount, color: Color.Warning),
-                            _ => (txt: "", color: Color.Error)
-                        };
+                    var color = context.Item.ConceptName.ToUpper() == "BASE" ? Color.Success : Color.Warning;
 
-                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@pair.color" Class="ma-0 pa-1" Style="font-size: 11px; font-style:italic;">
-                            @pair.txt
-                        </MudChip>
-                    }
-                </div>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@color" Class="ma-0 pa-0">
+                        @formattedAmount
+                    </MudChip>
+                }
             </CellTemplate>
         </TemplateColumn>
 
-        @* Monto Abonado *@
-        <TemplateColumn Title="Monto Abonado" HeaderClass="px-1 text-center" CellClass="px-1 text-center" HeaderStyle="min-width: 120px;">
+        @* 6. Monto Abonado (Monto/Input - Alineado a la Derecha) *@
+        <TemplateColumn Title="Monto Abonado" HeaderClass="px-2 text-end" CellClass="px-2 text-end" HeaderStyle="width: 160px;">
             <CellTemplate>
-                <div class="d-flex justify-center align-center">
-                    @{
-                        var isBase = context.Item.ConceptName?.ToUpper() == "BASE";
-                        var typeName = context.Item.TypeName?.ToUpper();
-                        var isValidType = typeName == "UNIDADES" || typeName == "REPUESTOS" || typeName == "PROFORMA";
+                @{
+                    var isBase = context.Item.ConceptName?.ToUpper() == "BASE";
+                    var typeName = context.Item.TypeName?.ToUpper();
+                    var isValidType = typeName == "UNIDADES" || typeName == "REPUESTOS" || typeName == "PROFORMA";
+                    var canEdit = isBase && isValidType && (context.Item.Detail == true || context.Item.Detail == null);
+                    var isUsd = selectCurrencyId == 2;
+                }
 
-                        var canEdit = isBase
-                                                      && isValidType
-                                                      && (context.Item.Detail == true || context.Item.Detail == null);
-                    }
+                <div class="d-flex justify-end align-center w-100">
                     @if (canEdit)
                     {
-                        var isUsd = selectCurrencyId == 2;
-                        var currentValue = isUsd ? context.Item.PaidAmount : context.Item.PaidAmountBs;
-
                         <MudNumericField T="double?"
-                                         Value="@(selectCurrencyId == 2 ? context.Item.PaidAmount : context.Item.PaidAmountBs)"
-                                         ValueChanged="@(async (double? val) => await OnPaidAmountInputChanged(context.Item, val, selectCurrencyId == 2))"
+                                         Value="@(isUsd ? context.Item.PaidAmount : context.Item.PaidAmountBs)"
+                                         ValueChanged="@(async (double? val) => await OnPaidAmountInputChanged(context.Item, val, isUsd))"
                                          Culture="@System.Globalization.CultureInfo.InvariantCulture"
                                          Format="N2"
                                          HideSpinButtons="true"
                                          Variant="Variant.Outlined"
                                          Margin="Margin.Dense"
                                          Adornment="Adornment.Start"
-                                         AdornmentText="@(selectCurrencyId == 2 ? "$" : "Bs.")"
+                                         AdornmentText="@(isUsd ? "$" : "Bs.")"
                                          ReadOnly="@(context.Item.TransactionStatusName?.ToUpper() == "POR REVISION")"
                                          AdornmentIcon="@(_isSuccess ? Icons.Material.Filled.Check : Icons.Material.Filled.AttachMoney)"
                                          AdornmentColor="@(_isSuccess ? Color.Success : Color.Default)"
-                                         Style="font-size: 11px; text-align: right;"
-                                         Class="pa-0 my-0 align-center custom-dense-input"
-                                         Disabled="@(context.Item.PaymentId == 0)" />
+                                         Disabled="@(context.Item.PaymentId == 0)"
+                                         Style="font-size: 12px; text-align: right;"
+                                         Class="my-0 custom-dense-input w-100" />
                     }
                     else
                     {
-                        if (selectCurrencyId == 2)
-                        {
-                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Warning" Class="ma-0 pa-1" Style="font-size: 11px; font-style:italic;">
-                                @("$ " + (context.Item.PaidAmount?.ToString("N2", System.Globalization.CultureInfo.InvariantCulture) ?? context.Item.Amount?.ToString("N2", System.Globalization.CultureInfo.InvariantCulture)))
-                            </MudChip>
-                        }
-                        else
-                        {
-                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Warning" Class="ma-0 pa-1" Style="font-size: 11px; font-style:italic;">
-                                @("Bs. " + (context.Item.PaidAmountBs?.ToString("N2", System.Globalization.CultureInfo.InvariantCulture) ?? context.Item.AmountBs?.ToString("N2", System.Globalization.CultureInfo.InvariantCulture)))
-                            </MudChip>
-                        }
+                        var amount = isUsd
+                            ? (context.Item.PaidAmount ?? context.Item.Amount)?.ToString("N2", System.Globalization.CultureInfo.InvariantCulture)
+                            : (context.Item.PaidAmountBs ?? context.Item.AmountBs)?.ToString("N2", System.Globalization.CultureInfo.InvariantCulture);
+
+                        var prefix = isUsd ? "$ " : "Bs. ";
+
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Warning" Class="ma-0 pa-0">
+                            @(prefix + amount)
+                        </MudChip>
                     }
                 </div>
             </CellTemplate>
         </TemplateColumn>
 
-        @* Acciones (Eliminar) *@
-        <TemplateColumn HeaderStyle="width: 40px; min-width: 40px;" HeaderClass="px-1 text-center" CellClass="px-1 text-center">
+        @* 7. Acciones (Botón - Centrado) *@
+        <TemplateColumn HeaderClass="px-1 text-center" CellClass="px-1 text-center" HeaderStyle="width: 50px;">
             <CellTemplate>
                 @if (context.Item.Detail == true || context.Item.Detail == null)
                 {
-                    <MudIconButton Size="@Size.Small"
-                                   Icon="@Icons.Material.Outlined.Delete"
-                                   OnClick="() => OnClickDeleteButton(context.Item)"
-                                   Class="pa-0" />
+                    <MudTooltip Text="Eliminar">
+                        <MudIconButton Size="@Size.Small"
+                                       Color="Color.Default"
+                                       Icon="@Icons.Material.Outlined.Delete"
+                                       OnClick="() => OnClickDeleteButton(context.Item)"
+                                       Class="pa-1" />
+                    </MudTooltip>
                 }
             </CellTemplate>
         </TemplateColumn>
