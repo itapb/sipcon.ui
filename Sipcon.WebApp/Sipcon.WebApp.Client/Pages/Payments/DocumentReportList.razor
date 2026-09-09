@@ -33,7 +33,7 @@
                                AdornmentIcon="@Icons.Material.Outlined.CalendarToday"
                                Disabled="@_hasActiveCart"
                                Error="@(_datePay == null)"
-                               ErrorText="Requerido para agregar al carrito"
+                               ErrorText="Requerido para reportar pago"
                                Style="min-width: 180px; flex: 1;" />
 
                 @* 2. Tipo de moneda *@
@@ -142,6 +142,7 @@
                                    Margin="Margin.Dense"
                                    DateFormat="dd/MM/yyyy"
                                    AutoClose="true"
+                                   Clearable="true"
                                    Adornment="Adornment.End"
                                    AdornmentIcon="@Icons.Material.Outlined.CalendarToday"
                                    Style="min-width: 140px; flex: 1;" />
@@ -157,6 +158,7 @@
                                    Margin="Margin.Dense"
                                    DateFormat="dd/MM/yyyy"
                                    AutoClose="true"
+                                   Clearable="true"
                                    Adornment="Adornment.End"
                                    AdornmentIcon="@Icons.Material.Outlined.CalendarToday"
                                    Style="min-width: 140px; flex: 1;" />
@@ -769,7 +771,8 @@
                 dateFromStr,
                 dateToStr,
                 statusId,
-                datePayStr
+                datePayStr,
+               _showMigration
             );
 
             if (response.Processed && response.Data != null)
@@ -866,7 +869,7 @@
 
             if (addResponse != null && addResponse.Processed)
             {
-                Snackbar.Add($"Documento #{item.Number} agregado al carrito en BD.", Severity.Success);
+                Snackbar.Add($"Documento #{item.Number} agregado exitosamente.", Severity.Success);
 
                 // 1. Consultar inmediatamente el carrito pendiente y refrescar datos/totales
                 await CheckPendingCartAsync();
@@ -876,13 +879,13 @@
             }
             else
             {
-                string message = addResponse?.Message ?? "No se pudo registrar el documento en el carrito.";
+                string message = addResponse?.Message ?? "No se pudo agregar el documento.";
                 Snackbar.Add(message, Severity.Error);
             }
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error al enviar al carrito: {ex.Message}", Severity.Error);
+            Snackbar.Add($"Error al agregar: {ex.Message}", Severity.Error);
         }
         finally
         {
