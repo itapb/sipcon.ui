@@ -231,7 +231,7 @@
 
         public async Task<ApiResponse<List<Receivable>>> GetAccountReceivables(int IdUser, int Idsupplier, int? IdDealer
             , string TypeCode, string ConceptCode, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = ""
-            , int? EstatusId = null, string DatePay = "")
+            , int? EstatusId = null, string DatePay = "", bool? Migration = false)
         {
             ApiResponse<List<Receivable>>? result;
 
@@ -246,6 +246,7 @@
                 url = string.IsNullOrEmpty(DateTo) ? url : $"{url}&upToDate={DateTo}";
                 url = (EstatusId.HasValue) ? $"{url}&statusId={EstatusId}" : url;
                 url = string.IsNullOrEmpty(DatePay) ? url : $"{url}&paymentDate={DatePay}";
+                url = (Migration.HasValue) ? $"{url}&migration={Migration}" : url;
 
                 result = await _http.GetFromJsonAsync<ApiResponse<List<Receivable>>>(url);
 
