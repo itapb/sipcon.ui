@@ -126,12 +126,46 @@ else
             _loading = false;
             return;
         }
+        else if (actionName == "PRINT")
+        {
+            // Obtener los items seleccionados
+            var selectedItems = LocationMudDataGrid?.FilteredItems.Where(item => item.IsSelected).ToList();
+
+            // Validar que haya al menos un item seleccionado
+            if (selectedItems == null || selectedItems.Count == 0)
+            {
+                await DialogService.ShowDialog("Debe seleccionar al menos una ubicación para imprimir.",
+                    "Advertencia", "OK", Color.Error, Icons.Material.Filled.Warning);
+                return;
+            }
+
+            // Inicializar PrintQty = 1 para cada item seleccionado
+            foreach (var item in selectedItems)
+            {
+                item.PrintQty = 1;
+            }
+
+            // Configuración del modal
+            DialogOptions options = new DialogOptions
+            {
+                MaxWidth = MaxWidth.Medium,
+                FullWidth = true,
+                BackdropClick = false,
+                NoHeader = false
+            };
+
+            // Abrir el modal con los items seleccionados
+            await DialogService.ShowAsync<PrintLocationDetail>(string.Empty, new DialogParameters { ["SelectedLocations"] = selectedItems }, options);
+
+            return;
+        }
         else if (actionName == "IMPORT")
         {
             await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('[type=file]').click()");
             return;
         }
-        var SelectedActions = (LocationMudDataGrid != null && ("ACTIVATE,DEACTIVATE,PRINT".IndexOf(actionName!) > -1)) ?
+
+        var SelectedActions = (LocationMudDataGrid != null && ("ACTIVATE,DEACTIVATE".IndexOf(actionName!) > -1)) ?
                             (LocationMudDataGrid.FilteredItems.Where(item => item.IsSelected)
                                                              .Select(item => new Client.Models.Action
                                                              {
