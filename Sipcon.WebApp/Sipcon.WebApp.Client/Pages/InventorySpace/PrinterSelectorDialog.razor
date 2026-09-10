@@ -1,0 +1,103 @@
+﻿@using Sipcon.WebApp.Client.Models
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true">
+            <MudText Typo="Typo.h6" Color="Color.Info"> Seleccionar Impresora</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3" Class="mt-2">
+            <MudText Typo="Typo.body2" Color="Color.Dark">
+                Seleccione la impresora a la que desea enviar la impresión:
+            </MudText>
+
+            @if (_loading)
+            {
+                <MudProgressLinear Indeterminate="true" Color="Color.Info" />
+            }
+            else if (Printers == null || !Printers.Any())
+            {
+                <MudAlert Severity="Severity.Warning" Variant="Variant.Filled">
+                    No hay impresoras disponibles para este proveedor.
+                </MudAlert>
+            }
+            else
+            {
+                <MudSelect T="Printer"
+                           @bind-Value="_selectedPrinter"
+                           Label="Impresora"
+                           Variant="Variant.Outlined"
+                           AnchorOrigin="Origin.BottomCenter"
+                           Dense="false">
+                    @foreach (var printer in Printers)
+                    {
+                        <MudSelectItem Value="@printer">@printer.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Error"
+                   StartIcon="@Icons.Material.Filled.Close"
+                   OnClick="CancelClick">
+            Cancelar
+        </MudButton>
+        <MudButton Color="Color.Info"
+                   StartIcon="@Icons.Material.Filled.Print"
+                   OnClick="ConfirmClick"
+                   Disabled="@(_selectedPrinter == null || _loading)">
+            Imprimir
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private UserSession Session { get; set; } = null!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+  
+    [Parameter] public List<Printer>? Printers { get; set; }
+
+    private Printer? _selectedPrinter;
+    private bool _loading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Printers == null)
+        {
+            _loading = true;
+            try
+            {
+                var response = await Http.GetFromJsonAsync<WebApiResponse<List<Printer>>>(
+                    $"api/Printer/GetAll?supplierId={Session.SupplierId}");
+                Printers = response?.data ?? new List<Printer>();
+            }
+            catch
+            {
+                Printers = new List<Printer>();
+            }
+            _loading = false;
+        }
+
+        // Preseleccionar la impresora por defecto
+        if (Printers != null && Printers.Any())
+        {
+            _selectedPrinter = Printers.FirstOrDefault(p => p.BDefault == true)
+                               ?? (Printers.Count == 1 ? Printers.First() : null);
+        }
+    }
+
+    private void ConfirmClick()
+    {
+        if (_selectedPrinter == null) return;
+        MudDialog.Close(DialogResult.Ok(_selectedPrinter));
+    }
+
+    private void CancelClick()
+    {
+        MudDialog.Close(DialogResult.Cancel());
+    }
+}
