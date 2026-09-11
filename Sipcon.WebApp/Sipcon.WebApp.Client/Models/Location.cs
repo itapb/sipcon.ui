@@ -24,5 +24,7 @@ namespace Sipcon.WebApp.Client.Models
 
         public bool? IsFullActive { get; set; }
 
+        public int? PrintQty { get; set; }
+
     }
 }
