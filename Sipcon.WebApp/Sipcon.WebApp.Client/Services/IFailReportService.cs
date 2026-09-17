@@ -19,7 +19,7 @@
         public Task<ApiResponse<List<byte>>> ExportPdfSRG(int IdUser, int IdService, int? IdDealer = null);
         public Task<ApiResponse<List<byte>>> ExportReportSRG(int IdUser, int IdSupplier, int IdDealer);
         public Task<ApiResponse<List<FailReport>>> GetFailReportsToGenerate(int IdSupplier, int IdUser, int RowFrom = 0, string Filter = "", int? IdDealer = null, string DateFrom = "", string DateTo = "");
-
+        public Task<ApiResponse<ActionResult>> PostStatusService(List<PostAction> PostActions, int IdUser);
 
 
         public Task<ApiResponse<List<FailReportDetail>>> GetFailReportDetails(int IdService, string Filter = "", ServiceDetailTypeEnum dType = ServiceDetailTypeEnum.LaborTime);
@@ -32,7 +32,9 @@
         public Task<ApiResponse<LaborTime>> GetLaborTimeExternal(int IdUser, int IdLaborTimeExternal);
         public Task<ApiResponse<ActionResult>> CreatePartExternal(PartExternal partExternal, int IdUser);
         public Task<ApiResponse<ActionResult>> UpdatePartExternal(PartExternal partExternal, int IdUser);
-        
+
+        public Task<ApiResponse<List<ServiceStatus>>> GetServiceStatus(int IdUser);
+
 
     }
 }

@@ -114,6 +114,35 @@
 
         }
 
+
+        public async Task<ApiResponse<List<ServiceStatus>>> GetServiceStatus(int IdUser)
+        {
+            ApiResponse<List<ServiceStatus>>? result;
+
+            try
+            {
+                result = await _http.GetFromJsonAsync<ApiResponse<List<ServiceStatus>>>($"api/Service/GetServiceStatus?userId={IdUser}");
+
+                result = result is null ? new ApiResponse<List<ServiceStatus>>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos.",
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<ServiceStatus>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+
+        }
+
         public async Task<ApiResponse<FailReport>> GetFailReport(int IdUser, int IdDealer, int IdFailReport) 
         {
             ApiResponse<FailReport>? result;
@@ -251,7 +280,8 @@
                     DealerId = FailReport.DealerId ?? 0,
                     VehicleId = FailReport.VehicleId ?? 0,
                     Km = FailReport.KM ?? 0,
-                    CustomerId = FailReport.CustomerId ?? 0
+                    CustomerId = FailReport.CustomerId ?? 0,
+                    StatusServiceId=FailReport.StatusServiceId ?? 0
                 };
 
                 var response = await _http.PostAsJsonAsync($"api/Service/PostFailReport?userId={IdUser}", _assistence);
@@ -310,6 +340,34 @@
             try
             {
                 var response = await _http.PostAsJsonAsync($"api/Service/PostCheckParalyzed?userId={IdUser}", PostActions);
+
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = "El servidor devolvió una respuesta vacía."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+            return result;
+
+        }
+
+        public async Task<ApiResponse<ActionResult>> PostStatusService(List<PostAction> PostActions, int IdUser)
+        {
+            ApiResponse<ActionResult>? result;
+
+            try
+            {
+                var response = await _http.PostAsJsonAsync($"api/Service/PostStatusService?userId={IdUser}", PostActions);
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result = (result is null) ? new ApiResponse<ActionResult>()
