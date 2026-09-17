@@ -10,4 +10,12 @@ namespace Sipcon.WebApp.Client.Models
         
     }
 
+    public class ServiceStatus
+    {
+        public int Id { get; set; } = 0;
+        public bool IsActive { get; set; } = true;
+        public string Name { get; set; } = string.Empty;
+
+    }
+
 }

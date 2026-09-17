@@ -149,19 +149,45 @@
                                 </MudCardHeader>
                                 
                                 <MudCardContent Style="padding-top: 0px;" Class="mt-2">
-                                 <MudStack Row="true" AlignItems="AlignItems.Center">
-                                    <MudText Typo="Typo.caption" Class="mr-2">Vehículo paralizado:</MudText>
+                               <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4">
+                                    <MudText Typo="Typo.caption">Vehículo paralizado:</MudText>
 
                                     <MudRadioGroup T="bool?" 
                                                    @bind-Value="_model.Paralyzed" 
                                                    Disabled="@(!_model.IsActive || _isReadOnly)"
                                                    Required="true"
-                                                   RequiredError="Debe seleccionar si el vehículo está paralizado o no">
+                                                   RequiredError="Campo Requerido">
                                         <MudRadio T="bool?" Value="@((bool?)true)" Color="Color.Success">Sí</MudRadio>
                                         <MudRadio T="bool?" Value="@((bool?)false)" Color="Color.Error">No</MudRadio>
                                     </MudRadioGroup>
 
-                                    <MudSpacer />
+                                        <div style="min-width: 220px;">
+                                            @if (_ServiceStatusList != null && _ServiceStatusList.Any())
+                                            {
+                                                <MudSelect T="int?"
+                                                           Value="_model.StatusServiceId"
+                                                           ValueChanged="OnServiceStatusChanged"
+                                                           Label="Estatus de unidad"
+                                                           Margin="Margin.Dense"
+                                                           Variant="Variant.Outlined"
+                                                           ReadOnly="@(!_model.IsActive || _isReadOnly)"
+                                                           Disabled="@(!_model.VehicleId.HasValue)"
+                                                           For="@(() => _model.StatusServiceId)"
+                                                           Immediate="true"
+                                                           Required="true"
+                                                           RequiredError="Campo Requerido">
+                                                    @foreach (var item in _ServiceStatusList)
+                                                    {
+                                                        <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
+                                                    }
+                                                </MudSelect>
+                                            }
+                                            else
+                                            {
+                                                <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-2" />
+                                            }
+                                        </div>
+
                                     <MudSpacer />
                                 </MudStack>
 
@@ -621,6 +647,7 @@
     private VehicleService _modelVehicle { get; set; } = new VehicleService();
     private LicenseDetail _modelLicenseDetail { get; set; } = new LicenseDetail();
     private IEnumerable<SelectOption> _FailReportTypeList { get; set; } = new List<SelectOption>();
+    private IEnumerable<SelectOption> _ServiceStatusList { get; set; } = new List<SelectOption>();
 
     private string _errorModalMessage = string.Empty;
     private string _errorSearchVehicle = string.Empty;
@@ -661,6 +688,7 @@
         }
 
         var originalList = await ModuleActionsService.GetFailReportType(Session.UserId);
+
         var filteredList = new List<SelectOption>();
         foreach (var item in originalList)
         {
@@ -671,8 +699,10 @@
         }
         _FailReportTypeList = filteredList;
 
-       
 
+        _ServiceStatusList = await ModuleActionsService.GetServiceStatus(Session.UserId);
+
+ 
         StateHasChanged();
         await Task.CompletedTask;
 
@@ -688,6 +718,11 @@
         }
     }
 
+
+    private void OnServiceStatusChanged(int? value)
+    {
+        _model.StatusServiceId = value;
+    }
 
     private async Task GetFailReport()
     {
