@@ -183,7 +183,7 @@
 
                             </MudStack>
                             <MudDivider />
-                         <MudStack Row="true" AlignItems="AlignItems.Center">
+                          <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4">
                             <MudText Typo="Typo.caption" Class="mr-2">Unidad Paralizada:</MudText>
 
                             <MudRadioGroup T="bool?" 
@@ -195,6 +195,32 @@
                                 <MudRadio T="bool?" Value="@((bool?)true)" Color="Color.Success">Sí</MudRadio>
                                 <MudRadio T="bool?" Value="@((bool?)false)" Color="Color.Error">No</MudRadio>
                             </MudRadioGroup>
+
+                            <div style="min-width: 220px;">
+                                    @if (_ServiceStatusList != null && _ServiceStatusList.Any())
+                                    {
+                                        <MudSelect T="int?"
+                                                   Value="_model.StatusServiceId"
+                                                   ValueChanged="OnServiceStatusChanged"
+                                                   Label="Estatus de unidad"
+                                                   Margin="Margin.Dense"
+                                                   Variant="Variant.Outlined"
+                                                   Disabled="@(IsSwitchDisabledStatus)"
+                                                   For="@(() => _model.StatusServiceId)"
+                                                   Immediate="true"
+                                                   Required="true"
+                                                   RequiredError="Campo Requerido">
+                                            @foreach (var item in _ServiceStatusList)
+                                            {
+                                                <MudSelectItem Value="@item.Value">@item.Text</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                    }
+                                    else
+                                    {
+                                        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-2" />
+                                    }
+                                </div>
 
                             <MudSpacer />
                             <MudSpacer />
@@ -783,6 +809,7 @@
     private List<Attachment> _attachment { get; set; } = new List<Attachment>();
     private List<Comment> _comment { get; set; } = new List<Comment>();
     private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
+     private IEnumerable<SelectOption> _ServiceStatusList { get; set; } = new List<SelectOption>();
 
     private string _moduleName = "SERVICIOS-REPORTE FALLA";
     private string _nestedErrorMessage = string.Empty;
@@ -856,6 +883,14 @@
         _ => true
     };
 
+
+    private bool IsSwitchDisabledStatus => _model.EstatusName switch
+    {
+        "PROCESADO" => true,
+        _ => false
+    };
+
+
     protected override async Task OnInitializedAsync()
     {
 
@@ -863,6 +898,8 @@
         Session.IsNewOrEdit = true;
         
         await GetFailReport();
+
+         _ServiceStatusList = await ModuleActionsService.GetServiceStatus(Session.UserId);
 
         await Task.Delay(50);
 
@@ -1727,6 +1764,38 @@
             {
                 // Si falla, revertimos el estado local
                 _model.Paralyzed = !value;
+                _success = false;
+                _nestedErrorMessage = serviceResponse.Message ?? "Error al actualizar el estado.";
+            }
+    
+            OpenNested();
+        }
+
+
+
+         private async Task OnServiceStatusChanged(int? value)
+        {
+            // Actualizamos el modelo local
+            _model.StatusServiceId = value;
+
+            var itemAction = new PostAction
+            {
+                RecordId = _model.Id,
+                ActionName = "EDIT", // Nombre de la acción según tu backend
+                RelatedId = value.Value
+            };
+
+            var serviceResponse = await FailReportService.PostStatusService(new List<PostAction> { itemAction }, Session.UserId);
+
+            if (serviceResponse.Processed)
+            {
+                _success = true;
+                _nestedErrorMessage = "Estado actualizado correctamente.";
+            }
+            else
+            {
+                // Si falla, revertimos el estado local
+                _model.StatusServiceId = value;
                 _success = false;
                 _nestedErrorMessage = serviceResponse.Message ?? "Error al actualizar el estado.";
             }

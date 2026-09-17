@@ -467,6 +467,26 @@ namespace Sipcon.WebApp.Client.Utils
 
         }
 
+        public async Task<List<SelectOption>> GetServiceStatus(int IdUser)
+        {
+            List<SelectOption> _itemsSelect = new([]);
+
+
+            var moduleResponse = await FailReportService.GetServiceStatus(IdUser);
+            if (moduleResponse.Processed)
+            {
+                List<ServiceStatus> _List = moduleResponse.Data ?? new List<ServiceStatus>();
+
+
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Id, item.Name));
+                }
+            }
+            return _itemsSelect;
+
+        }
+
 
         public async Task<List<SelectOption>> GetInventoryCountTypeOption(int IdUser)
         {

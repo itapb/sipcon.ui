@@ -21,6 +21,8 @@ namespace Sipcon.WebApp.Client.Models
         public string SupplierReport { get; set; } = string.Empty;
         public string? OrderNumber { get; set; } = string.Empty;
         public int? KM { get; set; } = null;
+        public Int32? StatusServiceId { get; set; } = null;
+        public String? StatusService { get; set; } = string.Empty;
 
         public int? SupplierId { get; set; } = null;
         public int? BrandId { get; set; } = null;
@@ -123,6 +125,7 @@ namespace Sipcon.WebApp.Client.Models
         public int ReportTypeId { get; set; } = 0;
         public int LicenseId { get; set; } = 0;
         public bool Paralyzed { get; set; } = true;
+        public Int32? StatusServiceId { get; set; } = null;
 
     }
 
