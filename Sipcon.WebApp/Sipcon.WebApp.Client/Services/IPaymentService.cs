@@ -36,6 +36,8 @@
 
         public Task<ApiResponse<ActionResult>> PostBankStatementActions(List<PostAction> PostActions, int IdUser);
 
+        public Task<ApiResponse<ActionResult>> DeleteCart(List<PostAction> PostActions, int IdUser);
+
 
 
     }

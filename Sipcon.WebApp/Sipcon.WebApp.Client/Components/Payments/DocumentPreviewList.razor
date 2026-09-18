@@ -81,7 +81,7 @@
             <CellTemplate>
                 @if (context.Item.ConceptName != null)
                 {
-                    var isUsd = selectCurrencyId == 2;
+                    var isUsd = context.Item.CurrencyId== 2;
                     var formattedAmount = isUsd
                         ? "$ " + context.Item.Amount?.ToString("N2")
                         : "Bs. " + context.Item.AmountBs?.ToString("N2");
@@ -96,14 +96,18 @@
         </TemplateColumn>
 
         @* 6. Monto Abonado (Monto/Input - Alineado a la Derecha) *@
-        <TemplateColumn Title="Monto Abonado" HeaderClass="px-2 text-end" CellClass="px-2 text-end" HeaderStyle="width: 160px;">
+        <TemplateColumn Title="Monto Abonado"
+                        HeaderClass="px-2 text-end"
+                        CellClass="px-2 text-end"
+                        HeaderStyle="width: 160px;"
+                        Style="width: 160px;">
             <CellTemplate>
                 @{
                     var isBase = context.Item.ConceptName?.ToUpper() == "BASE";
                     var typeName = context.Item.TypeName?.ToUpper();
                     var isValidType = typeName == "UNIDADES" || typeName == "REPUESTOS" || typeName == "PROFORMA";
                     var canEdit = isBase && isValidType && (context.Item.Detail == true || context.Item.Detail == null);
-                    var isUsd = selectCurrencyId == 2;
+                    var isUsd = context.Item.CurrencyId == 2;
                 }
 
                 <div class="d-flex justify-end align-center w-100">
@@ -134,9 +138,9 @@
 
                         var prefix = isUsd ? "$ " : "Bs. ";
 
-                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Warning" Class="ma-0 pa-0">
+                        <MudText Typo="Typo.body2" Color="Color.Warning" Class="fw-bold align-self-center">
                             @(prefix + amount)
-                        </MudChip>
+                        </MudText>
                     }
                 </div>
             </CellTemplate>
