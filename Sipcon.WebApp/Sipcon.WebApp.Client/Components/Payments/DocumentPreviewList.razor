@@ -81,7 +81,7 @@
             <CellTemplate>
                 @if (context.Item.ConceptName != null)
                 {
-                    var isUsd = selectCurrencyId == 2;
+                    var isUsd = context.Item.CurrencyId== 2;
                     var formattedAmount = isUsd
                         ? "$ " + context.Item.Amount?.ToString("N2")
                         : "Bs. " + context.Item.AmountBs?.ToString("N2");
@@ -103,7 +103,7 @@
                     var typeName = context.Item.TypeName?.ToUpper();
                     var isValidType = typeName == "UNIDADES" || typeName == "REPUESTOS" || typeName == "PROFORMA";
                     var canEdit = isBase && isValidType && (context.Item.Detail == true || context.Item.Detail == null);
-                    var isUsd = selectCurrencyId == 2;
+                    var isUsd = context.Item.CurrencyId == 2;
                 }
 
                 <div class="d-flex justify-end align-center w-100">

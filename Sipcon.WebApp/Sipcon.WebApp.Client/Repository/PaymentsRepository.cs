@@ -844,6 +844,35 @@
 
         }
 
+
+        public async Task<ApiResponse<ActionResult>> DeleteCart(List<PostAction> PostActions, int IdUser)
+        {
+            ApiResponse<ActionResult>? result;
+            List<PostAction> PostActionList = ([]);
+            try
+            {
+                var response = await _http.PostAsJsonAsync($"api/Payment/DeleteCart?userId={IdUser}", PostActions);
+
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = "El servidor devolvió una respuesta vacía."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+            return result;
+
+        }
+
     }
 
 }

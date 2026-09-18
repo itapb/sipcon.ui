@@ -24,9 +24,19 @@
         <MudPaper Class="pa-3 d-flex flex-column" Style="background-color: #f9fafb; border-radius: 8px; flex: 1 1 35%; min-height: 220px; overflow: hidden;">
             <div class="d-flex align-center mb-2 flex-shrink-0">
                 <MudText Style="color: #8b4c25; font-weight: bold;" Typo="Typo.subtitle1">Facturas agregadas</MudText>
-                <MudBadge Content="@(_panelContent?.Count ?? 0)" Color="Color.Primary" Overlap="true" Class="ml-auto">
-                    <MudIcon Icon="@Icons.Material.Filled.AddShoppingCart" Color="Color.Default" Size="Size.Medium" />
-                </MudBadge>
+
+                <div class="ml-auto d-flex align-center gap-2">
+                    <MudIconButton Icon="@Icons.Material.Filled.DeleteSweep"
+                                   Color="Color.Error"
+                                   Size="Size.Small"
+                                   Title="Vaciar carrito"
+                                   OnClick="ClearCart"
+                                   Disabled="@(_panelContent == null || _panelContent.Count == 0)" />
+
+                    <MudBadge Content="@(_panelContent?.Count ?? 0)" Color="Color.Primary" Overlap="true">
+                        <MudIcon Icon="@Icons.Material.Filled.AddBox" Color="Color.Default" Size="Size.Medium" />
+                    </MudBadge>
+                </div>
             </div>
 
             @if (_panelContent != null && _panelContent.Count > 0)
@@ -765,6 +775,51 @@
                     await CleanModel();
                     StateHasChanged();
                 }
+            }
+            else
+            {
+                _successNested = false;
+                _errorMessageNested = serviceResponse.Message ?? MessageEnum.DeleteNotOK.GetStringValue();
+                OpenNested();
+            }
+        }
+    }
+
+
+     private async Task ClearCart()
+    {
+        var option = new DialogOptions
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            BackdropClick = false
+        };
+
+        bool? confir = await DialogService.ShowMessageBox(
+            "Eliminar Documento",
+            "¿Desea eliminar todos los documentos del pago?",
+            yesText: "Si", noText: "No", "", option);
+
+        if (confir == true)
+        {
+            List<PostAction> actionList = new List<PostAction>
+        {
+            new PostAction
+            {
+                RecordId = SelectedPaymentId,
+                ModuleId = 0,
+                ActionName = "DEACTIVATE",
+                ActionComment = "Eliminar Transaccion",
+                RelatedId = 0
+            }
+        };
+
+            var serviceResponse = await PaymentService.DeleteCart(actionList, Session.UserId);
+            if (serviceResponse.Processed)
+            {
+              
+                 await OnClickCloseButton();
             }
             else
             {
