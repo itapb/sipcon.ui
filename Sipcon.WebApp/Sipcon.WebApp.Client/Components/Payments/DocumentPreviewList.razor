@@ -96,7 +96,11 @@
         </TemplateColumn>
 
         @* 6. Monto Abonado (Monto/Input - Alineado a la Derecha) *@
-        <TemplateColumn Title="Monto Abonado" HeaderClass="px-2 text-end" CellClass="px-2 text-end" HeaderStyle="width: 160px;">
+        <TemplateColumn Title="Monto Abonado"
+                        HeaderClass="px-2 text-end"
+                        CellClass="px-2 text-end"
+                        HeaderStyle="width: 160px;"
+                        Style="width: 160px;">
             <CellTemplate>
                 @{
                     var isBase = context.Item.ConceptName?.ToUpper() == "BASE";
@@ -134,9 +138,9 @@
 
                         var prefix = isUsd ? "$ " : "Bs. ";
 
-                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Warning" Class="ma-0 pa-0">
+                        <MudText Typo="Typo.body2" Color="Color.Warning" Class="fw-bold align-self-center">
                             @(prefix + amount)
-                        </MudChip>
+                        </MudText>
                     }
                 </div>
             </CellTemplate>
