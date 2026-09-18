@@ -355,31 +355,43 @@
 
             </Columns>
             <ChildRowContent>
-                <MudStack Row="true" Justify="Justify.Center" AlignItems="AlignItems.Center" Class="mud-width-full mud-height-full">
-                    <MudCard Style="width: 30%; min-height:176px;">
-                        <MudCardHeader Style="padding-top: 8px;">
-                            <CardHeaderContent>
-                                <MudText Typo="Typo.button" Align="Align.Left" Inline="true" Color="Color.Primary" Style="font-weight:bold;">
-                                    @("#" + context.Item.Id.ToString().PadLeft(10, '0'))
-                                </MudText>
-                            </CardHeaderContent>
-                        </MudCardHeader>
-                        <MudCardContent Style="padding-top: 0px;">
-                            <MudText Style="font-weight:bold;" Typo="Typo.body2">Cuenta Nro. : <MudText Inline="true" Typo="Typo.caption">@context.Item.AccountNumber</MudText></MudText>
-                            <MudText Style="font-weight:bold;" Typo="Typo.body2">Banco       : <MudText Inline="true" Typo="Typo.caption">@context.Item.BankName</MudText></MudText>
-                            @if (context.Item.TypeName.ToUpper() == "TRANSFERENCIA")
-                            {
-                                <MudText Style="font-weight:bold;" Typo="Typo.body2">Banco Origen: <MudText Inline="true" Typo="Typo.caption">@context.Item.BankOriginName</MudText></MudText>
-                            }
-                        </MudCardContent>
-                    </MudCard>
+                <div class="pa-2 d-flex justify-start w-100">
+                    <MudStack Row="true" Justify="Justify.FlexStart" AlignItems="AlignItems.Stretch" Spacing="2" Style="width: 70%;">
 
-                    <MudCard Style="width: 70%; min-height:176px;">
-                        <MudCardContent Style="padding-top: 0px;">
-                            <DocumentPreviewList DocumentDetails="context.Item.AccountPreview" IsVisibleToolBar="true" />
-                        </MudCardContent>
-                    </MudCard>
-                </MudStack>
+                        @* Tarjeta de Información (Izquierda) *@
+                        <MudCard Style="width: 35%; min-height: 120px;" Elevation="1">
+                            <MudCardHeader Style="padding-top: 6px; padding-bottom: 2px; padding-left: 12px;">
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.button" Align="Align.Left" Color="Color.Primary" Style="font-weight: bold; font-size: 11px;">
+                                        @("#" + context.Item.Id.ToString().PadLeft(10, '0'))
+                                    </MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudCardContent Style="padding: 0px 12px 8px 12px;">
+                                <MudText Style="font-weight: bold; font-size: 11px;" Typo="Typo.body2">
+                                    Cuenta Nro. : <MudText Inline="true" Typo="Typo.caption">@context.Item.AccountNumber</MudText>
+                                </MudText>
+                                <MudText Style="font-weight: bold; font-size: 11px;" Typo="Typo.body2">
+                                    Banco : <MudText Inline="true" Typo="Typo.caption">@context.Item.BankName</MudText>
+                                </MudText>
+                                @if (context.Item.TypeName?.ToUpper() == "TRANSFERENCIA")
+                                {
+                                    <MudText Style="font-weight: bold; font-size: 11px;" Typo="Typo.body2">
+                                        Banco Origen: <MudText Inline="true" Typo="Typo.caption">@context.Item.BankOriginName</MudText>
+                                    </MudText>
+                                }
+                            </MudCardContent>
+                        </MudCard>
+
+                        @* Tarjeta de Documentos (Compacta) *@
+                        <MudCard Style="width: 65%; min-height: 120px;" Elevation="1">
+                            <MudCardContent Class="pa-0">
+                                <DocumentPreviewList DocumentDetails="context.Item.AccountPreview" IsVisibleToolBar="true" />
+                            </MudCardContent>
+                        </MudCard>
+
+                    </MudStack>
+                </div>
             </ChildRowContent>
             <PagerContent>
                 <MudDataGridPager T="Payment" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
