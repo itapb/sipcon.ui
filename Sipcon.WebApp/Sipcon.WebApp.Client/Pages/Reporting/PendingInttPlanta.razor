@@ -125,6 +125,7 @@
     bool IsAllCheckBoxSelected = false;
     private HashSet<int> _selectedIds = new HashSet<int>();
 
+    private HashSet<int> _lastSelectAllIds = new HashSet<int>();
     protected override async Task OnInitializedAsync()
     {
         Modules = await Http.GetFromJsonAsync<List<Module>>($"api/Module/GetAll?moduleName=REPORTES-INTT-PLANTA&userId={Session.UserId}");
@@ -159,7 +160,7 @@
 
                 return new GridData<InttPlanta>
                 {
-                    TotalItems = content!.total ?? 0,
+                    TotalItems = content?.total ?? 0,
                     Items = items
                 };
             }
@@ -183,8 +184,11 @@
 
     private async Task ClickRefresh()
     {
+        // Reset explícito: limpia toda la selección (manual + select-all)
         IsAllCheckBoxSelected = false;
         _selectedIds.Clear();
+        _lastSelectAllIds.Clear();
+
         if (DataGrid?.FilteredItems != null)
         {
             foreach (var item in DataGrid.FilteredItems)
@@ -211,22 +215,71 @@
 
     private async Task AfterAsyncAllCheck()
     {
+        if (IsAllCheckBoxSelected)
+        {
+            var idsFromFilter = await GetAllFilteredIds();
+            _lastSelectAllIds = new HashSet<int>(idsFromFilter);
+            foreach (var id in idsFromFilter)
+            {
+                _selectedIds.Add(id);
+            }
+        }
+        else
+        {
+            foreach (var id in _lastSelectAllIds)
+            {
+                _selectedIds.Remove(id);
+            }
+            _lastSelectAllIds.Clear();
+        }
+
         if (DataGrid?.FilteredItems != null)
         {
-            var currentItems = DataGrid.FilteredItems.ToList();
-            foreach (var item in currentItems)
+            foreach (var item in DataGrid.FilteredItems)
             {
-                item.IsSelected = IsAllCheckBoxSelected;
-                if (item.IsSelected)
-                    _selectedIds.Add(item.Id);
-                else
-                    _selectedIds.Remove(item.Id);
+                item.IsSelected = _selectedIds.Contains(item.Id);
             }
-            StateHasChanged();
         }
+        StateHasChanged();
         await Task.CompletedTask;
     }
 
+    // Paginado interno para obtener todos los IDs del filtro actual
+    private async Task<HashSet<int>> GetAllFilteredIds()
+    {
+        var allIds = new HashSet<int>();
+        const int pageSize = 100;
+        int offset = 0;
+        bool hasMore = true;
+
+        while (hasMore)
+        {
+            string url = $"api/InttPlanta/GetPendientes?userId={Session.UserId}&supplierId={Session.SupplierId}&rowFrom={offset}&filter={searchString}";
+
+            var response = await Http.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+                break;
+
+            var content = await response.Content.ReadFromJsonAsync<WebApiResponse<List<InttPlanta>>>();
+            var items = content?.data ?? new List<InttPlanta>();
+
+            if (items.Count == 0)
+                break;
+
+            foreach (var item in items)
+            {
+                allIds.Add(item.Id);
+            }
+            hasMore = items.Count == pageSize;
+            offset += pageSize;
+
+            // Freno de seguridad por si el backend no respeta el pageSize
+            if (offset > 1000)
+                break;
+        }
+        return allIds;
+    }
     private async Task CloseFilterPanel()
     {
         if (_openFilters)
@@ -249,11 +302,7 @@
                 return;
             }
 
-            var selectedItems = DataGrid.FilteredItems
-                .Where(item => _selectedIds.Contains(item.Id))
-                .ToList();
-
-            if (selectedItems == null || !selectedItems.Any())
+            if (_selectedIds == null || !_selectedIds.Any())
             {
                 await DialogService.ShowDialog(
                     "Debe seleccionar al menos un registro para generar",
@@ -264,11 +313,12 @@
                 return;
             }
 
-            var actions = selectedItems.Select(item => new Models.Action
+            var moduleId = Modules?.FirstOrDefault(m => m.ActionName == "GENERATE")?.Id;
+            var actions = _selectedIds.Select(id => new Models.Action
             {
                 UserId = Session.UserId,
-                RecordId = item.Id,
-                ModuleId = Modules?.FirstOrDefault(m => m.ActionName == "GENERATE")?.Id,
+                RecordId = id,
+                ModuleId = moduleId,
                 ActionName = "GENERATE",
                 ActionComment = "",
                 RelatedId = 0
@@ -287,7 +337,7 @@
                     if (result != null && result.status == 200)
                     {
                         await DialogService.ShowDialog(
-                            $"{selectedItems.Count} registros generados exitosamente",
+                            $"{actions.Count} registros generados exitosamente",
                             "Éxito",
                             "OK",
                             Color.Success,
@@ -304,13 +354,15 @@
                     }
 
                     _selectedIds.Clear();
+                    _lastSelectAllIds.Clear();
                     IsAllCheckBoxSelected = false;
-                    foreach (var item in selectedItems)
+                    if (DataGrid?.FilteredItems != null)
                     {
-                        item.IsSelected = false;
+                        foreach (var item in DataGrid.FilteredItems)
+                        {
+                            item.IsSelected = false;
+                        }
                     }
-
-
                     await DataGrid!.ReloadServerData();
                 }
                 else
