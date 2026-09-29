@@ -10,8 +10,6 @@
 @inject HubEventsService hubEventsService
 @implements IDisposable
 
-<PageTitle>Detalle de Conteo de Inventario</PageTitle>
-<CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
 
 <MudDataGrid @ref="_mudDataGrid"
              T="GetInventoryCountDetail"
@@ -41,6 +39,15 @@
                       OnKeyUp="HandleKeyDownSearch">
         </MudTextField>
         <MudSpacer />
+
+        <MudSelect T="string" FitContent="true" Label="Agrupar por" @bind-Value="SelectedmGroup" @bind-Value:after="AfterAsync">
+            @foreach (var group in mGroups)
+            {
+                <MudSelectItem Value="@group">@group</MudSelectItem>
+            }
+        </MudSelect>
+
+         <MudIconButton Icon="@Icons.Material.Filled.Print" Color="Color.Dark" OnClick="() => ClickSearch()"></MudIconButton>
 
         <!-- Botón de Filtros con Popover Flotante -->
         <MudMenu Icon="@(_hasActiveFilters ? Icons.Material.Filled.FilterAlt : Icons.Material.Filled.FilterAltOff)"
@@ -77,6 +84,7 @@
                                DateFormat="dd/MM/yyyy"
                                AutoClose="true"
                                Clearable="true" />
+
 
                 <!-- Estatus -->
                 <MudSelect T="SelectOption"
@@ -126,52 +134,199 @@
     <Columns>
         <SelectColumn T="GetInventoryCountDetail" />
 
-        <!-- Columna agrupada por defecto -->
-        <PropertyColumn Property="x => x.NumForm"
-                        Title="N° PLANILLA"
+       <PropertyColumn Property="x => x.NumForm"
+                Title="N° PLANILLA"
+                Align="Align.Center"
+                Filterable="false"
+                Groupable="@(_numFormGrouping)"
+                @bind-Grouping="_numFormGrouping"
+                GroupBy="_groupBy1"
+                @bind-GroupByOrder="_numFormOrder"
+                @bind-GroupExpanded="_numFormExpanded">
+    <GroupTemplate>
+        @if (_customizeGroupTemplate)
+        {
+            <div class="d-flex align-center">
+                <MudIcon Icon="@Icons.Material.Filled.Assignment" Color="Color.Dark" Size="Size.Small" Class="mr-2" />
+                <span style="font-weight:bold">N° PLANILLA: @context.Grouping.Key</span>
+
+                <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
+                    @context.Grouping.Count() Ítems
+                </MudChip>
+
+                <!-- Contados -->
+                <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
+                    Ítems Contados: @context.Grouping.Count(x => !string.IsNullOrEmpty(x.StatusName) && x.StatusName.ToUpper() != "POR CONTAR")
+                </MudChip>
+
+                <!-- Diferencias -->
+                <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
+                    Ítems c/ Diferencia: @context.Grouping.Count(x => x.Diference != 0 && (!string.IsNullOrEmpty(x.StatusName) && x.StatusName.ToUpper() != "POR CONTAR"))
+                </MudChip>
+
+                        <MudTooltip Text="Imprimir Planilla">
+                            <div @onclick:stopPropagation="true" style="display:inline-block;">
+                                <MudIconButton Icon="@Icons.Material.Filled.Print"
+                                               Color="Color.Primary"
+                                               Size="Size.Small"
+                                               Class="ml-3"
+                                               OnClick="@(() => PrintFormAsync(context.Grouping.ToList()))" />
+                            </div>
+                        </MudTooltip>
+
+                        <MudTooltip Text="Asignar">
+                            <div @onclick:stopPropagation="true" style="display:inline-block;">
+                                <MudIconButton Icon="@Icons.Material.Filled.ArrowRightAlt"
+                                               Color="Color.Primary"
+                                               Size="Size.Small"
+                                               Class="ml-3"
+                                               OnClick="@(() => PrintFormAsync(context.Grouping.ToList()))" />
+                            </div>
+                        </MudTooltip>
+            </div>
+        }
+        else
+        {
+            <div class="d-flex align-center">
+                <span style="font-weight:bold">N° PLANILLA: @context.Grouping.Key</span>
+                <MudIconButton Icon="@Icons.Material.Filled.Print" 
+                               Color="Color.Primary" 
+                               Size="Size.Small" 
+                               Class="ml-2"
+                               OnClick="@(() => PrintFormAsync(context.Grouping.ToList()))" />
+                        <MudIconButton Icon="@Icons.Material.Filled.ArrowRightAlt"
+                                       Color="Color.Primary"
+                                       Size="Size.Small"
+                                       Class="ml-2"
+                                       OnClick="@(() => PrintFormAsync(context.Grouping.ToList()))" />
+                            
+            </div>
+        }
+    </GroupTemplate>
+</PropertyColumn>
+
+        <!-- Agrupación por CÓDIGO -->
+        <PropertyColumn Property="x => x.InnerCode"
+                        Title="CÓDIGO"
                         Align="Align.Center"
                         Filterable="false"
-                        Grouping="true"
-                        Groupable="true">
+                        Groupable="@(_innerCodeGrouping)"
+                        @bind-Grouping="_innerCodeGrouping"
+                        GroupBy="_groupBy1"
+                        @bind-GroupByOrder="_innerCodeOrder"
+                        @bind-GroupExpanded="_innerCodeExpanded">
             <GroupTemplate>
-                <span style="font-weight: bold;">
-                    N° PLANILLA: @context.Grouping.Key
-                </span>
+                @if (_customizeGroupTemplate)
+                {
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Hardware" Color="Color.Dark" Size="Size.Small" Class="mr-2" />
+                        <span style="font-weight:bold">CÓDIGO: @context.Grouping.Key</span>
+                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
+                            @context.Grouping.Count() Ítems
+                        </MudChip>
+                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
+                            Diferencia Total: @context.Grouping.Sum(x => x.Diference)
+                        </MudChip>
+                    </div>
+                }
+                else
+                {
+                    <span style="font-weight:bold">CÓDIGO: @context.Grouping.Key</span>
+                }
             </GroupTemplate>
         </PropertyColumn>
 
-        <PropertyColumn Property="x => x.InnerCode" Title="CÓDIGO" Align="Align.Center" Filterable="false" />
-        <PropertyColumn Property="x => x.PartName" Title="PARTE" Align="Align.Left" Filterable="false" />
-        <PropertyColumn Property="x => x.Zone" Title="ZONA" Align="Align.Center" Filterable="false" />
-        <PropertyColumn Property="x => x.Location" Title="UBICACIÓN" Align="Align.Center" Filterable="false" />
-        <PropertyColumn Property="x => x.QuantityOld" Title="CANT. ANTERIOR" Align="Align.Right" Filterable="false" />
-        <PropertyColumn Property="x => x.QuantityNew" Title="CANT. NUEVA" Align="Align.Right" Filterable="false" />
-        <PropertyColumn Property="x => x.Diference" Title="DIFERENCIA" Align="Align.Right" Filterable="false" />
-        <PropertyColumn Property="x => x.UserName" Title="USUARIO" Align="Align.Center" Filterable="false" />
-        <PropertyColumn Property="x => x.CountDate" Title="FECHA CONTEO" Format="dd/MM/yyyy HH:mm" Align="Align.Center" Filterable="false" />
+        <PropertyColumn Property="x => x.PartName" Title="PARTE" Align="Align.Left" Filterable="false" Groupable="false" />
 
-        <PropertyColumn Property="x => x.StatusName" Title="ESTATUS" Align="Align.Center" CellStyleFunc="@_cellStyleFunc" Filterable="false" />
+
+        <!-- Agrupación por ZONA -->
+        <PropertyColumn Property="x => x.Zone"
+                        Title="ZONA"
+                        Align="Align.Center"
+                        Filterable="false"
+                        Groupable="@(_zoneGrouping)"
+                        @bind-Grouping="_zoneGrouping"
+                        GroupBy="_groupBy1"
+                        @bind-GroupByOrder="_zoneOrder"
+                        @bind-GroupExpanded="_zoneExpanded">
+            <GroupTemplate>
+                @if (_customizeGroupTemplate)
+                {
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Hardware" Color="Color.Dark" Size="Size.Small" Class="mr-2" />
+                        <span style="font-weight:bold">CÓDIGO: @context.Grouping.Key</span>
+                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
+                            @context.Grouping.Count() Ítems
+                        </MudChip>
+                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
+                            Diferencia Total: @context.Grouping.Sum(x => x.Diference)
+                        </MudChip>
+                    </div>
+                }
+                else
+                {
+                    <span style="font-weight:bold">CÓDIGO: @context.Grouping.Key</span>
+                }
+            </GroupTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Location" Title="UBICACIÓN" Align="Align.Center" Filterable="false" Groupable="false" />
+        <PropertyColumn Property="x => x.CountId" Title="NUM. CONTEO" Align="Align.Right" Filterable="false" Groupable="false" />
+        <PropertyColumn Property="x => x.QuantityOld" Title="CANT. ANTERIOR" Align="Align.Right" Filterable="false" Groupable="false" />
+        <PropertyColumn Property="x => x.QuantityNew" Title="CANT. NUEVA" Align="Align.Right" Filterable="false" Groupable="false" />
+        <PropertyColumn Property="x => x.Diference" Title="DIFERENCIA" Align="Align.Right" Filterable="false" Groupable="false" />
+        <PropertyColumn Property="x => x.UserName" Title="ASIGNADO A" Align="Align.Center" Filterable="false" Groupable="false" />
+
+        <!-- Agrupación por UBICACIÓN -->
+        <PropertyColumn Property="x => x.Location"
+                        Title="UBICACIÓN"
+                        Align="Align.Center"
+                        Filterable="false"
+                        Groupable="@(_locationGrouping)"
+                        @bind-Grouping="_locationGrouping"
+                        GroupBy="_groupBy1"
+                        @bind-GroupByOrder="_locationOrder"
+                        @bind-GroupExpanded="_locationExpanded">
+            <GroupTemplate>
+                @if (_customizeGroupTemplate)
+                {
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Place" Color="Color.Dark" Size="Size.Small" Class="mr-2" />
+                        <span style="font-weight:bold">UBICACIÓN: @context.Grouping.Key</span>
+
+                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
+                            @context.Grouping.Count() Ítems
+                        </MudChip>
+
+                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
+                            Reg. Contados: @context.Grouping.Count(x => !string.IsNullOrEmpty(x.StatusName) && x.StatusName.ToUpper() != "POR CONTAR")
+                        </MudChip>
+
+                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
+                            Reg. c/ Diferencia: @context.Grouping.Count(x => x.Diference != 0 && (!string.IsNullOrEmpty(x.StatusName) && x.StatusName.ToUpper() != "POR CONTAR"))
+                        </MudChip>
+                    </div>
+                }
+                else
+                {
+                    <span style="font-weight:bold">UBICACIÓN: @context.Grouping.Key</span>
+                }
+            </GroupTemplate>
+        </PropertyColumn>
+
+        <PropertyColumn Property="x => x.StatusName" Title="ESTATUS" Align="Align.Center"  Filterable="false" Groupable="false" />
 
         <TemplateColumn StickyRight="true" HeaderClass="dt-center" CellClass="dt-center">
             <CellTemplate>
                 <MudButtonGroup Size="@Size.Small" Variant="Variant.Text" Color="Color.Dark">
-                    <MudIconButton Icon="@Icons.Material.Filled.FileOpen" Variant="Variant.Text" Color="Color.Success" Size="Size.Small" Href="@("inventoryCounDetail/" + (context.Item.InventoryId ?? context.Item.CountId))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Unarchive" Variant="Variant.Text" Color="Color.Success" Size="Size.Small" Href="@("inventoryCounDetail/" + (context.Item.InventoryId ?? context.Item.CountId))" />
 
-                    @if (context.Item.StatusName?.ToUpper() == "BORRADOR")
-                    {
-                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                       Variant="Variant.Text"
-                                       Color="Color.Primary"
-                                       Size="Size.Small"
-                                       OnClick="() => ClickEditInventoryCount(context.Item)" />
-                    }
                 </MudButtonGroup>
             </CellTemplate>
         </TemplateColumn>
     </Columns>
 
     <PagerContent>
-        <MudDataGridPager PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Página" />
+        <MudDataGridPager PageSizeOptions="new int[] { 300 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Página" />
     </PagerContent>
 </MudDataGrid>
 
@@ -190,6 +345,9 @@
     private HashSet<GetInventoryCountDetail> selectedInventoryCount = new([]);
     private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
 
+    string SelectedmGroup = "NRO PLANILLA";
+    string[] mGroups = ["NRO PLANILLA", "CODIGO", "UBICACION","ZONA"];
+
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
     private bool _success = false;
@@ -200,7 +358,7 @@
 
     private string _searchString = string.Empty;
     private bool _loading = true;
-    private string _moduleName = "INVENTARIO-CONTEO";
+    private string _moduleName = "INVENTARIO-DETALLES-CONTEO";
 
     private DateTime? _dateFrom { get; set; } = null;
     private DateTime? _dateTo { get; set; } = null;
@@ -211,6 +369,30 @@
     private bool _hasActiveFilters => _dateFrom.HasValue || _dateTo.HasValue || _selectedAction != null;
 
     private MudDataGrid<GetInventoryCountDetail>? _mudDataGrid;
+
+    // =========================================================================
+    // CONFIGURACIÓN DE AGRUPACIÓN (Igual al otro cuadro)
+    // =========================================================================
+    private bool _customizeGroupTemplate = true;
+
+    private bool _numFormGrouping = true;
+    private int _numFormOrder;
+    private bool _numFormExpanded = false;
+
+    private bool _innerCodeGrouping = false;
+    private int _innerCodeOrder;
+    private bool _innerCodeExpanded = false;
+
+    private bool _locationGrouping = false;
+    private int _locationOrder;
+    private bool _locationExpanded = true;
+
+    private bool _zoneGrouping = false;
+    private int _zoneOrder;
+    private bool _zoneExpanded = true;
+
+    private Func<GetInventoryCountDetail, object>? _groupBy1;
+    // =========================================================================
 
     List<BreadcrumbItem> _itemsNavigate = [
         new("Home", href: "", icon: Icons.Material.Filled.Home),
@@ -227,6 +409,20 @@
         await Task.CompletedTask;
     }
 
+    private async Task AfterAsync()
+    {
+        _numFormGrouping = SelectedmGroup == "NRO PLANILLA";
+        _innerCodeGrouping = SelectedmGroup == "CODIGO";
+        _locationGrouping = SelectedmGroup == "UBICACION";
+        _zoneGrouping = SelectedmGroup == "ZONA";
+
+
+        if (_mudDataGrid != null)
+        {
+            await _mudDataGrid.ReloadServerData();
+        }
+    }
+
     private async Task ReloadServerData()
     {
         if (_mudDataGrid != null)
@@ -239,6 +435,21 @@
     {
         hubEventsService.OnSupplierChanged -= ReloadServerData;
         hubEventsService.OnDealerChanged -= ReloadServerData;
+    }
+
+    private async Task PrintFormAsync(List<GetInventoryCountDetail> details)
+    {
+        // Verifica que la lista no esté vacía
+        if (details == null || !details.Any()) return;
+
+        // Obtiene el número de planilla del primer registro
+        int numForm = details.FirstOrDefault()?.NumForm ?? 0;
+
+        // Valida que el número de planilla sea válido (mayor a 0)
+        if (numForm <= 0) return;
+
+        // Tu lógica para generar el reporte / impresión de la planilla
+        // Ejemplo: await JS.InvokeVoidAsync("openPrintWindow", numForm);
     }
 
     private async Task<GridData<GetInventoryCountDetail>> LoadGridData(GridState<GetInventoryCountDetail> state)
@@ -415,7 +626,7 @@
                 {
                     var itemAction = new PostAction
                     {
-                        RecordId = item.NumForm?? 0, // Asigna NumForm como RecordId
+                        RecordId = item.NumForm ?? 0,
                         ModuleId = moduleId,
                         ActionName = moduleActionName
                     };
