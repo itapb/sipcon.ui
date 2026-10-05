@@ -118,7 +118,8 @@
                          @bind-Value:after="AfterAsyncAllCheck" />
         </HeaderTemplate>
         <CellTemplate>
-            <MudCheckBox @bind-Value="@context.Item.IsSelected" />
+            <MudCheckBox @bind-Value="@context.Item.IsSelected"
+                         @bind-Value:after="() => ToggleSelection(context.Item)" />
         </CellTemplate>
     </TemplateColumn>
 
@@ -175,6 +176,8 @@
     private List<Module>? Modules;
 
     bool IsAllCheckBoxSelected = false;
+    private HashSet<int?> _selectedIds = new HashSet<int?>();
+    private HashSet<int?> _lastSelectAllIds = new HashSet<int?>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -187,7 +190,7 @@
         _cts = new CancellationTokenSource();
         var token = _cts.Token;
 
-        IsAllCheckBoxSelected = false;
+       // IsAllCheckBoxSelected = false;
 
         var offset = state.Page * state.PageSize;
         string url = $"api/Intt/GetPendientes?userId={Session.UserId}&supplierId={Session.SupplierId}&rowFrom={offset}&filter={searchString}";
@@ -202,10 +205,17 @@
             if (response.IsSuccessStatusCode)
             {
                 var content = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Intt>>>(cancellationToken: token);
+
+                var items = content?.data ?? new List<Intt>();
+                foreach (var item in items)
+                {
+                    item.IsSelected = _selectedIds.Contains(item.Id);
+                }
+
                 return new GridData<Intt>
                 {
                     TotalItems = content!.total ?? 0,
-                    Items = content.data ?? []
+                    Items = items
                 };
             }
 
@@ -218,8 +228,28 @@
         }
     }
 
+    private void ToggleSelection(Intt item)
+    {
+        if (item.IsSelected)
+            _selectedIds.Add(item.Id);
+        else
+            _selectedIds.Remove(item.Id);
+    }
+
     private async Task ClickRefresh()
     {
+        IsAllCheckBoxSelected = false;
+        _selectedIds.Clear();
+        _lastSelectAllIds.Clear();
+
+        if (DataGrid?.FilteredItems != null)
+        {
+            foreach (var item in DataGrid.FilteredItems)
+            {
+                item.IsSelected = false;
+            }
+        }
+
         await DataGrid!.ReloadServerData();
         if (_openFilters)
             await _filtersPanel.CollapseAsync();
@@ -238,9 +268,68 @@
 
     private async Task AfterAsyncAllCheck()
     {
-        DataGrid?.FilteredItems.ToList().ForEach(item => item.IsSelected = IsAllCheckBoxSelected);
+        if (IsAllCheckBoxSelected)
+        {
+            var idsFromFilter = await GetAllFilteredIds();
+            _lastSelectAllIds = new HashSet<int?>(idsFromFilter);
+            foreach (var id in idsFromFilter)
+            {
+                _selectedIds.Add(id);
+            }
+        }
+        else
+        {
+            foreach (var id in _lastSelectAllIds)
+            {
+                _selectedIds.Remove(id);
+            }
+            _lastSelectAllIds.Clear();
+        }
+
+        if (DataGrid?.FilteredItems != null)
+        {
+            foreach (var item in DataGrid.FilteredItems)
+            {
+                item.IsSelected = _selectedIds.Contains(item.Id);
+            }
+        }
         StateHasChanged();
         await Task.CompletedTask;
+    }
+
+    private async Task<HashSet<int?>> GetAllFilteredIds()
+    {
+        var allIds = new HashSet<int?>();
+        const int pageSize = 100;
+        int offset = 0;
+        bool hasMore = true;
+
+        while (hasMore)
+        {
+            string url = $"api/Intt/GetPendientes?userId={Session.UserId}&supplierId={Session.SupplierId}&rowFrom={offset}&filter={searchString}";
+
+            var response = await Http.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+                break;
+
+            var content = await response.Content.ReadFromJsonAsync<WebApiResponse<List<Intt>>>();
+            var items = content?.data ?? new List<Intt>();
+
+            if (items.Count == 0)
+                break;
+
+            foreach (var item in items)
+            {
+                allIds.Add(item.Id);
+            }
+            hasMore = items.Count == pageSize;
+            offset += pageSize;
+
+            if (offset > 1000)
+                break;
+        }
+        return allIds;
     }
 
     private async Task CloseFilterPanel()
@@ -253,12 +342,9 @@
     {
         if (actionName == "GENERATE")
         {
-            // Tu lógica existente para GENERATE
-            var selectedItems = DataGrid?.FilteredItems
-                .Where(item => item.IsSelected)
-                .ToList();
+            var validIds = _selectedIds.Where(id => id.HasValue).Select(id => id!.Value).ToList();
 
-            if (selectedItems == null || !selectedItems.Any())
+            if (!validIds.Any())
             {
                 await DialogService.ShowDialog(
                     "Debe seleccionar al menos un registro para generar",
@@ -269,10 +355,10 @@
                 return;
             }
 
-            var actions = selectedItems.Select(item => new Models.Action
+            var actions = validIds.Select(id => new Models.Action
             {
                 UserId = Session.UserId,
-                RecordId = item.Id,
+                RecordId = id,
                 ModuleId = Modules?.FirstOrDefault(m => m.ActionName == "GENERATE")?.Id,
                 ActionName = "GENERATE",
                 ActionComment = "",
@@ -291,6 +377,18 @@
                     "OK",
                     Color.Success,
                     Icons.Material.Filled.CheckCircle);
+
+                _selectedIds.Clear();
+                _lastSelectAllIds.Clear();
+                IsAllCheckBoxSelected = false;
+                if (DataGrid?.FilteredItems != null)
+                {
+                    foreach (var item in DataGrid.FilteredItems)
+                    {
+                        item.IsSelected = false;
+                    }
+                }
+
                 await DataGrid!.ReloadServerData();
             }
             else
