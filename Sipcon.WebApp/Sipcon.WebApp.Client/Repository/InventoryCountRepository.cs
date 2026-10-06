@@ -159,7 +159,7 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<GetInventoryCountDetail>>> GetInventoryCountDetail(int IdSupplier, int IdUser, int inventoryCountId, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "", int? EstatusId = null)
+        public async Task<ApiResponse<List<GetInventoryCountDetail>>> GetInventoryCountDetail(int IdSupplier, int IdUser, int inventoryCountId, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "", int? EstatusId = null, int? ZoneId = null, bool? Assign = null)
         {
             ApiResponse<List<GetInventoryCountDetail>>? result;
 
@@ -170,7 +170,8 @@
                 url = string.IsNullOrEmpty(DateFrom) ? url : $"{url}&fromDate={DateFrom}";
                 url = string.IsNullOrEmpty(DateTo) ? url : $"{url}&upToDate={DateTo}";
                 url = (EstatusId.HasValue) ? $"{url}&estatusId={EstatusId}" : url;
-
+                url = (ZoneId.HasValue) ? $"{url}&idZone={ZoneId}" : url;
+                url = (Assign.HasValue) ? $"{url}&Assign={Assign}" : url;
                 // Se cambia GetInventoryCountDetail por GetCountFull para que coincida con el JSON anidado
                 result = await _http.GetFromJsonAsync<ApiResponse<List<GetInventoryCountDetail>>>(url);
 
@@ -288,6 +289,138 @@
             }
             return result;
 
+        }
+
+
+        public async Task<ApiResponse<ActionResult>> ActionsInventoryCountDetail(List<PostAction> PostActions, int IdUser)
+        {
+            ApiResponse<ActionResult>? result;
+
+            try
+            {
+                var response = await _http.PostAsJsonAsync($"api/InventoryCount/ActionsInventoryCountDetail?userId={IdUser}", PostActions);
+
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result = (result is null) ? new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = "El servidor devolvió una respuesta vacía."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<ActionResult>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+            return result;
+
+        }
+
+
+        public async Task<ApiResponse<List<byte>>> ExportPdfInventoryCount(int inventoryId, List<int> formIds, int supplierId, int userId)
+        {
+            ApiResponse<List<byte>> result;
+            string fileUrl = string.Empty;
+
+            try
+            {
+                string formsQuery = formIds != null && formIds.Any()
+                    ? string.Join("&", formIds.Select(id => $"formIds={id}"))
+                    : string.Empty;
+
+                var response = await _http.GetAsync($"api/Inventory/ExportPdfInventoryCount?inventoryId={inventoryId}&supplierId={supplierId}&userId={userId}&{formsQuery}");
+
+                var fileContent = await response.Content.ReadAsByteArrayAsync();
+                result = (fileContent is null) ? new ApiResponse<List<byte>>()
+                {
+                    Processed = false,
+                    Message = "Error al Exportar Data.",
+                    Data = []
+                } : new ApiResponse<List<byte>>()
+                {
+                    Processed = true,
+                    Message = "",
+                    Data = fileContent.ToList()
+                };
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<byte>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message),
+                    Data = []
+                };
+            }
+
+            return result;
+        }
+
+
+        public async Task<ApiResponse<List<ZoneOption>>> GetZoneCount(int IdUser, int SupplierId)
+        {
+            try
+            {
+                // Cambia List<ZoneOption> por ApiResponse<List<ZoneOption>>
+                var response = await _http.GetFromJsonAsync<ApiResponse<List<ZoneOption>>>(
+                    $"api/InventoryCount/GetZoneCount?userId={IdUser}&supplierId={SupplierId}"
+                );
+
+                if (response is null)
+                {
+                    return new ApiResponse<List<ZoneOption>>
+                    {
+                        Processed = false,
+                        Message = "La respuesta del servidor fue nula."
+                    };
+                }
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<List<ZoneOption>>
+                {
+                    Processed = false,
+                    Message = $"Ocurrió un error inesperado: {ex.Message}"
+                };
+            }
+        }
+
+
+        public async Task<ApiResponse<List<CountSummary>>> GetCountSummary(int IdSupplier, int IdUser, int inventoryCountId, int RowFrom = 0)
+        {
+            ApiResponse<List<CountSummary>>? result;
+
+            try
+            {
+                var url = $"api/InventoryCount/GetInventoryCountDetail?supplierId={IdSupplier}&userId={IdUser}&inventoryId={inventoryCountId}&rowFrom={RowFrom}";
+                // Se cambia GetInventoryCountDetail por GetCountFull para que coincida con el JSON anidado
+                result = await _http.GetFromJsonAsync<ApiResponse<List<CountSummary>>>(url);
+
+                result = (result is null) ? new ApiResponse<List<CountSummary>>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos."
+                } : result;
+
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<List<CountSummary>>()
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+
+            return result;
         }
 
 

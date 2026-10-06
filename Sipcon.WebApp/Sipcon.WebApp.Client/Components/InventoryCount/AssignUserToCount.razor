@@ -1,0 +1,168 @@
+﻿@if (Contacts == null)
+{
+    <LoadingForm IsMudDialog="@(MudDialog != null)" />
+}
+else
+{
+    <div>
+        <MudForm @ref="form">
+            <MudGrid Spacing="0">
+                <MudItem xs="12">
+                    <MudPaper Elevation="2" Class="jpv1-dialog-background-title pa-3" Square="true">
+                        <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                            <MudStack Row="true" StretchItems="StretchItems.Start" Justify="Justify.FlexEnd">
+                                <MudStack Row="true">
+                                    <MudText Typo="Typo.h6" Color="Color.Info">Asignar Conteo</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Spacing="2">
+                                    <MudButton OnClick="CancelClick">Cancelar</MudButton>
+                                    <MudFab StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" OnClick="SaveClick" Size="Size.Small" Label="Aceptar" />
+                                </MudStack>
+                            </MudStack>
+                        </MudPaper>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudPaper Elevation="2" Class="pa-3 jpv1-dialog-body-background" Square="true">
+                        <MudPaper Elevation="2" Class="pa-3 mud-text-align-center">
+                            <MudStack Row="false">
+                                <MudText Typo="Typo.h6" GutterBottom="true">Usuarios</MudText>
+                                <MudSelect T="Contact" 
+                                           ToStringFunc="@ConvertContactFunc" 
+                                           Required="true" 
+                                           ValueChanged="OnContactValueChanged" 
+                                           RequiredError="Campo requerido" 
+                                           Value="ContactSelected">
+                                    @foreach (var contact in Contacts!)
+                                    {
+                                        <MudSelectItem T="Contact" Value="@contact" @key="contact.Id" />
+                                    }
+                                </MudSelect>
+                            </MudStack>
+                        </MudPaper>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </div>
+}
+
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private ILogger<AssignUserToCount> Logger { get; set; } = default!;
+    [Inject] private IInventoryCountService InventoryCountService { get; set; } = default!; // Inyección de tu servicio
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    // Reemplaza 'dynamic' o el tipo genérico por la clase/modelo real de tus ítems seleccionados
+    [Parameter] public IEnumerable<dynamic>? SelectedInventoryCount { get; set; } 
+    [Parameter] public string? moduleName { get; set; }
+    [Parameter] public int ModuleId { get; set; }
+    [Parameter] public string ModuleActionName { get; set; }
+    [Parameter] public int InventoryNumber { get; set; }
+    [Parameter] public int? ZoneId { get; set; } = 0;
+
+    private MudForm? form;
+    private Contact? ContactSelected;
+    private Func<Contact?, string> ConvertContactFunc = contact => $"{contact?.FirstName} {contact?.LastName}".Trim();
+    private List<Contact>? Contacts = default;
+
+    protected override async Task OnInitializedAsync()
+    {
+        HttpResponseMessage locationResponse = await Http.GetAsync($"api/Contact/GetUsersByModule?moduleName={moduleName}&supplierId={Session.SupplierId}");
+        if (locationResponse.IsSuccessStatusCode)
+        {
+            var content = await locationResponse.Content.ReadFromJsonAsync<WebApiResponse<List<Contact>>>();
+            Contacts = content?.data ?? new List<Contact>();
+        }
+        else
+        {
+            Contacts = new List<Contact>();
+        }
+    }
+
+    private async Task SaveClick(MouseEventArgs args)
+    {
+        if (form == null) return;
+
+        await form.Validate();
+        if (!form.IsValid || ContactSelected == null) return;
+
+        // Se evalúa si es modo Zona O si existen ítems en la lista
+        bool isZoneMode = ZoneId.HasValue && ZoneId.Value != 0;
+        bool hasSelectedItems = SelectedInventoryCount != null && SelectedInventoryCount.Any();
+
+        if (isZoneMode || hasSelectedItems)
+        {
+            var option = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false
+            };
+
+            bool? confirm = await DialogService.ShowMessageBox(
+                "Asignar Conteo de Inventario",
+                "¿Está seguro de asignar los items seleccionados?",
+                yesText: "Sí", noText: "No", "", option);
+
+            if (confirm == true)
+            {
+                List<PostAction> actionList = new();
+
+                // Determina el comentario según el ActionName
+                string defaultComment = ModuleActionName?.ToUpper() == "VALIDATE" ? "RECONTEO" : "CONTEO";
+
+                if (isZoneMode)
+                {
+                    // Registro único para la Zona
+                    actionList.Add(new PostAction
+                    {
+                        RecordId = ZoneId.Value,
+                        ActionComment = "PRECONTEO",
+                        ModuleId = ModuleId,
+                        ActionName = ModuleActionName,
+                        UserId = ContactSelected.Id ?? 0,
+                        RelatedId = InventoryNumber
+                    });
+                }
+                else
+                {
+                    // Registros individuales por ítem
+                    foreach (var item in SelectedInventoryCount!)
+                    {
+                        actionList.Add(new PostAction
+                        {
+                            RecordId = item.Id ?? 0,
+                            ActionComment = defaultComment,
+                            ModuleId = ModuleId,
+                            ActionName = ModuleActionName,
+                            UserId = ContactSelected.Id ?? 0,
+                            RelatedId = InventoryNumber
+                        });
+                    }
+                }
+
+                var serviceResponse = await InventoryCountService.ActionsInventoryCountDetail(actionList, Session.UserId);
+
+                if (serviceResponse.Processed)
+                {
+                    await DialogService.ShowDialog(Useful.OkSavedMessage, "Asignar", "OK", Color.Info, Icons.Material.Filled.Commit);
+                    MudDialog?.Close(DialogResult.Ok(true));
+                }
+                else
+                {
+                    string errorMessage = serviceResponse.Message ?? MessageEnum.GenerateNotOK.GetStringValue();
+                    Logger.LogError(Session.TemplateLog("Asignar Usuario a Conteo", errorMessage));
+                    await DialogService.ShowDialog(errorMessage, "Error", "OK", Color.Error, Icons.Material.Filled.Error);
+                }
+            }
+        }
+    }
+
+    private void CancelClick(MouseEventArgs args) => MudDialog?.Close();
+    private void OnContactValueChanged(Contact selectedContact) => ContactSelected = selectedContact;
+}

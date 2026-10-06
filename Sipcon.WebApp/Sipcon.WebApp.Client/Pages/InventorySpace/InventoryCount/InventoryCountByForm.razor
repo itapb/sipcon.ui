@@ -3,6 +3,7 @@
 @using System.Globalization;
 @using Sipcon.WebApp.Client.Components.InventoryCount
 
+
 @inject IInventoryCountService InventoryCountService
 @inject IDialogService DialogService
 @inject UtilModuleActions ModuleActionsService
@@ -40,6 +41,8 @@
         </MudTextField>
         <MudSpacer />
 
+       
+
         <MudSelect T="string" FitContent="true" Label="Agrupar por" @bind-Value="SelectedmGroup" @bind-Value:after="AfterAsync">
             @foreach (var group in mGroups)
             {
@@ -47,7 +50,12 @@
             }
         </MudSelect>
 
-         <MudIconButton Icon="@Icons.Material.Filled.Print" Color="Color.Dark" OnClick="() => ClickSearch()"></MudIconButton>
+         <MudIconButton Icon="@Icons.Material.Filled.Print" Color="Color.Dark" OnClick="() => PrintFormAsync()"></MudIconButton>
+        <MudIconButton Icon="@Icons.Material.Filled.Assignment"
+                       Color="Color.Dark"
+                       Disabled="@(_selectedZone?.Value is null or 0)"
+                       OnClick="() => AssignZone()">
+        </MudIconButton>
 
         <!-- Botón de Filtros con Popover Flotante -->
         <MudMenu Icon="@(_hasActiveFilters ? Icons.Material.Filled.FilterAlt : Icons.Material.Filled.FilterAltOff)"
@@ -106,6 +114,29 @@
                     }
                 </MudSelect>
 
+                <!-- Estatus -->
+                <MudSelect T="SelectOption"
+                           @bind-Value="_selectedZone"
+                           ToStringFunc="@(e => e?.Text)"
+                           Label="Zona"
+                           FitContent="true"
+                           AdornmentIcon="@Icons.Material.Filled.FilterList"
+                           AdornmentColor="Color.Info"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Clearable="true"
+                           Dense="true">
+                    @if (_zone != null)
+                    {
+                        @foreach (var zone in _zone)
+                        {
+                            <MudSelectItem T="SelectOption" Value="@zone">@zone.Text</MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+
+
+
                 <!-- Botones de Acción -->
                 <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-2">
                     <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" OnClick="ClearFilters">
@@ -134,76 +165,52 @@
     <Columns>
         <SelectColumn T="GetInventoryCountDetail" />
 
-       <PropertyColumn Property="x => x.NumForm"
-                Title="N° PLANILLA"
-                Align="Align.Center"
-                Filterable="false"
-                Groupable="@(_numFormGrouping)"
-                @bind-Grouping="_numFormGrouping"
-                GroupBy="_groupBy1"
-                @bind-GroupByOrder="_numFormOrder"
-                @bind-GroupExpanded="_numFormExpanded">
-    <GroupTemplate>
-        @if (_customizeGroupTemplate)
-        {
-            <div class="d-flex align-center">
-                <MudIcon Icon="@Icons.Material.Filled.Assignment" Color="Color.Dark" Size="Size.Small" Class="mr-2" />
-                <span style="font-weight:bold">N° PLANILLA: @context.Grouping.Key</span>
+        <PropertyColumn Property="x => x.NumForm"
+                        Title="N° PLANILLA"
+                        Align="Align.Center"
+                        Filterable="false"
+                        Groupable="@(_numFormGrouping)"
+                        @bind-Grouping="_numFormGrouping"
+                        GroupBy="_groupBy1"
+                        @bind-GroupByOrder="_numFormOrder"
+                        @bind-GroupExpanded="_numFormExpanded">
+            <GroupTemplate>
+                <div class="d-flex align-center">
+                    <!-- Checkbox de selección para el grupo completo -->
+                    <div @onclick:stopPropagation="true" style="display:inline-block;">
+                        <MudCheckBox T="bool"
+                                     Value="@(context.Grouping.All(x => selectedInventoryCount.Contains(x)))"
+                                     ValueChanged="@(_ => ToggleSelectGroup(context.Grouping))"
+                                     Color="Color.Primary"
+                                     Class="mr-2" />
+                    </div>
 
-                <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
-                    @context.Grouping.Count() Ítems
-                </MudChip>
+                        <MudIcon Icon="@Icons.Material.Filled.Assignment" Color="Color.Dark" Size="Size.Small" Class="mr-2" />
+                        <span style="font-weight:bold">N° PLANILLA: @context.Grouping.Key</span>
 
-                <!-- Contados -->
-                <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
-                    Ítems Contados: @context.Grouping.Count(x => !string.IsNullOrEmpty(x.StatusName) && x.StatusName.ToUpper() != "POR CONTAR")
-                </MudChip>
 
-                <!-- Diferencias -->
-                <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
-                    Ítems c/ Diferencia: @context.Grouping.Count(x => x.Diference != 0 && (!string.IsNullOrEmpty(x.StatusName) && x.StatusName.ToUpper() != "POR CONTAR"))
-                </MudChip>
+                    <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
+                        Avance: @((context.Grouping.Count() > 0 ? (context.Grouping.Count(x => !string.IsNullOrEmpty(x.StatusName) && x.StatusName.ToUpper() != "POR CONTAR") * 100.0 / context.Grouping.Count()) : 0).ToString("F1"))%
+                    </MudChip>
 
-                        <MudTooltip Text="Imprimir Planilla">
-                            <div @onclick:stopPropagation="true" style="display:inline-block;">
-                                <MudIconButton Icon="@Icons.Material.Filled.Print"
-                                               Color="Color.Primary"
-                                               Size="Size.Small"
-                                               Class="ml-3"
-                                               OnClick="@(() => PrintFormAsync(context.Grouping.ToList()))" />
-                            </div>
-                        </MudTooltip>
+                        <!-- Diferencias -->
+                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
+                            Ítems c/ Diferencia: @context.Grouping.Count(x => x.Diference != 0 && (!string.IsNullOrEmpty(x.StatusName) && x.StatusName.ToUpper() != "POR CONTAR"))
+                        </MudChip>
 
-                        <MudTooltip Text="Asignar">
-                            <div @onclick:stopPropagation="true" style="display:inline-block;">
-                                <MudIconButton Icon="@Icons.Material.Filled.ArrowRightAlt"
-                                               Color="Color.Primary"
-                                               Size="Size.Small"
-                                               Class="ml-3"
-                                               OnClick="@(() => PrintFormAsync(context.Grouping.ToList()))" />
-                            </div>
-                        </MudTooltip>
-            </div>
-        }
-        else
-        {
-            <div class="d-flex align-center">
-                <span style="font-weight:bold">N° PLANILLA: @context.Grouping.Key</span>
-                <MudIconButton Icon="@Icons.Material.Filled.Print" 
-                               Color="Color.Primary" 
-                               Size="Size.Small" 
-                               Class="ml-2"
-                               OnClick="@(() => PrintFormAsync(context.Grouping.ToList()))" />
-                        <MudIconButton Icon="@Icons.Material.Filled.ArrowRightAlt"
-                                       Color="Color.Primary"
-                                       Size="Size.Small"
-                                       Class="ml-2"
-                                       OnClick="@(() => PrintFormAsync(context.Grouping.ToList()))" />
-                            
-            </div>
-        }
-    </GroupTemplate>
-</PropertyColumn>
+                    <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
+                        Asignado a: @(context.Grouping.FirstOrDefault(x => !string.IsNullOrEmpty(x.Zone))?.Zone ?? "No definida")
+                    </MudChip>
+
+                    <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
+                         @(context.Grouping.FirstOrDefault(x => !string.IsNullOrEmpty(x.UserName))?.UserName ?? "Sin Asignar")
+                    </MudChip>
+
+
+                       
+                </div>
+            </GroupTemplate>
+        </PropertyColumn>
 
         <!-- Agrupación por CÓDIGO -->
         <PropertyColumn Property="x => x.InnerCode"
@@ -235,47 +242,8 @@
                 }
             </GroupTemplate>
         </PropertyColumn>
-
-        <PropertyColumn Property="x => x.PartName" Title="PARTE" Align="Align.Left" Filterable="false" Groupable="false" />
-
-
-        <!-- Agrupación por ZONA -->
-        <PropertyColumn Property="x => x.Zone"
-                        Title="ZONA"
-                        Align="Align.Center"
-                        Filterable="false"
-                        Groupable="@(_zoneGrouping)"
-                        @bind-Grouping="_zoneGrouping"
-                        GroupBy="_groupBy1"
-                        @bind-GroupByOrder="_zoneOrder"
-                        @bind-GroupExpanded="_zoneExpanded">
-            <GroupTemplate>
-                @if (_customizeGroupTemplate)
-                {
-                    <div class="d-flex align-center">
-                        <MudIcon Icon="@Icons.Material.Filled.Hardware" Color="Color.Dark" Size="Size.Small" Class="mr-2" />
-                        <span style="font-weight:bold">CÓDIGO: @context.Grouping.Key</span>
-                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
-                            @context.Grouping.Count() Ítems
-                        </MudChip>
-                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
-                            Diferencia Total: @context.Grouping.Sum(x => x.Diference)
-                        </MudChip>
-                    </div>
-                }
-                else
-                {
-                    <span style="font-weight:bold">CÓDIGO: @context.Grouping.Key</span>
-                }
-            </GroupTemplate>
-        </PropertyColumn>
-        <PropertyColumn Property="x => x.Location" Title="UBICACIÓN" Align="Align.Center" Filterable="false" Groupable="false" />
-        <PropertyColumn Property="x => x.CountId" Title="NUM. CONTEO" Align="Align.Right" Filterable="false" Groupable="false" />
-        <PropertyColumn Property="x => x.QuantityOld" Title="CANT. ANTERIOR" Align="Align.Right" Filterable="false" Groupable="false" />
-        <PropertyColumn Property="x => x.QuantityNew" Title="CANT. NUEVA" Align="Align.Right" Filterable="false" Groupable="false" />
-        <PropertyColumn Property="x => x.Diference" Title="DIFERENCIA" Align="Align.Right" Filterable="false" Groupable="false" />
-        <PropertyColumn Property="x => x.UserName" Title="ASIGNADO A" Align="Align.Center" Filterable="false" Groupable="false" />
-
+        <PropertyColumn Property="x => x.PartName" Title="UBICACIÓN" Align="Align.Center" Filterable="false" Groupable="false" />
+        <PropertyColumn Property="x => x.Zone" Title="ZONA" Align="Align.Left" Filterable="false" Groupable="false" />
         <!-- Agrupación por UBICACIÓN -->
         <PropertyColumn Property="x => x.Location"
                         Title="UBICACIÓN"
@@ -312,17 +280,18 @@
                 }
             </GroupTemplate>
         </PropertyColumn>
+      
+        <PropertyColumn Property="x => x.CountId" Title="NUM. CONTEO" Align="Align.Right" Filterable="false" Groupable="false" />
+        <PropertyColumn Property="x => x.QuantityOld" Title="CANT. ANTERIOR" Align="Align.Right" Filterable="false" Groupable="false" />
+        <PropertyColumn Property="x => x.QuantityNew" Title="CANT. NUEVA" Align="Align.Right" Filterable="false" Groupable="false" />
+        <PropertyColumn Property="x => x.Diference" Title="DIFERENCIA" Align="Align.Right" Filterable="false" Groupable="false" />
+        <PropertyColumn Property="x => x.UserName" Title="ASIGNADO A" Align="Align.Center" Filterable="false" Groupable="false" />
+
+       
 
         <PropertyColumn Property="x => x.StatusName" Title="ESTATUS" Align="Align.Center"  Filterable="false" Groupable="false" />
 
-        <TemplateColumn StickyRight="true" HeaderClass="dt-center" CellClass="dt-center">
-            <CellTemplate>
-                <MudButtonGroup Size="@Size.Small" Variant="Variant.Text" Color="Color.Dark">
-                    <MudIconButton Icon="@Icons.Material.Filled.Unarchive" Variant="Variant.Text" Color="Color.Success" Size="Size.Small" Href="@("inventoryCounDetail/" + (context.Item.InventoryId ?? context.Item.CountId))" />
-
-                </MudButtonGroup>
-            </CellTemplate>
-        </TemplateColumn>
+     
     </Columns>
 
     <PagerContent>
@@ -338,15 +307,18 @@
 @code {
     [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
 
     [Parameter] public int InventoryCountId { get; set; }
 
     private IEnumerable<GetInventoryCountDetail> _count = new List<GetInventoryCountDetail>();
     private HashSet<GetInventoryCountDetail> selectedInventoryCount = new([]);
+
     private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
 
     string SelectedmGroup = "NRO PLANILLA";
-    string[] mGroups = ["NRO PLANILLA", "CODIGO", "UBICACION","ZONA"];
+    string[] mGroups = ["NRO PLANILLA", "CODIGO", "UBICACION"];
 
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
@@ -365,8 +337,10 @@
     private MudDatePicker _picker = new MudDatePicker();
     private MudDatePicker _pickerTo = new MudDatePicker();
     private List<SelectOption> _actions = new List<SelectOption>();
+    private List<SelectOption> _zone = new List<SelectOption>();
     private SelectOption? _selectedAction;
-    private bool _hasActiveFilters => _dateFrom.HasValue || _dateTo.HasValue || _selectedAction != null;
+    private SelectOption? _selectedZone;
+    private bool _hasActiveFilters => _dateFrom.HasValue || _dateTo.HasValue || _selectedAction != null || _selectedZone != null;
 
     private MudDataGrid<GetInventoryCountDetail>? _mudDataGrid;
 
@@ -387,9 +361,8 @@
     private int _locationOrder;
     private bool _locationExpanded = true;
 
-    private bool _zoneGrouping = false;
-    private int _zoneOrder;
-    private bool _zoneExpanded = true;
+
+
 
     private Func<GetInventoryCountDetail, object>? _groupBy1;
     // =========================================================================
@@ -414,7 +387,6 @@
         _numFormGrouping = SelectedmGroup == "NRO PLANILLA";
         _innerCodeGrouping = SelectedmGroup == "CODIGO";
         _locationGrouping = SelectedmGroup == "UBICACION";
-        _zoneGrouping = SelectedmGroup == "ZONA";
 
 
         if (_mudDataGrid != null)
@@ -422,6 +394,8 @@
             await _mudDataGrid.ReloadServerData();
         }
     }
+
+
 
     private async Task ReloadServerData()
     {
@@ -437,19 +411,64 @@
         hubEventsService.OnDealerChanged -= ReloadServerData;
     }
 
-    private async Task PrintFormAsync(List<GetInventoryCountDetail> details)
+    private async Task PrintFormAsync()
     {
-        // Verifica que la lista no esté vacía
-        if (details == null || !details.Any()) return;
+        
+        if (selectedInventoryCount == null || !selectedInventoryCount.Any())
+        {
+            Snackbar.Add("Debe seleccionar al menos un registro de la tabla para imprimir.", Severity.Warning);
+            return;
+        }
 
-        // Obtiene el número de planilla del primer registro
-        int numForm = details.FirstOrDefault()?.NumForm ?? 0;
+        // 2. Extraer únicamente los números de formulario (NumForm) sin duplicados
+        List<int> formIds = selectedInventoryCount
+            .Where(x => x.NumForm.HasValue && x.NumForm.Value > 0)
+            .Select(x => x.NumForm!.Value)
+            .Distinct()
+            .ToList();
 
-        // Valida que el número de planilla sea válido (mayor a 0)
-        if (numForm <= 0) return;
+        if (!formIds.Any())
+        {
+            Snackbar.Add("Los registros seleccionados no contienen un número de formulario válido.", Severity.Warning);
+            return;
+        }
 
-        // Tu lógica para generar el reporte / impresión de la planilla
-        // Ejemplo: await JS.InvokeVoidAsync("openPrintWindow", numForm);
+        // 3. Invocación usando tu variable global y la sesión
+        var response = await InventoryCountService.ExportPdfInventoryCount(InventoryCountId, formIds, Session.SupplierId, Session.UserId);
+
+        // 4. Descargar o procesar la respuesta del PDF
+        if (response != null && response.Processed && response.Data != null && response.Data.Any())
+        {
+            var base64File = Convert.ToBase64String(response.Data.ToArray());
+            var fileUrl = $"data:application/pdf;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "PlanillaInventario.pdf");
+
+        }
+        else
+        {
+            Snackbar.Add(response?.Message ?? "Ocurrió un error al intentar generar las planillas.", Severity.Error);
+        }
+    }
+
+    private void ToggleSelectGroup(IEnumerable<GetInventoryCountDetail> groupItems)
+    {
+        var itemsList = groupItems.ToList();
+        bool allSelected = itemsList.All(item => selectedInventoryCount.Contains(item));
+
+        if (allSelected)
+        {
+            foreach (var item in itemsList)
+            {
+                selectedInventoryCount.Remove(item);
+            }
+        }
+        else
+        {
+            foreach (var item in itemsList)
+            {
+                selectedInventoryCount.Add(item);
+            }
+        }
     }
 
     private async Task<GridData<GetInventoryCountDetail>> LoadGridData(GridState<GetInventoryCountDetail> state)
@@ -470,6 +489,7 @@
 
         _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
         _actions = await ModuleActionsService.GetStatusByModule(Session.UserId, _moduleName);
+        _zone = await ModuleActionsService.GetZoneCount(Session.UserId, Session.SupplierId);
 
         int? idRespaldado = _selectedAction?.Value;
         if (idRespaldado.HasValue && _actions != null)
@@ -477,11 +497,21 @@
             _selectedAction = _actions.FirstOrDefault(x => x.Value == idRespaldado);
         }
 
+        
+
+        int? idzone = _selectedZone?.Value;
+        if (idzone.HasValue && _zone != null)
+        {
+            _selectedZone = _zone.FirstOrDefault(x => x.Value == idzone);
+        }
+
         int? _estatusid = _selectedAction?.Value;
+        int? _zoneId = _selectedZone?.Value;
+
         string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
         string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
 
-        var serviceResponse = await InventoryCountService.GetInventoryCountDetail(Session.SupplierId, Session.UserId, InventoryCountId, _rowCount, _searchString, _dateFromStr, _dateToStr, _estatusid);
+        var serviceResponse = await InventoryCountService.GetInventoryCountDetail(Session.SupplierId, Session.UserId, InventoryCountId, _rowCount, _searchString, _dateFromStr, _dateToStr, _estatusid,_zoneId,null);
         if (serviceResponse.Processed)
         {
             _count = serviceResponse.Data;
@@ -569,7 +599,9 @@
                 await ExportItemsAsync();
                 break;
             case "ASSIGN":
-            case "ASSIGNAR":
+                await AssignItemsAsync(module.IdAction, module.ActionName);
+                break;
+            case "VALIDATE":
                 await AssignItemsAsync(module.IdAction, module.ActionName);
                 break;
             default:
@@ -605,53 +637,149 @@
     {
         if (selectedInventoryCount.Any())
         {
-            var option = new DialogOptions
+            var parameters = new DialogParameters
+            {
+                ["SelectedInventoryCount"] = selectedInventoryCount,
+                ["moduleName"] = _moduleName,
+                ["ModuleId"] = moduleId,
+                ["ModuleActionName"] = moduleActionName,
+                ["InventoryNumber"] = InventoryCountId,
+                ["ZoneId"] = 0
+                                       
+            };
+
+            var options = new DialogOptions
             {
                 CloseButton = false,
                 MaxWidth = MaxWidth.Small,
                 FullWidth = true,
-                BackdropClick = false
+                BackdropClick = false,
+                NoHeader = true // <-- Oculta la barra de título del diálogo
             };
 
-            bool? result = await DialogService.ShowMessageBox(
-                            "Asignar Conteo de Inventario",
-                            "¿Está seguro de asignar los items seleccionados?",
-                            yesText: "Sí", noText: "No", "", option);
+            // Se pasa "" en el título y se activa NoHeader en options
+            var dialog = await DialogService.ShowAsync<AssignUserToCount>("", parameters, options);
+            var result = await dialog.Result;
 
-            if (result == true)
+            // Si el usuario confirmó y la operación en el diálogo fue exitosa (retornó true)
+            if (!result.Canceled && result.Data is true)
             {
-                List<PostAction> actionList = new();
+                _success = true;
+                _nestedErrorMessage = MessageEnum.GenerateOK.GetStringValue();
 
-                foreach (var item in selectedInventoryCount)
+                if (_mudDataGrid != null)
                 {
-                    var itemAction = new PostAction
-                    {
-                        RecordId = item.NumForm ?? 0,
-                        ModuleId = moduleId,
-                        ActionName = moduleActionName
-                    };
-                    actionList.Add(itemAction);
+                    await _mudDataGrid.ReloadServerData();
                 }
 
-                var serviceResponse = await InventoryCountService.ActionsInventoryCount(actionList, Session.UserId);
-                if (serviceResponse.Processed)
-                {
-                    _success = true;
-                    _nestedErrorMessage = MessageEnum.GenerateOK.GetStringValue();
-                    await _mudDataGrid!.ReloadServerData();
-                }
-                else
-                {
-                    _success = false;
-                    _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GenerateNotOK.GetStringValue();
-                }
                 OpenNested();
             }
         }
 
-        selectedInventoryCount = new([]);
-        await Task.CompletedTask;
+        // Limpia la selección
+        selectedInventoryCount = new();
     }
+
+
+    private async Task ValidateItemsAsync(int moduleId, string moduleActionName)
+    {
+        if (selectedInventoryCount.Any())
+        {
+            var parameters = new DialogParameters
+            {
+                ["SelectedInventoryCount"] = selectedInventoryCount,
+                ["moduleName"] = _moduleName,
+                ["ModuleId"] = moduleId,
+                ["ModuleActionName"] = moduleActionName,
+                ["InventoryNumber"] = InventoryCountId,
+                ["ZoneId"] = 0
+
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false,
+                NoHeader = true // <-- Oculta la barra de título del diálogo
+            };
+
+            // Se pasa "" en el título y se activa NoHeader en options
+            var dialog = await DialogService.ShowAsync<AssignUserToCount>("", parameters, options);
+            var result = await dialog.Result;
+
+            // Si el usuario confirmó y la operación en el diálogo fue exitosa (retornó true)
+            if (!result.Canceled && result.Data is true)
+            {
+                _success = true;
+                _nestedErrorMessage = MessageEnum.GenerateOK.GetStringValue();
+
+                if (_mudDataGrid != null)
+                {
+                    await _mudDataGrid.ReloadServerData();
+                }
+
+                OpenNested();
+            }
+        }
+
+        // Limpia la selección
+        selectedInventoryCount = new();
+    }
+
+
+    private async Task AssignZone()
+    {
+        // Permite continuar si hay ítems seleccionados O si se especificó una zona válida
+        bool isZoneMode = _selectedZone?.Value is > 0;
+
+        if (selectedInventoryCount.Any() || isZoneMode)
+        {
+            var parameters = new DialogParameters
+            {
+                // Pasa una lista vacía en lugar de null si no hay ítems de grilla seleccionados
+                ["SelectedInventoryCount"] = selectedInventoryCount ?? Enumerable.Empty<dynamic>(),
+                ["moduleName"] = _moduleName,
+                ["ModuleId"] = 58,
+                ["ModuleActionName"] = "ASSIGN",
+                ["InventoryNumber"] = InventoryCountId,
+                ["ZoneId"] = _selectedZone?.Value ?? 0
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false,
+                NoHeader = true
+            };
+
+            var dialog = await DialogService.ShowAsync<AssignUserToCount>("", parameters, options);
+            var result = await dialog.Result;
+
+            if (!result.Canceled && result.Data is true)
+            {
+                _success = true;
+                _nestedErrorMessage = MessageEnum.GenerateOK.GetStringValue();
+
+                if (_mudDataGrid != null)
+                {
+                    await _mudDataGrid.ReloadServerData();
+                }
+
+                OpenNested();
+            }
+        }
+
+        // Limpia la selección
+        selectedInventoryCount = new();
+    }
+
+
+
+
 
     private Func<GetInventoryCountDetail, string> _cellStyleFunc => x =>
     {

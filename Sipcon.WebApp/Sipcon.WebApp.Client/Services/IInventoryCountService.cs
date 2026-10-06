@@ -17,7 +17,14 @@
         public Task<ApiResponse<ActionResult>> UpdateInventoryCount(GetInventoryCount InventoryCount, int IdUser);
 
         public Task<ApiResponse<ActionResult>> ActionsInventoryCount(List<PostAction> PostActions, int IdUser);
-        public Task<ApiResponse<List<GetInventoryCountDetail>>> GetInventoryCountDetail(int IdSupplier, int IdUser, int inventoryCountId, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "", int? EstatusId = null);
+        public Task<ApiResponse<ActionResult>> ActionsInventoryCountDetail(List<PostAction> PostActions, int IdUser);
+        public Task<ApiResponse<List<GetInventoryCountDetail>>> GetInventoryCountDetail(int IdSupplier, int IdUser, int inventoryCountId, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "", int? EstatusId = null, int? ZoneId = null, bool? Assign = null);
+
+        public Task<ApiResponse<List<byte>>> ExportPdfInventoryCount(int inventoryId, List<int> formIds, int supplierId, int userId);
+
+        public Task<ApiResponse<List<ZoneOption>>> GetZoneCount(int IdUser, int SupplierId);
+
+        public Task<ApiResponse<List<CountSummary>>> GetCountSummary(int IdSupplier, int IdUser, int inventoryCountId, int RowFrom = 0);
 
 
     }

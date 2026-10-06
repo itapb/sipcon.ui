@@ -10,7 +10,8 @@ namespace Sipcon.WebApp.Client.Models
         public string ActionName { get; set; } = "";
         public string ActionComment { get; set; } = "";
         public int RelatedId { get; set; } = 0;
-      
+        public int? UserId { get; set; } = 0;
+
 
     }
 

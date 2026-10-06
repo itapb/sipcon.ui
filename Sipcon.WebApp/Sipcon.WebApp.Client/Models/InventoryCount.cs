@@ -66,12 +66,15 @@ namespace Sipcon.WebApp.Client.Models
     }
     public class CountSummary
     {
-        public int? ZoneId { get; set; }
-         public String? Zone { get; set; }
-         public Int32? LocationTotal { get; set; }
-        public Int32? LocationCounted { get; set; }
-         public Decimal Porcentage { get; set; }
-         public String? UsersAssigned { get; set; }
+            public int? ZoneId { get; set; }
+            public String? Zone { get; set; }
+            public Int32? LocationTotal { get; set; }
+            public Int32? LocationCounted { get; set; }
+            public Decimal Porcentage { get; set; }
+            public String? UsersAssigned { get; set; }
+            public Int32? FormTotal { get; set; }
+            public Int32? FormAssign { get; set; }
+
 
     }
 
@@ -97,6 +100,15 @@ namespace Sipcon.WebApp.Client.Models
         [Required] public Int32? CountInventoryId { get; set; }
         [Required] public String? AssignType { get; set; }
 
+
+    }
+
+
+    public class ZoneOption
+    {
+        public int Id { get; set; } = 0;
+        public bool IsActive { get; set; } = true;
+        public string Name { get; set; } = string.Empty;
 
     }
 }
