@@ -901,9 +901,50 @@
         await ClickRefreshDocuments();
     }
 
-    private async Task ExportItemsAsync()
+    private void OpenNested()
     {
-        Snackbar.Add("Exportando datos...", Severity.Info);
-        await Task.CompletedTask;
+        NestedVisible = true;
+        StateHasChanged();
     }
+
+        private async Task ExportItemsAsync()
+
+        {
+
+                string documentTypes = _selectedDocumentTypes != null ? string.Join(",", _selectedDocumentTypes) : "";
+                string concepts = _selectedConcepts != null ? string.Join(",", _selectedConcepts) : "";
+                string dateFromStr = _dateFrom?.ToString("yyyy-MM-dd") ?? "";
+                string dateToStr = _dateTo?.ToString("yyyy-MM-dd") ?? "";
+                string datePayStr = _datePay?.ToString("yyyy-MM-dd") ?? "";
+                int statusId = SelectedStatus?.Value ?? 0;
+
+            var serviceResponse = await PaymentsRepository.ExportAccountReceivable(Session.UserId,
+                    Session.SupplierId,
+                    Session.DealerId,
+                    documentTypes,
+                    concepts,
+                    SearchString,
+                    dateFromStr,
+                    dateToStr,
+                    statusId,
+                    datePayStr,
+                    _showMigration);
+
+            if (serviceResponse.Processed)
+            {
+                Success = true;
+                NestedErrorMessage = "";
+
+                var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+                var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+                await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "DocumentoReporte.xlsx");
+
+            }
+            else
+            {
+                Success = false;
+                NestedErrorMessage = serviceResponse.Message ?? MessageEnum.ExportNotOK.GetStringValue();
+                OpenNested();
+            }
+        }
 }

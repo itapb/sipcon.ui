@@ -18,9 +18,7 @@
 
         public Task<ApiResponse<List<AccountPreview>>> GetAccountByPayment(int IdUser, int? IdPaymentDetail, int RowFrom = 0);
         public Task<ApiResponse<List<Payment>>> GetPaymentDetails(int IdUser, int? IdPaymentDetail, int RowFrom = 0);
-        public Task<ApiResponse<List<byte>>> ExportAccountReceivable(int IdUser, int Idsupplier, int? IdDealer
-          , string TypeCode, string ConceptCode, string Filter = "", string DateFrom = "", string DateTo = ""
-          , int? EstatusId = null, string DatePay = "");
+        public Task<ApiResponse<List<byte>>> ExportAccountReceivable(int IdUser, int Idsupplier, int? IdDealer, string TypeCode, string ConceptCode, string Filter = "", string DateFrom = "", string DateTo = "", int? EstatusId = null, string DatePay = "", bool? Migration = false);
         public Task<ApiResponse<List<byte>>> ExportPayment(int IdUser, int Idsupplier, int? IdDealer
             , string Filter = "", string DateFrom = "", string DateTo = "", int? EstatusId = null, int? CurrencyId = null
             , int? PaymentId = null);

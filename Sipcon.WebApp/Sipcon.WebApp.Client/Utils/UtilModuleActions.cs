@@ -689,5 +689,24 @@ namespace Sipcon.WebApp.Client.Utils
 
         }
 
+
+        public async Task<List<SelectOption>> GetZoneCount(int IdUser, int SupplierId)
+        {
+            List<SelectOption> _itemsSelect = new([]);
+
+            var moduleResponse = await InventoryCountService.GetZoneCount(IdUser, SupplierId);
+            if (moduleResponse.Processed)
+            {
+                List<ZoneOption> _List = moduleResponse.Data ?? new List<ZoneOption>();
+
+                foreach (var item in _List.ToList())
+                {
+                    _itemsSelect.Add(new SelectOption(item.Id, item.Name));
+                }
+            }
+            return _itemsSelect;
+
+        }
+
     }
 }

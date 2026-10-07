@@ -593,7 +593,7 @@
 
         public async Task<ApiResponse<List<byte>>> ExportAccountReceivable(int IdUser, int Idsupplier, int? IdDealer
             , string TypeCode, string ConceptCode, string Filter = "", string DateFrom = "", string DateTo = ""
-            , int? EstatusId = null, string DatePay = "")
+            , int? EstatusId = null, string DatePay = "", bool? Migration = false)
         {
             ApiResponse<List<byte>> result;
             string fileUrl = string.Empty;
@@ -609,6 +609,7 @@
                 url = string.IsNullOrEmpty(DateTo) ? url : $"{url}&upToDate={DateTo}";
                 url = (EstatusId.HasValue) ? $"{url}&statusId={EstatusId}" : url;
                 url = string.IsNullOrEmpty(DatePay) ? url : $"{url}&paymentDate={DatePay}";
+                url = (Migration.HasValue) ? $"{url}&migration={Migration}" : url;
 
                 var response = await _http.GetAsync(url);
 

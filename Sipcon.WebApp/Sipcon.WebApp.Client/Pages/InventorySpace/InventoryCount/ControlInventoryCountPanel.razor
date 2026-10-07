@@ -49,7 +49,7 @@ else if (_inventoryHeader != null)
                         <MudText Typo="Typo.caption" Class="mud-text-secondary bold">ESTADO</MudText>
                         <div>
                             <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small">
-                                @(_inventoryHeader.StatusName?.ToUpper() ?? "GENERADO")
+                                @(_inventoryHeader.StatusName?.ToUpper())
                             </MudChip>
                         </div>
                     </div>
@@ -57,7 +57,6 @@ else if (_inventoryHeader != null)
             </MudPaper>
         </MudItem>
 
-        @* Tarjeta 3: Fechas Clave + Botón Volver Integrado *@
         <MudItem xs="12" md="5">
             <MudPaper Elevation="2" Class="pa-3" Style="height: 100%;">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
@@ -67,16 +66,20 @@ else if (_inventoryHeader != null)
                                 <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Color="Color.Info" Size="Size.Small" />
                                 <div>
                                     <MudText Typo="Typo.caption" Class="mud-text-secondary">APERTURA (A)</MudText>
-                                    <MudText Typo="Typo.body2"><b>@(_inventoryHeader.PreInventoryDate?.ToString("dd/MM/yyyy") ?? "-")</b></MudText>
+                                    <MudText Typo="Typo.body2"><b>@(_inventoryHeader.InventoryDate?.ToString("dd/MM/yyyy") ?? "-")</b></MudText>
                                 </div>
                             </MudStack>
                         </MudItem>
                         <MudItem xs="6">
                             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                                <MudIcon Icon="@Icons.Material.Filled.EventAvailable" Color="Color.Success" Size="Size.Small" />
+                                <MudIcon Icon="@(_isProcessed ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Timer)"
+                                         Color="@(_isProcessed ? Color.Success : Color.Warning)"
+                                         Size="Size.Small" />
                                 <div>
-                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">CREACIÓN (C)</MudText>
-                                    <MudText Typo="Typo.body2"><b>@(_inventoryHeader.Created.ToString("dd/MM/yyyy"))</b></MudText>
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                        @(_isProcessed ? "DURACIÓN TOTAL" : "TIEMPO TRANSCURRIDO")
+                                    </MudText>
+                                    <MudText Typo="Typo.body2"><b>@_elapsedTimeString</b></MudText>
                                 </div>
                             </MudStack>
                         </MudItem>
@@ -101,10 +104,6 @@ else if (_inventoryHeader != null)
 @* --- PESTAÑAS (PROGRESO / CONTROL) --- *@
 <MudTabs Elevation="3" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-4" Color="Color.Primary" Centered="false">
     
-    <MudTabPanel Icon="@Icons.Material.Filled.BarChart" Text="PROGRESO">
-        <InventoryCountDetailList InventoryCountId="@InventoryCountId" />
-    </MudTabPanel>
-
     <MudTabPanel Icon="@Icons.Material.Filled.Assignment" Text="CONTROL">
         <InventoryCountByForm InventoryCountId="@InventoryCountId" />
     </MudTabPanel> 
@@ -119,6 +118,16 @@ else if (_inventoryHeader != null)
     private List<ModuleAction> _itemsModules = new();
     private GetInventoryCount? _inventoryHeader;
     private bool _loadingHeader = true;
+    private Timer? _timer;
+    private string _elapsedTimeString = "-";
+
+    // Asume que esta propiedad define si está procesado o ajusta según tu enum/string de estatus
+    private bool _isProcessed => _inventoryHeader?.StatusName == "GENERADO";
+
+    protected override void OnParametersSet()
+    {
+        CalculateTime();
+    }
 
     private List<BreadcrumbItem> _itemsNavigate = [
         new("Home", href: "", icon: Icons.Material.Filled.Home),
@@ -162,5 +171,54 @@ else if (_inventoryHeader != null)
     private void GoToInventoryList()
     {
         NavigationManager.NavigateTo("count");
+    }
+
+    private void CalculateTime()
+    {
+        if (_inventoryHeader?.InventoryDate.HasValue != true)
+        {
+            _elapsedTimeString = "-";
+            return;
+        }
+
+        if (_isProcessed)
+        {
+            // Si está procesado, destruye el timer si existía y calcula con FinishDate
+            _timer?.Dispose();
+            _timer = null;
+
+            var endDate = _inventoryHeader.FinishDate ?? DateTime.Now;
+            var duration = endDate - _inventoryHeader.InventoryDate.Value;
+            _elapsedTimeString = FormatTimeSpan(duration);
+        }
+        else
+        {
+            // Si está en proceso, inicia el timer de actualización en tiempo real
+            if (_timer == null)
+            {
+                _timer = new Timer(UpdateLiveTime, null, 0, 1000);
+            }
+        }
+    }
+
+    private void UpdateLiveTime(object? state)
+    {
+        if (_inventoryHeader?.InventoryDate.HasValue == true && !_isProcessed)
+        {
+            var duration = DateTime.Now - _inventoryHeader.InventoryDate.Value;
+            _elapsedTimeString = FormatTimeSpan(duration);
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private string FormatTimeSpan(TimeSpan timeSpan)
+    {
+        if (timeSpan.TotalSeconds < 0) return "00d 00h 00m 00s";
+        return $"{timeSpan.Days:D2}d {timeSpan.Hours:D2}h {timeSpan.Minutes:D2}m {timeSpan.Seconds:D2}s";
+    }
+
+    public void Dispose()
+    {
+        _timer?.Dispose();
     }
 }
