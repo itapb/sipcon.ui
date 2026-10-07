@@ -216,7 +216,10 @@
         <TemplateColumn>
             <CellTemplate>
                 <MudStack Row="true">
+
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditVehicle(context.Item)" />
+                    <MudIconButton Icon="@Icons.Material.Filled.ImageSearch" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info" OnClick="@(() => VerAdjuntos(context.Item.Id))" Class="rounded-lg" />
+
                     @if (_statusRecord.Contains(context.Item.EstatusName.ToUpper()))
                     {
                         <MudIconButton Icon="@Icons.Material.Filled.Speed" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" Href="@("vehicledetailrecord/1/" + context.Item.Vin)" />
@@ -304,6 +307,23 @@
         "ASIGNADO",
         "FACTURADO"
     };
+
+    private async Task VerAdjuntos(int id)
+    {
+        var parameters = new DialogParameters<VehicleFilesDialog> 
+        {
+            { x => x.RecordId, id },
+            { x => x.ModuleName, "VEHICULOS-VEHICULOS" }
+        };
+
+        await OpenDialog(parameters, "Documentos adjuntos a la unidad");
+    }
+
+    private async Task OpenDialog(DialogParameters parameters, string title)
+    {
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        await DialogService.ShowAsync<VehicleFilesDialog>(title, parameters, options);
+    }
 
     protected override async Task OnInitializedAsync()
     {
