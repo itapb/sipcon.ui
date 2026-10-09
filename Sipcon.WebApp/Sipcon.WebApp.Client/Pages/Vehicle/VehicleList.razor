@@ -218,8 +218,7 @@
                 <MudStack Row="true">
 
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="() => ClickEditVehicle(context.Item)" />
-                    <MudIconButton Icon="@Icons.Material.Filled.ImageSearch" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info" OnClick="@(() => VerAdjuntos(context.Item.Id))" Class="rounded-lg" />
-
+                    <MudIconButton Icon="@Icons.Material.Filled.ImageSearch" Variant="Variant.Outlined" Size="Size.Small" Color="@(context.Item.hasAttachment == true ? Color.Info : Color.Error)" OnClick="@(() => VerAdjuntos(context.Item.Id))" Class="rounded-lg" />
                     @if (_statusRecord.Contains(context.Item.EstatusName.ToUpper()))
                     {
                         <MudIconButton Icon="@Icons.Material.Filled.Speed" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" Href="@("vehicledetailrecord/1/" + context.Item.Vin)" />
