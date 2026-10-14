@@ -1,0 +1,1074 @@
+
+@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+@using FluentValidation
+@using System.Globalization
+
+@inject IMaintenanceService MaintenanceService
+@inject IPolicyService PolicyService
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+@inject NavigationManager UriHelper
+@inject IJSRuntime JSRuntime
+
+
+<MudForm Model="@Model" @ref="@form" Validation="@(_modelValidator.ValidateValue)" ValidationDelay="0" >
+    <MudDialog Class="blur dialog-background" ActionsClass="dialog-background-surface">
+        <DialogContent>
+
+            <MudContainer Class="blur dialog-background-title py-2 pt-2 pa-2">
+                <MudCard>
+                    <MudCardContent>
+                        <MudGrid Spacing="0" Justify="Justify.Center">
+                            <MudItem xs="12" sm="4">
+                                <div class="d-flex justify-left">
+                                    <h3>Editando Mantenimiento</h3>
+                                </div>
+                            </MudItem>
+                            <MudItem xs="12" sm="2">
+
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <div class="d-flex justify-right" style="justify-content: end;">
+                                    <MudButton OnClick="Cancel">Cancelar</MudButton>
+                                    <MudFab StartIcon="@Icons.Material.Filled.Save" Label="Aceptar" OnClick="@(async () => await OnValidSubmit())" Color="Color.Info" Size="Size.Small" />
+                                </div>
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+            </MudContainer>
+
+            <div id="unique_id_scroll_section" class="ma-0" style="height:400px;overflow: auto;">
+                <MudContainer Class="dialog-background-surface py-2 pt-2 pa-2">
+                    <MudGrid Spacing="1" Justify="Justify.Center">
+                        <MudItem xs="12" sm="8">
+                           
+                            @* Buscar Poliza *@
+                            <MudItem xs="12" sm="12">
+                                <MudCard Elevation="0">
+                                    <MudCardHeader>
+                                        <CardHeaderContent>
+                                            <MudStack Row="true">
+                                                 <MudDatePicker @bind-Date="Model.ServiceDate"
+                                                           Style="font-size: 14px;line-height: 0.8rem;"
+                                                           Adornment="Adornment.Start"
+                                                           AdornmentColor="Color.Info"
+                                                           Class="align-right"
+                                                           Placeholder="Fecha"
+                                                           Variant="Variant.Text"
+                                                           PickerVariant="PickerVariant.Inline"
+                                                           Margin="Margin.None"
+                                                           Modal="false"
+                                                           ShowToolbar="false"
+                                                           DateFormat="dd/MM/yyyy"
+                                                           Mask="@maskDate"
+                                                           ReadOnly="@(!Model.IsActive || _isReadOnly)"
+                                                           For="@(() => Model.ServiceDate)" />
+
+
+                                                <MudNumericField Typo="Typo.caption" @bind-Value="Model.Km"
+                                                                 Class="align-right"
+                                                                 AdornmentIcon="@Icons.Material.Filled.Speed"
+                                                                 Adornment="Adornment.Start"
+                                                                 AdornmentColor="Color.Info"
+                                                                 Style="line-height: 0.8rem;"
+                                                                 Placeholder="Kilometraje"
+                                                                 Variant="Variant.Text"
+                                                                 Margin="Margin.None"
+                                                                 HideSpinButtons="true"
+                                                                 Format="N0"
+                                                                 Culture="@CultureInfo.GetCultureInfo("es-VE")"
+                                                                 ReadOnly="@(!Model.IsActive || _isReadOnly)"
+                                                                 For="@(() => Model.Km)" />
+
+                                                <MudTextField Typo="Typo.caption" @bind-Value="Model.Vin"
+                                                              Style="line-height: 0.8rem;"
+                                                              AdornmentIcon="@Icons.Material.Filled.Search"
+                                                              Adornment="Adornment.End"
+                                                              AdornmentColor="Color.Info"
+                                                              Placeholder="Placa/Vin"
+                                                              MaxLength="20"
+                                                              Variant="Variant.Text"
+                                                              Margin="Margin.None"
+                                                              OnAdornmentClick="() => ClickSearchVehicle()"
+                                                              OnKeyUp="HandleKeyUpSearchVehicle"
+                                                              Validation="@_SelectValidator.Validation"
+                                                              ReadOnly="true"
+                                                              Disabled="false" />
+
+                                            </MudStack>
+
+                                            <div class="d-flex justify-center">
+                                                <MudStack Row="true">
+                                                    <MudText Class="nested" Color="Color.Error" Style="font-weight:bold;font-style:italic;"><p>@_errorSearchVehicle</p> </MudText>
+                                                </MudStack>
+                                            </div>
+
+                                        </CardHeaderContent>
+                                    </MudCardHeader>
+                                </MudCard>
+                            </MudItem>
+
+                            @* Datos Servicio *@
+                            <MudItem xs="12" sm="12">
+                                <MudCard Elevation="0">
+                                    <MudCardHeader Style="padding-bottom: 0px;">
+                                        <CardHeaderContent>
+                                            <MudStack Row="true">
+                                                <MudIcon Icon="@Icons.Material.Outlined.CarRepair" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
+                                                <MudText Typo="Typo.subtitle2">Datos Mantenimiento </MudText>
+
+                                            </MudStack>
+                                        </CardHeaderContent>
+                                        <CardHeaderActions>
+                                            <MudNumericField Typo="Typo.caption" @bind-Value="Model.OrderNumber"
+                                                          Label="Nro.Orden"
+                                                          Style="max-width: 220px;"
+                                                          Variant="Variant.Text"
+                                                          Margin="Margin.Dense"
+                                                          MaxLength="10"
+                                                          HideSpinButtons="true"
+                                                          Pattern="[0-9]*"
+                                                          Format="N0"
+                                                          Culture="@CultureInfo.GetCultureInfo("es-VE")"
+                                                          ReadOnly="@(!Model.IsActive || _isReadOnly)"
+                                                          For="@(() => Model.OrderNumber)" />
+                                        </CardHeaderActions>
+                                    </MudCardHeader>
+
+                                    <MudCardContent Style="padding-top: 0px;">
+
+                                        <MudStack Row="true">
+
+                                     <MudSelect T="int?" 
+                                               Value="Model.ReportTypeId"
+                                               ValueChanged="OnReportTypeChanged"
+                                               Label="Tipo Reporte"
+                                               ReadOnly="@(!Model.IsActive || _isReadOnly)"
+                                               Disabled="@(!Model.VehicleId.HasValue)"
+                                               For="@(() => Model.ReportTypeId)"
+                                               Margin="Margin.Dense"
+                                               Style="font-size: 14px">
+                                        @foreach (var item in _FailReportTypeList)
+                                        {
+                                            // Asumiendo que item.Value es el ID que se guarda en ReportTypeId
+                                            <MudSelectItem Value="item.Value">@item.Text</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                            
+
+                                            <MudDatePicker @bind-Date="Model.InvoiceDate"
+                                                            Label="Fecha Factura"
+                                                            Style="font-size: 12px"
+                                                            ShowToolbar="false"
+                                                            DateFormat="dd/MM/yyyy"
+                                                            Mask="@maskDate"
+                                                            Variant="Variant.Text"
+                                                            PickerVariant="PickerVariant.Inline" Modal="false"
+                                                            Margin="Margin.Dense"
+                                                            ReadOnly="@(!Model.IsActive || _isReadOnly)"
+                                                            For="@(() => Model.InvoiceDate)" />
+
+                                            <MudNumericField Typo="Typo.caption" @bind-Value="Model.InvoiceNumber"
+                                                          Label="Nro. Factura"
+                                                          Variant="Variant.Text"
+                                                          Margin="Margin.Dense"
+                                                          MaxLength="10"
+                                                          HideSpinButtons="true"
+                                                          Pattern="[0-9]*"
+                                                          Format="N0"
+                                                          Culture="@CultureInfo.GetCultureInfo("es-VE")"
+                                                          ReadOnly="@(!Model.IsActive || _isReadOnly)"
+                                                          For="@(() => Model.InvoiceNumber)" />
+
+                                
+
+                                        </MudStack>
+                                        @if (_modelPolicyDetail != null && _modelPolicyDetail.Id > 0)
+                                        {
+                                            // Lógica de colores dinámica
+                                            var statusColor = ServicePolicyStatus == 1 ? "var(--mud-palette-success)" :
+                                            ServicePolicyStatus == 3 ? "var(--mud-palette-warning)" :
+                                            "var(--mud-palette-error)";
+
+                                            var iconColor = ServicePolicyStatus == 1 ? Color.Success :
+                                            ServicePolicyStatus == 3 ? Color.Warning :
+                                            Color.Error;
+
+                                            <MudPaper Variant="Variant.Outlined"
+                                                      Class="pa-2 mt-2 d-flex align-center justify-space-between mud-background-gray"
+                                                      Style="@($"border-radius: 8px; border-left: 6px solid {statusColor};")">
+
+                                                <div class="d-flex align-center flex-grow-1">
+                                                    <MudIcon Icon="@(ServicePolicyStatus == 1 ? Icons.Material.Filled.Shield : Icons.Material.Filled.ReportProblem)"
+                                                             Color="@iconColor" Class="mx-2" Size="Size.Medium" />
+
+                                                    <div class="d-flex flex-row align-center gap-4">
+                                                        @* Kilometraje *@
+                                                        <div class="d-flex flex-column">
+                                                            <MudText Typo="Typo.caption" Style="font-weight: bold; line-height: 1;">KILOMETRAJE ESCALA</MudText>
+                                                            <MudText Typo="Typo.body2"
+                                                                     Color="@(ServicePolicyStatus == 1 ? Color.Default : iconColor)"
+                                                                     Style="font-size: 12px;">
+                                                                @($"{_modelPolicyDetail.FromKm?.ToString("N0")} - {_modelPolicyDetail.UpToKm?.ToString("N0")} kms.")
+                                                            </MudText>
+                                                        </div>
+
+                                                        <MudDivider Vertical="true" FlexItem="true" Class="mx-2" Style="height: 25px;" />
+
+                                                        @* Vigencia *@
+                                                        <div class="d-flex flex-column">
+                                                            <MudText Typo="Typo.caption" Style="font-weight: bold; line-height: 1;">VIGENCIA ESCALA</MudText>
+                                                            <MudText Typo="Typo.body2"
+                                                                     Color="@(ServicePolicyStatus == 1 ? Color.Default : iconColor)"
+                                                                     Style="font-size: 12px;">
+                                                                @($"{_modelPolicyDetail.FromDate?.ToString("dd/MM/yy")} al {_modelPolicyDetail.UpToDate?.ToString("dd/MM/yy")}")
+                                                            </MudText>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="px-2">
+                                                    @if (ServicePolicyStatus == 3)
+                                                    {
+                                                        <MudText Typo="Typo.caption" Color="Color.Warning" Class="mr-2">¡Servicio Anticipado!</MudText>
+                                                    }
+                                                    else if (ServicePolicyStatus == 2)
+                                                    {
+                                                        <MudText Typo="Typo.caption" Color="Color.Error" Class="mr-2">¡Fuera de rango!</MudText>
+                                                    }
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => OnReportTypeChanged(Model.ReportTypeId))" />
+                                                </div>
+                                            </MudPaper>
+                                        }
+
+                                        <MudTextField Typo="Typo.caption" @bind-Value="Model.DealerReport"
+                                                        Label="Reporte Concesionario"
+                                                        Lines="12"
+                                                        MaxLength="500"
+                                                        Variant="Variant.Text"
+                                                        Margin="Margin.None"
+                                                        ReadOnly="@(!Model.IsActive || _isReadOnly)"
+                                                        Disabled="@(!Model.IsActive || _isReadOnly)" />
+
+                                    </MudCardContent>
+                                </MudCard>
+                            </MudItem>
+
+                            
+                        </MudItem>
+
+                        <MudItem xs="12" sm="4">
+
+                            @* Datos Poliza *@
+                           
+                            <div id="scroll_section_policydetail" class="ma-0" style="height:285px;overflow: auto;">
+                                <MudCard Elevation="2" Style="min-height:280px;">
+                                    <MudCardHeader>
+                                        <CardHeaderContent>
+
+                                            <MudGrid Spacing="0" Justify="Justify.Center">
+                                                <MudItem xs="12" sm="8">
+
+
+                                                    <div class="d-flex justify-left">
+
+                                                        <MudStack Row="true">
+                                                            <MudIcon Icon="@Icons.Material.Filled.Policy" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
+                                                            <MudText Typo="Typo.subtitle2">Poliza</MudText>
+
+                                                        </MudStack>
+                                                    </div>
+                                                </MudItem>
+
+                                                <MudItem xs="12" sm="4">
+
+
+                                                </MudItem>
+                                            </MudGrid>
+
+                                        </CardHeaderContent>
+                                        <CardHeaderActions>
+                                            @if (_modelPolicy.Id != 0)
+                                            {
+                                                string style = "";
+
+                                                if (_modelPolicy.EstatusName.ToUpper() == "BORRADOR")
+                                                    style += "";
+                                                else if (_modelPolicy.EstatusName.ToUpper() == "ACTIVADO")
+                                                {
+                                                    style += "color:#fff";
+                                                    style += ";background-color:#0099F3";
+                                                }
+                                                else if (_modelPolicy.EstatusName.ToUpper() == "APROBADO")
+                                                {
+                                                    style += "color:#fff";
+                                                    style += ";background-color:#0099F3";
+                                                }
+                                                else if (_modelPolicy.EstatusName.ToUpper() == "PROCESADO")
+                                                {
+                                                    style += "color:#fff";
+                                                    style += ";background-color:#757575";
+                                                }
+                                                else
+                                                {
+                                                    style += "color:#fff";
+                                                    style += ";background-color:#FF7043";
+                                                }
+                                                style += ";font-weight:bold;font-size:10px";
+                                                style += ";font-style:italic";
+
+
+                                                <MudChip T="string" Style="@style" Label="true" Disabled="true">@_modelPolicy.EstatusName</MudChip>
+                                            }
+
+                                        </CardHeaderActions>
+
+                                    </MudCardHeader>
+                                    <MudCardContent Style="padding-top: 0px;">
+
+                                        <MudFlexBreak />
+
+                                        <div class="d-flex align-end justify-space-between mud-width-full">
+                                            <div class="d-flex flex-column">
+                                                @if (_modelPolicy.EstatusId != null)
+                                                {
+                                                    <MudText Typo="Typo.caption"><b>Nro. Poliza: </b> <MudText Typo="Typo.caption" Color="Color.Info">@(!string.IsNullOrEmpty(_modelPolicy.Id.ToString()) ? " #" + Model.NumberPolicy : "")</MudText></MudText>
+                                                }
+                                                @if (_modelPolicy.ActivationDate != null)
+                                                {
+                                                    <MudText Typo="Typo.caption"><b>Activacion: </b>@_modelPolicy.ActivationDate.Value.ToString("dd-MMM-yyyy")</MudText>
+                                                }
+                                                @if (_modelPolicy.LockDate != null)
+                                                {
+                                                    <MudText Typo="Typo.caption"><b>Bloqueada: </b> @_modelPolicy.LockDate.Value.ToString("dd-MMM-yyyy")</MudText>
+                                                }
+                                                @if (_modelPolicy.ExpirationDate != null)
+                                                {
+                                                    <MudText Typo="Typo.caption"><b>Expiracion: </b> @_modelPolicy.ExpirationDate.Value.ToString("dd-MMM-yyyy")</MudText>
+                                                }
+                                            </div>
+
+                                        </div>
+
+                                        <MudFlexBreak />
+
+                                        <MudDivider />
+                                        <div class="d-flex justify-left">
+
+                                            <MudStack Row="true">
+                                                <MudIcon Icon="@Icons.Material.Filled.History" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
+                                                <MudText Typo="Typo.subtitle2">Historia</MudText>
+
+                                            </MudStack>
+                                        </div>
+
+                                        
+                                        <MudContainer Class="dialog-background-surface py-1 pt-0 pa-1">
+                                                <MudTimeline TimelinePosition="TimelinePosition.Start">
+
+                                                    @foreach (var item in _policyDetail)
+                                                    {
+                                                    <MudTimelineItem TimelineAlign="TimelineAlign.End" Color="@GetTimelineColor(item.Valid)" Size="Size.Small" Culture="@CultureInfo.GetCultureInfo("es-VE")">
+
+                                                        @* Primera línea *@
+                                                        <MudText Typo="Typo.body2" Style="font-size: 11px;">
+                                                            @item.Valid <b>@(item.FromKm?.ToString("N0") + "-" + item.UpToKm?.ToString("N0") + " kms.") </b>
+                                                        </MudText>
+
+                                                        @* Segunda línea *@
+                                                        <MudText Typo="Typo.body2" Style="font-size: 11px;" Class="mud-text-secondary">
+                                                            @("Desde: " + item.FromDate?.ToString("dd MMM yyyy") + " - Hasta: " + item.UpToDate?.ToString("dd MMM yyyy"))
+                                                        </MudText>
+
+                                                        @* Tercera línea: Resaltado tipo 'badge' o marcador si es el actual *@
+                                                        <MudText Typo="Typo.body2" Style="font-size: 11px;" Class="mud-text-secondary">
+                                                            @("Km: " + item.KM?.ToString("N0") + " - " + item.Date?.ToString("dd MMM yyyy") + " - Servicio: " + item.ServiceId?.ToString("N0"))
+                                                        </MudText>
+
+                                                    </MudTimelineItem>
+                                                    }
+
+                                                </MudTimeline>
+                                            </MudContainer>
+                                           
+
+                                    </MudCardContent>
+
+                                </MudCard>
+                                 <MudScrollToTop TopOffset="100"
+                                                    Selector="#scroll_section_policydetail"
+                                                    VisibleCssClass="visible absolute"
+                                                    HiddenCssClass="invisible">
+
+                                    </MudScrollToTop>
+                            </div>
+                           
+
+                            @* ///Vehicle *@
+                            <MudCard Elevation="2">
+                                      
+                                    <MudCardHeader Style="padding-bottom: 0px;">
+                                        <CardHeaderContent>
+
+                                            <MudGrid Spacing="0" Justify="Justify.Center">
+                                                <MudItem xs="12" sm="8">
+                                                    <div class="d-flex justify-left">
+                                                        <MudStack Row="true">
+                                                            <MudIcon Icon="@Icons.Material.Filled.CarRental" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
+                                                            <MudText Typo="Typo.subtitle2">Vehiculo</MudText>
+
+                                                        </MudStack>
+                                                    </div>
+                                                </MudItem>
+
+                                                <MudItem xs="12" sm="4">
+
+
+
+                                                </MudItem>
+                                            </MudGrid>
+
+
+                                        </CardHeaderContent>
+
+                                    </MudCardHeader>
+                                    <MudCardContent Style="padding-top: 0px;">
+                                        
+
+                                        <MudTextField Typo="Typo.caption" @bind-Value="@Model.Vin"
+                                                        Label="Vin"
+                                                        Variant="Variant.Text"
+                                                        Margin="Margin.None"
+                                                        ReadOnly="true"/>
+
+
+                                        <MudStack Row="true">
+
+                                            <MudTextField Typo="Typo.caption" T="string" Text="@Model.Plate"
+                                                            Label="Placa"
+                                                            Variant="Variant.Text"
+                                                            Margin="Margin.None"
+                                                            ReadOnly="true" />
+
+                                            <MudTextField Typo="Typo.caption" T="string" Text="@Model.Year"
+                                                            Label="Año"
+                                                            Variant="Variant.Text"
+                                                            Margin="Margin.None"
+                                                            ReadOnly="true" />
+
+                                            <MudTextField Typo="Typo.caption" T="string" Text="@_modelPolicy.Color"
+                                                            Label="Color"
+                                                            Variant="Variant.Text"
+                                                            Margin="Margin.None"
+                                                            ReadOnly="true" />
+
+                                                
+
+                                        </MudStack>
+
+                                        <MudTextField Typo="Typo.caption" T="string" Text="@Model.DealerSaleName"
+                                                        Label="Concesionario"
+                                                        Variant="Variant.Text"
+                                                        Margin="Margin.None"
+                                                        ReadOnly="true" />
+
+                                                
+                                        <MudTextField Typo="Typo.caption" T="string" Text="@Model.ModelName"
+                                                        Label="Modelo" 
+                                                        Variant="Variant.Text" 
+                                                        Margin="Margin.None" 
+                                                        ReadOnly="true" />
+
+
+                                    </MudCardContent>
+
+                                </MudCard>
+                            
+
+                            @* ///Customer *@
+                            <MudCard Elevation="2">
+                                    <MudCardHeader Style="padding-bottom: 0px;">
+                                        <CardHeaderContent>
+
+                                            <MudGrid Spacing="0" Justify="Justify.Center">
+                                                <MudItem xs="12" sm="6">
+                                                    <div class="d-flex justify-left">
+                                                        <MudStack Row="true">
+                                                            <MudIcon Icon="@Icons.Material.Filled.ManageAccounts" Color="Color.Default" Style="font-size: 2rem;"></MudIcon>
+                                                            <MudText Typo="Typo.subtitle2">Cliente</MudText>
+
+                                                        </MudStack>
+                                                    </div>
+                                                </MudItem>
+
+                                                <MudItem xs="12" sm="6">
+                                                    <div class="d-flex justify-end">
+                                                        <MudStack Row="true">
+
+                                                        </MudStack>
+                                                    </div>
+                                                </MudItem>
+                                            </MudGrid>
+
+                                        </CardHeaderContent>
+
+                                    </MudCardHeader>
+                                    <MudCardContent Style="padding-top: 0px;">
+                                        @*  <MudHidden @bind-Value="Model.CustomerId" /> *@
+
+
+                                        <MudTextField Typo="Typo.caption" @bind-Value="Model.Vat"
+                                                        Label="RIF"
+                                                        Variant="Variant.Text"
+                                                        Margin="Margin.None"
+                                                        ReadOnly="true"/>
+
+                                        <MudStack Row="true">
+                                            <MudTextField Typo="Typo.caption" T="string" Text="@(Model.CustomerLastName + " " + Model.CustomerName)"
+                                                            Label="Apellidos y Nombres"
+                                                            Variant="Variant.Text"
+                                                            Margin="Margin.None"
+                                                            ReadOnly="true" />
+                                        </MudStack>
+
+                                            
+
+                                        <MudTextField Typo="Typo.caption" T="string" Text="@Model.CustomerPhone"
+                                                        Label="Tel&eacute;fono"
+                                                        Adornment="Adornment.Start"
+                                                        AdornmentIcon="@Icons.Material.Filled.Phone"
+                                                        Variant="Variant.Text"
+                                                        Margin="Margin.None"
+                                                        ReadOnly="true" />
+
+                                        @* Style="line-height: 1.2rem;" *@
+                                        <MudTextField Typo="Typo.caption" T="string" Text="@_modelPolicy.Email"
+                                                        Label="Email"
+                                                        Adornment="Adornment.Start"
+                                                        AdornmentIcon="@Icons.Material.Filled.MailOutline"
+                                                        Variant="Variant.Text"
+                                                        Margin="Margin.None"
+                                                        ReadOnly="true" />
+
+                                    </MudCardContent>
+
+                                </MudCard>
+                            
+
+
+                        </MudItem>
+                    </MudGrid>
+                </MudContainer>
+                
+                <MudScrollToTop TopOffset="100"
+                Selector="#unique_id_scroll_section"
+                VisibleCssClass="visible absolute"
+                HiddenCssClass="invisible">
+
+                </MudScrollToTop>
+            </div>
+
+            <MudDialog @bind-Visible="_nestedModalVisible">
+                <TitleContent>
+                    <MudStack Row="true">
+                        <MudIcon Icon="@Icons.Material.Filled.Speed" Color="@(_successModal ? Color.Default : Color.Error)" Style="font-size: 2rem;"></MudIcon>
+                        <MudText Typo="Typo.subtitle2">Mantenimiento</MudText>
+                    </MudStack>
+                </TitleContent>
+                <DialogContent>
+                    <MudStack Row="true">
+                        <MudText Class="nested"><p>@_errorModalMessage!</p> </MudText>
+                    </MudStack>
+                </DialogContent>
+                <DialogActions>
+                    <MudButton Color="Color.Info" OnClick="CloseNestedModal" Variant="Variant.Filled" Class="px-10">Ok</MudButton>
+                </DialogActions>
+            </MudDialog>
+
+        </DialogContent>
+
+
+
+    </MudDialog>
+</MudForm>
+
+<style>
+    .blur {
+    backdrop-filter: blur(10px);
+    }
+
+    .dialog-background {
+    background-color: transparent;
+    }
+
+    .dialog-background-title {
+    background: rgb(from var(--mud-palette-info-lighten) r g b / 50%);
+    color: var(--mud-palette-white);
+    }
+
+    .dialog-background-surface {
+    background: rgb(from var(--mud-palette-surface) r g b / 75%);
+    }
+</style>
+
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
+
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public int IdMaintenance { get; set; } 
+    [Parameter] public ActionsEnum ActionsModal { get; set; }
+    [Parameter] public Maintenance Model { get; set; } = new Maintenance();
+
+    private MudForm? form;
+
+    private Models.Policy _modelPolicy { get; set; } = new Models.Policy();
+    private PolicyDetail? _modelPolicyDetail { get; set; } = new PolicyDetail();
+    private List<PolicyDetail> _policyDetail { get; set; } = new List<PolicyDetail>();
+    private IEnumerable<SelectOption> _FailReportTypeList { get; set; } = new List<SelectOption>();
+
+    private string _errorModalMessage = string.Empty;
+    private string _errorSearchVehicle = string.Empty;
+    private bool _nestedModalVisible = false;
+    private bool _successModal = false;
+
+    bool _isReadOnly = false;
+    string _searchVin = string.Empty;
+    bool _isSearchVin = false;
+
+    MaintenanceValidator _modelValidator = new MaintenanceValidator();
+
+    IMask maskDate = new DateMask("dd/MM/yyyy");
+
+    SelectValidator<string> _SelectValidator = new SelectValidator<string>(x => x
+       .NotNull().WithMessage("Campo requerido")
+       .NotEmpty().WithMessage("Campo requerido")
+       .Length(1, 20).WithMessage("Campo requerido entre 1-20 carácteres"));
+
+    
+
+    private Color GetTimelineColor(string status)
+    {
+        return status switch
+        {
+            "VALIDO" => Color.Success,
+            "NO VALIDO" => Color.Error,
+            "PENDIENTE" => Color.Info,
+            "NO REGISTRADO" => Color.Warning,
+            "SRAN" => Color.Default,
+            _ => Color.Default
+        };
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _searchVin = Model.Vin;
+
+        var originalList = await ModuleActionsService.GetFailReportType(Session.UserId);
+        var filteredList = new List<SelectOption>();
+        foreach (var item in originalList)
+        {
+            if (item.Text == "GARANTIA" || item.Text == "PARTICULAR")
+            {
+                filteredList.Add(item);
+            }
+        }
+        _FailReportTypeList = filteredList;
+
+        StateHasChanged();
+        await GetPolicyBy();
+
+        await Task.CompletedTask;
+    }
+
+
+
+    private async Task GetPolicyBy()
+    {
+
+        _modelPolicy = new Models.Policy();
+        _policyDetail = new List<PolicyDetail>();
+        _modelPolicyDetail = new PolicyDetail();
+        _isSearchVin = false;
+        var serviceResponse = await PolicyService.GetPolicyBy(Session.SupplierId, Session.UserId, _searchVin, SearchByEnum.Dual);
+        if (serviceResponse.Processed)
+        {
+            _modelPolicy = serviceResponse.Data ?? new Models.Policy();
+            var serviceResponselist = await PolicyService.GetLogPolicyDetails(_modelPolicy.Id);
+            if (serviceResponselist.Processed)
+            {
+                _policyDetail = serviceResponselist.Data ?? new List<PolicyDetail>();
+            }
+
+            _isSearchVin = true;    
+            _errorSearchVehicle = string.Empty;
+            form!.ResetValidation();
+        }
+        else
+        {
+            //_errorSearchVehicle = MessageEnum.SearchVehicleNotOK.GetStringValue();
+            _errorSearchVehicle = "Vehiculo sin poliza activa!";
+        }
+
+        Model.NumberPolicy = _modelPolicy.Number;
+        Model.DealerId = Session.DealerId;
+
+        Model.DealerSaleId = 0;
+        Model.DealerSaleName = _modelPolicy.DealerName ?? string.Empty;
+        Model.DealerSaleCod = _modelPolicy.DealerCod;
+
+        Model.VehicleId = _modelPolicy.VehicleId;
+        Model.Plate = _modelPolicy.Plate;
+        Model.Vin = _modelPolicy.Vin;
+        Model.ModelId = 0;
+        Model.ModelName = _modelPolicy.ModelName;
+        Model.Year = _modelPolicy.Year;
+        Model.CustomerId = _modelPolicy.CustomerId;
+        Model.Vat = _modelPolicy.Vat;
+        Model.CustomerName = _modelPolicy.FirstName;
+        Model.CustomerLastName = _modelPolicy.LastName;
+        Model.CustomerPhone = _modelPolicy.Phone ?? string.Empty;
+
+
+        await Task.CompletedTask;
+
+
+        await Task.Delay(50);
+        StateHasChanged();
+    }
+
+    private async Task GetLogPolicyBy()
+    {
+        _policyDetail = new List<PolicyDetail>();
+        var serviceResponselist = await PolicyService.GetLogPolicyDetails(_modelPolicy.Id);
+        if (serviceResponselist.Processed)
+        {
+            _policyDetail = serviceResponselist.Data ?? new List<PolicyDetail>();
+        }
+
+        await Task.CompletedTask;
+        await Task.Delay(50);
+        StateHasChanged();
+    }
+
+    private async Task OnReportTypeChanged(int? newValue)
+    {
+        Model.ReportTypeId = newValue;
+
+        // Buscamos el texto sin LINQ (como pediste antes)
+        SelectOption? selectedOption = null;
+        foreach (var item in _FailReportTypeList)
+        {
+            if (item.Value == newValue)
+            {
+                selectedOption = item;
+                break;
+            }
+        }
+
+        if (selectedOption != null && selectedOption.Text == "GARANTIA")
+        {
+            await GetLogPolicyBy();
+
+            var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+            var parameters = new DialogParameters { ["PolicyDetails"] = _policyDetail };
+
+            var dialog = await DialogService.ShowAsync<YourPolicyDialog>("Seleccionar Escala", parameters, options);
+            var result = await dialog.Result;
+
+            if (!result.Canceled && result.Data is PolicyDetail selectedPolicy)
+            {
+                Model.PolicyDetailId = selectedPolicy.Id;
+                _modelPolicyDetail = selectedPolicy; // <-- Guardamos el objeto para la vista
+            }
+        }
+        else
+        {
+            // Si cambia a PARTICULAR, limpiamos la selección de garantía
+            Model.PolicyDetailId = null;
+            _modelPolicyDetail = null;
+        }
+    }
+
+
+
+    private async Task ClickSearchVehicle()
+    {
+
+        _errorSearchVehicle = string.Empty;
+        _isSearchVin = false;
+
+        if (Model.ServiceDate is null || Model.ServiceDate.Value.ToString().Length == 0)
+        {
+            _errorSearchVehicle = "Indique Fecha Servicio...";
+            return;
+
+        }
+        if (_searchVin is null || _searchVin.Length <= 3)
+        {
+            _errorSearchVehicle = "Indique VIN/Placa Vehiculo...";
+            return;
+        }
+        if (Model.Km is null || Model.Km.Value.ToString().Length == 0)
+        {
+            _errorSearchVehicle = "Indique Kilometraje Vehiculo...";
+            return;
+
+        }
+
+       
+        await GetPolicyBy();
+
+        
+    }
+
+
+    private async Task HandleKeyUpSearchVehicle(KeyboardEventArgs e)
+    {
+
+        if (e.Key == "Enter")
+        {
+            _errorSearchVehicle = string.Empty;
+            _isSearchVin = false;
+            if (Model.ServiceDate is null || Model.ServiceDate.Value.ToString().Length == 0)
+            {
+                _errorSearchVehicle = "Indique Fecha Servicio...";
+                return;
+
+            }
+            if (_searchVin is null || _searchVin.Length <= 3)
+            {
+                _errorSearchVehicle = "Indique VIN/Placa Vehiculo...";
+                return;
+            }
+            if (Model.Km is null || Model.Km.Value.ToString().Length == 0)
+            {
+                _errorSearchVehicle = "Indique KM Vehiculo...";
+                return;
+            }
+
+
+            await GetPolicyBy();
+
+        }
+    }
+
+
+    private async Task OnValidSubmit()
+    {
+        await form!.Validate();
+        
+        if (!_isSearchVin)
+        {
+            _errorSearchVehicle = "Buscar VIN/Placa Vehiculo...";
+            StateHasChanged();
+            await Task.CompletedTask;
+            return;
+        }
+
+        if (form.IsValid)
+        {
+            _errorModalMessage = "";
+
+            var serviceResponse = await MaintenanceService.UpdateMaintenance(Model, Session.UserId);
+            if (serviceResponse.Processed)
+            {
+                var _result = serviceResponse.Data ?? new ActionResult();
+                if (_result is not null)
+                {
+                    await JSRuntime.InvokeVoidAsync("eval", "window.location.reload(true);");
+                }
+                
+                _errorModalMessage = MessageEnum.SaveOK.GetStringValue();
+                _successModal = true;
+                Cancel();
+            }
+            else
+            {
+                // Console.WriteLine(serviceResponse.Message);
+                _successModal = false;
+                _errorModalMessage = serviceResponse.Message ?? MessageEnum.SaveNotOK.GetStringValue();
+                
+                OpenNested();
+            }
+        }
+
+        StateHasChanged();
+        await Task.CompletedTask;
+
+    }
+
+
+
+    private void Cancel()
+    {
+        if (_successModal)
+            MudDialog.Close(DialogResult.Ok(true));
+        else
+        {
+            MudDialog!.Cancel();
+        }
+    }
+
+    private void OpenNested() 
+    {
+        StateHasChanged();
+        _nestedModalVisible = true;
+    }
+
+    private async Task CloseNestedModal()
+    {
+        _nestedModalVisible = false;
+        await Task.Delay(50);
+        StateHasChanged();
+        if (_successModal)
+            MudDialog.Close(DialogResult.Ok(true));
+        
+        await Task.CompletedTask;
+
+    }
+
+    private int ServicePolicyStatus
+    {
+        get
+        {
+            if (_modelPolicyDetail == null || Model == null) return -1;
+
+            // 1. ¿Está EXCEDIDO? (Prioridad alta: Rojo)
+            // Si el Km es mayor al máximo O la fecha es posterior al límite.
+            if (Model.Km > (_modelPolicyDetail.UpToKm ?? 0) || Model.ServiceDate > _modelPolicyDetail.UpToDate)
+            {
+                return 2; // Rojo: Excedido
+            }
+
+            // 2. ¿Es MENOR al mínimo? (Prioridad media: Amarillo)
+            // Si el Km es menor al inicio de escala O la fecha es anterior al inicio.
+            if (Model.Km < (_modelPolicyDetail.FromKm ?? 0) && Model.ServiceDate < _modelPolicyDetail.FromDate)
+            {
+                return 3; // Amarillo: Anticipado
+            }
+
+            // 3. Si no es ninguna de las anteriores, está perfecto.
+            return 1; // Verde: En rango
+        }
+    }
+
+
+
+
+    public class SelectValidator<T> : AbstractValidator<T>
+    {
+
+        public SelectValidator(Action<IRuleBuilderInitial<T, T>> rule)
+        {
+            rule(RuleFor(x => x));
+        }
+
+
+        private IEnumerable<string> ValidateValue(T arg)
+        {
+            var result = Validate(arg);
+            if (result.IsValid)
+                return new string[0];
+            return result.Errors.Select(e => e.ErrorMessage);
+        }
+
+        public Func<T, IEnumerable<string>> Validation => ValidateValue;
+
+    }
+
+
+    /// <summary>
+    /// Validacion del formulario 
+    /// </summary>
+    /// <typeparam name="Maintenance"></typeparam>
+    public class MaintenanceValidator : AbstractValidator<Maintenance>
+    {
+        public MaintenanceValidator()
+        {
+
+             RuleFor(x => x.OrderNumber)
+              .NotNull().WithMessage("Campo requerido.")
+              .NotEmpty().WithMessage("Campo requerido ")
+              .Length(5, 10).WithMessage("Campo requerido entre 5-10 digitos")
+              .Custom((value, context) =>
+              {
+                  long number;
+                  if (!long.TryParse(value, out number))
+                  {
+                      context.AddFailure($"Campo requerido solo digitos [0-9]");
+                  }
+              });
+               
+            
+            RuleFor(x => x.Km)
+                .NotEmpty().WithMessage("Campo requerido")
+                .GreaterThan(0).WithMessage("Campo requerido.");
+
+
+            RuleFor(x => x.InvoiceNumber)
+               .NotNull().WithMessage("Campo requerido.")
+               .NotEmpty().WithMessage("Campo requerido ")
+               .Length(5, 10).WithMessage("Campo requerido entre 5-10 digitos")
+               .Custom((value, context) =>
+               {
+                   long number;
+                   if (!long.TryParse(value, out number))
+                   {
+                       context.AddFailure($"Campo requerido solo digitos [0-9]");
+                   }
+               });
+
+            RuleFor(x => x.InvoiceNumber)
+                .NotEmpty().WithMessage("Campo requerido")
+                .Length(5, 20).WithMessage("Campo requerido entre 5-20 carácteres");
+
+            RuleFor(x => x.InvoiceDate)
+                .NotEmpty().WithMessage("Campo requerido")
+                .Custom((value, context) =>
+                {
+                    if (value > DateTime.Now )
+                    {
+                        context.AddFailure($"Campo requerido menor a la fecha actual {(DateTime.Now.ToString("dd-MMM-yyyy"))}");
+                    }
+                });
+
+            RuleFor(x => x.ServiceDate)
+               .NotEmpty().WithMessage("Campo requerido")
+               .Custom((value, context) =>
+               {
+                   if (value > DateTime.Now)
+                   {
+                       context.AddFailure($"Campo requerido menor a la fecha actual {(DateTime.Now.ToString("dd-MMM-yyyy"))}");
+                   }
+               });
+
+
+            RuleFor(x => x.ReportTypeId)
+              .NotEmpty().WithMessage("Campo requerido")
+              .GreaterThan(0).WithMessage("Campo requerido.");
+
+            RuleFor(x => x.PolicyDetailId)
+                .NotEmpty().WithMessage("Campo requerido")
+                .GreaterThan(0).WithMessage("Campo requerido.");
+
+         
+        }
+
+
+
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<Maintenance>.CreateWithOptions((Maintenance)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+
+    }
+    }
