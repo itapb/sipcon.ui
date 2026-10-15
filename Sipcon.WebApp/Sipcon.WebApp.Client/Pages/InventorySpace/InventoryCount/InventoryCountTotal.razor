@@ -1,0 +1,426 @@
+﻿@using Sipcon.WebApp.Client.Repository.Auth
+@using System.Text.Json
+@using System.Globalization;
+@using Sipcon.WebApp.Client.Components.InventoryCount
+
+
+@inject IInventoryCountService InventoryCountService
+@inject IDialogService DialogService
+@inject UtilModuleActions ModuleActionsService
+@inject IJSRuntime JSRuntime
+@inject HubEventsService hubEventsService
+@implements IDisposable
+
+
+<MudDataGrid @ref="_mudDataGrid"
+             T="CountTotal"
+             SelectedItems="@selectedInventoryCount"
+             SortMode="SortMode.Multiple"
+             Filterable="true"
+             FixedHeader Height="calc(92vh - 235px)"
+             Hideable="true"
+             Loading="_loading"
+             ShowColumnOptions="false"
+             Bordered="false"
+             Dense="true"
+             Groupable="true"
+             MultiSelection="true"
+             Culture="@_esCulture"
+             ServerData="LoadGridData">
+
+    <ToolBarContent>
+
+        <MudTextField @bind-Value="_searchString"
+                      Style="font-size: 14px;line-height: 0.8rem;"
+                      Placeholder="Buscar..."
+                      Adornment="Adornment.Start"
+                      Immediate="true"
+                      Typo="Typo.caption"
+                      IconSize="Size.Medium"
+                      Class="mt-0"
+                      OnKeyUp="HandleKeyDownSearch">
+        </MudTextField>
+
+      
+
+
+        <MudCheckBox T="bool?"
+                     @bind-Value="_bDifference"
+                     TriState="true"
+                     Label="Con diferencias"
+                     Color="Color.Info"
+                     Dense="true" />
+        
+      
+
+     <MudSpacer />
+
+
+       @*  <!-- Botón de Filtros con Popover Flotante -->
+        <MudMenu Icon="@(_hasActiveFilters ? Icons.Material.Filled.FilterAlt : Icons.Material.Filled.FilterAltOff)"
+                 Color="@(_hasActiveFilters ? Color.Warning : Color.Info)"
+                 AriaLabel="Filtros avanzados"
+                 AnchorOrigin="Origin.BottomRight"
+                 TransformOrigin="Origin.TopRight"
+                 PopoverClass="pa-4 rounded-lg mud-elevation-4"
+                 Dense="true">
+
+            <MudText Typo="Typo.subtitle2" Class="mb-3 text-secondary"><b>FILTRAR BÚSQUEDA</b></MudText>
+
+            <MudStack Spacing="3" Style="width: 280px;">
+
+
+               
+
+                <!-- Botones de Acción -->
+                <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-2">
+                    <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" OnClick="ClearFilters">
+                        Limpiar
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Info" Size="Size.Small" OnClick="ClickSearch">
+                        Aplicar
+                    </MudButton>
+                </MudStack>
+            </MudStack>
+        </MudMenu>
+ *@
+        <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Info" OnClick="() => ClickSearch()"></MudIconButton>
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
+
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
+            @foreach (var module in _itemsModules)
+            {
+                <MudMenuItem Icon="@(module.Icon ?? "")"
+                             IconColor="@module.Color"
+                             Label="@GetModuleText(module.Text)"
+                             OnClick="() => HandleMenuClick(module)" />
+            }
+        </MudMenu>
+    </ToolBarContent>
+
+    <Columns>
+        <SelectColumn T="CountTotal" />
+
+        <!-- Código del Repuesto -->
+        <PropertyColumn Property="x => x.InnerCode"
+                        Title="CÓDIGO"
+                        Align="Align.Center"
+                        Filterable="false" />
+
+        <!-- Stock General (Inventario) -->
+        <PropertyColumn Property="x => x.Stock"
+                        Title="STOCK INV."
+                        Align="Align.Right"
+                        Format="N0"
+                        Filterable="false" />
+
+        <!-- Stock Figo -->
+        <PropertyColumn Property="x => x.StockFigo"
+                        Title="STOCK FIGO"
+                        Align="Align.Right"
+                        Format="N0"
+                        Filterable="false" />
+
+        <!-- Cantidad Contada -->
+        <PropertyColumn Property="x => x.Count"
+                        Title="CANT. CONTADA"
+                        Align="Align.Right"
+                        Format="N0"
+                        Filterable="false" />
+
+        <!-- Costo Unitario -->
+        <TemplateColumn Title="COSTO" Align="Align.Right">
+            <CellTemplate>
+                $ @context.Item.Cost?.ToString("N2")
+            </CellTemplate>
+        </TemplateColumn>
+
+        <!-- Costo de la Cantidad Contada -->
+        <TemplateColumn Title="TOTAL COSTO CONTADO" Align="Align.Right">
+            <CellTemplate>
+                $ @context.Item.CostCount?.ToString("N2")
+            </CellTemplate>
+        </TemplateColumn>
+
+        <!-- Costo del Stock Figo -->
+        <TemplateColumn Title="TOTAL COSTO FIGO" Align="Align.Right">
+            <CellTemplate>
+                $ @context.Item.CostFigo?.ToString("N2")
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+
+    <PagerContent>
+        <MudDataGridPager PageSizeOptions="new int[] { 300 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Página" />
+    </PagerContent>
+</MudDataGrid>
+
+<NestedDialogCustom IsVisible="@_nestedVisible" Success="@_success"
+                    onCloseNested="() => _nestedVisible = false"
+                    ErrorMessage="@_nestedErrorMessage"
+                    Title="@("Conteo de Inventario")" />
+
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
+    [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
+
+    [Parameter] public int InventoryCountId { get; set; }
+    [Parameter] public string? Estatus { get; set; } = null;
+
+    private IEnumerable<CountTotal> _count = new List<CountTotal>();
+    private HashSet<CountTotal> selectedInventoryCount = new([]);
+
+    private List<ModuleAction> _itemsModules = new List<ModuleAction>([]);
+
+    string SelectedmGroup = "NRO PLANILLA";
+    string[] mGroups = ["NRO PLANILLA", "CODIGO", "UBICACION"];
+
+    private string _nestedErrorMessage = string.Empty;
+    private bool _nestedVisible;
+    private bool _success = false;
+    private CultureInfo _esCulture = new CultureInfo("es-ES");
+
+    private int _rowCount = 0;
+    private int _rowsTotal = 0;
+
+    private string _searchString = string.Empty;
+    private bool _loading = true;
+    private string _moduleName = "INVENTARIO-DETALLES-CONTEO";
+
+    private DateTime? _dateFrom { get; set; } = null;
+    private DateTime? _dateTo { get; set; } = null;
+
+    private MudDataGrid<CountTotal>? _mudDataGrid;
+
+    // =========================================================================
+    // CONFIGURACIÓN DE AGRUPACIÓN (Igual al otro cuadro)
+    // =========================================================================e;
+
+    private bool? _bAssign = null;      // Corresponde a @BASSIGN
+    private bool? _bDifference = null;
+
+
+    private Func<CountTotal, object>? _groupBy1;
+    // =========================================================================
+
+    List<BreadcrumbItem> _itemsNavigate = [
+        new("Home", href: "", icon: Icons.Material.Filled.Home),
+        new("Inventario", href: "count", icon: Icons.Material.Filled.Inventory),
+        new("Conteo", href: "count", icon: Icons.Material.Filled.Map)
+    ];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+
+        hubEventsService.OnSupplierChanged += ReloadServerData;
+        hubEventsService.OnDealerChanged += ReloadServerData;
+        await Task.CompletedTask;
+    }
+
+   
+
+    private string GetModuleText(string? originalText)
+    {
+        return originalText?.Trim().ToLower() switch
+        {
+            "validar" => "RE-CONTAR",
+            _ => originalText ?? ""
+        };
+    }
+
+    
+
+    private async Task ReloadServerData()
+    {
+        if (_mudDataGrid != null)
+        {
+            await _mudDataGrid.ReloadServerData();
+        }
+    }
+
+    public void Dispose()
+    {
+        hubEventsService.OnSupplierChanged -= ReloadServerData;
+        hubEventsService.OnDealerChanged -= ReloadServerData;
+    }
+
+   
+
+    private async Task<GridData<CountTotal>> LoadGridData(GridState<CountTotal  > state)
+    {
+        await AuthenticationStateProvider.RefreshStaticVariables();
+        _rowCount = state.Page * state.PageSize;
+
+        await GetInventoryCount();
+
+        return new GridData<CountTotal> { TotalItems = _rowsTotal, Items = _count };
+    }
+
+    private async Task GetInventoryCount()
+    {
+        _loading = true;
+        _count = new List<CountTotal>();
+        _rowsTotal = 0;
+      
+        var allModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
+
+        // Filtramos para que solo traiga los que sean exactamente "exportar" (ignorando mayúsculas/minúsculas)
+        _itemsModules = allModules
+            .Where(x => x.Text != null && x.Text.Equals("EXPORTAR", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+
+        var serviceResponse = await InventoryCountService.GetInventoryCountTotal(Session.SupplierId, Session.UserId, InventoryCountId, _rowCount, _searchString, _bDifference);
+        if (serviceResponse.Processed)
+        {
+            _count = serviceResponse.Data;
+            _rowsTotal = serviceResponse.Total;
+        }
+        else
+        {
+            _success = false;
+            _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.GetError.GetStringValue();
+            OpenNested();
+        }
+
+        _loading = false;
+    }
+
+    private async Task ClickAddInventoryCount()
+    {
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+        var parameters = new DialogParameters<InventoryCountDialog> { { x => x.InventoryCountId, 0 }, { x => x.SupplierId, Session.SupplierId }, { x => x.ActionsModal, ActionsEnum.Create } };
+
+        var dialog = await DialogService.ShowAsync<InventoryCountDialog>("simple dialog", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            await _mudDataGrid!.ReloadServerData();
+            StateHasChanged();
+        }
+    }
+
+    private async Task ClickEditInventoryCount(GetInventoryCountDetail item)
+    {
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = false, NoHeader = true };
+        var parameters = new DialogParameters<InventoryCountDialog> { { x => x.InventoryCountId, item.InventoryId ?? item.CountId ?? 0 }, { x => x.SupplierId, Session.SupplierId }, { x => x.ActionsModal, ActionsEnum.Edit } };
+
+        var dialog = await DialogService.ShowAsync<InventoryCountDialog>("simple dialog", parameters, options);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            await _mudDataGrid!.ReloadServerData();
+            StateHasChanged();
+        }
+    }
+
+    private void ClearFilters()
+    {
+        _dateFrom = null;
+        _dateTo = null;
+        _bAssign = null;
+        _bDifference = null;
+        ClickSearch();
+    }
+
+    private async Task HandleKeyDownSearch(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await _mudDataGrid!.ReloadServerData();
+        }
+    }
+
+    private async Task ClickSearch()
+    {
+        await _mudDataGrid!.ReloadServerData();
+    }
+
+    private async Task HandleOnClickRefresh()
+    {
+        _searchString = string.Empty;
+        _dateFrom = null;
+        _dateTo = null;
+        await _mudDataGrid!.ReloadServerData();
+    }
+
+    private void OpenNested()
+    {
+        _nestedVisible = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleMenuClick(ModuleAction module)
+    {
+        switch (module.ActionName)
+        {
+            case "EXPORT":
+                await ExportItemsAsync();
+                break;
+            default:
+                Console.WriteLine($"{MessageEnum.ActionsError.GetStringValue()}: {module.ActionName}");
+                break;
+        }
+    }
+
+    private async Task ExportItemsAsync()
+    {
+        string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
+        string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
+
+        var serviceResponse = await InventoryCountService.ExportInventoryCountTotal(Session.SupplierId, Session.UserId, InventoryCountId, null, Filter: _searchString, Diference: _bDifference);
+        if (serviceResponse.Processed)
+        {
+            _success = true;
+            _nestedErrorMessage = "";
+
+            var base64File = Convert.ToBase64String(serviceResponse.Data.ToArray());
+            var fileUrl = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64File}";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "ConteoInventario.xlsx");
+        }
+        else
+        {
+            _success = false;
+            _nestedErrorMessage = MessageEnum.ExportNotOK.GetStringValue();
+            OpenNested();
+        }
+    }
+
+
+
+   
+
+    
+
+
+    private Func<GetInventoryCountDetail, string> _cellStyleFunc => x =>
+    {
+        if (string.IsNullOrEmpty(x.StatusName)) return "";
+
+        string style = "";
+        string status = x.StatusName.ToUpper();
+
+        if (status == "BORRADOR")
+        {
+            style += "";
+        }
+        else if (status == "ACTIVADO" || status == "ASIGNADO")
+        {
+            style += "color:#fff;background-color:#0099F3";
+        }
+        else if (status == "BLOQUEADO")
+        {
+            style += "color:#fff;background-color:#757575";
+        }
+        else
+        {
+            style += "color:#fff;background-color:#FF7043";
+        }
+
+        style += ";font-weight:bold;font-style:italic";
+        return style;
+    };
+}
