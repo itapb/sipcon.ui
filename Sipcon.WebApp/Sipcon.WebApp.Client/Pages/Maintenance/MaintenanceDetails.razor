@@ -3,10 +3,8 @@
 
 @using Sipcon.WebApp.Client.Pages
 @using Sipcon.WebApp.Client.Repository.Auth
-@using System.Text.RegularExpressions
-@using System.ComponentModel.DataAnnotations
 @using System.Globalization
-@using FluentValidation
+@using Sipcon.WebApp.Client.Components.Maintenance
 
 @inject IMaintenanceService MaintenanceService
 @inject IPolicyService PolicyService
@@ -15,12 +13,11 @@
 @inject ICommentService CommentService
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
-
+@inject IDialogService DialogService
 
 <PageTitle>Mantenimiento</PageTitle>
 
 <MudContainer Style="position:relative;">
-
     <MudStack Row="true">
         <CustomBreadcrumbs mItems="_itemsNavigate"></CustomBreadcrumbs>
         <MudSpacer />
@@ -32,29 +29,27 @@
         @* DATOS REPORTE *@
         <MudTabPanel Icon="@Icons.Material.Filled.CarRepair" Text="MANTENIMIENTO" >
             <MudGrid Spacing="1" Justify="Justify.Center">
-
-               
                 <MudItem xs="12" sm="8">
+
                     @* Datos Servicio *@
                     <MudCard Elevation="1" Class="pa-1 mt-2">
                         <MudCardHeader Style="padding-bottom: 0px;">
                             <CardHeaderContent>
-                           
-                              @*   <MudText Typo="Typo.caption" Color="Color.Info"> </MudText>
-                                <MudText Typo="Typo.h6">
-                                    Datos Mantenimiento 
-                                </MudText> *@
                                 <MudChat ChatPosition="ChatBubblePosition.Start">
                                     <MudAvatar Color="Color.Info" > <MudIcon Icon="@Icons.Material.Filled.CarRepair" /></MudAvatar>
                                     <MudChatBubble>
                                         <MudText Typo="Typo.h6">
                                             Datos Mantenimiento
+                                            @if (_model.ReportTypeId == 2 && canEdit)
+                                            {
+                                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Dark" OnClick="ClickEditMaintenance" Size="Size.Small"></MudIconButton>
+                                            }
                                         </MudText>
                                     </MudChatBubble>
                                     <MudChatFooter Style="font-size: 12px;font-style:italic;color:blue" Text="@(_model.Id != 0 ? " #" + _model.Id.ToString().PadLeft(10, '0') : "")" />
                                 </MudChat>
-                           
                             </CardHeaderContent>
+
                             <CardHeaderActions>
                                 @if (_model.Id != 0)
                                 {
@@ -85,20 +80,14 @@
                                     style += ";font-size: 10px";
                                     style += ";font-style:italic";
 
-
                                     <MudChip T="string" Style="@style" Label="true" Disabled="true">@_model.EstatusName</MudChip>
                                 }
-
                             </CardHeaderActions>
-
                         </MudCardHeader>
 
                         <MudCardContent Style="padding-top: 2px;">
-
                             <MudStack Row="true">
                                 <MudIcon Icon="@Icons.Material.Filled.Speed" Color="Color.Info" Style="font-size: 2rem;"></MudIcon>
-
-
                                 <MudNumericField Typo="Typo.caption" @bind-Value="_model.Km"
                                                  Style="line-height: 0.8rem;"
                                                  Label="Kilometraje"
@@ -138,12 +127,9 @@
                                               Variant="Variant.Text"
                                               Margin="Margin.Dense"
                                               ReadOnly="true" />
-
-
                             </MudStack>
 
                             <MudStack Row="true">
-
                                 <MudTextField Typo="Typo.caption" @bind-Value="_model.ReportTypeName"
                                               Label="Tipo Servicio"
                                               Variant="Variant.Text"
@@ -198,27 +184,23 @@
                     @* Datos Poliza *@
                      <div id="scroll_section_policydetail" class="ma-0" style="height:285px;overflow: auto;">
                         <MudCard Elevation="2" Class="pa-1 mt-2" Style="min-height:280px;">
+
                         <MudCardHeader>
                             <CardHeaderContent>
-
                                 <MudGrid Spacing="0" Justify="Justify.Center">
                                     <MudItem xs="12" sm="8">
                                         <div class="d-flex justify-left">
                                             <MudStack Row="true">
                                                 <MudIcon Icon="@Icons.Material.Filled.Policy" Color="Color.Default" Style="font-size: 1.8rem;"></MudIcon>
                                                 <MudText Typo="Typo.subtitle2">Poliza</MudText>
-
                                             </MudStack>
                                         </div>
                                     </MudItem>
 
-                                    <MudItem xs="12" sm="4">
-
-
-                                    </MudItem>
+                                    <MudItem xs="12" sm="4"></MudItem>
                                 </MudGrid>
-
                             </CardHeaderContent>
+
                             <CardHeaderActions>
                                 @if (_modelPolicy.Id != 0)
                                 {
@@ -249,13 +231,11 @@
                                     style += ";font-weight:bold;font-size:10px";
                                     style += ";font-style:italic";
 
-
-                                        <MudChip T="string" Style="@style" Label="true" Disabled="true">@_modelPolicy.EstatusName</MudChip>
+                                    <MudChip T="string" Style="@style" Label="true" Disabled="true">@_modelPolicy.EstatusName</MudChip>
                                 }
-
                             </CardHeaderActions>
-
                         </MudCardHeader>
+
                         <MudCardContent Style="padding-top: 0px;">
                             <MudFlexBreak />
 
@@ -268,46 +248,45 @@
                                     }
                                 </div>
                             </div>
-
                             
                             <MudContainer Class="dialog-background-surface py-1 pt-0 pa-1">
-                            <MudTimeline TimelinePosition="TimelinePosition.Start">
-                                @foreach (var item in _policyDetail)
-                                {
-                                    bool isCurrentService = item.ServiceId == _model.Id;
 
-                                    <MudTimelineItem TimelineAlign="TimelineAlign.End" Color="@GetTimelineColor(item.Valid)" Size="Size.Small" Culture="@CultureInfo.GetCultureInfo("es-VE")">
+                                <MudTimeline TimelinePosition="TimelinePosition.Start">
+                                    @foreach (var item in _policyDetail)
+                                    {
+                                        bool isCurrentService = item.ServiceId == _model.Id;
+
+                                        <MudTimelineItem TimelineAlign="TimelineAlign.End" Color="@GetTimelineColor(item.Valid)" Size="Size.Small" Culture="@CultureInfo.GetCultureInfo("es-VE")">
                 
-                                        @* Primera línea *@
-                                        <MudText Typo="Typo.body2" Style="font-size: 11px;">
-                                            @item.Valid <b>@(item.FromKm?.ToString("N0") + "-" + item.UpToKm?.ToString("N0") + " kms.") </b> 
-                                        </MudText>
+                                            @* Primera línea *@
+                                            <MudText Typo="Typo.body2" Style="font-size: 11px;">
+                                                @item.Valid <b>@(item.FromKm?.ToString("N0") + "-" + item.UpToKm?.ToString("N0") + " kms.") </b> 
+                                            </MudText>
 
-                                        @* Segunda línea *@
-                                        <MudText Typo="Typo.body2" Style="font-size: 11px;" Class="mud-text-secondary">
-                                            @("Desde: " + item.FromDate?.ToString("dd MMM yyyy") + " - Hasta: " + item.UpToDate?.ToString("dd MMM yyyy"))
-                                        </MudText>
+                                            @* Segunda línea *@
+                                            <MudText Typo="Typo.body2" Style="font-size: 11px;" Class="mud-text-secondary">
+                                                @("Desde: " + item.FromDate?.ToString("dd MMM yyyy") + " - Hasta: " + item.UpToDate?.ToString("dd MMM yyyy"))
+                                            </MudText>
 
-                                        @* Tercera línea: Resaltado tipo 'badge' o marcador si es el actual *@
-                                        <MudText Typo="Typo.body2" Style="@GetTripleLineStyle(isCurrentService)">
-                                            @("Km: " + item.KM?.ToString("N0") + " - " + item.Date?.ToString("dd MMM yyyy") + " - Servicio: " + item.ServiceId?.ToString("N0"))
-                                        </MudText>
+                                            @* Tercera línea: Resaltado tipo 'badge' o marcador si es el actual *@
+                                            <MudText Typo="Typo.body2" Style="@GetTripleLineStyle(isCurrentService)">
+                                                @("Km: " + item.KM?.ToString("N0") + " - " + item.Date?.ToString("dd MMM yyyy") + " - Servicio: " + item.ServiceId?.ToString("N0"))
+                                            </MudText>
 
-                                    </MudTimelineItem>
-                                }
-                            </MudTimeline>
-                        </MudContainer>
-                            
+                                        </MudTimelineItem>
+                                    }
+                                </MudTimeline>
+                            </MudContainer>
                         </MudCardContent>
-
                     </MudCard>
+
                     <MudScrollToTop TopOffset="100"
                                     Selector="#scroll_section_policydetail"
                                     VisibleCssClass="visible absolute"
                                     HiddenCssClass="invisible">
 
                     </MudScrollToTop>
-                    </div>
+               </div>
 
                     @* ///Vehicle *@
                     <MudCard Elevation="2" Class="pa-1 mt-2">
@@ -620,10 +599,16 @@
     ErrorMessage="@_nestedErrorMessage" 
     Title="@("Mantenimiento")" />
 
-@code { [Inject] private UserSession Session { get; set; } = null!;
+    @code {
+    [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Parameter]
     public string IdMaintenance { get; set; } = string.Empty;
+
+    public bool canEdit => Session?.UserModules?
+                            .Where(m => m.Name == "SERVICIOS-MANTENIMIENTO")
+                            .SelectMany(m => m.Actions)
+                            .Any(a => a.ActionName == "EDIT") ?? false;
 
     private Maintenance _model { get; set; } = new Maintenance();
 
@@ -633,7 +618,7 @@
     private List<Comment> _comment { get; set; } = new List<Comment>();
 
     private string _moduleName = "SERVICIOS-MANTENIMIENTO";
-    
+
     private string _nestedErrorMessage = string.Empty;
     private bool _nestedVisible;
     string _strComment = string.Empty;
@@ -665,6 +650,23 @@
         //TODO upload the files to the server
     }
 
+    private async Task ClickEditMaintenance()
+    {
+
+        DialogOptions options = new() { BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = false, NoHeader = true };
+
+        var parameters = new DialogParameters<EditMaintenanceDialog> {
+                { x => x.IdMaintenance, 0 },
+                { x => x.ActionsModal, ActionsEnum.Create },
+                { x => x.Model, _model }
+        };
+
+        var dialog = await DialogService.ShowAsync<EditMaintenanceDialog>("simple dialog", parameters, options);
+        var result = await dialog.Result;
+       
+
+        await Task.CompletedTask;
+    }
 
     protected override async Task OnInitializedAsync()
     {
