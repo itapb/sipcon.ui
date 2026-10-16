@@ -1,8 +1,10 @@
-﻿@inject HubEventsService hubEventsService
+﻿@using System.Collections.Generic
+@using MudBlazor.Utilities
+
+@inject HubEventsService hubEventsService
+@inject IDispatchService DispatchService
 @implements IDisposable
 
-@using System.Collections.Generic
-@using MudBlazor.Utilities
 
 <MudDataGrid @ref="@DispatchTapDataGrid" T="Invoicecontrol"
              ServerData="@ServerReload"
@@ -19,13 +21,14 @@
         </MudMenu>
 
     </ToolBarContent>
+
     <Columns>
         <TemplateColumn>
 @*             <HeaderTemplate>
                 <MudCheckBox @bind-Value="IsAllCheckBoxSelected" @bind-Value:after="AfterAsyncAllCheck" />
             </HeaderTemplate> *@
             <CellTemplate>
-                <MudCheckBox @bind-Value="@context.Item.Mark" @bind-Value:after="@(() =>AfterAsyncCheck(context.Item))" />
+                <MudCheckBox @bind-Value="@context.Item.Mark" @bind-Value:after="@(() => AfterAsyncCheck(context.Item))" />
             </CellTemplate>
         </TemplateColumn>
 
@@ -37,13 +40,22 @@
         <PropertyColumn Property="x => x.PartName" Title="RESPUESTO" Groupable="false" />
         <PropertyColumn Property="x => x.Dispatched" Title="CANTIDAD" Groupable="false" />
 
+        <TemplateColumn>
+            <CellTemplate>
+                <MudStack Row="true">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="@(() => ClickRemoveDispatch(context.Item.Id))" />
+                </MudStack>
+            </CellTemplate>
+        </TemplateColumn>
     </Columns>
+
     <PagerContent>
         <MudDataGridPager T="Invoicecontrol" PageSizeOptions="new int[] { 100 }" InfoFormat="{first_item}-{last_item} de {all_items}" RowsPerPageString="Registros por Pagina" />
     </PagerContent>
 </MudDataGrid>
 
-@code { [Inject] private UserSession Session { get; set; } = null!;
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
     [Inject] private Repository.Auth.AuthenticationProviderJWT AuthenticationStateProvider { get; set; } = null!;
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
@@ -70,11 +82,10 @@
         hubEventsService.OnSupplierChanged += ReloadBackOrderGrid;
     }
 
-
-
     private int LocationCurrentPage = 0;
     bool _loading = true;
     bool IsAllCheckBoxSelected = false;
+
     private async Task<GridData<Invoicecontrol>> ServerReload(GridState<Invoicecontrol> state)
     {
         await AuthenticationStateProvider.RefreshStaticVariables();
@@ -113,6 +124,19 @@
         return new GridData<Invoicecontrol> { TotalItems = totalItems, Items = data };
     }
 
+    private async Task ClickRemoveDispatch(int? InvoiceId)
+    {
+
+
+        DialogOptions mOptions = new() { MaxWidth = MaxWidth.ExtraLarge, BackdropClick = false, NoHeader = false };
+        bool? result = await DialogService.ShowMessageBox("Eliminar", "Confirmar accion para este registro?", yesText: "SI", cancelText: "NO", options: mOptions);
+
+        if ((result ?? false))
+        {
+                await DispatchService.DeleteDispatch(InvoiceId ?? 0);
+                await DispatchTapDataGrid!.ReloadServerData();
+        }
+    }
 
     private static object? GetPropertyValue<TT>(TT obj, string propertyName)
     {
