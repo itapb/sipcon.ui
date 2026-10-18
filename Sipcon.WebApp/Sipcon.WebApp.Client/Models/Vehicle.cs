@@ -78,6 +78,6 @@ namespace Sipcon.WebApp.Client.Models
 
         public string PolicyTypeName { get; set; } = string.Empty;
 
-        public Boolean hasAttachment { get; set; }
+        public Boolean? hasAttachment { get; set; }
     }
 }
