@@ -1,0 +1,554 @@
+﻿
+@if (MudDialog != null)
+{
+    <div>
+        <MudForm @ref="form">
+            <MudGrid Spacing="0">
+
+                <!-- ENCABEZADO -->
+                <MudItem xs="12">
+                    <MudPaper Elevation="2"
+                              Class="jpv1-dialog-background-title pa-3"
+                              Square="true">
+                        <MudPaper Elevation="2" Class="pa-2 mud-text-align-center">
+                            <MudStack Row="true"
+                                      StretchItems="StretchItems.Start"
+                                      Justify="Justify.SpaceBetween"
+                                      AlignItems="AlignItems.Center">
+
+                                <MudText Typo="Typo.h6" Color="Color.Info">
+                                    Registro de Conteo por Formulario
+                                </MudText>
+
+                                <MudStack Row="true" Spacing="2">
+                                    <MudButton OnClick="CancelClick">
+                                        Cancelar
+                                    </MudButton>
+
+                                    <MudFab StartIcon="@Icons.Material.Filled.Save"
+                                            Color="Color.Info"
+                                            OnClick="SaveClick"
+                                            Size="Size.Small"
+                                            Label="Guardar"
+                                            Disabled="@(!itemsDetails.Any() || isSaving || isLoading)" />
+                                </MudStack>
+
+                            </MudStack>
+                        </MudPaper>
+                    </MudPaper>
+                </MudItem>
+
+                <!-- CUERPO -->
+                <MudItem xs="12">
+                    <MudPaper Elevation="2"
+                              Class="pa-3 jpv1-dialog-body-background"
+                              Square="true">
+
+                        <!-- CONSULTAR FORMULARIO -->
+                        <MudPaper Elevation="0" Class="pa-2 mb-3 transparent-bg">
+                            <MudGrid AlignItems="AlignItems.Center" Spacing="2">
+
+                                <MudItem xs="12" sm="6" md="4">
+                                    <MudNumericField T="int?"
+                                                     Label="Buscar N° Formulario"
+                                                     Value="@formIdInput"
+                                                     ValueChanged="OnFormIdChanged"
+                                                     Immediate="true"
+                                                     OnKeyDown="HandleFormKeyDown"
+                                                     Adornment="Adornment.End"
+                                                     AdornmentIcon="@Icons.Material.Filled.Search"
+                                                     OnAdornmentClick="SearchFormAsync"
+                                                     Margin="Margin.Dense"
+                                                     Variant="Variant.Outlined"
+                                                     HideSpinButtons="true"
+                                                     Disabled="@isLoading"
+                                                     Clearable="true" />
+                                </MudItem>
+                                @if (itemsDetails.Any())
+                                {
+                                    <MudItem xs="12" sm="6" md="3">
+                                        <MudButton Variant="Variant.Outlined"
+                                                   Color="Color.Warning"
+                                                   StartIcon="@Icons.Material.Filled.Add"
+                                                   OnClick="ToggleSobrante"
+                                                   FullWidth="true">
+                                            Registrar sobrante
+                                        </MudButton>
+                                    </MudItem>
+                                }
+
+                            </MudGrid>
+                        </MudPaper>
+
+                        @if (isLoading)
+                        {
+                            <MudProgressLinear Color="Color.Info"
+                                               Indeterminate="true"
+                                               Class="my-3" />
+                        }
+
+                        <!-- PANEL PARA REGISTRAR SOBRANTE -->
+                        @if (showSobrante && itemsDetails.Any())
+                        {
+                            <MudPaper Elevation="1"
+                                      Outlined="true"
+                                      Class="pa-3 mb-3">
+
+                                <MudStack Spacing="2">
+                                    <MudText Typo="Typo.subtitle1" Color="Color.Warning">
+                                        <MudIcon Icon="@Icons.Material.Filled.AddBox"
+                                                 Class="mr-1" />
+                                        Registrar sobrante
+                                    </MudText>
+
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                        Ingresa el código interno, la ubicación y la cantidad
+                                        del artículo que no aparece en el formulario.
+                                    </MudText>
+
+                                    <MudGrid Spacing="2">
+
+                                        <MudItem xs="12" sm="4">
+                                            <MudTextField T="string"
+                                                          Label="Código interno"
+                                                          @bind-Value="sobranteInnerCode"
+                                                          Required="true"
+                                                          Immediate="true"
+                                                          Margin="Margin.Dense"
+                                                          Variant="Variant.Outlined"
+                                                          Disabled="@isSaving"
+                                                          MaxLength="100" />
+                                        </MudItem>
+
+                                        <MudItem xs="12" sm="4">
+                                            <MudTextField T="string"
+                                                          Label="Ubicación"
+                                                          @bind-Value="sobranteLocation"
+                                                          Required="true"
+                                                          Immediate="true"
+                                                          Margin="Margin.Dense"
+                                                          Variant="Variant.Outlined"
+                                                          Disabled="@isSaving"
+                                                          MaxLength="100" />
+                                        </MudItem>
+
+                                        <MudItem xs="12" sm="4">
+                                            <MudNumericField T="int?"
+                                                             Label="Cantidad contada"
+                                                             @bind-Value="sobranteQuantity"
+                                                             Min="0"
+                                                             Required="true"
+                                                             Immediate="true"
+                                                             Margin="Margin.Dense"
+                                                             Variant="Variant.Outlined"
+                                                             HideSpinButtons="true"
+                                                             Disabled="@isSaving" />
+                                        </MudItem>
+
+                                        <MudItem xs="12">
+                                            <MudStack Row="true"
+                                                      Justify="Justify.FlexEnd"
+                                                      Spacing="2">
+
+                                                <MudButton Variant="Variant.Text"
+                                                           Color="Color.Default"
+                                                           OnClick="CancelSobrante"
+                                                           Disabled="@isSaving">
+                                                    Cancelar
+                                                </MudButton>
+
+                                                <MudButton Variant="Variant.Filled"
+                                                           Color="Color.Warning"
+                                                           StartIcon="@Icons.Material.Filled.PlaylistAdd"
+                                                           OnClick="AddSobrante"
+                                                           Disabled="@isSaving">
+                                                    Agregar a la lista
+                                                </MudButton>
+
+                                            </MudStack>
+                                        </MudItem>
+
+                                    </MudGrid>
+                                </MudStack>
+                            </MudPaper>
+                        }
+
+                        <!-- CABECERA INFORMATIVA -->
+                        @if (itemsDetails.Any())
+                        {
+                            <MudPaper Elevation="1"
+                                      Class="pa-3 mb-3 style-header-info">
+                                <MudGrid Spacing="2">
+
+                                    <MudItem xs="12" sm="6">
+                                        <MudText Typo="Typo.subtitle1">
+                                            <b>N° Formulario:</b>
+                                            @(headerInfo?.NumForm ?? formIdInput)
+                                        </MudText>
+                                    </MudItem>
+
+                                    <MudItem xs="12" sm="6">
+                                        <MudText Typo="Typo.subtitle1">
+                                            <b>Usuario Asignado:</b>
+                                            @(headerInfo?.UserName ?? "Sin Asignar")
+                                        </MudText>
+                                    </MudItem>
+
+                                </MudGrid>
+                            </MudPaper>
+
+                            <!-- TABLA DE CONTEO -->
+                            <MudTable Items="@itemsDetails"
+                                      Dense="true"
+                                      Hover="true"
+                                      Striped="true"
+                                      Bordered="true"
+                                      Elevation="1">
+
+                                <HeaderContent>
+                                    <MudTh>Zona</MudTh>
+                                    <MudTh>Código Interno</MudTh>
+                                    <MudTh>Parte / Descripción</MudTh>
+                                    <MudTh>Ubicación</MudTh>
+                                    <MudTh Style="width:150px;text-align:center;">
+                                        Cant. Contada
+                                    </MudTh>
+                                </HeaderContent>
+
+                                <RowTemplate>
+                                    <MudTd DataLabel="Zona">
+                                        @context.Zone
+                                    </MudTd>
+
+                                    <MudTd DataLabel="Código Interno">
+                                        @context.InnerCode
+                                    </MudTd>
+
+                                    <MudTd DataLabel="Parte / Descripción">
+                                        @context.PartName
+
+                                        @if (context.PartName == "SOBRANTE")
+                                        {
+                                            <MudChip T="string"
+                                                     Size="Size.Small"
+                                                     Color="Color.Warning"
+                                                     Variant="Variant.Outlined">
+                                                Nuevo
+                                            </MudChip>
+                                        }
+                                    </MudTd>
+
+                                    <MudTd DataLabel="Ubicación">
+                                        @context.Location
+                                    </MudTd>
+
+                                    <MudTd DataLabel="Cant. Contada">
+                                        @{
+                                            var currentIndex = itemsDetails.IndexOf(context);
+                                            var inputId = $"qty-input-{currentIndex}";
+                                            var nextInputId = $"qty-input-{currentIndex + 1}";
+                                        }
+
+                                        <MudNumericField T="int?"
+                                                         id="@inputId"
+                                                         @bind-Value="context.QuantityNew"
+                                                         Min="0"
+                                                         Immediate="true"
+                                                         Margin="Margin.Dense"
+                                                         Variant="Variant.Outlined"
+                                                         HideSpinButtons="true"
+                                                         OnKeyDown="@(async (e) =>
+                                                                                                                      await HandleQuantityKeyDown(e, nextInputId))" />
+                                    </MudTd>
+                                </RowTemplate>
+
+                            </MudTable>
+                        }
+                        else if (hasSearched && !isLoading)
+                        {
+                            <MudAlert Severity="Severity.Warning" Class="mt-2">
+                                No se encontraron registros para el número de
+                                formulario ingresado.
+                            </MudAlert>
+                        }
+
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </div>
+}
+
+@code {
+    [Inject] private UserSession Session { get; set; } = null!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+    [Inject] private ILogger<AssignUserToCount> Logger { get; set; } = default!;
+    [Inject] private IInventoryCountService InventoryCountService { get; set; } = default!;
+    private bool _nestedModalVisible = false;
+    private bool _successModal = false;
+    private string _errorModalMessage = string.Empty;
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public int InventoryCountId { get; set; }
+
+    private MudForm? form;
+
+    private int? formIdInput;
+    private int? assignId => itemsDetails.FirstOrDefault().UserId;
+
+    private bool isLoading = false;
+    private bool isSaving = false;
+    private bool hasSearched = false;
+    private bool showSobrante = false;
+
+    private string sobranteInnerCode = string.Empty;
+    private string sobranteLocation = string.Empty;
+    private int? sobranteQuantity;
+
+    private List<GetInventoryCountDetail> itemsDetails = new();
+
+    private GetInventoryCountDetail? headerInfo => itemsDetails.FirstOrDefault();
+
+    // Actualizar el valor del formulario inmediatamente mientras se escribe.
+    private Task OnFormIdChanged(int? value)
+    {
+        formIdInput = value;
+        return Task.CompletedTask;
+    }
+
+    // Consultar con el valor actualizado al presionar Enter.
+    private async Task HandleFormKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SearchFormAsync();
+        }
+    }
+
+    private async Task SearchFormAsync()
+    {
+        if (isLoading)
+            return;
+
+        if (!formIdInput.HasValue || formIdInput.Value <= 0)
+        {
+            await DialogService.ShowMessageBox(
+                "Atención",
+                "Por favor ingrese un número de formulario válido.",
+                "OK");
+
+            return;
+        }
+
+        isLoading = true;
+        hasSearched = true;
+        showSobrante = false;
+
+        try
+        {
+            var response = await InventoryCountService.GetInventoryCountDetailByForm(InventoryCountId,formIdInput.Value,Session.SupplierId, Session.UserId     );
+
+            if (response != null &&
+                response.Processed &&
+                response.Data != null)
+            {
+                itemsDetails = response.Data;
+            }
+            else
+            {
+                itemsDetails = new();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(
+                ex,
+                "Error al obtener el detalle del conteo por formulario.");
+
+            await DialogService.ShowMessageBox(
+                "Error",
+                "Ocurrió un error al cargar la información.",
+                "OK");
+
+            itemsDetails = new();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ToggleSobrante()
+    {
+        showSobrante = !showSobrante;
+
+        if (!showSobrante)
+            ResetSobrante();
+    }
+
+    private void CancelSobrante()
+    {
+        showSobrante = false;
+        ResetSobrante();
+    }
+
+    private void ResetSobrante()
+    {
+        sobranteInnerCode = string.Empty;
+        sobranteLocation = string.Empty;
+        sobranteQuantity = null;
+    }
+
+    private async Task AddSobrante()
+    {
+        if (isSaving)
+            return;
+
+        var innerCode = sobranteInnerCode?.Trim();
+        var location = sobranteLocation?.Trim();
+
+        if (string.IsNullOrWhiteSpace(innerCode))
+        {
+            await DialogService.ShowMessageBox(
+                "Atención",
+                "Debe ingresar el código interno del sobrante.",
+                "OK");
+
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(location))
+        {
+            await DialogService.ShowMessageBox(
+                "Atención",
+                "Debe ingresar la ubicación del sobrante.",
+                "OK");
+
+            return;
+        }
+
+        if (!sobranteQuantity.HasValue || sobranteQuantity.Value < 0)
+        {
+            await DialogService.ShowMessageBox(
+                "Atención",
+                "Debe ingresar una cantidad válida mayor o igual a cero.",
+                "OK");
+
+            return;
+        }
+
+        // Incorporar el sobrante a la misma lista que se va a guardar.
+        // La zona y la descripción no se conocen en este formulario.
+        var sobrante = new GetInventoryCountDetail
+        {
+            InnerCode = innerCode,
+            Location = location,
+            QuantityNew = sobranteQuantity.Value,
+            PartName = "SOBRANTE",
+            Zone = string.Empty,
+            UserId=assignId
+
+        };
+
+        itemsDetails.Add(sobrante);
+
+        showSobrante = false;
+        ResetSobrante();
+
+        StateHasChanged();
+    }
+
+    // Pasar al campo de cantidad de la siguiente fila con Enter.
+    private async Task HandleQuantityKeyDown(
+        KeyboardEventArgs e,
+        string nextElementId)
+    {
+        if (e.Key != "Enter")
+            return;
+
+        await JSRuntime.InvokeVoidAsync(
+            "eval",
+            $"document.getElementById('{nextElementId}')?.focus()");
+    }
+
+
+    private async Task SaveClick(MouseEventArgs args)
+    {
+        if (isSaving || !itemsDetails.Any())
+            return;
+
+        // Validar que todas las filas tengan una cantidad ingresada.
+        var itemSinCantidad = itemsDetails.FirstOrDefault(
+            x => !x.QuantityNew.HasValue
+        );
+
+        if (itemSinCantidad != null)
+        {
+            await DialogService.ShowMessageBox(
+                "Atención",
+                $"Debe ingresar la cantidad contada para el artículo " +
+                $"{itemSinCantidad.InnerCode}, ubicado en {itemSinCantidad.Location}.",
+                "OK"
+            );
+
+            return;
+        }
+
+        isSaving = true;
+
+        try
+        {
+            var serviceResponse =
+                await InventoryCountService.UpdateInventoryCountDetail(
+                    itemsDetails,
+                    Session.UserId
+                );
+
+            if (serviceResponse.Processed)
+            {
+                // Cerrar el formulario devolviendo el resultado exitoso.
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                _successModal = false;
+                _errorModalMessage = serviceResponse.Message
+                    ?? MessageEnum.SaveNotOK.GetStringValue();
+
+                OpenNested();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(
+                ex,
+                "Error al guardar el detalle del conteo por formulario."
+            );
+
+            _successModal = false;
+            _errorModalMessage = MessageEnum.SaveNotOK.GetStringValue();
+
+            OpenNested();
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void OpenNested()
+    {
+        _nestedModalVisible = true;
+        StateHasChanged();
+    }
+
+
+    private void CancelClick(MouseEventArgs args)
+    {
+        MudDialog?.Close();
+    }
+}

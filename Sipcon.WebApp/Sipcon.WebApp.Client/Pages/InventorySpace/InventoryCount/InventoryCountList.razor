@@ -47,15 +47,7 @@
                     OnKeyUp="HandleKeyDownSearch">
         </MudTextField>
         <MudSpacer />
-        @* BOTÓN DE AGRUPACIÓN MANUAL *@
-      @*   <MudTooltip Text="Agrupar por Código">
-            <MudToggleIconButton Toggled="@_isGrouped"
-                                 ToggledChanged="OnToggledChanged"
-                                 Icon="@Icons.Material.Filled.ViewList" 
-                                 Color="@Color.Default"
-                                 ToggledIcon="@Icons.Material.Filled.TableRows" 
-                                 ToggledColor="@Color.Info" />
-        </MudTooltip> *@
+     
 
          <!-- Botón de Filtros con Popover Flotante -->
         <MudMenu Icon="@(_hasActiveFilters ? Icons.Material.Filled.FilterAlt : Icons.Material.Filled.FilterAltOff)"
@@ -129,9 +121,10 @@
         <MudMenu Icon="@Icons.Material.Filled.MoreVert" AriaLabel="Open user menu">
             @foreach (var module in _itemsModules)
             {
-                <MudMenuItem Icon="@(module.Icon ?? "")" IconColor="@module.Color"
-                Label="@module.Text"
-                OnClick="() => HandleMenuClick(module)" />
+                <MudMenuItem Icon="@(module.Icon ?? "")"
+                             IconColor="@module.Color"
+                             Label="@GetModuleText(module.Text)"
+                             OnClick="() => HandleMenuClick(module)" />
             }
         </MudMenu>
     </ToolBarContent>
@@ -229,7 +222,7 @@
                     <CellTemplate>
                         <MudButtonGroup Size="@Size.Small" Variant="Variant.Text" Color="Color.Dark">
                            
-                                <MudIconButton Icon="@Icons.Material.Filled.FileOpen" Variant="Variant.Text" Color="Color.Success" Size="Size.Small" Href="@("inventoryCounDetail/" + context.Item.Id)"  />
+                                <MudIconButton Icon="@Icons.Material.Filled.FileOpen" Variant="Variant.Text" Color="Color.Success" Size="Size.Small" Href="@("inventoryCounDetail/" + context.Item.Id+ "/" + context.Item.StatusName)"  />
                                  
                                 @if (context.Item.StatusName?.ToUpper() == "BORRADOR")
                                         {
@@ -299,7 +292,17 @@
         await Task.CompletedTask;
     }
 
-
+    private string GetModuleText(string? originalText)
+    {
+        return originalText?.Trim().ToLower() switch
+        {
+            "activar" => "INVENTARIO",
+            "disponible" => "PRE-INVENTARIO",
+            "generar" => "FINALIZAR CONTEO",
+            "procesar" => "AJUSTAR INVENTARIO",
+            _ => originalText ?? ""
+        };
+    }
 
     private async Task ReloadServerData()
     {

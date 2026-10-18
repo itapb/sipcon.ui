@@ -1,0 +1,302 @@
+@using MudBlazor
+
+@inject IInventoryCountService InventoryCountService
+@inject UserSession Session
+@inject ILogger<InventoryCountDialogDetails> Logger
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="2">
+
+            <!-- ENCABEZADO -->
+            <MudStack Row="true"
+                      AlignItems="AlignItems.Center"
+                      Spacing="2">
+
+                <MudIcon Icon="@Icons.Material.Filled.History"
+                         Color="Color.Secondary"
+                         Size="Size.Medium" />
+
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.h6">
+                        Historial de conteos
+                    </MudText>
+
+                    <MudText Typo="Typo.caption"
+                             Color="Color.Secondary">
+                        Detalle de conteos por parte y ubicación.
+                    </MudText>
+                </MudStack>
+
+            </MudStack>
+
+            <MudDivider />
+
+            <!-- ESTADOS -->
+            @if (isLoading)
+            {
+                <MudProgressLinear Indeterminate="true"
+                                   Color="Color.Default"
+                                   Size="Size.Small" />
+
+                <MudText Typo="Typo.body2"
+                         Color="Color.Secondary"
+                         Align="Align.Center">
+                    Consultando historial...
+                </MudText>
+            }
+            else if (!string.IsNullOrWhiteSpace(errorMessage))
+            {
+                <MudAlert Severity="Severity.Error"
+                          Variant="Variant.Text"
+                          Dense="true">
+                    @errorMessage
+                </MudAlert>
+            }
+            else if (!itemsDetails.Any())
+            {
+                <MudText Typo="Typo.body2"
+                         Color="Color.Secondary"
+                         Align="Align.Center"
+                         Class="pa-4">
+                    No se encontraron conteos relacionados.
+                </MudText>
+            }
+            else
+            {
+                <!-- RESUMEN -->
+                <MudStack Row="true"
+                          AlignItems="AlignItems.Center"
+                          Justify="Justify.SpaceBetween">
+
+                    <MudText Typo="Typo.body2"
+                             Color="Color.Secondary">
+                        Registros encontrados
+                    </MudText>
+
+                    <MudText Typo="Typo.body2"
+                             Color="Color.Secondary">
+                        @itemsDetails.Count registros
+                    </MudText>
+
+                </MudStack>
+
+                <!-- TABLA -->
+                <MudTable T="GetInventoryCountDetail"
+                          Items="@itemsDetails"
+                          Dense="true"
+                          Hover="true"
+                          Striped="false"
+                          Bordered="false"
+                          Elevation="0"
+                          FixedHeader="true"
+                          Height="400px">
+
+                    <HeaderContent>
+                        <MudTh>PLANILLA</MudTh>
+                        <MudTh>NUM. CONTEO</MudTh>
+                        <MudTh>FECHA</MudTh>
+                        <MudTh>USUARIO</MudTh>
+                        <MudTh>CÓDIGO</MudTh>
+                        <MudTh>DESCRIPCIÓN</MudTh>
+                        <MudTh>ZONA</MudTh>
+                        <MudTh>UBICACIÓN</MudTh>
+
+                        <MudTh Style="text-align:right">
+                            CANT. ANTERIOR
+                        </MudTh>
+
+                        <MudTh Style="text-align:right">
+                            CANT. CONTADA
+                        </MudTh>
+
+                        <MudTh Style="text-align:right">
+                            DIFERENCIA
+                        </MudTh>
+
+                        <MudTh>ESTATUS</MudTh>
+                    </HeaderContent>
+
+                    <RowTemplate>
+                        <MudTd DataLabel="Planilla">
+                            @((context.NumForm?.ToString()) ?? "-")
+                        </MudTd>
+
+                        <MudTd DataLabel="Num. conteo">
+                            @((context.CountId?.ToString()) ?? "-")
+                        </MudTd>
+
+                        <MudTd DataLabel="Fecha">
+                            @(context.CountDate?.ToString("dd/MM/yyyy HH:mm")
+                                ?? context.Created?.ToString("dd/MM/yyyy HH:mm")
+                                ?? "-")
+                        </MudTd>
+
+                        <MudTd DataLabel="Usuario">
+                            @(context.UserName ?? "Sin asignar")
+                        </MudTd>
+
+                        <MudTd DataLabel="Código">
+                            @(context.InnerCode ?? "-")
+                        </MudTd>
+
+                        <MudTd DataLabel="Descripción">
+                            @(context.PartName ?? "-")
+                        </MudTd>
+
+                        <MudTd DataLabel="Zona">
+                            @(context.Zone ?? "-")
+                        </MudTd>
+
+                        <MudTd DataLabel="Ubicación">
+                            @(context.Location ?? "-")
+                        </MudTd>
+
+                        <MudTd DataLabel="Cant. anterior"
+                               Style="text-align:right">
+                            @(context.QuantityOld?.ToString() ?? "-")
+                        </MudTd>
+
+                        <MudTd DataLabel="Cant. contada"
+                               Style="text-align:right">
+                            @(context.QuantityNew?.ToString() ?? "-")
+                        </MudTd>
+
+                        <MudTd DataLabel="Diferencia"
+                               Style="text-align:right">
+                            <MudText Typo="Typo.body2"
+                                     Color="@GetDifferenceColor(context.Diference)">
+                                @(context.Diference?.ToString() ?? "-")
+                            </MudText>
+                        </MudTd>
+
+                        <MudTd DataLabel="Estatus">
+                            <MudChip T="string"
+                                     Size="Size.Small"
+                                     Variant="Variant.Text"
+                                     Color="@GetStatusColor(context.StatusName)">
+                                @(context.StatusName ?? "Sin estatus")
+                            </MudChip>
+                        </MudTd>
+                    </RowTemplate>
+
+                    <NoRecordsContent>
+                        <MudText Typo="Typo.body2"
+                                 Color="Color.Secondary"
+                                 Class="pa-3">
+                            No existen registros para mostrar.
+                        </MudText>
+                    </NoRecordsContent>
+
+                </MudTable>
+            }
+
+        </MudStack>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel"
+                   Variant="Variant.Text"
+                   Color="Color.Default"
+                   Size="Size.Small">
+            Cerrar
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public int PartId { get; set; }
+
+    [Parameter]
+    public int LocationId { get; set; }
+
+    [Parameter]
+    public int InventoryCountId { get; set; }
+
+    private bool isLoading;
+    private string errorMessage = string.Empty;
+
+    private List<GetInventoryCountDetail> itemsDetails = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDetails();
+    }
+
+    private async Task LoadDetails()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            var response =
+                await InventoryCountService.GetInventoryCountDetailAll(  InventoryCountId, PartId, LocationId, Session.SupplierId, Session.UserId);
+
+            if (response != null &&
+                response.Processed &&
+                response.Data != null)
+            {
+                itemsDetails = response.Data;
+            }
+            else
+            {
+                itemsDetails = new();
+
+                errorMessage = response?.Message
+                    ?? "No fue posible consultar el historial de conteos.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(
+                ex,
+                "Error consultando historial. Inventario: {InventoryId}, " +
+                "Parte: {PartId}, Ubicación: {LocationId}",
+                InventoryCountId,
+                PartId,
+                LocationId
+            );
+
+            itemsDetails = new();
+            errorMessage =
+                "Ocurrió un error al consultar el historial de conteos.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private Color GetDifferenceColor(int? difference)
+    {
+        if (!difference.HasValue || difference.Value == 0)
+            return Color.Default;
+
+        return Color.Error;
+    }
+
+    private Color GetStatusColor(string? status)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+            return Color.Default;
+
+        return status.Trim().ToUpperInvariant() switch
+        {
+            "CONTADO" => Color.Success,
+            "PROCESADO" => Color.Success,
+            "POR CONTAR" => Color.Warning,
+            "PENDIENTE" => Color.Warning,
+            "BLOQUEADO" => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Close();
+    }
+}
