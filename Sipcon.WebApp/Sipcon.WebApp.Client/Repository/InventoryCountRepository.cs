@@ -158,7 +158,7 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<GetInventoryCountDetail>>> GetInventoryCountDetail(int IdSupplier, int IdUser, int inventoryCountId, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "", int? EstatusId = null, int? ZoneId = null, bool? Assign = null, bool? Diference = null)
+        public async Task<ApiResponse<List<GetInventoryCountDetail>>> GetInventoryCountDetail(int IdSupplier, int IdUser, int inventoryCountId, int RowFrom = 0, string Filter = "", string DateFrom = "", string DateTo = "", int? EstatusId = null, int? ZoneId = null, bool? Assign = null, int? Diference = null)
         {
             ApiResponse<List<GetInventoryCountDetail>>? result;
 
@@ -480,7 +480,7 @@
             return result;
         }
 
-        public async Task<ApiResponse<List<CountTotal>>> GetInventoryCountTotal(int IdSupplier, int IdUser, int inventoryCountId, int RowFrom = 0, string Filter = "", bool? Diference = null)
+        public async Task<ApiResponse<List<CountTotal>>> GetInventoryCountTotal(int IdSupplier, int IdUser, int inventoryCountId, int? RowFrom = 0, string? Filter = "", int? Diference = null)
         {
             ApiResponse<List<CountTotal>>? result;
 
@@ -514,7 +514,7 @@
 
 
 
-        public async Task<ApiResponse<List<byte>>> ExportInventoryCountTotal(int IdSupplier, int IdUser, int inventoryCountId, int? RowFrom = null, string Filter = "", bool? Diference = null)
+        public async Task<ApiResponse<List<byte>>> ExportInventoryCountTotal(int IdSupplier, int IdUser, int inventoryCountId, int? RowFrom = null, string Filter = "", int? Diference = null)
         {
             ApiResponse<List<byte>> result;
             string fileUrl = string.Empty;
@@ -553,7 +553,7 @@
         }
 
 
-        public async Task<ApiResponse<List<byte>>> ExportInventoryCountDetail(int IdSupplier, int IdUser, int inventoryCountId, int? RowFrom = null, string Filter = "", string DateFrom = "", string DateTo = "", int? EstatusId = null, int? ZoneId = null, bool? Assign = null, bool? Diference = null)
+        public async Task<ApiResponse<List<byte>>> ExportInventoryCountDetail(int IdSupplier, int IdUser, int inventoryCountId, int? RowFrom = null, string Filter = "", string DateFrom = "", string DateTo = "", int? EstatusId = null, int? ZoneId = null, bool? Assign = null, int? Diference = null)
         {
             ApiResponse<List<byte>> result;
             string fileUrl = string.Empty;
@@ -635,7 +635,7 @@
 
             try
             {
-                var url = $"api/InventoryCount/GetInventoryCountDetailAll?supplierId={supplierId}&userId={userId}&inventoryId={inventoryId}&locationId={locationId}&locationId={locationId}";
+                var url = $"api/InventoryCount/GetInventoryCountDetailAll?supplierId={supplierId}&userId={userId}&inventoryCountId={inventoryId}&partId={partId}&locationId={locationId}";
 
                 // Se cambia GetInventoryCountDetail por GetCountFull para que coincida con el JSON anidado
                 result = await _http.GetFromJsonAsync<ApiResponse<List<GetInventoryCountDetail>>>(url);
@@ -657,6 +657,44 @@
             }
 
 
+            return result;
+        }
+
+        public async Task<ApiResponse<List<ImportStockCountResult>>> ImportStockCount( int IdSupplier, int IdUser, int InventoryCountId, MultipartFormDataContent formData)
+          {
+            ApiResponse<List<ImportStockCountResult>>? result;
+            try
+            {
+               var url = $"api/StockCount/ImportStockCount?userId={IdUser}&supplierId={IdSupplier}&inventoryId={InventoryCountId}";
+                var response = await _http.PostAsync(url, formData);
+                if (response.IsSuccessStatusCode)
+                {
+                   result = await response.Content.ReadFromJsonAsync<ApiResponse<List<ImportStockCountResult>>>();
+               }
+                else
+                {
+                    var errorMessage = await response.Content.ReadAsStringAsync();
+                    result = new ApiResponse<List<ImportStockCountResult>>()
+                    {
+                        Processed = false,
+                        Message = errorMessage
+                    };
+                }
+
+               result = (result is null) ? new ApiResponse<List<ImportStockCountResult>>()
+                {
+                    Processed = false,
+                    Message = "La respuesta del servidor no contiene datos."
+                } : result;
+           }
+           catch (Exception ex)
+            {
+                result = new ApiResponse<List<ImportStockCountResult>>()
+                {
+                   Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
             return result;
         }
 

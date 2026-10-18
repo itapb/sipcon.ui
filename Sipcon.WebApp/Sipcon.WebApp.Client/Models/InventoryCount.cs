@@ -115,14 +115,17 @@ namespace Sipcon.WebApp.Client.Models
 
     public class CountTotal
     {
-         public int? PartId { get; set; }
-         public String? InnerCode { get; set; }
-         public Int32? Stock { get; set; }
-         public Int32? StockFigo { get; set; }
-         public Int32? Count { get; set; }
-         public Decimal? Cost { get; set; }
-         public Decimal? CostCount { get; set; }
-         public Decimal? CostFigo { get; set; }
+        public int? PartId { get; set; }
+        public String? InnerCode { get; set; }
+        public String? Description { get; set; }
+        public Int32? Stock { get; set; }
+        public Int32? StockFigo { get; set; }
+        public Int32? Count { get; set; }
+        public Decimal? Cost { get; set; }
+        public Decimal? CostCount { get; set; }
+        public Decimal? CostFigo { get; set; }
+        public Decimal? CostUnit { get; set; }
+        public Decimal? CostDiference { get; set; }
 
     }
 
@@ -134,6 +137,17 @@ namespace Sipcon.WebApp.Client.Models
         public int UserId { get; set; }
         public String Location { get; set; }
         public String InnerCode { get; set; }
+
+    }
+
+    public class ImportStockCountResult
+    {
+
+        public int? Fila { get; set; }
+
+        public string Estado { get; set; } = string.Empty;
+
+        public string Mensaje { get; set; } = string.Empty;
 
     }
 }

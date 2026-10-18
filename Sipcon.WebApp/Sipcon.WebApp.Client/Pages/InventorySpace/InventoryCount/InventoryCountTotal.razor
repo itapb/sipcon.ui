@@ -42,48 +42,28 @@
         </MudTextField>
 
       
+        <MudSpacer />
 
+        <MudSelect T="int?"
+                   @bind-Value="_bDifference"
+                   Label="Diferencias"
+                   Variant="Variant.Outlined"
+                   Dense="true"
+                   Clearable="false">
 
-        <MudCheckBox T="bool?"
-                     @bind-Value="_bDifference"
-                     TriState="true"
-                     Label="Con diferencias"
-                     Color="Color.Info"
-                     Dense="true" />
+            <MudSelectItem T="int?" Value="@((int?)null)">Todos</MudSelectItem>
+            <MudSelectItem T="int?" Value="@((int?)1)">Igual</MudSelectItem>
+            <MudSelectItem T="int?" Value="@((int?)2)">Sobrantes</MudSelectItem>
+            <MudSelectItem T="int?" Value="@((int?)3)">Faltantes</MudSelectItem>
+
+        </MudSelect>
+
         
       
 
      <MudSpacer />
 
 
-       @*  <!-- Botón de Filtros con Popover Flotante -->
-        <MudMenu Icon="@(_hasActiveFilters ? Icons.Material.Filled.FilterAlt : Icons.Material.Filled.FilterAltOff)"
-                 Color="@(_hasActiveFilters ? Color.Warning : Color.Info)"
-                 AriaLabel="Filtros avanzados"
-                 AnchorOrigin="Origin.BottomRight"
-                 TransformOrigin="Origin.TopRight"
-                 PopoverClass="pa-4 rounded-lg mud-elevation-4"
-                 Dense="true">
-
-            <MudText Typo="Typo.subtitle2" Class="mb-3 text-secondary"><b>FILTRAR BÚSQUEDA</b></MudText>
-
-            <MudStack Spacing="3" Style="width: 280px;">
-
-
-               
-
-                <!-- Botones de Acción -->
-                <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-2">
-                    <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" OnClick="ClearFilters">
-                        Limpiar
-                    </MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Info" Size="Size.Small" OnClick="ClickSearch">
-                        Aplicar
-                    </MudButton>
-                </MudStack>
-            </MudStack>
-        </MudMenu>
- *@
         <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Info" OnClick="() => ClickSearch()"></MudIconButton>
         <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" OnClick="() => HandleOnClickRefresh()" />
 
@@ -101,51 +81,81 @@
     <Columns>
         <SelectColumn T="CountTotal" />
 
-        <!-- Código del Repuesto -->
+        <!-- Código del repuesto -->
         <PropertyColumn Property="x => x.InnerCode"
                         Title="CÓDIGO"
                         Align="Align.Center"
                         Filterable="false" />
 
-        <!-- Stock General (Inventario) -->
+        <PropertyColumn Property="x => x.Description"
+                        Title="DESCRIPCION"
+                        Align="Align.Center"
+                        Filterable="false" />
+
+        <!-- Cantidades -->
+
         <PropertyColumn Property="x => x.Stock"
                         Title="STOCK INV."
                         Align="Align.Right"
                         Format="N0"
                         Filterable="false" />
 
-        <!-- Stock Figo -->
         <PropertyColumn Property="x => x.StockFigo"
                         Title="STOCK FIGO"
                         Align="Align.Right"
                         Format="N0"
                         Filterable="false" />
 
-        <!-- Cantidad Contada -->
         <PropertyColumn Property="x => x.Count"
                         Title="CANT. CONTADA"
                         Align="Align.Right"
                         Format="N0"
                         Filterable="false" />
 
-        <!-- Costo Unitario -->
-        <TemplateColumn Title="COSTO" Align="Align.Right">
+        <!-- Costos en dólares -->
+        <TemplateColumn Title="COSTO UNITARIO FIGO ($)"
+                        Align="Align.Right"
+                        Filterable="false">
             <CellTemplate>
-                $ @context.Item.Cost?.ToString("N2")
+                @context.Item.CostUnit?.ToString("N2")
             </CellTemplate>
         </TemplateColumn>
 
-        <!-- Costo de la Cantidad Contada -->
-        <TemplateColumn Title="TOTAL COSTO CONTADO" Align="Align.Right">
+
+        <!-- Costos en dólares -->
+        <TemplateColumn Title="VALOR STOCK CONTADO ($)"
+                        Align="Align.Right"
+                        Filterable="false">
             <CellTemplate>
-                $ @context.Item.CostCount?.ToString("N2")
+                @context.Item.CostCount?.ToString("N2")
             </CellTemplate>
         </TemplateColumn>
 
-        <!-- Costo del Stock Figo -->
-        <TemplateColumn Title="TOTAL COSTO FIGO" Align="Align.Right">
+        <TemplateColumn Title="VALOR STOCK FIGO ($)"
+                        Align="Align.Right"
+                        Filterable="false">
             <CellTemplate>
-                $ @context.Item.CostFigo?.ToString("N2")
+                @context.Item.CostFigo?.ToString("N2")
+            </CellTemplate>
+        </TemplateColumn>
+
+        @* Diferencia entre costo contado y costo FIGO *@
+        <TemplateColumn Title="DIFERENCIA VALOR ($)"
+                        Align="Align.Right"
+                        Filterable="false">
+            <CellTemplate>
+                @{
+                    decimal? diferencia = context.Item.CostDiference.HasValue
+                        ? context.Item.CostDiference.Value
+                        : (decimal?)null;
+                }
+
+                <MudText Typo="Typo.body2"
+                         Color="@(diferencia > 0 ? Color.Success :
+                                                   diferencia < 0 ? Color.Error :
+                                                   Color.Default)">
+                    @(diferencia?.ToString("N2") ?? "-")
+                </MudText>
             </CellTemplate>
         </TemplateColumn>
     </Columns>
@@ -199,7 +209,7 @@
     // =========================================================================e;
 
     private bool? _bAssign = null;      // Corresponde a @BASSIGN
-    private bool? _bDifference = null;
+    private int? _bDifference = null;
 
 
     private Func<CountTotal, object>? _groupBy1;
@@ -214,6 +224,7 @@
     protected override async Task OnInitializedAsync()
     {
         await AuthenticationStateProvider.RefreshStaticVariables();
+        Session.IsNewOrEdit = true;
 
         hubEventsService.OnSupplierChanged += ReloadServerData;
         hubEventsService.OnDealerChanged += ReloadServerData;
@@ -264,13 +275,16 @@
         _loading = true;
         _count = new List<CountTotal>();
         _rowsTotal = 0;
+        Session.IsNewOrEdit = true;
       
         var allModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
 
         // Filtramos para que solo traiga los que sean exactamente "exportar" (ignorando mayúsculas/minúsculas)
         _itemsModules = allModules
-            .Where(x => x.Text != null && x.Text.Equals("EXPORTAR", StringComparison.OrdinalIgnoreCase))
-            .ToList();
+     .Where(x => x.Text != null &&
+         (x.Text.Equals("EXPORTAR", StringComparison.OrdinalIgnoreCase) ||
+          x.Text.Equals("VALIDAR", StringComparison.OrdinalIgnoreCase)))
+     .ToList();
 
 
         var serviceResponse = await InventoryCountService.GetInventoryCountTotal(Session.SupplierId, Session.UserId, InventoryCountId, _rowCount, _searchString, _bDifference);
@@ -360,10 +374,60 @@
             case "EXPORT":
                 await ExportItemsAsync();
                 break;
+            case "VALIDATE":
+                await ValidateItemsAsync(module.IdAction, module.ActionName);
+                break;
             default:
                 Console.WriteLine($"{MessageEnum.ActionsError.GetStringValue()}: {module.ActionName}");
                 break;
         }
+    }
+
+    private async Task ValidateItemsAsync(int moduleId, string moduleActionName)
+    {
+        if (selectedInventoryCount.Any())
+        {
+            var parameters = new DialogParameters
+            {
+                ["SelectedInventoryCount"] = selectedInventoryCount,
+                ["moduleName"] = _moduleName,
+                ["ModuleId"] = moduleId,
+                ["ModuleActionName"] = moduleActionName,
+                ["InventoryNumber"] = InventoryCountId,
+                ["ZoneId"] = 0
+
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                BackdropClick = false,
+                NoHeader = true // <-- Oculta la barra de título del diálogo
+            };
+
+            // Se pasa "" en el título y se activa NoHeader en options
+            var dialog = await DialogService.ShowAsync<AssignUserToCountForPart>("", parameters, options);
+            var result = await dialog.Result;
+
+            // Si el usuario confirmó y la operación en el diálogo fue exitosa (retornó true)
+            if (!result.Canceled && result.Data is true)
+            {
+                _success = true;
+                _nestedErrorMessage = MessageEnum.GenerateOK.GetStringValue();
+
+                if (_mudDataGrid != null)
+                {
+                    await _mudDataGrid.ReloadServerData();
+                }
+
+                OpenNested();
+            }
+        }
+
+        // Limpia la selección
+        selectedInventoryCount = new();
     }
 
     private async Task ExportItemsAsync()
@@ -371,7 +435,7 @@
         string _dateFromStr = string.IsNullOrEmpty(_dateFrom?.ToString()) ? string.Empty : _dateFrom.Value.ToString();
         string _dateToStr = string.IsNullOrEmpty(_dateTo?.ToString()) ? string.Empty : _dateTo.Value.ToString();
 
-        var serviceResponse = await InventoryCountService.ExportInventoryCountTotal(Session.SupplierId, Session.UserId, InventoryCountId, null, Filter: _searchString, Diference: _bDifference);
+        var serviceResponse = await InventoryCountService.ExportInventoryCountTotal(Session.SupplierId, Session.UserId, InventoryCountId, null, _searchString,_bDifference);
         if (serviceResponse.Processed)
         {
             _success = true;

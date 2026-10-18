@@ -11,6 +11,7 @@
 @inject HubEventsService hubEventsService
 @implements IDisposable
 
+<InputFile OnChange="OnInputFileChange" accept=".xlsx" style="display:none" />
 
 <MudDataGrid @ref="_mudDataGrid"
              T="GetInventoryCountDetail"
@@ -128,13 +129,13 @@
                             <MudDivider Class="my-1" />
                             <MudGrid Spacing="1">
                                 <MudItem xs="6">
-                                    <MudText Typo="Typo.caption">Ubicaciones: <b>@summary.LocationCounted / @summary.LocationTotal</b></MudText>
+                                    <MudText Typo="Typo.caption">Ubicaciones Cont: <b>@summary.LocationCounted / @summary.LocationTotal</b></MudText>
                                 </MudItem>
                                 <MudItem xs="6">
-                                    <MudText Typo="Typo.caption">Planillas: <b>@summary.FormAssign / @summary.FormTotal</b></MudText>
+                                    <MudText Typo="Typo.caption">Planillas Asignadas: <b>@summary.FormAssign / @summary.FormTotal</b></MudText>
                                 </MudItem>
                                 <MudItem xs="6">
-                                    <MudText Typo="Typo.caption">Usuarios: <b>@summary.UsersAssigned</b></MudText>
+                                    <MudText Typo="Typo.caption">Usuarios en zona: <b>@summary.UsersAssigned</b></MudText>
                                 </MudItem>
                                 <MudItem xs="12">
                                     <div class="d-flex align-center justify-between mt-1">
@@ -216,13 +217,19 @@
                              Color="Color.Info"
                              Dense="true" />
 
-                <!-- Check 2: Diferencias (Tri-state: Null = Todos, True = Con Diferencias, False = Sin Diferencias) -->
-                <MudCheckBox T="bool?"
-                             @bind-Value="_bDifference"
-                             TriState="true"
-                             Label="Con diferencias"
-                             Color="Color.Info"
-                             Dense="true" />
+                <MudSelect T="int?"
+                           @bind-Value="_bDifference"
+                           Label="Diferencias"
+                           Variant="Variant.Outlined"
+                           Dense="true"
+                           Clearable="false">
+
+                    <MudSelectItem T="int?" Value="@((int?)null)">Todos</MudSelectItem>
+                    <MudSelectItem T="int?" Value="@((int?)1)">Igual</MudSelectItem>
+                    <MudSelectItem T="int?" Value="@((int?)2)">Sobrantes</MudSelectItem>
+                    <MudSelectItem T="int?" Value="@((int?)3)">Faltantes</MudSelectItem>
+
+                </MudSelect>
 
                 <!-- Botones de Acción -->
                 <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-2">
@@ -277,21 +284,62 @@
                         <span style="font-weight:bold">N° PLANILLA: @context.Grouping.Key</span>
 
 
-                    <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
-                        Avance: @((context.Grouping.Count() > 0 ? (context.Grouping.Count(x => !string.IsNullOrEmpty(x.StatusName) && x.StatusName.ToUpper() != "POR CONTAR") * 100.0 / context.Grouping.Count()) : 0).ToString("F1"))%
+                    <!-- Avance -->
+                    <MudChip T="string"
+                             Variant="Variant.Outlined"
+                             Color="Color.Info"
+                             Size="Size.Small"
+                             Class="ml-2">
+                        Avance:
+                        @((context.Grouping.Count() > 0
+                            ? context.Grouping.Count(x =>
+                                !string.IsNullOrEmpty(x.StatusName) &&
+                                x.StatusName.ToUpper() != "POR CONTAR") * 100.0
+                                / context.Grouping.Count()
+                            : 0).ToString("F1"))%
                     </MudChip>
 
-                        <!-- Diferencias -->
-                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
-                            Ítems c/ Diferencia: @context.Grouping.Count(x => x.Diference != 0 && (!string.IsNullOrEmpty(x.StatusName) && x.StatusName.ToUpper() != "POR CONTAR"))
-                        </MudChip>
-
-                    <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
-                        Asignado a: @(context.Grouping.FirstOrDefault(x => !string.IsNullOrEmpty(x.Zone))?.Zone ?? "No definida")
+                    <!-- Ítems con diferencia -->
+                    <MudChip T="string"
+                             Variant="Variant.Outlined"
+                             Color="Color.Warning"
+                             Size="Size.Small"
+                             Class="ml-2">
+                        <MudIcon Icon="@Icons.Material.Filled.Warning"
+                                 Size="Size.Small"
+                                 Class="mr-1" />
+                        Ítems c/ Diferencia:
+                        @context.Grouping.Count(x =>
+                            x.Diference != 0 &&
+                            !string.IsNullOrEmpty(x.StatusName) &&
+                            x.StatusName.ToUpper() != "POR CONTAR")
                     </MudChip>
 
-                    <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
-                         @(context.Grouping.FirstOrDefault(x => !string.IsNullOrEmpty(x.UserName))?.UserName ?? "Sin Asignar")
+                    <!-- Asignado a -->
+                    <MudChip T="string"
+                             Variant="Variant.Outlined"
+                             Color="Color.Default"
+                             Size="Size.Small"
+                             Class="ml-2">
+                        <MudIcon Icon="@Icons.Material.Filled.LocationOn"
+                                 Size="Size.Small"
+                                 Class="mr-1" />
+                        Zona:
+                        @(context.Grouping.FirstOrDefault(x =>
+                            !string.IsNullOrEmpty(x.Zone))?.Zone ?? "No definida")
+                    </MudChip>
+
+                    <!-- Usuario -->
+                    <MudChip T="string"
+                             Variant="Variant.Outlined"
+                             Color="Color.Success"
+                             Size="Size.Small"
+                             Class="ml-2">
+                        <MudIcon Icon="@Icons.Material.Filled.Person"
+                                 Size="Size.Small"
+                                 Class="mr-1" />
+                        @(context.Grouping.FirstOrDefault(x =>
+                            !string.IsNullOrEmpty(x.UserName))?.UserName ?? "Sin asignar")
                     </MudChip>
 
 
@@ -317,24 +365,68 @@
                         <MudIcon Icon="@Icons.Material.Filled.Hardware" Color="Color.Dark" Size="Size.Small" Class="mr-2" />
                         <span style="font-weight:bold">CÓDIGO: @context.Grouping.Key</span>
 
-                        <!-- Cantidad de Planillas -->
-                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
-                            Num Planillas: @context.Grouping.Count(x => x.NumForm.HasValue)
+                        <!-- Cantidad de planillas -->
+                        <MudChip T="string"
+                                 Variant="Variant.Outlined"
+                                 Color="Color.Info"
+                                 Size="Size.Small"
+                                 Class="ml-2">
+                            <MudIcon Icon="@Icons.Material.Filled.Assignment"
+                                     Size="Size.Small"
+                                     Class="mr-1" />
+                            Planillas: @context.Grouping.Count(x => x.NumForm.HasValue)
                         </MudChip>
 
-                        <!-- Avance por CÓDIGO -->
-                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
-                            Avance: @((context.Grouping.Count() > 0 ? (context.Grouping.Count(x => !string.IsNullOrEmpty(x.StatusName) && x.StatusName.ToUpper() != "POR CONTAR") * 100.0 / context.Grouping.Count()) : 0).ToString("F1"))%
+                        <!-- Avance -->
+                        <MudChip T="string"
+                                 Variant="Variant.Outlined"
+                                 Color="Color.Primary"
+                                 Size="Size.Small"
+                                 Class="ml-2">
+                            <MudIcon Icon="@Icons.Material.Filled.TrendingUp"
+                                     Size="Size.Small"
+                                     Class="mr-1" />
+                            Avance:
+                            @((context.Grouping.Count() > 0
+                                ? context.Grouping.Count(x =>
+                                    !string.IsNullOrEmpty(x.StatusName) &&
+                                    x.StatusName.ToUpper() != "POR CONTAR") * 100.0
+                                    / context.Grouping.Count()
+                                : 0).ToString("F1"))%
                         </MudChip>
 
-                        <!-- Ítems Contados (o cantidad de Iform con estatus procesado) -->
-                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
-                            Contados: @context.Grouping.Count(x => !string.IsNullOrEmpty(x.StatusName) && x.StatusName.ToUpper() != "POR CONTAR")
+                        <!-- Ítems contados -->
+                        <MudChip T="string"
+                                 Variant="Variant.Outlined"
+                                 Color="Color.Success"
+                                 Size="Size.Small"
+                                 Class="ml-2">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircleOutline"
+                                     Size="Size.Small"
+                                     Class="mr-1" />
+                            Contados:
+                            @context.Grouping.Count(x =>
+                                !string.IsNullOrEmpty(x.StatusName) &&
+                                x.StatusName.ToUpper() != "POR CONTAR")
                         </MudChip>
 
-                        <!-- Diferencias / Ítems c/ Diferencia -->
-                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
-                            Ítems c/ Diferencia: @context.Grouping.Count(x => x.Diference != 0 && (!string.IsNullOrEmpty(x.StatusName) && x.StatusName.ToUpper() != "POR CONTAR"))
+                        <!-- Ítems con diferencia -->
+                        @{
+                            var diferencias = context.Grouping.Count(x =>
+                                x.Diference != 0 &&
+                                !string.IsNullOrEmpty(x.StatusName) &&
+                                x.StatusName.ToUpper() != "POR CONTAR");
+                        }
+
+                        <MudChip T="string"
+                                 Variant="Variant.Outlined"
+                                 Color="@(diferencias > 0 ? Color.Error : Color.Default)"
+                                 Size="Size.Small"
+                                 Class="ml-2">
+                            <MudIcon Icon="@Icons.Material.Filled.WarningAmber"
+                                     Size="Size.Small"
+                                     Class="mr-1" />
+                            Diferencias: @diferencias
                         </MudChip>
                     </div>
                 }
@@ -363,24 +455,68 @@
                         <MudIcon Icon="@Icons.Material.Filled.Place" Color="Color.Dark" Size="Size.Small" Class="mr-2" />
                         <span style="font-weight:bold">UBICACIÓN: @context.Grouping.Key</span>
 
-                        <!-- Cantidad de Planillas -->
-                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
-                            Num Planillas: @context.Grouping.Count(x => x.NumForm.HasValue)
+                        <!-- Cantidad de planillas -->
+                        <MudChip T="string"
+                                 Variant="Variant.Outlined"
+                                 Color="Color.Info"
+                                 Size="Size.Small"
+                                 Class="ml-2">
+                            <MudIcon Icon="@Icons.Material.Filled.Assignment"
+                                     Size="Size.Small"
+                                     Class="mr-1" />
+                            Num. Planillas: @context.Grouping.Count(x => x.NumForm.HasValue)
                         </MudChip>
 
-                        <!-- Avance por CÓDIGO -->
-                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
-                            Avance: @((context.Grouping.Count() > 0 ? (context.Grouping.Count(x => !string.IsNullOrEmpty(x.StatusName) && x.StatusName.ToUpper() != "POR CONTAR") * 100.0 / context.Grouping.Count()) : 0).ToString("F1"))%
+                        <!-- Avance por código -->
+                        <MudChip T="string"
+                                 Variant="Variant.Outlined"
+                                 Color="Color.Primary"
+                                 Size="Size.Small"
+                                 Class="ml-2">
+                            <MudIcon Icon="@Icons.Material.Filled.TrendingUp"
+                                     Size="Size.Small"
+                                     Class="mr-1" />
+                            Avance:
+                            @((context.Grouping.Count() > 0
+                                ? context.Grouping.Count(x =>
+                                    !string.IsNullOrEmpty(x.StatusName) &&
+                                    x.StatusName.ToUpper() != "POR CONTAR") * 100.0
+                                    / context.Grouping.Count()
+                                : 0).ToString("F1"))%
                         </MudChip>
 
-                        <!-- Ítems Contados (o cantidad de Iform con estatus procesado) -->
-                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
-                            Contados: @context.Grouping.Count(x => !string.IsNullOrEmpty(x.StatusName) && x.StatusName.ToUpper() != "POR CONTAR")
+                        <!-- Ítems contados -->
+                        <MudChip T="string"
+                                 Variant="Variant.Outlined"
+                                 Color="Color.Success"
+                                 Size="Size.Small"
+                                 Class="ml-2">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircleOutline"
+                                     Size="Size.Small"
+                                     Class="mr-1" />
+                            Contados:
+                            @context.Grouping.Count(x =>
+                                !string.IsNullOrEmpty(x.StatusName) &&
+                                x.StatusName.ToUpper() != "POR CONTAR")
                         </MudChip>
 
-                        <!-- Diferencias / Ítems c/ Diferencia -->
-                        <MudChip Variant="Variant.Outlined" Color="Color.Dark" Size="Size.Small" Class="ml-2">
-                            Ítems c/ Diferencia: @context.Grouping.Count(x => x.Diference != 0 && (!string.IsNullOrEmpty(x.StatusName) && x.StatusName.ToUpper() != "POR CONTAR"))
+                        <!-- Ítems con diferencia -->
+                        @{
+                            var diferencias = context.Grouping.Count(x =>
+                                x.Diference != 0 &&
+                                !string.IsNullOrEmpty(x.StatusName) &&
+                                x.StatusName.ToUpper() != "POR CONTAR");
+                        }
+
+                        <MudChip T="string"
+                                 Variant="Variant.Outlined"
+                                 Color="@(diferencias > 0 ? Color.Error : Color.Default)"
+                                 Size="Size.Small"
+                                 Class="ml-2">
+                            <MudIcon Icon="@Icons.Material.Filled.WarningAmber"
+                                     Size="Size.Small"
+                                     Class="mr-1" />
+                            Ítems c/ Diferencia: @diferencias
                         </MudChip>
                     </div>
                 }
@@ -392,8 +528,8 @@
         </PropertyColumn>
       
         <PropertyColumn Property="x => x.CountId" Title="NUM. CONTEO" Align="Align.Right" Filterable="false" Groupable="false" />
-        <PropertyColumn Property="x => x.QuantityOld" Title="CANT. ANTERIOR" Align="Align.Right" Filterable="false" Groupable="false" />
-        <PropertyColumn Property="x => x.QuantityNew" Title="CANT. NUEVA" Align="Align.Right" Filterable="false" Groupable="false" />
+        <PropertyColumn Property="x => x.QuantityOld" Title="CANT. TEORICA" Align="Align.Right" Filterable="false" Groupable="false" />
+        <PropertyColumn Property="x => x.QuantityNew" Title="CANT. CONTADA" Align="Align.Right" Filterable="false" Groupable="false" />
         <PropertyColumn Property="x => x.Diference" Title="DIFERENCIA" Align="Align.Right" Filterable="false" Groupable="false" />
         <PropertyColumn Property="x => x.UserName" Title="ASIGNADO A" Align="Align.Center" Filterable="false" Groupable="false" />
 
@@ -487,7 +623,7 @@
     private bool _loadingSummary = false;
 
     private bool? _bAssign = null;      // Corresponde a @BASSIGN
-    private bool? _bDifference = null;
+    private int? _bDifference = null;
 
 
     private Func<GetInventoryCountDetail, object>? _groupBy1;
@@ -502,7 +638,7 @@
     protected override async Task OnInitializedAsync()
     {
         await AuthenticationStateProvider.RefreshStaticVariables();
-
+        Session.IsNewOrEdit = true;
         hubEventsService.OnSupplierChanged += ReloadServerData;
         hubEventsService.OnDealerChanged += ReloadServerData;
         await Task.CompletedTask;
@@ -629,36 +765,36 @@
 
 
     
-        private async Task AddCount()
-            {
-                var options = new DialogOptions
-                {
-                    CloseButton = false,
-                    MaxWidth = MaxWidth.Medium,
-                    FullWidth = true,
-                    BackdropClick = false
-                };
+    private async Task AddCount()
+    {
+        var options = new DialogOptions
+        {
+            NoHeader = true,
+            CloseButton = false,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            BackdropClick = false
+        };
 
-                var parameters = new DialogParameters<FormCount>
-            {
-                { x => x.InventoryCountId, InventoryCountId }
-            };
+        var parameters = new DialogParameters<FormCount>
+    {
+        { x => x.InventoryCountId, InventoryCountId }
+    };
 
-                var dialog = await DialogService.ShowAsync<FormCount>(
-                    "Registro de Conteo",
-                    parameters,
-                    options
-                );
+        var dialog = await DialogService.ShowAsync<FormCount>(
+            "",
+            parameters,
+            options
+        );
 
-                // Esperar el resultado del modal.
-                var result = await dialog.Result;
+        var result = await dialog.Result;
 
-               if (result is { Canceled: false } && result.Data is true)
-                {
-                    await GetInventoryCount();
-                    await InvokeAsync(StateHasChanged);
-                }
-            }
+        if (result is { Canceled: false } && result.Data is true)
+        {
+            await GetInventoryCount();
+            await InvokeAsync(StateHasChanged);
+        }
+    }
 
     private void ToggleSelectGroup(IEnumerable<GetInventoryCountDetail> groupItems)
     {
@@ -696,6 +832,7 @@
         _loading = true;
         _count = new List<GetInventoryCountDetail>();
         _rowsTotal = 0;
+        Session.IsNewOrEdit = true;
 
         _itemsModules = await ModuleActionsService.GetModuleActions(Session.UserId, _moduleName);
         _actions = await ModuleActionsService.GetStatusByModule(Session.UserId, _moduleName);
@@ -820,6 +957,13 @@
             case "VALIDATE":
                 await ValidateItemsAsync(module.IdAction, module.ActionName);
                 break;
+             case "UNLOCK":
+                await UnlockItemsAsync(module.IdAction, module.ActionName);
+                break;
+            case "IMPORT":
+                await ImportItemsAsync();
+                break;
+
             default:
                 Console.WriteLine($"{MessageEnum.ActionsError.GetStringValue()}: {module.ActionName}");
                 break;
@@ -1033,6 +1177,86 @@
     }
 
 
+
+     private async Task UnlockItemsAsync(int moduleId, string moduleActionName)
+    {
+        Console.WriteLine("Desbloquear ubicacion de inventario...");
+
+        var dialogOptions = new DialogOptions
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            BackdropClick = false
+        };
+
+        // 1. Confirmación inicial
+        bool? confir = await DialogService.ShowMessageBox(
+            "Desbloquear ubicacion de inventario",
+            "¿Seguro de Desbloquear ubicacion?",
+            yesText: "Sí",
+            noText: "No",
+            options: dialogOptions);
+
+        if (confir != true) return;
+
+        // 2. Diálogo de observación
+        var textDialogOptions = new DialogOptions
+        {
+            BackdropClick = false,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseButton = false,
+            NoHeader = true
+        };
+
+        var parameters = new DialogParameters<TextItemDialog>
+    {
+        { x => x.Title, "Desbloquear ubicacion de inventario..." }
+    };
+
+        var dialog = await DialogService.ShowAsync<TextItemDialog>("Desbloquear ubicacion Inventario", parameters, textDialogOptions);
+        var result = await dialog.Result;
+
+        // 3. Procesamiento tras respuesta
+        if (result != null && !result.Canceled)
+        {
+            var observacion = result.Data?.ToString() ?? string.Empty;
+
+            var actionList = selectedInventoryCount.Select(item => new PostAction
+            {
+                RecordId = item.Id ??0, // 👈 Cambia '.Id' por la propiedad de tu ID
+                ModuleId = moduleId,
+                ActionName = moduleActionName,
+                ActionComment = observacion,
+                RelatedId=InventoryCountId
+            }).ToList();
+
+            var serviceResponse = await InventoryCountService.ActionsInventoryCountDetail(actionList, Session.UserId);
+
+            if (serviceResponse.Processed)
+            {
+                _success = true;
+                _nestedErrorMessage = MessageEnum.UnassignOK.GetStringValue();
+
+                if (_mudDataGrid != null)
+                {
+                    await _mudDataGrid.ReloadServerData();
+                }
+            }
+            else
+            {
+                _success = false;
+                _nestedErrorMessage = serviceResponse.Message ?? MessageEnum.UnassignNotOK.GetStringValue();
+            }
+
+            OpenNested();
+        }
+
+        // Limpia la selección
+        selectedInventoryCount = new();
+    }
+
     private async Task AssignZone()
     {
         // Permite continuar si hay ítems seleccionados O si se especificó una zona válida
@@ -1083,7 +1307,93 @@
 
 
 
+    private async Task ImportItemsAsync()
+    {
+        await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('[type=file]').click()");
+    }
 
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        if (e.FileCount == 1)
+        {
+            var file = e.File;
+            const long maxAllowedSize = 10 * 1024 * 1024; // 10MB
+
+            if (file.Size == 0)
+            {
+                Snackbar.Add("El archivo está vacío", Severity.Error);
+                return;
+            }
+
+            if (file.Size > maxAllowedSize)
+            {
+                Snackbar.Add("El archivo excede el límite máximo permitido de 10MB", Severity.Error);
+                return;
+            }
+
+            if (!Path.GetExtension(file.Name).Equals(".xlsx", StringComparison.OrdinalIgnoreCase))
+            {
+                Snackbar.Add("Solo se permiten archivos Excel (.xlsx)", Severity.Error);
+                return;
+            }
+
+            try
+            {
+                _loading = true;
+
+                using var stream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
+                var content = new StreamContent(stream);
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+                var formData = new MultipartFormDataContent();
+                formData.Add(content, "file", file.Name);
+
+                var response = await InventoryCountService.ImportStockCount(Session.SupplierId, Session.UserId, InventoryCountId, formData);
+
+                if (response != null && response.Processed)
+                {
+                    // Separar resumen y rechazados
+                    var resumen = response.Data?.FirstOrDefault(r => r.Estado == "RESUMEN");
+                    var rechazados = response.Data?.Where(r => r.Estado == "RECHAZADO").ToList();
+
+                    if (rechazados != null && rechazados.Any())
+                    {
+                        var detalle = string.Join("\n", rechazados.Select(r => $"Fila {r.Fila}: {r.Mensaje}"));
+                        _success = false;
+                        _nestedErrorMessage = $"{resumen?.Mensaje}\n\n{detalle}";
+                        OpenNested();
+                    }
+                    else
+                    {
+                        Snackbar.Add(resumen?.Mensaje ?? "Importación exitosa", Severity.Success);
+                    }
+
+                    // Recargar la grilla
+                    if (_mudDataGrid != null)
+                    {
+                        await _mudDataGrid.ReloadServerData();
+                    }
+                }
+                else
+                {
+                    _success = false;
+                    _nestedErrorMessage = response?.Message ?? "Error al importar";
+                    OpenNested();
+                }
+            }
+            catch (Exception ex)
+            {
+                _success = false;
+                _nestedErrorMessage = $"Error: {ex.Message}";
+                OpenNested();
+            }
+            finally
+            {
+                _loading = false;
+                StateHasChanged();
+            }
+        }
+    }
 
     private Func<GetInventoryCountDetail, string> _cellStyleFunc => x =>
     {
