@@ -18,14 +18,14 @@ namespace Sipcon.WebApp.Client.Repository
             {
                 var response = await _http.PostAsJsonAsync(
                     $"api/InvoiceControl/DeleteDispatch?IdDispatch={IdDispatch}",
-                    new { } 
+                    new { }
                 );
 
                 result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
                 result ??= new ApiResponse<ActionResult>
                 {
                     Processed = false,
-                    Message   = "El servidor devolvió una respuesta vacía."
+                    Message = "El servidor devolvió una respuesta vacía."
                 };
             }
             catch (Exception ex)
@@ -33,7 +33,36 @@ namespace Sipcon.WebApp.Client.Repository
                 result = new ApiResponse<ActionResult>
                 {
                     Processed = false,
-                    Message   = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
+                };
+            }
+
+            return result;
+        }
+
+        public async Task<ApiResponse<ActionResult>> DeleteDispatchTxt(int idControl, string vinnerCode)
+        {
+            ApiResponse<ActionResult>? result;
+            try
+            {
+                var response = await _http.PostAsJsonAsync(
+                    $"api/InvoiceControl/DeleteDispatchedControlTxt?idControl={idControl}&vinnerCode={vinnerCode}",
+                    new { }
+                );
+
+                result = await response.Content.ReadFromJsonAsync<ApiResponse<ActionResult>>();
+                result ??= new ApiResponse<ActionResult>
+                {
+                    Processed = false,
+                    Message = "El servidor devolvió una respuesta vacía."
+                };
+            }
+            catch (Exception ex)
+            {
+                result = new ApiResponse<ActionResult>
+                {
+                    Processed = false,
+                    Message = string.Concat("Ocurrió un error inesperado: ", ex.Message)
                 };
             }
 
