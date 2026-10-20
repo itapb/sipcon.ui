@@ -312,7 +312,8 @@
         var parameters = new DialogParameters<VehicleFilesDialog> 
         {
             { x => x.RecordId, id },
-            { x => x.ModuleName, "VEHICULOS-VEHICULOS" }
+            { x => x.ModuleName, "VEHICULOS-VEHICULOS" },
+            { x => x.Reload, EventCallback.Factory.Create(this, ReloadServerData) }       
         };
 
         await OpenDialog(parameters, "Documentos adjuntos a la unidad");
