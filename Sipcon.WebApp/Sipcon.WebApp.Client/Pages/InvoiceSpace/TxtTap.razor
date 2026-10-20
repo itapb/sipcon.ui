@@ -1,5 +1,6 @@
 ﻿@inject HubEventsService hubEventsService
 @implements IDisposable
+@inject IDispatchService DispatchService
 
 @using System.Collections.Generic
 @using MudBlazor.Utilities
@@ -93,6 +94,13 @@
         <PropertyColumn Property="x => x.Invoiced" Title="CANT FACT" Groupable="false" />       
         <PropertyColumn Property="x => x.InvoiceId" Title="NRO FACT" Groupable="false" />       
 
+        <TemplateColumn>
+            <CellTemplate>
+                <MudStack Row="true">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="@(() => ClickRemoveTxt(context.Item))" />
+                </MudStack>
+            </CellTemplate>
+        </TemplateColumn>
 
     </Columns>
     <PagerContent>
@@ -164,6 +172,18 @@
             {
                 StateHasChanged();
             }
+        }
+    }
+
+    private async Task ClickRemoveTxt(Invoicecontrol Invoicecontrol)
+    {
+        DialogOptions mOptions = new() { MaxWidth = MaxWidth.ExtraLarge, BackdropClick = false, NoHeader = false };
+        bool? result = await DialogService.ShowMessageBox("Eliminar", "Confirmar accion para este registro?", yesText: "SI", cancelText: "NO", options: mOptions);
+
+        if ((result ?? false))
+        {
+                await DispatchService.DeleteDispatchTxt(Invoicecontrol.ControlId ?? 0, Invoicecontrol.PartInnerCode);
+                await TxtTapDataGrid!.ReloadServerData();
         }
     }
 

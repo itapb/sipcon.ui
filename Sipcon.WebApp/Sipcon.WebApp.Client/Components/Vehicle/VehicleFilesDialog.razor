@@ -101,6 +101,7 @@
 
     [Parameter] public int RecordId { get; set; }
     [Parameter] public string ModuleName { get; set; } = "VEHICULOS-VEHICULOS";
+    [Parameter] public EventCallback Reload { get; set; }
 
     private List<Attachment> _files = new();
     private bool _loading = true;
@@ -163,15 +164,22 @@
             if (response.Processed)
             {
                 await LoadFiles();
+                await Reload.InvokeAsync();
             }
             else
             {
-                Console.WriteLine($"No se pudo eliminar el adjunto: {response.Message}");
+              await DialogService.ShowMessageBox(
+                "Aviso", 
+                $"No se pudo eliminar el adjunto: {response.Message}", 
+                yesText: "Aceptar");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error al eliminar el adjunto: {ex.Message}");
+            await DialogService.ShowMessageBox(
+                    "Error", 
+                    $"Ocurrió un error al eliminar el adjunto: {ex.Message}", 
+                    yesText: "Aceptar");        
         }
         finally
         {
